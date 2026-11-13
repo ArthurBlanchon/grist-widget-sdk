@@ -495,6 +495,27 @@ describe("runUpgrade", () => {
     expect(readFileSync(path.join(dir, "tsconfig.node.json"), "utf8")).toBe(nodeTsconfig)
   })
 
+  it("rewrites the deprecated names in the widget's code once the template is on grist-widget-sdk 0.6", () => {
+    const old = `import { useGristContext } from "grist-widget-sdk"\nexport const useW = () => useGristContext()\n`
+    for (const [version, rewritten] of [
+      ["0.6.0", true],
+      ["0.5.0", false],
+    ]) {
+      const template = embeddedTemplate(version)
+      const dir = scaffold(template, { version })
+      writeFileSync(path.join(dir, "src/app/use-w.ts"), old)
+      const report = runUpgrade({ cwd: dir, templateDir: template, cliVersion: version, publishedAt: noLookup })
+      const after = readFileSync(path.join(dir, "src/app/use-w.ts"), "utf8")
+      if (rewritten) {
+        expect(report.codemods).toEqual([{ file: "src/app/use-w.ts", changes: ["useGristContext → useGrist"] }])
+        expect(after).toBe(`import { useGrist } from "grist-widget-sdk"\nexport const useW = () => useGrist()\n`)
+      } else {
+        expect(report.codemods).toEqual([])
+        expect(after).toBe(old)
+      }
+    }
+  })
+
   it("changes nothing on a widget already on this template", () => {
     const template = embeddedTemplate("0.9.0")
     const dir = scaffold(template, { version: "0.9.0" })

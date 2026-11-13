@@ -40,6 +40,7 @@ import { createComposer } from "../vendor/compose-example.mjs"
 import { checkGitGate } from "../src/git-gate.mjs"
 import { addedAgeExceptions } from "../src/age-exceptions.mjs"
 import { installPlan } from "../src/package-manager.mjs"
+import { DEPRECATED_URL } from "../src/codemods.mjs"
 import { runUpgrade, upgradeRefusal } from "../src/upgrade.mjs"
 import { DEMO_DIR, demoArgs, demoRefusal, runDemo, saveDemo } from "../src/demo.mjs"
 import { MANIFEST_FILE, writeManifest } from "../src/manifest.mjs"
@@ -646,7 +647,8 @@ function cmdUpgrade(argv) {
       report.deleted.length +
       report.tsconfigs.length +
       report.packageChanges.length +
-      report.ageRemoved.length >
+      report.ageRemoved.length +
+      report.codemods.length >
     0
 
   const from = report.fromVersion && report.fromVersion !== cliPkg.version ? ` (from ${report.fromVersion})` : ""
@@ -672,6 +674,14 @@ function cmdUpgrade(argv) {
   printList("package.json:", report.packageChanges)
   printList("pnpm age exceptions removed (old enough now that pnpm no longer needs them):", report.ageRemoved)
   printList("pnpm age exceptions kept (their publish time could not be looked up):", report.ageUnknown)
+  printList(
+    "Deprecated grist-widget-sdk names rewritten in your code:",
+    report.codemods.map(({ file, changes }) => `${file}: ${changes.join("; ")}`)
+  )
+  printList(
+    `Deprecated names left for you to change (${DEPRECATED_URL}):`,
+    report.deprecatedLeft.map(({ file, line, name, hint }) => `${file}:${line}  ${name}: ${hint}`)
+  )
   if (!changed) return
 
   console.log("\nNext:")

@@ -18,7 +18,7 @@ links here; a production build stays silent. Its type is marked
 | --- | --- |
 | `useGristContext()` | `widget.useGrist()`, or `useGrist()`: `mountGristWidget()` always renders the provider. |
 | `useGrist().isReady` | `status === "ready"` |
-| `useGrist().isAvailable` | `status`: `"unavailable"` outside Grist, `"booting"` while connecting, anything else inside Grist. |
+| `useGrist().isAvailable`, `useGristSchema().isAvailable` | `useGrist().status`: `"unavailable"` outside Grist, `"booting"` while connecting, anything else inside Grist. |
 | `useGrist().fetchSelectedTable(options?)` | `fetchRows()` for the section's rows, `fetchRows({ columnar: true })` for its columns. |
 | `useGrist().fetchTable(tableId)` | `fetchRows(tableId)` for rows, `fetchRows(tableId, { columnar: true })` for columns. |
 | `useGrist().fetchTableRows(tableId, options?)` | `fetchRows(tableId, options)`, the same rows. |

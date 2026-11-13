@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, expectTypeOf, it, vi } from "v
 import * as actions from "../../src/actions"
 import * as sdk from "../../src/sdk"
 import { resetDeprecationWarnings, warnDeprecated } from "../../src/sdk/helpers/deprecate"
-import { cleanup, presets, renderWithGrist, screen, waitFor } from "../../src/emulator/testing"
+import { cleanup, presets, renderWithGrist, screen, smokeTestWidget, waitFor } from "../../src/emulator/testing"
 import type { GristColumnarTable, GristRowRecord, UseGristResult } from "../../src/sdk"
 
 let warn: ReturnType<typeof vi.spyOn>
@@ -68,6 +68,23 @@ describe("useGristContext", () => {
     )
     await waitFor(() => expect(screen.getByText("ready")).toBeTruthy())
     expect(lines()).toEqual([expect.stringContaining("useGristContext() is deprecated")])
+  })
+})
+
+describe("a widget on the current API", () => {
+  it("logs no deprecation warning, the SDK's own hooks and components included", async () => {
+    const widget = sdk.defineGristWidget({ requiredAccess: "full", columns: [{ name: "Title", type: "Text" }] })
+    function App() {
+      const w = widget.useGrist()
+      const schema = sdk.useGristSchema({ tableId: w.currentTableId ?? undefined })
+      return (
+        <p>
+          {w.status} {w.mappedRecord?.Title} {schema.loading ? "…" : Object.keys(schema.table?.columns ?? {}).length}
+        </p>
+      )
+    }
+    await smokeTestWidget({ App, widget })
+    expect(lines()).toEqual([])
   })
 })
 

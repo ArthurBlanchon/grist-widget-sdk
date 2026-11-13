@@ -1,14 +1,10 @@
-import {
-  useGrist,
-  useWidgetMetadata,
-  type GristMappedRow,
-  type GristRowRecord,
-  type UseGristOptions,
-} from "grist-widget-sdk"
+import { defineGristWidget } from "grist-widget-sdk"
 
-// `as const satisfies` keeps the column names and types literal, so
-// GristMappedRow can type the mapped records from this one declaration.
-export const GRIST_OPTIONS = {
+// The declaration types the mapped records: each task is
+// { id; Title: string | null; Due: Date | null; Done: boolean | null }, no generics.
+export const widget = defineGristWidget({
+  title: "Typed reads",
+  description: "Mapped records typed and checked from the widget's declaration, with read-only access.",
   // Read-only is enough: each mapped cell is checked against the type declared here.
   requiredAccess: "read table",
   columns: [
@@ -17,18 +13,10 @@ export const GRIST_OPTIONS = {
     { name: "Done", type: "Bool", optional: true },
   ],
   suppressAlerts: ["section-not-linked"],
-} as const satisfies UseGristOptions
-
-type Task = GristMappedRow<typeof GRIST_OPTIONS>
-
-export const WIDGET_METADATA = {
-  title: "Typed reads",
-  description: "Mapped records typed and checked from GRIST_OPTIONS, with read-only access.",
-} as const
+})
 
 export function WidgetApp() {
-  useWidgetMetadata(WIDGET_METADATA)
-  const { mappedRecords, cellIssues } = useGrist<GristRowRecord, Task>()
+  const { mappedRecords, cellIssues } = widget.useGrist()
 
   return (
     <div className="grid gap-3 p-4 text-sm">

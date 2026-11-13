@@ -50,6 +50,16 @@
         "default": "./dist/app.cjs"
       }
     },
+    "./actions": {
+      "import": {
+        "types": "./dist/actions.d.ts",
+        "default": "./dist/actions.js"
+      },
+      "require": {
+        "types": "./dist/actions.d.cts",
+        "default": "./dist/actions.cjs"
+      }
+    },
     "./emulator": {
       "import": {
         "types": "./dist/emulator.d.ts",

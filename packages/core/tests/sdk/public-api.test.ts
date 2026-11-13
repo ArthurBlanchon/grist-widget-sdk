@@ -8,6 +8,7 @@
 import { describe, expect, it } from "vitest"
 
 import * as sdk from "../../src/sdk"
+import * as actions from "../../src/actions"
 import * as app from "../../src/app"
 import * as emulator from "../../src/emulator"
 import * as emulatorTesting from "../../src/emulator/testing"
@@ -35,7 +36,7 @@ const ROOT = [
   "gristAttachmentCellValue",
   "gristAttachmentCellValues",
   "mergeGristAttachmentCellValue",
-  // User actions
+  // User actions: deprecated here (they moved to grist-widget-sdk/actions), removed in 1.0
   "gristAddColumnAction",
   "gristAddRecordAction",
   "gristAddTableAction",
@@ -48,6 +49,21 @@ const ROOT = [
   // Typed reads
   "checkGristCell",
   "encodeGristCell",
+]
+
+const ACTIONS = [
+  "gristAddColumnAction",
+  "gristAddRecordAction",
+  "gristAddTableAction",
+  "gristAddVisibleColumnAction",
+  "gristBulkAddRecordAction",
+  "gristBulkRemoveRecordAction",
+  "gristBulkUpdateRecordAction",
+  "gristModifyColumnAction",
+  "gristRemoveColumnAction",
+  "gristRemoveRecordAction",
+  "gristRenameColumnAction",
+  "gristUpdateRecordAction",
 ]
 
 const APP = ["mountGristWidget", "GristWidgetApp", "entryProps", "useTheme", "parseDeployPath", "deployChannelLabel", "useReleasedVersions"]
@@ -85,6 +101,9 @@ const keys = (mod: Record<string, unknown>) => Object.keys(mod).filter((k) => mo
 describe("public API surface", () => {
   it("grist-widget-sdk exports exactly the documented names", () => {
     expect(keys(sdk)).toEqual([...ROOT].sort())
+  })
+  it("grist-widget-sdk/actions exports exactly the documented names", () => {
+    expect(keys(actions)).toEqual([...ACTIONS].sort())
   })
   it("grist-widget-sdk/app exports exactly the documented names", () => {
     expect(keys(app)).toEqual([...APP].sort())

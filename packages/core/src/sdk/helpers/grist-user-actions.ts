@@ -24,7 +24,7 @@ export function gristRemoveRecordAction(tableId: string, rowId: number): GristUs
   return ["RemoveRecord", tableId, rowId]
 }
 
-/** `["AddColumn", tableId, colId, colInfo]` — `colInfo` shape depends on Grist version / column type. */
+/** `["BulkUpdateRecord", tableId, rowIds, { col: value[], ... }]` */
 export function gristBulkUpdateRecordAction(
   tableId: string,
   rowIds: number[],

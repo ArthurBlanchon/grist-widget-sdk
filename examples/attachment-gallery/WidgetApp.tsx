@@ -1,24 +1,16 @@
 import { useEffect, useState } from "react"
 
-import {
-  extractGristAttachmentIdsFromCell,
-  useGrist,
-  useWidgetMetadata,
-  type UseGristOptions,
-} from "grist-widget-sdk"
+import { defineGristWidget, extractGristAttachmentIdsFromCell } from "grist-widget-sdk"
 
 import { Button } from "@/components/ui/button"
 
-export const GRIST_OPTIONS: UseGristOptions = {
-  requiredAccess: "full",
-  columns: [{ name: "Attachments", type: "Attachments" }],
-}
-
-export const WIDGET_METADATA = {
+export const widget = defineGristWidget({
   title: "Attachment gallery",
   description:
     "Thumbnail grid of every attachment in the selected row. Showcases extractGristAttachmentIdsFromCell + useGrist().fetchAttachmentBlob.",
-} as const
+  requiredAccess: "full",
+  columns: [{ name: "Attachments", type: "Attachments" }],
+})
 
 type Thumb = {
   id: string
@@ -27,25 +19,11 @@ type Thumb = {
 }
 
 export function WidgetApp() {
-  useWidgetMetadata(WIDGET_METADATA)
-  const w = useGrist()
+  const w = widget.useGrist()
 
   const cellValue = w.mappedRecord?.Attachments ?? null
   const ids = extractGristAttachmentIdsFromCell(cellValue)
   const idsKey = ids.join(",")
-
-  if (w.status === "booting") {
-    return <Empty title="Connecting to Grist…" body="" />
-  }
-
-  if (!w.columnMappingStatus.ok) {
-    return (
-      <Empty
-        title="Missing column mapping"
-        body="Open the widget configuration panel and map the Attachments column."
-      />
-    )
-  }
 
   if (w.mode === "empty") {
     return (
@@ -84,7 +62,7 @@ function AttachmentGrid({
 }: {
   ids: string[]
   recordId: unknown
-  fetchAttachmentBlob: ReturnType<typeof useGrist>["fetchAttachmentBlob"]
+  fetchAttachmentBlob: ReturnType<typeof widget.useGrist>["fetchAttachmentBlob"]
 }) {
   const [thumbs, setThumbs] = useState<Thumb[]>([])
   const [error, setError] = useState<string | null>(null)

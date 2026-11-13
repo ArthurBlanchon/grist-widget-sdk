@@ -5,16 +5,16 @@
  * components that call `useGrist()`:
  *
  * ```tsx
- * export const GRIST_OPTIONS: UseGristOptions = { requiredAccess: "full", columns: ["Title"] }
+ * export const widget = defineGristWidget({
+ *   requiredAccess: "full",
+ *   columns: [{ name: "Title", type: "Text" }, { name: "Done", type: "Bool" }],
+ * })
  *
  * export default function App() {
- *   const w = useGrist<Row, { Title: string }>()
- *   if (w.mode !== "row") return <p>Select a row.</p>
- *   return (
- *     <button onClick={() => w.table.update({ id: w.record!.id, fields: w.mapBack({ Title: "Done" }) })}>
- *       {w.mappedRecord?.Title}
- *     </button>
- *   )
+ *   const w = widget.useGrist()
+ *   if (!w.mappedRecord) return <p>Select a row.</p>
+ *   const { Title, Done } = w.mappedRecord
+ *   return <button onClick={() => w.updateRecord({ Done: !Done })}>{Title}</button>
  * }
  * ```
  *
@@ -34,6 +34,8 @@ export {
   useGrist,
   useGristContext,
   useGristOptional,
+  type FetchRows,
+  type FetchRowsOptions,
   type GristColumnInfo,
   type GristRecordPatch,
   type GristTheme,
@@ -79,7 +81,7 @@ export {
   type GristAttachmentUploadResult,
 } from "./helpers/grist-attachment-upload"
 
-// User actions for `applyActions` (schema changes, batches)
+// User actions for `applyActions`: deprecated here, in `grist-widget-sdk/actions` now
 export {
   gristAddColumnAction,
   gristAddRecordAction,
@@ -90,8 +92,8 @@ export {
   gristRemoveRecordAction,
   gristRenameColumnAction,
   gristUpdateRecordAction,
-  type GristUserActionTuple,
-} from "./helpers/grist-user-actions"
+} from "./deprecated-actions"
+export type { GristUserActionTuple } from "./helpers/grist-user-actions"
 
 // Typed reads: each mapped cell checked against its declared type
 export { checkGristCell, encodeGristCell, type GristCellIssue, type GristMappedRow, type StandardSchema } from "./runtime/cells"

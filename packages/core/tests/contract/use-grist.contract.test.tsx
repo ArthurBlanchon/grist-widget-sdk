@@ -16,6 +16,7 @@ import { presets } from "../../src/emulator"
 import { actionsOf, eventsOf } from "../../src/emulator/testing"
 import { renderProbe, settle, untilReady } from "./harness"
 import type { UseGristOptions } from "../../src/sdk"
+import { resetDeprecationWarnings } from "../../src/sdk/helpers/deprecate"
 
 /** todoList with a REST access token, for the attachment and REST members. */
 const withToken = () => ({
@@ -29,8 +30,6 @@ const withToken = () => ({
 
 const MEMBERS = [
   "status",
-  "isAvailable",
-  "isReady",
   "error",
   "reload",
   "theme",
@@ -47,9 +46,7 @@ const MEMBERS = [
   "updateRecord",
   "addRecord",
   "currentTableId",
-  "fetchSelectedTable",
-  "fetchTable",
-  "fetchTableRows",
+  "fetchRows",
   "listTables",
   "listColumns",
   "table",
@@ -68,6 +65,9 @@ const MEMBERS = [
   "fetchWithAuth",
 ] as const
 
+/** Still on the result, warning once in development; removed in 1.0. */
+const DEPRECATED = ["isAvailable", "isReady", "fetchSelectedTable", "fetchTable", "fetchTableRows"] as const
+
 const MAPPED = {
   requiredAccess: "read table",
   columns: [
@@ -83,7 +83,38 @@ describe("the contract covers every member", () => {
     const keys = Object.keys(w())
     for (const m of MEMBERS) expect(keys, `useGrist().${m}`).toContain(m)
     const source = readFileSync(new URL(import.meta.url), "utf8")
-    for (const m of MEMBERS) expect(source, `describe("${m}")`).toContain(`describe("${m}"`)
+    for (const m of [...MEMBERS, ...DEPRECATED]) expect(source, `describe("${m}")`).toContain(`describe("${m}"`)
+    for (const m of DEPRECATED) expect(m in w(), `useGrist().${m}`).toBe(true)
+  })
+})
+
+describe("deprecated members", () => {
+  it("each works, and warns once in development with what replaces it", async () => {
+    const { w } = renderProbe({ requiredAccess: "full" })
+    await untilReady(w)
+    resetDeprecationWarnings()
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {})
+    try {
+      for (let i = 0; i < 2; i++) {
+        void w().isAvailable
+        void w().isReady
+        await w().fetchSelectedTable()
+        await w().fetchTable("Tasks")
+        await w().fetchTableRows("Tasks")
+      }
+      const lines = warn.mock.calls.map((c) => String(c[0]))
+      expect(lines).toHaveLength(DEPRECATED.length)
+      for (const m of DEPRECATED) expect(lines.some((l) => l.includes(`useGrist().${m}`) && l.includes("deprecated"))).toBe(true)
+    } finally {
+      warn.mockRestore()
+    }
+  })
+
+  it("stay out of a spread of the result", async () => {
+    const { w } = renderProbe()
+    await untilReady(w)
+    const copy = { ...w() }
+    expect("isReady" in copy || "isAvailable" in copy).toBe(false)
   })
 })
 
@@ -374,6 +405,33 @@ describe("currentTableId", () => {
     const { w } = renderProbe()
     await untilReady(w)
     await waitFor(() => expect(w().currentTableId).toBe("Tasks"))
+  })
+})
+
+describe("fetchRows", () => {
+  it("reads the section's rows, in its order, without a table id", async () => {
+    const { w } = renderProbe()
+    await untilReady(w)
+    const rows = await w().fetchRows()
+    expect(rows.map((r) => [r.id, r.title])).toEqual([
+      [1, "Buy milk"],
+      [2, "Write the SOTA emulator"],
+      [3, "Ship it"],
+    ])
+  })
+
+  it("reads any table as rows with full access", async () => {
+    const { w } = renderProbe({ requiredAccess: "full" })
+    await untilReady(w)
+    const rows = await w().fetchRows("Tasks")
+    expect(rows.map((r) => r.title)).toEqual(["Buy milk", "Write the SOTA emulator", "Ship it"])
+  })
+
+  it("gives Grist's columns with { columnar: true }", async () => {
+    const { w } = renderProbe({ requiredAccess: "full" })
+    await untilReady(w)
+    expect((await w().fetchRows({ columnar: true })).title).toEqual(["Buy milk", "Write the SOTA emulator", "Ship it"])
+    expect((await w().fetchRows("Tasks", { columnar: true })).id).toEqual([1, 2, 3])
   })
 })
 

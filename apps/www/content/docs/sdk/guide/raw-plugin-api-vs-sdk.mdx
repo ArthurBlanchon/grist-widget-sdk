@@ -30,7 +30,7 @@ Most widget reads/writes are **RPC to the host runtime** (`grist.docApi`, `onRec
 | Gate UI until mapped | Custom checks | `<GristBoundary>` waits for the required declared columns; `w.columnMappingStatus.ok` |
 | Update one field | Build `UpdateRecord` user-action tuple | `w.table.update({ id, fields })` |
 | Bulk row CRUD | `applyActions([…])` tuples | `w.table.create` / `update` / `upsert` / `destroy` (single or array) |
-| Schema changes | Hand-built action tuples | `w.applyActions([gristAddColumnAction(…), …])` |
+| Schema changes | Hand-built action tuples | `w.applyActions([gristAddColumnAction(…), …])` (`grist-widget-sdk/actions`) |
 | TypeScript | Loose global | `useGrist<MyRow, MyMapped>()` + exported types |
 | Tests in CI | Mock `window.grist` by hand | `renderWithGrist` + `presets` (same code paths as production) |
 

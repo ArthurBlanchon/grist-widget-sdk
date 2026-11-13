@@ -1,11 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 
-import {
-  useGristContext,
-  useGristSchema,
-  useWidgetMetadata,
-  type UseGristOptions,
-} from "grist-widget-sdk"
+import { defineGristWidget, useGristSchema } from "grist-widget-sdk"
 
 import { Button } from "@/components/ui/button"
 
@@ -25,25 +20,20 @@ function downloadReplicaJson(label: string, json: string) {
   URL.revokeObjectURL(url)
 }
 
-export const GRIST_OPTIONS: UseGristOptions = {
+export const widget = defineGristWidget({
+  title: "Spreadsheet grid",
+  description:
+    "Selected Grist section rendered as a fully-synced, editable spreadsheet via react-datasheet-grid, plus a schema toolbar and replica-document export.",
   /** Required so `table.update` / `applyUserActions` succeed. */
   requiredAccess: "full",
   /** Needed so `setCursorPos` / linked selection can drive host row focus. */
   allowSelectBy: true,
-}
-
-export const WIDGET_METADATA = {
-  title: "Spreadsheet grid",
-  description:
-    "Selected Grist section rendered as a fully-synced, editable spreadsheet via react-datasheet-grid, plus a schema toolbar and replica-document export.",
-} as const
+})
 
 export function WidgetApp() {
-  useWidgetMetadata(WIDGET_METADATA)
-
   // Hoist the schema fetch so the grid + toolbar share it (single
   // `_grist_Tables_column` round-trip per reload).
-  const w = useGristContext()
+  const w = widget.useGrist()
   const schema = useGristSchema({
     tableId: w.currentTableId ?? undefined,
     requiredAccess: "full",
@@ -87,7 +77,7 @@ export function WidgetApp() {
           type="button"
           variant="outline"
           size="sm"
-          disabled={!w.isReady || exporting !== null}
+          disabled={w.status !== "ready" || exporting !== null}
           onClick={() => exportReplica("schema-only", "none")}
         >
           {exporting === "schema-only" ? "…" : "Export schema"}
@@ -96,7 +86,7 @@ export function WidgetApp() {
           type="button"
           variant="outline"
           size="sm"
-          disabled={!w.isReady || exporting !== null}
+          disabled={w.status !== "ready" || exporting !== null}
           onClick={() => exportReplica("schema-samples", "samples")}
         >
           {exporting === "schema-samples" ? "…" : "Export schema + samples"}

@@ -108,7 +108,7 @@ Only synchronous validators: an asynchronous one is reported as an issue.
 ## Any table
 
 `checkGristCell(type, value)` checks one value against a Grist type, for data
-read some other way (`fetchTableRows`, with the types from `listColumns`):
+read some other way (`fetchRows(tableId)`, with the types from `listColumns`):
 
 ```ts
 import { checkGristCell } from "grist-widget-sdk"

@@ -34,6 +34,7 @@ export default defineConfig({
       { find: /^grist-widget-sdk\/emulator\/testing$/, replacement: `${core}/emulator/testing/index.ts` },
       { find: /^grist-widget-sdk\/emulator$/, replacement: `${core}/emulator/index.ts` },
       { find: /^grist-widget-sdk\/app$/, replacement: `${core}/app/index.ts` },
+      { find: /^grist-widget-sdk\/actions$/, replacement: `${core}/actions/index.ts` },
       { find: /^grist-widget-sdk$/, replacement: `${core}/index.ts` },
     ],
   },

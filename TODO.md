@@ -13,7 +13,22 @@ The reasoning behind 0.4.0, and what it left for later, is the
   and the `check` status, and blocks force pushes and deletion; `dev`
   blocks force pushes and deletion.
 
-## 1. Next project — the core widget library
+## 1. The developer experience plan
+
+From the [developer experience review](./docs/planning/2026-11-12-developer-experience-review.md) §5.
+
+- [ ] **0.6.0, `upgrade`'s codemods** (`create-grist-widget`): rewrite the
+  deprecated names a widget uses (`useGristContext`, `isReady`,
+  `fetchTableRows`, `fetchSelectedTable`/`fetchTable`, root-entry user
+  actions) and list, by file and line, those it can't. Done when the six
+  reference widgets run without a deprecation warning after `upgrade`.
+- [ ] **1.0**: deprecated names removed; a written versioning policy (deprecate
+  for a minor, remove in the next major, a codemod for each break); an API
+  report (`.d.ts`) checked in CI; React 18 and 19 in the core job's matrix;
+  grouped Dependabot with an automatic `upgrade` on the widget's PR;
+  `pnpm release` for widgets. Decide the page-wide connection first.
+
+## 2. Next project — the core widget library
 
 A library of widgets built with the SDK, developed with AI, each a real
 repo scaffolded by `create-grist-widget`, registered in awesome-grist-widgets
@@ -26,7 +41,7 @@ widgets, the bar each must meet, and how agents build and verify them
   `create --example` starts from a library widget and the CLI stops
   embedding the examples.
 
-## 2. Later, if they still matter
+## 3. Later, if they still matter
 
 From the earlier backlog (`docs/history/TASKS.md`, `docs/history/2026-08-09-execution-plan.md`),
 kept only where still relevant after the 0.4.0 review:
@@ -38,8 +53,6 @@ kept only where still relevant after the 0.4.0 review:
   store; document what to do instead.
 - **Landing page with a live widget** (old batch N): an example's
   `/examples/<id>/demo/`, embedded.
-- **Peer dependency range** (task-052): declare and test the React majors
-  the SDK supports.
 - **Error-message pass** (task-053): every thrown error names its function
   and gives a one-line hint.
 

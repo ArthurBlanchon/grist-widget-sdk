@@ -43,8 +43,6 @@ widget says what to change in Grist.
 | Member | Type | Notes |
 | --- | --- | --- |
 | `status` | `"booting" \| "ready" \| "unavailable" \| "error"` | `"error"` too when Grist grants less access than declared. |
-| `isAvailable` | `boolean \| null` | Inside Grist with its plugin API (`null` while connecting). |
-| `isReady` | `boolean` | `status === "ready"`. |
 | `error` | `string \| null` | Why the widget can't run, else `null`. |
 | `reload()` | `() => Promise<void>` | Calls `grist.ready()` again and re-reads mappings. |
 | `theme` | `"light" \| "dark" \| null` | Grist's theme, `null` until Grist sends it. |
@@ -71,10 +69,10 @@ widget says what to change in Grist.
 
 | Member | Access | Notes |
 | --- | --- | --- |
-| `fetchSelectedTable(options?)` | `"read table"` | The section's rows, column-oriented (`{ id: [...], Name: [...] }`); `tableDataToRows()` turns it into rows. |
+| `fetchRows(options?)` | `"read table"` | The section's rows (what its filters show, in its order), each `{ id, ...cells }` under real column ids. |
+| `fetchRows(tableId, options?)` | `"full"` | Any table's rows, in Grist's order (`order: "id"` or `"none"` to change it; `columns` to decode with the [replica's column metadata](/docs/sdk/design/replica-document)). |
+| `fetchRows(…, { columnar: true })` | as above | Grist's column-oriented payload (`{ id: [...], Name: [...] }`) instead. |
 | `listTables(options?)` | `"read table"` | Table ids; Grist's own tables only with `{ includeSystem: true }`. |
-| `fetchTable(tableId)` | `"full"` | Any table, column-oriented. |
-| `fetchTableRows(tableId, options?)` | `"full"` | Any table as rows, in Grist's order. |
 | `listColumns(tableId, options?)` | `"full"` | Column ids, types, labels, formulas. |
 
 ### Writes (`"full"`)
@@ -114,11 +112,25 @@ widget says what to change in Grist.
 `options.readOnly` asks for a read-only token on the download and REST
 members.
 
+### Deprecated
+
+Still on the result in 0.6, warning once in development; removed in 1.0.
+See [Deprecated names](/docs/sdk/api/deprecated).
+
+| Member | Instead |
+| --- | --- |
+| `isReady` | `status === "ready"` |
+| `isAvailable` | `status`: `"unavailable"` outside Grist, `"booting"` while connecting |
+| `fetchSelectedTable(options?)` | `fetchRows({ columnar: true })`, or `fetchRows()` for rows |
+| `fetchTable(tableId)` | `fetchRows(tableId, { columnar: true })`, or `fetchRows(tableId)` for rows |
+| `fetchTableRows(tableId, options?)` | `fetchRows(tableId, options)` |
+
 ## Outside a provider
 
-`useGristContext()` is `useGrist()` that throws outside
-`<GristWidgetProvider>`; `useGristOptional()` returns `null` there, for a
-component that also works without Grist.
+`useGristOptional()` returns `null` outside `<GristWidgetProvider>`, for a
+component that also works without Grist. `useGristContext()`, which threw
+there, is deprecated: `mountGristWidget()` always renders the provider, so
+`widget.useGrist()` (or `useGrist()`) is enough.
 
 ## Examples
 
@@ -163,6 +175,8 @@ function StatusLine() {
 ### Schema mutation
 
 ```tsx
+import { gristAddColumnAction, gristRenameColumnAction } from "grist-widget-sdk/actions"
+
 async function migrate(w: ReturnType<typeof useGrist>) {
   await w.applyActions(
     [

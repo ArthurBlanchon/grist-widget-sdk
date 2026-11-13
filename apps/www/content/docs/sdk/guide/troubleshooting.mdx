@@ -81,8 +81,7 @@ You call `useGristSchema()` and `result.replicaDocument` stays `null`.
 **Causes.**
 
 - The Grist plugin api has not finished its handshake yet — wait for
-  `w.isReady === true` (the schema hook auto-runs once `isReady`
-  flips to true).
+  `w.status === "ready"` (the schema hook runs once it is).
 - The widget does not have `read table` access. Schema discovery
   needs at least read access to enumerate tables.
 

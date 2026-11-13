@@ -1,26 +1,18 @@
 import { useState } from "react"
 
-import {
-  useGrist,
-  useWidgetMetadata,
-  type UseGristOptions,
-} from "grist-widget-sdk"
+import { defineGristWidget } from "grist-widget-sdk"
 
 import { Button } from "@/components/ui/button"
 
-export const GRIST_OPTIONS: UseGristOptions = {
-  requiredAccess: "full",
-  suppressAlerts: ["section-not-linked"],
-}
-
-export const WIDGET_METADATA = {
+export const widget = defineGristWidget({
   title: "REST fetch",
   description: "fetchWithAuth against the Grist REST API.",
-} as const
+  requiredAccess: "full",
+  suppressAlerts: ["section-not-linked"],
+})
 
 export function WidgetApp() {
-  useWidgetMetadata(WIDGET_METADATA)
-  const w = useGrist()
+  const w = widget.useGrist()
   const [body, setBody] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 

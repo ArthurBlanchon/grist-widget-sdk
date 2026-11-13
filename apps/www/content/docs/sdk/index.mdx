@@ -121,11 +121,11 @@ for why you use this package instead of calling `grist` directly.
 
 | Group | Properties |
 | --- | --- |
-| **Connection** | `status`, `isAvailable`, `isReady`, `error`, `reload()`, `theme` |
+| **Connection** | `status`, `error`, `reload()`, `theme` |
 | **Selection and mapping** | `record`, `records`, `mode`, `currentTableId`, `mappings`, `columnMappingStatus`, `mappedRecord`, `resolveMappedColumnId`, `mapBack` |
 | **Writes (records)** | `table`, `getTable(id)`, `actionStatus`, `actionError` |
 | **Writes (schema)** | `applyActions(actions)` |
-| **Reads** | `fetchSelectedTable`, `listTables`, `fetchTable`, `fetchTableRows`, `listColumns` |
+| **Reads** | `fetchRows`, `listTables`, `listColumns` |
 | **Widget options** | `widgetOptions`, `setWidgetOptions`, `patchWidgetOptions` |
 | **Linking** | `setCursorPosition`, `setLinkedRowSelection` |
 | **Attachments / REST** | `getAttachmentUrl`, `fetchAttachmentBlob`, `uploadAttachment`, `fetchWithAuth` |

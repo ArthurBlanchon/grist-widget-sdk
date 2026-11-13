@@ -9,7 +9,13 @@ import { isGristNoiseColumn, type GristNoiseColumnsOptions } from "../helpers/gr
 import { fetchAttachmentBlob, getAttachmentDownloadUrl, type GristFetchedAttachmentBlob } from "../helpers/grist-attachment-download"
 import { uploadGristAttachment, type GristAttachmentUploadResult } from "../helpers/grist-attachment-upload"
 import { fetchWithGristAuth } from "../helpers/grist-fetch-with-auth"
-import { fetchGristTableRows, type FetchGristTableRowsOptions, type GristColumnarTable } from "../helpers/grist-table-data"
+import { deprecatedFunction } from "../helpers/deprecate"
+import {
+  fetchGristTableRows,
+  materializeGristRowsFromColumnar,
+  type FetchGristTableRowsOptions,
+  type GristColumnarTable,
+} from "../helpers/grist-table-data"
 import type { GristUserActionTuple } from "../helpers/grist-user-actions"
 import type {
   GristApplyUserActionsOptions,
@@ -40,10 +46,38 @@ export type GristColumnInfo = {
   description?: string
 }
 
+/** `fetchRows()` options: rows (the default) or Grist's columns. */
+export type FetchRowsOptions = FetchGristTableRowsOptions & {
+  /** Grist's column-oriented payload (`{ id: [...], Name: [...] }`) instead of rows. */
+  columnar?: boolean
+}
+
+/**
+ * A table's rows, each `{ id, ...cells }` under real column ids. Without a
+ * table id, the widget's own table as its section shows it (filters and
+ * sort applied); with one, any table (full access), in Grist's row order.
+ * `{ columnar: true }` gives Grist's columns instead.
+ */
+export type FetchRows = {
+  <T extends Record<string, unknown> = Record<string, unknown>>(
+    tableId?: string | null,
+    options?: FetchRowsOptions & { columnar?: false }
+  ): Promise<GristRowRecord<T>[]>
+  <T extends Record<string, unknown> = Record<string, unknown>>(options: FetchRowsOptions & { columnar?: false }): Promise<
+    GristRowRecord<T>[]
+  >
+  (tableId: string | null | undefined, options: FetchRowsOptions & { columnar: true }): Promise<GristColumnarTable>
+  (options: FetchRowsOptions & { columnar: true }): Promise<GristColumnarTable>
+}
+
 export type GristApi = {
   reload: () => Promise<void>
+  fetchRows: FetchRows
+  /** @deprecated Use `fetchRows({ columnar: true })` (or `fetchRows()` for rows). */
   fetchSelectedTable: (options?: GristFetchSelectedOptions) => Promise<GristColumnarTable>
+  /** @deprecated Use `fetchRows(tableId, { columnar: true })` (or `fetchRows(tableId)` for rows). */
   fetchTable: (tableId: string) => Promise<GristColumnarTable>
+  /** @deprecated Use `fetchRows(tableId, options)`. */
   fetchTableRows: <T extends Record<string, unknown> = Record<string, unknown>>(
     tableId: string,
     options?: FetchGristTableRowsOptions
@@ -127,17 +161,36 @@ export function createGristApi(runtime: GristRuntime): GristApi {
   })
   const tables = new Map<string, GristTableOperations>()
 
+  const selectedColumns = (options?: GristFetchSelectedOptions): Promise<GristColumnarTable> =>
+    read(async () => {
+      const impl = docApi().fetchSelectedTable ?? grist.fetchSelectedTable
+      if (!impl) throw new Error("fetchSelectedTable is not available in this Grist version")
+      return (await impl({ keepEncoded: false, ...options })) as GristColumnarTable
+    })
+  const tableColumns = (tableId: string): Promise<GristColumnarTable> =>
+    read(async () => (await docApi().fetchTable(tableId)) as GristColumnarTable)
+
+  const fetchRows = (async (a?: string | null | FetchRowsOptions, b?: FetchRowsOptions) => {
+    const tableId = typeof a === "string" ? a : null
+    const { columnar, ...rowOptions } = (typeof a === "object" && a !== null ? a : b) ?? {}
+    if (tableId === null) {
+      // The section's rows: Grist decodes them unless `columns` asks for the SDK's decoding.
+      const data = await selectedColumns(rowOptions.columns ? { keepEncoded: true } : undefined)
+      return columnar ? data : materializeGristRowsFromColumnar(data, { order: "none", ...rowOptions })
+    }
+    if (columnar) return tableColumns(tableId)
+    return read(() => fetchGristTableRows(docApi(), tableId, rowOptions))
+  }) as FetchRows
+
   return {
     reload: () => runtime.reload(),
 
-    fetchSelectedTable: (options) =>
-      read(async () => {
-        const impl = docApi().fetchSelectedTable ?? grist.fetchSelectedTable
-        if (!impl) throw new Error("fetchSelectedTable is not available in this Grist version")
-        return (await impl({ keepEncoded: false, ...options })) as GristColumnarTable
-      }),
-    fetchTable: (tableId) => read(async () => (await docApi().fetchTable(tableId)) as GristColumnarTable),
-    fetchTableRows: (tableId, options) => read(() => fetchGristTableRows(docApi(), tableId, options ?? {})) as never,
+    fetchRows,
+    fetchSelectedTable: deprecatedFunction("useGrist().fetchSelectedTable()", "use fetchRows({ columnar: true }), or fetchRows() for rows", selectedColumns),
+    fetchTable: deprecatedFunction("useGrist().fetchTable()", "use fetchRows(tableId, { columnar: true }), or fetchRows(tableId) for rows", tableColumns),
+    fetchTableRows: deprecatedFunction("useGrist().fetchTableRows()", "use fetchRows(tableId, options)", (tableId: string, options?: FetchGristTableRowsOptions) =>
+      read(() => fetchGristTableRows(docApi(), tableId, options ?? {}))
+    ) as never,
     listTables: (options) =>
       read(async () => {
         const all = [...(await docApi().listTables())]

@@ -10,6 +10,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useSyncExternalStore } from "react"
 
+import { warnDeprecated } from "./helpers/deprecate"
 import type { ValidateColumnMappingsResult } from "./helpers/grist-mappings"
 import { createGristApi, type GristApi } from "./runtime/api"
 import {
@@ -34,7 +35,7 @@ import {
 import type { GristRowRecord, GristWidgetColumnMap } from "./types"
 
 export type { GristTheme, GristWidgetActionStatus, GristWidgetStatus }
-export type { GristColumnInfo, ListColumnsOptions, ListTablesOptions } from "./runtime/api"
+export type { FetchRows, FetchRowsOptions, GristColumnInfo, ListColumnsOptions, ListTablesOptions } from "./runtime/api"
 
 /** What the widget asks Grist for: access, columns to map, and the alerts it doesn't want. */
 export type UseGristOptions = GristRuntimeOptions
@@ -56,8 +57,9 @@ export type UseGristResult<TRow = Record<string, unknown>, TMapped = Record<stri
 > & {
   /** `"booting"` until Grist answers, then `"ready"`; `"unavailable"` outside Grist; `"error"` otherwise. */
   status: GristWidgetStatus
-  /** Inside Grist with its plugin API (null while connecting). */
+  /** @deprecated Use `status`: `status !== "unavailable"` once it isn't `"booting"`. */
   isAvailable: boolean | null
+  /** @deprecated Use `status === "ready"`. */
   isReady: boolean
   /** Why the widget can't run (status `"error"` or `"unavailable"`), else null. */
   error: string | null
@@ -104,7 +106,7 @@ export type UseGristResult<TRow = Record<string, unknown>, TMapped = Record<stri
   /** The section's table id. */
   currentTableId: string | null
 
-  /** Any table as rows (full access). */
+  /** @deprecated Use `fetchRows(tableId, options)`. */
   fetchTableRows: <T extends Record<string, unknown> = Record<string, unknown>>(
     tableId: string,
     options?: Parameters<GristApi["fetchTableRows"]>[1]
@@ -214,11 +216,9 @@ function buildResult<TRow, TMapped>(
   const { runtime, api } = connection
   const status = deriveStatus(state)
   const columns = runtime.options.columns
-  return {
+  const result = {
     ...api,
     status,
-    isAvailable: state.connection === "connecting" ? null : state.connection !== "not-embedded" && state.connection !== "unavailable",
-    isReady: status === "ready",
     error: deriveError(state),
     theme: state.theme,
     record: state.record as GristRowRecord<TRow> | null,
@@ -237,7 +237,24 @@ function buildResult<TRow, TMapped>(
     actionStatus: state.actionStatus,
     actionError: state.actionError,
     widgetOptions: state.widgetOptions,
-  }
+  } as UseGristResult<TRow, TMapped>
+  // Deprecated flags: getters that warn once, kept out of spreads and equality checks.
+  const isAvailable = state.connection === "connecting" ? null : state.connection !== "not-embedded" && state.connection !== "unavailable"
+  Object.defineProperties(result, {
+    isAvailable: {
+      get() {
+        warnDeprecated("useGrist().isAvailable", 'read status: "unavailable" outside Grist, "booting" while connecting')
+        return isAvailable
+      },
+    },
+    isReady: {
+      get() {
+        warnDeprecated("useGrist().isReady", 'use status === "ready"')
+        return status === "ready"
+      },
+    },
+  })
+  return result
 }
 
 const EMPTY_MAPPINGS: GristWidgetColumnMap = Object.freeze({}) as GristWidgetColumnMap
@@ -296,11 +313,15 @@ export function useGristOptional<TRow = Record<string, unknown>, TMapped = Recor
   return fromProvider ? result : null
 }
 
-/** `useGrist()` inside `<GristWidgetProvider>`; throws outside one. */
+/**
+ * `useGrist()` inside `<GristWidgetProvider>`; throws outside one.
+ * @deprecated Use `widget.useGrist()` (or `useGrist()`): `mountGristWidget()` always renders the provider.
+ */
 export function useGristContext<TRow = Record<string, unknown>, TMapped = Record<string, unknown>>(): UseGristResult<
   TRow,
   TMapped
 > {
+  warnDeprecated("useGristContext()", "use widget.useGrist() (or useGrist()): mountGristWidget() always renders the provider")
   if (!useContext(GristContext)) {
     throw new Error("useGristContext() must be used inside <GristWidgetProvider> (mountGristWidget renders one).")
   }

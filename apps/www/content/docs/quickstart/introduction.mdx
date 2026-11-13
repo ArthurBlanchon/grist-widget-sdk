@@ -52,11 +52,11 @@ The SDK encapsulates this once. Your widget code never imports the `grist` globa
 
 | Concern | API |
 | --- | --- |
-| Mounting, inside and outside Grist | `mountGristWidget({ App, options })` (`grist-widget-sdk/app`) |
+| Mounting, inside and outside Grist | `mountGristWidget(entry)` (`grist-widget-sdk/app`) |
 | Connecting / access / mapping screens | `<GristBoundary>`, rendered by `mountGristWidget()` |
 | Data, mapping, writes, options, REST | `useGrist()` |
 | Schema for LLMs | `useGristSchema()` |
-| Schema mutations | `gristAddColumnAction`, `gristAddTableAction`, … + `w.applyActions([...])` |
+| Schema mutations | `gristAddColumnAction`, `gristAddTableAction`, … (`grist-widget-sdk/actions`) + `w.applyActions([...])` |
 | Decoding / encoding cells | `decodeGristValue`, `encodeGristValue` |
 | Typed reads (checked against the declared types, read-only) | `w.mappedRecords`, `w.cellIssues`, `GristMappedRow` |
 | REST | `w.fetchWithAuth(path)` |

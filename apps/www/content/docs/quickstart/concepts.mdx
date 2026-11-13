@@ -84,18 +84,18 @@ Grist sometimes sends cell values as marshalled tuples: dates as `["D", epochSec
 The SDK **pins decoding on**:
 
 - `w.record` / `w.records` (event streams) — decoded.
-- `w.fetchSelectedTable()` — the section's decoded rows, column-oriented.
-- `w.fetchTableRows()` — decoded rows when you pass `columns` metadata.
+- `w.fetchRows()` — the section's decoded rows.
+- `w.fetchRows(tableId, { columns })` — another table's rows, decoded with its column metadata.
 
-`w.fetchTable()` returns the raw columnar payload. Use `decodeGristValue(value, column)` to decode, or `fetchTableRows(tableId, { columns })`. The mapped records go further: each cell is checked against its declared type ([Typed reads](/docs/sdk/guide/typing)).
+`w.fetchRows(tableId)` without `columns` gives another table's cells as Grist sends them. Use `decodeGristValue(value, column)` to decode one, or pass `columns`. The mapped records go further: each cell is checked against its declared type ([Typed reads](/docs/sdk/guide/typing)).
 
 ## Reads vs writes
 
 | Path | Use for |
 | --- | --- |
 | `w.record` / `w.records` (subscriptions) | Reactive selection — *re-renders when Grist updates*. |
-| `w.fetchSelectedTable` | One-off read of the current section. |
-| `w.fetchTable` / `w.fetchTableRows` | One-off read of any table by id (full access). |
+| `w.fetchRows()` | One-off read of the current section. |
+| `w.fetchRows(tableId)` | One-off read of any table by id (full access). |
 | `w.table.*` / `w.getTable(id).*` | All record CRUD. |
 | `w.applyActions([...])` | Schema mutations (add/rename/remove tables, columns) or operations needing custom undo descriptions. |
 

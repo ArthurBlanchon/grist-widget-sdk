@@ -1,18 +1,14 @@
-import { useGristSchema, useWidgetMetadata, type UseGristOptions } from "grist-widget-sdk"
+import { defineGristWidget, useGristSchema } from "grist-widget-sdk"
 
-export const GRIST_OPTIONS: UseGristOptions = {
+export const widget = defineGristWidget({
+  title: "Schema preview",
+  description: "useGristSchema with replicaRowMode schema+samples for LLM context.",
   // The document's schema (_grist_Tables_column) is only readable with full access.
   requiredAccess: "full",
   suppressAlerts: ["section-not-linked"],
-}
-
-export const WIDGET_METADATA = {
-  title: "Schema preview",
-  description: "useGristSchema with replicaRowMode schema+samples for LLM context.",
-} as const
+})
 
 export function WidgetApp() {
-  useWidgetMetadata(WIDGET_METADATA)
   const schema = useGristSchema({ replicaRowMode: "schema+samples" })
 
   if (!schema.replicaDocument) {

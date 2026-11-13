@@ -1,0 +1,60 @@
+---
+title: "Deprecated names"
+description: "Names on their way out: what replaces each, and when it goes."
+---
+
+A deprecated name keeps working until the next major release. In
+development (`process.env.NODE_ENV` is not `"production"`, as in
+`pnpm dev` and `pnpm test`) its first use logs one console warning that
+links here; a production build stays silent. Its type is marked
+`@deprecated`, so the editor strikes it through.
+
+`pnpm exec create-grist-widget upgrade` rewrites most of them: see
+[Upgrading a widget](/docs/cli/upgrading).
+
+## Deprecated in 0.6, removed in 1.0
+
+| Name | Instead |
+| --- | --- |
+| `useGristContext()` | `widget.useGrist()`, or `useGrist()`: `mountGristWidget()` always renders the provider. |
+| `useGrist().isReady` | `status === "ready"` |
+| `useGrist().isAvailable` | `status`: `"unavailable"` outside Grist, `"booting"` while connecting, anything else inside Grist. |
+| `useGrist().fetchSelectedTable(options?)` | `fetchRows()` for the section's rows, `fetchRows({ columnar: true })` for its columns. |
+| `useGrist().fetchTable(tableId)` | `fetchRows(tableId)` for rows, `fetchRows(tableId, { columnar: true })` for columns. |
+| `useGrist().fetchTableRows(tableId, options?)` | `fetchRows(tableId, options)`, the same rows. |
+| `gristAddColumnAction`, `gristAddRecordAction`, `gristAddTableAction`, `gristAddVisibleColumnAction`, `gristModifyColumnAction`, `gristRemoveColumnAction`, `gristRemoveRecordAction`, `gristRenameColumnAction`, `gristUpdateRecordAction` from `grist-widget-sdk` | The same names from `grist-widget-sdk/actions`. |
+
+### Before and after
+
+In 0.5:
+
+```tsx
+import { gristAddColumnAction, tableDataToRows, useGristContext } from "grist-widget-sdk"
+
+export function AddDue() {
+  const w = useGristContext()
+  if (!w.isReady) return null
+  async function addDue() {
+    const rows = tableDataToRows(await w.fetchSelectedTable())
+    if (rows.length) await w.applyActions([gristAddColumnAction("Tasks", "Due", { type: "Date" })])
+  }
+  return <button onClick={() => void addDue()}>Add Due</button>
+}
+```
+
+In 0.6:
+
+```tsx
+import { useGrist } from "grist-widget-sdk"
+import { gristAddColumnAction } from "grist-widget-sdk/actions"
+
+export function AddDue() {
+  const w = useGrist()
+  if (w.status !== "ready") return null
+  async function addDue() {
+    const rows = await w.fetchRows()
+    if (rows.length) await w.applyActions([gristAddColumnAction("Tasks", "Due", { type: "Date" })])
+  }
+  return <button onClick={() => void addDue()}>Add Due</button>
+}
+```

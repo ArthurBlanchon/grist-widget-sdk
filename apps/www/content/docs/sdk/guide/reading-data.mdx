@@ -58,16 +58,16 @@ The hook returns several read methods. All return promises and throw if the SDK 
 
 | Method | Returns | Notes |
 | --- | --- | --- |
-| `w.fetchTable(tableId)` | columnar `{ [col]: unknown[] }` | Raw `docApi.fetchTable`. |
-| `w.fetchTableRows(tableId, options?)` | `GristRowRecord<T>[]` | Decoded rows, in Grist's order. |
-| `w.fetchSelectedTable(options?)` | columnar | The section's rows (what its filters show); `tableDataToRows()` turns them into rows. |
+| `w.fetchRows(options?)` | `GristRowRecord<T>[]` | The section's rows (what its filters show, in its order), under real column ids. |
+| `w.fetchRows(tableId, options?)` | `GristRowRecord<T>[]` | Any table's rows, in Grist's order (full access). |
+| `w.fetchRows(…, { columnar: true })` | columnar `{ [col]: unknown[] }` | Grist's own payload, column by column. |
 | `w.listTables(options?)` | `string[]` | User table ids (system/hidden tables filtered by default). Pass `{ includeSystem: true }` for all. |
 | `w.listColumns(tableId, options?)` | `GristColumnInfo[]` | Column metadata (`colId`, `type`, `label`, …) without fetching row data. Noise columns filtered by default. |
 
-### `fetchTableRows` with decode
+### `fetchRows` with decode
 
 ```ts
-const rows = await w.fetchTableRows<MyTask>("Tasks", {
+const rows = await w.fetchRows<MyTask>("Tasks", {
   // Column metadata for type-aware decoding (Dates → Date, …), e.g. useGristSchema().table.columns.
   columns: schema.columns,
   order: "grist", // "grist" | "id" | "none"; default "grist" (manualSort, fallback id)
@@ -81,19 +81,19 @@ without full access: see [Typed reads](/docs/sdk/guide/typing).
 
 The reactive `w.records` stream covers the *current section*. To watch a **different** table for changes, you have to poll — there is no system-wide row-change event.
 
-Poll from an effect, with `fetchTableRows`:
+Poll from an effect, with `fetchRows`:
 
 ```tsx
 function useReports() {
-  const { isReady, fetchTableRows } = useGrist()
+  const { status, fetchRows } = useGrist()
   const [rows, setRows] = useState<GristRowRecord[]>([])
   useEffect(() => {
-    if (!isReady) return
-    const load = () => void fetchTableRows("Reports").then(setRows, () => {})
+    if (status !== "ready") return
+    const load = () => void fetchRows("Reports").then(setRows, () => {})
     load()
     const timer = setInterval(load, 10_000)
     return () => clearInterval(timer)
-  }, [isReady, fetchTableRows])
+  }, [status, fetchRows])
   return rows
 }
 ```

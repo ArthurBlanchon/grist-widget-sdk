@@ -1,28 +1,20 @@
 import { useEffect, useState } from "react"
 
-import {
-  useGrist,
-  useWidgetMetadata,
-  type UseGristOptions,
-} from "grist-widget-sdk"
+import { defineGristWidget } from "grist-widget-sdk"
 
-export const GRIST_OPTIONS: UseGristOptions = {
-  // fetchTableRows and listColumns read any table, which Grist only allows with full document access.
-  requiredAccess: "full",
-}
-
-export const WIDGET_METADATA = {
+export const widget = defineGristWidget({
   title: "Reads demo",
-  description: "listTables, listColumns, fetchTableRows, fetchSelectedTable.",
-} as const
+  description: "listTables, listColumns and fetchRows: the section's rows, then any table's.",
+  // fetchRows(tableId) and listColumns read any table, which Grist only allows with full document access.
+  requiredAccess: "full",
+})
 
 export function WidgetApp() {
-  useWidgetMetadata(WIDGET_METADATA)
-  const { isReady, currentTableId, listTables, listColumns, fetchTableRows, fetchSelectedTable } = useGrist()
+  const { status, currentTableId, listTables, listColumns, fetchRows } = widget.useGrist()
   const [summary, setSummary] = useState<string>("Loading…")
 
   useEffect(() => {
-    if (!isReady) return
+    if (status !== "ready") return
     let cancelled = false
     void (async () => {
       try {
@@ -30,12 +22,12 @@ export function WidgetApp() {
         const tableId = currentTableId ?? tableIds[0]
         if (!tableId) return
         const columns = (await listColumns(tableId)).map((c) => `${c.colId} (${c.type})`)
-        const rows = await fetchTableRows(tableId)
-        const section = await fetchSelectedTable()
+        const rows = await fetchRows(tableId)
+        const section = await fetchRows()
         if (!cancelled) {
           setSummary(
             JSON.stringify(
-              { tableIds, columns, rowCount: rows.length, firstRow: rows[0] ?? null, sectionRowIds: section.id },
+              { tableIds, columns, rowCount: rows.length, firstRow: rows[0] ?? null, sectionRowIds: section.map((r) => r.id) },
               null,
               2,
             ),
@@ -48,7 +40,7 @@ export function WidgetApp() {
     return () => {
       cancelled = true
     }
-  }, [isReady, currentTableId, listTables, listColumns, fetchTableRows, fetchSelectedTable])
+  }, [status, currentTableId, listTables, listColumns, fetchRows])
 
   return (
     <pre className="max-h-svh overflow-auto p-4 text-xs">{summary}</pre>

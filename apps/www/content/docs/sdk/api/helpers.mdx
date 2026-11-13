@@ -3,13 +3,14 @@ title: "Helpers"
 description: "The SDK's pure functions: cells, attachments, user actions, typed reads, page metadata."
 ---
 
-Pure functions, exported from `grist-widget-sdk`. None needs React or Grist.
+Pure functions, exported from `grist-widget-sdk` (the user actions from
+`grist-widget-sdk/actions`). None needs React or Grist.
 
 ## Cells
 
 ### `tableDataToRows(columnar)`
 
-Turns a column-oriented payload (`fetchSelectedTable()`, `fetchTable()`:
+Turns a column-oriented payload (`fetchRows({ columnar: true })`:
 `{ id: [1, 2], Name: ["a", "b"] }`) into rows (`[{ id: 1, Name: "a" }, …]`),
 in the order of the `id` column.
 
@@ -69,13 +70,24 @@ Downloading and uploading need the document's REST API: `useGrist()`'s
 
 ## User actions
 
-Builders for `useGrist().applyActions([...])`, which applies them together.
+Builders for `useGrist().applyActions([...])`, which applies them together,
+as one step of Grist's undo. They are exported from `grist-widget-sdk/actions`:
+
+```ts
+import { gristAddColumnAction } from "grist-widget-sdk/actions"
+```
+
+The root entry exported nine of them up to 0.5; there they are deprecated
+(a development warning), and go in 1.0.
 
 | Builder | Action |
 | --- | --- |
 | `gristAddRecordAction(tableId, values)` | `["AddRecord", tableId, null, values]` |
 | `gristUpdateRecordAction(tableId, rowId, patch)` | `["UpdateRecord", tableId, rowId, patch]` |
 | `gristRemoveRecordAction(tableId, rowId)` | `["RemoveRecord", tableId, rowId]` |
+| `gristBulkAddRecordAction(tableId, values, rowIds?)` | `["BulkAddRecord", tableId, ids, { col: [...] }]`: Grist allocates the ids unless given |
+| `gristBulkUpdateRecordAction(tableId, rowIds, values)` | `["BulkUpdateRecord", tableId, rowIds, { col: [...] }]` |
+| `gristBulkRemoveRecordAction(tableId, rowIds)` | `["BulkRemoveRecord", tableId, rowIds]` |
 | `gristAddTableAction(tableId, tableInfo)` | `["AddTable", tableId, tableInfo]` |
 | `gristAddColumnAction(tableId, colId, colInfo)` | `["AddColumn", tableId, colId, colInfo]` |
 | `gristAddVisibleColumnAction(tableId, colId, colInfo)` | `["AddVisibleColumn", ...]`: also shows it in the section |

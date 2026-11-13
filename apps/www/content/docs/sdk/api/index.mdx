@@ -11,7 +11,8 @@ added or removed without changing it.
 
 | Import path | Use for |
 | --- | --- |
-| `grist-widget-sdk` | The hooks, the provider and boundary, cell and attachment helpers, user actions, types. |
+| `grist-widget-sdk` | The hooks, the provider and boundary, cell and attachment helpers, types. |
+| `grist-widget-sdk/actions` | [User actions](/docs/sdk/api/helpers#user-actions) for `applyActions()`: schema changes and batches. |
 | `grist-widget-sdk/app` | [`mountGristWidget()`](/docs/sdk/api/app): what `src/main.tsx` wires (inside- and outside-Grist pages, theme), plus `useTheme()` and the deploy channel helpers. |
 | `grist-widget-sdk/emulator` | The emulator, the engine of the testing helpers. |
 | `grist-widget-sdk/emulator/testing` | `renderWithGrist`, `smokeTestWidget`, `presets` and Testing Library. |
@@ -23,7 +24,6 @@ added or removed without changing it.
 | --- | --- | --- |
 | `defineGristWidget(definition)` | The widget's declaration (access, columns, title). `widget.useGrist()` is `useGrist()` typed from it, with no generics. | [Typed reads](/docs/sdk/guide/typing#declare-once) |
 | `useGrist<TRow, TMapped>()` | The widget's one object for Grist: status, records, mapping, writes, options, linking, REST. | [useGrist](/docs/sdk/api/use-grist) |
-| `useGristContext()` | `useGrist()` that throws outside `<GristWidgetProvider>`. | [useGrist](/docs/sdk/api/use-grist#outside-a-provider) |
 | `useGristOptional()` | `useGrist()` inside a provider, `null` outside one. | [useGrist](/docs/sdk/api/use-grist#outside-a-provider) |
 | `useGristSchema(options?)` | The document's schema and sample rows (full access). | [useGristSchema](/docs/sdk/api/use-grist-schema) |
 | `useWidgetMetadata(meta)` | The page's title and meta tags. | [Helpers](/docs/sdk/api/helpers#widget-metadata) |
@@ -39,8 +39,14 @@ widget never renders them itself.
 | --- | --- |
 | `tableDataToRows`, `decodeGristValue`, `encodeGristValue`, `isGristCellError`, `normalizeGristChoiceListEntries`, `resolveGristFormulaKind` | [Cells](/docs/sdk/api/helpers#cells) |
 | `extractGristAttachmentId`, `extractGristAttachmentIdsFromCell`, `gristAttachmentCellValue`, `gristAttachmentCellValues`, `mergeGristAttachmentCellValue` | [Attachments](/docs/sdk/api/helpers#attachments) |
-| `gristAddRecordAction`, `gristUpdateRecordAction`, `gristRemoveRecordAction`, `gristAddTableAction`, `gristAddColumnAction`, `gristAddVisibleColumnAction`, `gristModifyColumnAction`, `gristRenameColumnAction`, `gristRemoveColumnAction` | [User actions](/docs/sdk/api/helpers#user-actions) |
+| From `grist-widget-sdk/actions`: `gristAddRecordAction`, `gristUpdateRecordAction`, `gristRemoveRecordAction`, `gristBulkAddRecordAction`, `gristBulkUpdateRecordAction`, `gristBulkRemoveRecordAction`, `gristAddTableAction`, `gristAddColumnAction`, `gristAddVisibleColumnAction`, `gristModifyColumnAction`, `gristRenameColumnAction`, `gristRemoveColumnAction` | [User actions](/docs/sdk/api/helpers#user-actions) |
 | `checkGristCell`, `encodeGristCell`, and the types `GristMappedRow`, `GristCellIssue`, `StandardSchema` | [Typed reads](/docs/sdk/guide/typing), [Writing data](/docs/sdk/guide/writing-data#encoding-values-for-the-wire) |
+
+## Deprecated
+
+Still exported in 0.6, warning once in development, removed in 1.0:
+`useGristContext()`, the user actions from the root entry, and five
+`useGrist()` members. What replaces each: [Deprecated names](/docs/sdk/api/deprecated).
 
 ## Types
 

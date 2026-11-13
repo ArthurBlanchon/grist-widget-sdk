@@ -28,6 +28,7 @@
     "paths": {
       "grist-widget-sdk": ["../../../src/sdk/index.ts"],
       "grist-widget-sdk/app": ["../../../src/app/index.ts"],
+      "grist-widget-sdk/actions": ["../../../src/actions/index.ts"],
       "grist-widget-sdk/emulator/testing": ["../../../src/emulator/testing/index.ts"]
     }
   },

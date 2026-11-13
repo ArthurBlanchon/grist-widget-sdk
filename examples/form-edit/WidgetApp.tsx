@@ -1,17 +1,14 @@
 import { useState, type FormEvent, type ReactNode } from "react"
 
-import {
-  useGrist,
-  useWidgetMetadata,
-  type UseGristOptions,
-  type UseGristResult,
-} from "grist-widget-sdk"
+import { defineGristWidget, type GristWidgetRow } from "grist-widget-sdk"
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
-export const GRIST_OPTIONS: UseGristOptions = {
+export const widget = defineGristWidget({
+  title: "Row editor",
+  description: "Edit the selected row in a polished form. Showcases typed records, updateRecord, write status, and error UI.",
   requiredAccess: "full",
   columns: [
     { name: "Title", type: "Text" },
@@ -19,22 +16,10 @@ export const GRIST_OPTIONS: UseGristOptions = {
     { name: "Done", type: "Bool" },
     { name: "Priority", type: "Text", optional: true },
   ],
-}
+})
 
-export const WIDGET_METADATA = {
-  title: "Row editor",
-  description:
-    "Edit the selected row in a polished form. Showcases column mappings, write status, and error UI.",
-} as const
-
-type FormEditMappedRecord = {
-  Title?: unknown
-  Description?: unknown
-  Done?: unknown
-  Priority?: unknown
-}
-
-type FormEditGrist = UseGristResult<Record<string, unknown>, FormEditMappedRecord>
+type Task = GristWidgetRow<typeof widget>
+type Grist = ReturnType<typeof widget.useGrist>
 
 type Draft = {
   title: string
@@ -43,48 +28,21 @@ type Draft = {
   priority: string
 }
 
-function readDraft(mapped: FormEditMappedRecord | null): Draft {
+function readDraft(task: Task | null): Draft {
   return {
-    title:
-      typeof mapped?.Title === "string"
-        ? mapped.Title
-        : mapped?.Title == null
-          ? ""
-          : String(mapped.Title),
-    description:
-      typeof mapped?.Description === "string"
-        ? mapped.Description
-        : mapped?.Description == null
-          ? ""
-          : String(mapped.Description),
-    done: mapped?.Done === true,
-    priority:
-      typeof mapped?.Priority === "string"
-        ? mapped.Priority
-        : mapped?.Priority == null
-          ? ""
-          : String(mapped.Priority),
+    title: task?.Title ?? "",
+    description: task?.Description ?? "",
+    done: task?.Done === true,
+    priority: task?.Priority ?? "",
   }
 }
 
 export function WidgetApp() {
-  useWidgetMetadata(WIDGET_METADATA)
-  const w = useGrist<Record<string, unknown>, FormEditMappedRecord>()
+  // GristBoundary (mountGristWidget renders it) shows the connection and
+  // asks for Title and Done until they are mapped.
+  const w = widget.useGrist()
 
-  if (w.status === "booting") {
-    return <Empty title="Connecting to Grist…" body="" />
-  }
-
-  if (!w.columnMappingStatus.ok) {
-    return (
-      <Empty
-        title="Missing column mappings"
-        body="Open the widget configuration panel and map the four required columns: Title, Done, Description (optional), Priority (optional)."
-      />
-    )
-  }
-
-  if (w.mode === "empty") {
+  if (w.mode === "empty" || !w.record) {
     return (
       <Empty
         title="No row selected"
@@ -93,26 +51,22 @@ export function WidgetApp() {
     )
   }
 
-  return <RowEditor key={String(w.record!.id)} w={w} />
+  return <RowEditor key={String(w.record.id)} w={w} />
 }
 
-function RowEditor({ w }: { w: FormEditGrist }) {
+function RowEditor({ w }: { w: Grist }) {
   const [draft, setDraft] = useState<Draft>(() => readDraft(w.mappedRecord))
   const [saveError, setSaveError] = useState<string | null>(null)
 
   async function save(e: FormEvent) {
     e.preventDefault()
-    if (!w.record) return
     setSaveError(null)
     try {
-      await w.table.update({
-        id: w.record.id as number,
-        fields: w.mapBack({
-          Title: draft.title,
-          Description: draft.description || null,
-          Done: draft.done,
-          Priority: draft.priority || null,
-        }),
+      await w.updateRecord({
+        Title: draft.title,
+        Description: draft.description || null,
+        Done: draft.done,
+        Priority: draft.priority || null,
       })
     } catch (err) {
       setSaveError(err instanceof Error ? err.message : String(err))
@@ -128,7 +82,7 @@ function RowEditor({ w }: { w: FormEditGrist }) {
         <h1 className="text-lg font-medium">Row #{String(w.record!.id)}</h1>
         <p className="text-sm text-muted-foreground">
           Edit fields, then save back to Grist via{" "}
-          <code className="rounded bg-muted px-1 text-xs">table.update</code>.
+          <code className="rounded bg-muted px-1 text-xs">updateRecord</code>.
         </p>
       </header>
 

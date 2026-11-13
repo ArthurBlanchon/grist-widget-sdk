@@ -1,27 +1,16 @@
-import {
-  gristAddVisibleColumnAction,
-  gristRemoveColumnAction,
-  gristRenameColumnAction,
-  useGrist,
-  useWidgetMetadata,
-  type UseGristOptions,
-} from "grist-widget-sdk"
+import { defineGristWidget } from "grist-widget-sdk"
+import { gristAddVisibleColumnAction, gristRemoveColumnAction, gristRenameColumnAction } from "grist-widget-sdk/actions"
 
 import { Button } from "@/components/ui/button"
 
-export const GRIST_OPTIONS: UseGristOptions = {
-  requiredAccess: "full",
-}
-
-export const WIDGET_METADATA = {
+export const widget = defineGristWidget({
   title: "Schema migration",
-  description:
-    "applyActions with gristAddVisibleColumnAction, gristRenameColumnAction, and gristRemoveColumnAction.",
-} as const
+  description: "applyActions with user actions from grist-widget-sdk/actions: add, rename and remove columns.",
+  requiredAccess: "full",
+})
 
 export function WidgetApp() {
-  useWidgetMetadata(WIDGET_METADATA)
-  const w = useGrist()
+  const w = widget.useGrist()
 
   async function runMigration() {
     const tableId = w.currentTableId

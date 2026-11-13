@@ -25,6 +25,20 @@ describe("smokeTestWidget()", () => {
     await smokeTestWidget({ App: () => <p>hello</p>, options: { requiredAccess: "read table" } })
   })
 
+  it("reads an entry module that also exports its component as App", async () => {
+    const seen: { ok: unknown } = { ok: null }
+    function Widget() {
+      const w = useGrist()
+      useEffect(() => {
+        seen.ok = w.columnMappingStatus.ok
+      })
+      return <Titled />
+    }
+    const options = { requiredAccess: "read table" as const, columns: [{ name: "Title", type: "Text" }] }
+    await smokeTestWidget({ default: Widget, App: Widget, GRIST_OPTIONS: options })
+    expect(seen.ok).toBe(true)
+  })
+
   it("maps every declared column, single and multiple, on a document it builds from them", async () => {
     const seen: { status: unknown } = { status: null }
     function Widget() {

@@ -17,11 +17,11 @@ The reasoning behind 0.4.0, and what it left for later, is the
 
 From the [developer experience review](./docs/planning/2026-11-12-developer-experience-review.md) §5.
 
-- [ ] **0.6.0, `upgrade`'s codemods** (`create-grist-widget`): rewrite the
-  deprecated names a widget uses (`useGristContext`, `isReady`,
-  `fetchTableRows`, `fetchSelectedTable`/`fetchTable`, root-entry user
-  actions) and list, by file and line, those it can't. Done when the six
-  reference widgets run without a deprecation warning after `upgrade`.
+- [ ] **The six reference widgets on 0.6**, once `grist-widget-sdk` and
+  `create-grist-widget` 0.6.0 are a day old: bump, `pnpm exec
+  create-grist-widget upgrade` (its codemods rewrite the deprecated names),
+  and change by hand what it lists (create-email-draft's `isAvailable`).
+  Done when the six run without a deprecation warning.
 - [ ] **1.0**: deprecated names removed; a written versioning policy (deprecate
   for a minor, remove in the next major, a codemod for each break); an API
   report (`.d.ts`) checked in CI; React 18 and 19 in the core job's matrix;

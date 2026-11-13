@@ -1,7 +1,7 @@
 import { Component, type ComponentType, type ReactNode } from "react"
 import { waitFor } from "@testing-library/react"
 
-import { entryProps, GristWidgetApp, type GristWidgetEntry } from "../../app/mount-grist-widget"
+import { entryProps, GristWidgetApp, isGristWidgetEntry, type GristWidgetEntry } from "../../app/mount-grist-widget"
 import type { GristReplicaDocument, GristWidget, UseGristOptions } from "../../sdk"
 import { declaredColumns, declaredDocument, mapEveryColumn } from "./declared-document"
 import { installJsdomStubs } from "./jsdom-stubs"
@@ -52,7 +52,7 @@ export async function smokeTestWidget(
   extra: Pick<SmokeTestWidgetOptions, "document" | "timeout"> = {}
 ): Promise<void> {
   const { App, options: given, widget, document, timeout = 10_000 } =
-    "App" in input ? input : { ...entryProps(input), ...extra }
+    isGristWidgetEntry(input) ? { ...entryProps(input), ...extra } : input
   installJsdomStubs()
   const options = given ?? widget?.options
   if (!options) throw new Error("smokeTestWidget: pass the widget's `widget` (defineGristWidget) or its `options` (GRIST_OPTIONS).")

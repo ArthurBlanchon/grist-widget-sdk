@@ -1,24 +1,16 @@
-import {
-  useGrist,
-  useWidgetMetadata,
-  type UseGristOptions,
-} from "grist-widget-sdk"
+import { defineGristWidget } from "grist-widget-sdk"
 
 import { Button } from "@/components/ui/button"
 
-export const GRIST_OPTIONS: UseGristOptions = {
-  requiredAccess: "read table",
-  suppressAlerts: ["section-not-linked"],
-}
-
-export const WIDGET_METADATA = {
+export const widget = defineGristWidget({
   title: "Widget options",
   description: "Persist UI state with patchWidgetOptions / widgetOptions.",
-} as const
+  requiredAccess: "read table",
+  suppressAlerts: ["section-not-linked"],
+})
 
 export function WidgetApp() {
-  useWidgetMetadata(WIDGET_METADATA)
-  const w = useGrist()
+  const w = widget.useGrist()
   const compact = w.widgetOptions?.compact === true
 
   return (

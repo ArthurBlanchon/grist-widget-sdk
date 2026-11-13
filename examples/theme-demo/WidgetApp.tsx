@@ -1,22 +1,14 @@
-import {
-  useGrist,
-  useWidgetMetadata,
-  type UseGristOptions,
-} from "grist-widget-sdk"
+import { defineGristWidget } from "grist-widget-sdk"
 
-export const GRIST_OPTIONS: UseGristOptions = {
-  requiredAccess: "read table",
-  suppressAlerts: ["section-not-linked"],
-}
-
-export const WIDGET_METADATA = {
+export const widget = defineGristWidget({
   title: "Theme",
   description: "Read w.theme from the host document.",
-} as const
+  requiredAccess: "read table",
+  suppressAlerts: ["section-not-linked"],
+})
 
 export function WidgetApp() {
-  useWidgetMetadata(WIDGET_METADATA)
-  const w = useGrist()
+  const w = widget.useGrist()
 
   return (
     <div className="p-4" data-theme={w.theme ?? "light"}>

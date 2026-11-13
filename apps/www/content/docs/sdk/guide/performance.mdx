@@ -21,7 +21,7 @@ budget (`packages/core/bench/`, checked in CI) pins how many:
 - **Derive with `useMemo`** from the members you use (`w.records`,
   `w.mappings`), not from `w` itself: the result object is new on every
   change, its members aren't.
-- **Methods are stable**: `w.fetchTableRows`, `w.table`, `w.listColumns`…
+- **Methods are stable**: `w.fetchRows`, `w.table`, `w.listColumns`…
   keep their identity for the widget's lifetime, so they are safe in effect
   dependencies.
 - **Split a heavy view** into a component that receives only what it shows
@@ -30,7 +30,7 @@ budget (`packages/core/bench/`, checked in CI) pins how many:
 
 ## Reads are not cached
 
-`fetchTable`, `fetchTableRows`, `fetchSelectedTable` and `listColumns` call
+`fetchRows` and `listColumns` call
 Grist each time. Call them from an effect (or a query library such as React
 Query), not during render. For the section's own rows, `w.records` is already
 there and kept current by Grist.

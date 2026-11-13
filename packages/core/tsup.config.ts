@@ -4,6 +4,7 @@ export default defineConfig({
   entry: {
     index: "src/index.ts",
     app: "src/app/index.ts",
+    actions: "src/actions/index.ts",
     emulator: "src/emulator/index.ts",
     "emulator/testing": "src/emulator/testing/index.ts",
   },

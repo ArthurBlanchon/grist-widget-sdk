@@ -1,6 +1,6 @@
 {
   "name": "grist-widget-sdk",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "React hooks and helpers for Grist custom widgets",
   "license": "MIT",
   "engines": {
@@ -48,6 +48,16 @@
       "require": {
         "types": "./dist/app.d.cts",
         "default": "./dist/app.cjs"
+      }
+    },
+    "./actions": {
+      "import": {
+        "types": "./dist/actions.d.ts",
+        "default": "./dist/actions.js"
+      },
+      "require": {
+        "types": "./dist/actions.d.cts",
+        "default": "./dist/actions.cjs"
       }
     },
     "./emulator": {

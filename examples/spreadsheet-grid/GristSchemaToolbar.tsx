@@ -1,15 +1,13 @@
 import { useState } from "react"
 import { Plus, RefreshCw, X } from "lucide-react"
 
+import { useGrist, useGristSchema, type UseGristSchemaResult } from "grist-widget-sdk"
 import {
   gristModifyColumnAction,
   gristRemoveColumnAction,
   gristRenameColumnAction,
-  useGristContext,
-  useGristSchema,
   type GristUserActionTuple,
-  type UseGristSchemaResult,
-} from "grist-widget-sdk"
+} from "grist-widget-sdk/actions"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -48,7 +46,7 @@ export function GristSchemaToolbar({
   enable,
   className,
 }: GristSchemaToolbarProps) {
-  const w = useGristContext()
+  const w = useGrist()
   const internalSchema = useGristSchema({
     tableId: schemaProp ? undefined : (w.currentTableId ?? undefined),
     requiredAccess: "full",

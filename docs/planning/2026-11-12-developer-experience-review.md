@@ -4,7 +4,14 @@ title: Developer experience review — 2026-11-12
 
 # Developer experience review — 2026-11-12
 
-> **Status: proposed.** Scope: the SDK's public surface, the template a
+> **Status: in progress.** SDK and CLI 0.5.0 shipped (#245–#248); the 0.6.0
+> surface is in the SDK (fetchRows, `grist-widget-sdk/actions`, the
+> deprecations); `upgrade`'s codemods and 1.0 are left (see `TODO.md` §1).
+> The page-wide connection (`useGrist()` outside a provider) stays in 0.6:
+> `renderWithGrist(<App />)` without `widget` and the six widgets' tests use
+> it; 1.0 decides whether `renderWithGrist` always renders a provider.
+>
+> Scope: the SDK's public surface, the template a
 > widget starts from, and how a widget takes in later versions, judged by
 > one question: *how simple is it for a professional engineer to build,
 > test and maintain a widget?* Read after SDK 0.4.0 and the six reference

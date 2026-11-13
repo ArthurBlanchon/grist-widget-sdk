@@ -121,15 +121,10 @@ Pitfall: `allowMultiple` columns can't be reverse-mapped automatically — you h
 
 ## Schema mutations via `applyActions`
 
-For changes beyond record CRUD, compose **user-action builders** and pass them to `w.applyActions(actions, { desc })`.
+For changes beyond record CRUD, compose **user-action builders** from `grist-widget-sdk/actions` and pass them to `w.applyActions(actions, { desc })`: Grist applies them as one step of its undo.
 
 ```ts
-import {
-  gristAddColumnAction,
-  gristRenameColumnAction,
-  gristAddTableAction,
-  gristReplaceTableDataAction,
-} from "grist-widget-sdk"
+import { gristAddColumnAction, gristAddTableAction, gristRenameColumnAction } from "grist-widget-sdk/actions"
 
 await w.applyActions(
   [
@@ -153,6 +148,9 @@ Available builders:
 | `gristAddRecordAction(tableId, values)` | `["AddRecord", tableId, null, values]` |
 | `gristUpdateRecordAction(tableId, rowId, patch)` | `["UpdateRecord", ...]` |
 | `gristRemoveRecordAction(tableId, rowId)` | `["RemoveRecord", ...]` |
+| `gristBulkAddRecordAction(tableId, values, rowIds?)` | `["BulkAddRecord", ...]` |
+| `gristBulkUpdateRecordAction(tableId, rowIds, values)` | `["BulkUpdateRecord", ...]` |
+| `gristBulkRemoveRecordAction(tableId, rowIds)` | `["BulkRemoveRecord", ...]` |
 | `gristAddColumnAction(tableId, colId, colInfo)` | `["AddColumn", ...]` |
 | `gristAddVisibleColumnAction(tableId, colId, colInfo)` | `["AddVisibleColumn", ...]` |
 | `gristModifyColumnAction(tableId, colId, colInfo)` | `["ModifyColumn", ...]` |
@@ -160,7 +158,7 @@ Available builders:
 | `gristRemoveColumnAction(tableId, colId)` | `["RemoveColumn", ...]` |
 | `gristAddTableAction(tableId, tableInfo)` | `["AddTable", ...]` |
 
-Any other action is a raw tuple (`["BulkAddRecord", "Tasks", [null, null], { Title: ["a", "b"] }]`, `["RenameTable", "Old", "New"]`): `applyActions` takes any `GristUserActionTuple`. For bulk record writes, `w.table.create([...])` / `update([...])` / `destroy([...])` take arrays.
+Any other action is a raw tuple (`["RenameTable", "Old", "New"]`): `applyActions` takes any `GristUserActionTuple`. For bulk record writes, `w.table.create([...])` / `update([...])` / `destroy([...])` take arrays.
 
 ## Encoding values for the wire
 

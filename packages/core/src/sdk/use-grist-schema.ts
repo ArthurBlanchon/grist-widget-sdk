@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 
 import { buildReplicaDocumentFromDocApi } from "./helpers/build-replica-document"
+import { warnDeprecated } from "./helpers/deprecate"
 import { isGristNoiseColumn, type GristNoiseColumnsOptions } from "./helpers/grist-columns-filters"
 import {
   buildReplicaJsonPayload,
@@ -53,6 +54,7 @@ export type ReplicaDocumentJsonOptions = {
 }
 
 export type UseGristSchemaResult = {
+  /** @deprecated Use `useGrist().status`: `"unavailable"` outside Grist, `"booting"` while connecting. */
   isAvailable: boolean | null
   /** Canonical replica document. */
   document: GristReplicaDocument | null
@@ -122,9 +124,9 @@ export function useGristSchema(options?: UseGristSchemaOptions): UseGristSchemaR
     onEditOptions: options?.onEditOptions,
   })
   const connection = useGristRuntime()
-  const isAvailable = w.isAvailable
+  const isAvailable = w.status === "booting" ? null : w.status !== "unavailable"
   const readyError = w.status === "error" || w.status === "unavailable" ? w.error : null
-  const docApi = w.isReady && typeof grist !== "undefined" ? (grist.docApi ?? null) : null
+  const docApi = w.status === "ready" && typeof grist !== "undefined" ? (grist.docApi ?? null) : null
 
   const [document, setDocument] = useState<GristReplicaDocument | null>(null)
   const [loading, setLoading] = useState(false)
@@ -254,8 +256,7 @@ export function useGristSchema(options?: UseGristSchemaOptions): UseGristSchemaR
     })
   }, [])
 
-  return {
-    isAvailable,
+  const result = {
     document,
     replicaDocument: document,
     table,
@@ -270,5 +271,13 @@ export function useGristSchema(options?: UseGristSchemaOptions): UseGristSchemaR
     loading,
     error: readyError ?? error,
     reload: load,
-  }
+  } as UseGristSchemaResult
+  Object.defineProperty(result, "isAvailable", {
+    get() {
+      warnDeprecated("useGristSchema().isAvailable", 'read useGrist().status: "unavailable" outside Grist, "booting" while connecting')
+      return isAvailable
+    },
+  })
+  return result
+
 }

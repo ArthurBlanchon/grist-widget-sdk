@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import {
   checkGristCell,
-  useGristContext,
+  useGrist,
   type UseGristSchemaResult,
 } from "grist-widget-sdk"
 
@@ -43,7 +43,7 @@ export type GristDataSheetGridProps = {
  * section's view fields**. Sections start empty by default, so `records` rows
  * arrive with just `{id}` and our cells render blank.
  *
- * Instead we fetch table rows via `w.fetchTableRows(tableId, ...)`, which
+ * Instead we fetch table rows via `w.fetchRows(tableId, ...)`, which
  * always returns every column the table actually has — matching what
  * `useGristSchema()` reports, decoded with that schema; `checkGristCell` flags
  * the numeric cells Grist couldn't parse.
@@ -57,7 +57,7 @@ export type GristDataSheetGridProps = {
  *    edits, row inserts/removes, and undo/redo).
  * 3. After our own writes settle (`actionStatus` returns to `"idle"`).
  * 4. Periodic 5 s backstop in case the host swallows a notification (this is
- *    cheap — `fetchTable` is a single round trip).
+ *    cheap — `fetchRows` is a single round trip).
  *
  * ## Single source of truth
  *
@@ -75,7 +75,7 @@ export function GristDataSheetGrid({
   lockRows = false,
   className,
 }: GristDataSheetGridProps) {
-  const w = useGristContext()
+  const w = useGrist()
   const tableId = w.currentTableId
   const selectedRowId = typeof w.record?.id === "number" ? w.record.id : null
   const records = w.records
@@ -88,9 +88,9 @@ export function GristDataSheetGrid({
     () => schema.table?.columns ?? {},
     [schema.table]
   )
-  // ---- Data: fetchTableRows(tableId), numeric cells checked -------------------
+  // ---- Data: fetchRows(tableId), numeric cells checked ------------------------
 
-  const fetchTableRows = w.fetchTableRows
+  const fetchRows = w.fetchRows
   const [rowsState, setRowsState] = useState<{
     tableId: string
     rows: GristRdgRow[]
@@ -112,7 +112,7 @@ export function GristDataSheetGrid({
     async (forTableId: string, signal: { cancelled: boolean }) => {
       try {
         const columns = schemaColumnsRef.current
-        const rows = (await fetchTableRows<Record<string, unknown>>(forTableId, {
+        const rows = (await fetchRows<Record<string, unknown>>(forTableId, {
           columns,
           order: "grist",
         })) as GristRdgRow[]
@@ -133,7 +133,7 @@ export function GristDataSheetGrid({
         void err
       }
     },
-    [fetchTableRows]
+    [fetchRows]
   )
 
   // 1) Refetch when `tableId` changes + 5s periodic backstop.
@@ -207,7 +207,7 @@ export function GristDataSheetGrid({
   }, [rows])
 
   // Visible column ids: schema is the single source. We do NOT fall back to
-  // `Object.keys(rows[0])` because `fetchTable` returns *every* column
+  // `Object.keys(rows[0])` because `fetchRows` returns *every* column
   // (including system columns) and we want the schema's filtered ordering.
   const visibleColIds = useMemo<string[]>(
     () =>

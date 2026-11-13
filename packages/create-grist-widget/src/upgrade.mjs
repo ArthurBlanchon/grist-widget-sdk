@@ -6,10 +6,12 @@
 // now (RETIRED_FILES), switches a tsconfig.app.json / tsconfig.node.json that
 // predates the SDK's base once (SDK_TSCONFIGS), merges package.json's
 // template-set scripts and dependency versions, and prunes pnpm age
-// exceptions that no longer matter. It never touches anything else: src/app/
-// (smoke test included), src/components/ui/, src/index.css, components.json,
-// README.md and every file the widget added are the widget's own. It runs on a clean `dev`,
-// so what it changed is one `git diff` to review.
+// exceptions that no longer matter. The widget's own files (src/app/, smoke
+// test included, src/components/ui/, src/index.css, components.json, README.md
+// and every file the widget added) it only touches through the codemods
+// (codemods.mjs): the grist-widget-sdk names a release deprecated, rewritten
+// where the meaning is the same, listed by file and line where it isn't. It
+// runs on a clean `dev`, so what it changed is one `git diff` to review.
 
 import { execFileSync } from "node:child_process"
 import { createHash } from "node:crypto"
@@ -23,6 +25,8 @@ import {
   writeFileSync,
 } from "node:fs"
 import path from "node:path"
+
+import { runCodemods } from "./codemods.mjs"
 
 /**
  * The files the template writes and keeps identical in every widget. Listed
@@ -573,6 +577,9 @@ export function migratedTsconfig(widgetText, templateText) {
  *   now?: Date,
  * }} options
  */
+/** The grist-widget-sdk version whose names the codemods (codemods.mjs) rewrite to. */
+export const CODEMODS_SINCE = [0, 6, 0]
+
 export function runUpgrade({ cwd, templateDir, cliVersion, publishedAt, now = new Date() }) {
   const report = {
     fromVersion: readJson(path.join(cwd, "package.json"))?.createGristWidgetVersion ?? null,
@@ -584,6 +591,8 @@ export function runUpgrade({ cwd, templateDir, cliVersion, publishedAt, now = ne
     packageChanges: [],
     ageRemoved: [],
     ageUnknown: [],
+    codemods: [],
+    deprecatedLeft: [],
   }
 
   for (const file of TEMPLATE_FILES) {
@@ -635,6 +644,14 @@ export function runUpgrade({ cwd, templateDir, cliVersion, publishedAt, now = ne
     if (yaml !== before) writeFileSync(workspacePath, yaml)
     report.ageRemoved = removed
     report.ageUnknown = unknown
+  }
+
+  // The codemods rewrite to names grist-widget-sdk 0.6 added: only once the template depends on it.
+  const sdkFloor = rangeFloor(templatePkg.dependencies?.["grist-widget-sdk"])
+  if (sdkFloor && compareVersions(sdkFloor, CODEMODS_SINCE) >= 0) {
+    const { rewritten, manual } = runCodemods(cwd, { skip: TEMPLATE_FILES })
+    report.codemods = rewritten
+    report.deprecatedLeft = manual
   }
   return report
 }

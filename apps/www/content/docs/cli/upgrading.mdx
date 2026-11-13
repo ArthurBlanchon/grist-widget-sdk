@@ -12,7 +12,7 @@ four groups:
 | Dependencies and workflow actions | `grist-widget-sdk`, `create-grist-widget` (the deploy command), React, Vite, `actions/checkout` | [Dependabot pull requests](#dependency-updates), on `dev` |
 | Compiler settings | what `tsconfig.app.json` and `tsconfig.node.json` extend from `grist-widget-sdk` | With `grist-widget-sdk`'s own updates |
 | [The template's files](#the-templates-files) | `src/main.tsx`, `.github/workflows/*.yml`, `vite.config.ts`, `eslint.config.js` | [`create-grist-widget upgrade`](#template-changes), on `dev` |
-| Your widget | `src/app/`, `src/components/ui/`, `src/index.css`, and everything else you add | Never touched |
+| Your widget | `src/app/`, `src/components/ui/`, `src/index.css`, and everything else you add | Never touched, except [deprecated SDK names](#deprecated-sdk-names) `upgrade` rewrites |
 
 ## Dependency updates
 
@@ -154,11 +154,36 @@ What `upgrade` changes:
 - **`pnpm-workspace.yaml`**: `minimumReleaseAgeExclude` entries for versions
   now old enough for pnpm's age check are removed. `upgrade` asks the npm
   registry when they were published, and keeps an entry it can't check.
+- **[Deprecated SDK names](#deprecated-sdk-names)** in your code under `src/`,
+  rewritten where the replacement means the same; the others are listed.
 
 A template change that needs more, say in `index.html` (which is your
 widget's), says so in the
 [create-grist-widget changelog](https://github.com/ArthurBlanchon/grist-widget-sdk/blob/main/packages/create-grist-widget/CHANGELOG.md),
 under "Existing widgets can…". `upgrade` prints the link.
+
+### Deprecated SDK names
+
+A `grist-widget-sdk` name on its way out keeps working until the next major
+release and warns once in development ([Deprecated names](/docs/sdk/api/deprecated)).
+Once the template depends on the release that deprecated it, `upgrade`
+rewrites your code under `src/` (the template's files aside) where the
+replacement means the same:
+
+| Before | After |
+| --- | --- |
+| `useGristContext()` | `useGrist()` |
+| `w.isReady`, `!w.isReady` | `w.status === "ready"`, `w.status !== "ready"` |
+| `fetchTableRows(tableId, options)` | `fetchRows(tableId, options)` |
+| `fetchSelectedTable()` | `fetchRows({ columnar: true })` |
+| `fetchTable(tableId)` | `fetchRows(tableId, { columnar: true })` |
+| `import { gristAddColumnAction, … } from "grist-widget-sdk"` | `… from "grist-widget-sdk/actions"` |
+
+It only rewrites files that import `grist-widget-sdk`, and not comments.
+What it can't rewrite safely it lists by file and line, to change by hand:
+`isAvailable` (read `status`), a flag taken out by destructuring
+(`const { isReady } = w`), a reader called with options. `pnpm typecheck`
+afterwards checks the result.
 
 ### Widgets declared with `GRIST_OPTIONS`
 

@@ -307,6 +307,31 @@ describe("mountGristWidget()", () => {
     }
   })
 
+  it("reads an entry module that also exports its component as App", () => {
+    const root = document.createElement("div")
+    root.id = "root"
+    document.body.appendChild(root)
+    try {
+      // `export function App` next to `export default App`: still an entry module.
+      const entry = {
+        default: Widget,
+        App: Widget,
+        GRIST_OPTIONS: { requiredAccess: "read table" as const },
+        WIDGET_METADATA: { title: "Named App widget" },
+        LocalDevPage: () => <p>entry page</p>,
+      }
+      let mounted: ReturnType<typeof mountGristWidget> | undefined
+      act(() => {
+        mounted = mountGristWidget(entry, { dev: true })
+      })
+      expect(root).toHaveTextContent("entry page")
+      expect(document.title).toBe("Named App widget")
+      act(() => mounted!.unmount())
+    } finally {
+      root.remove()
+    }
+  })
+
   it("says which element it couldn't find", () => {
     expect(() =>
       mountGristWidget({ App: Widget, options: { requiredAccess: "read table" }, root: "#missing" })

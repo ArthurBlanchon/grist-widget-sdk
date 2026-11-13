@@ -62,6 +62,15 @@ export type GristWidgetEntry = {
   ReleasePage?: GristWidgetAppProps["ReleasePage"]
 }
 
+/**
+ * @internal An entry module, as opposed to `{ App, options }`: it has a
+ * default export. A widget's module may also export its component as `App`,
+ * so `App` alone doesn't tell them apart.
+ */
+export function isGristWidgetEntry(value: object): value is GristWidgetEntry {
+  return "default" in value && value.default != null
+}
+
 /** The props {@link GristWidgetApp} takes, from a widget's entry module. */
 export function entryProps(entry: GristWidgetEntry, dev = false): GristWidgetAppProps {
   const widget = isGristWidget(entry.widget) ? entry.widget : undefined
@@ -116,7 +125,7 @@ export function mountGristWidget(
   entryOptions: { dev?: boolean; root?: Element | string } = {}
 ): MountedGristWidget {
   const { root = "#root", ...props } =
-    "App" in config ? config : { ...entryProps(config, entryOptions.dev), root: entryOptions.root }
+    isGristWidgetEntry(config) ? { ...entryProps(config, entryOptions.dev), root: entryOptions.root } : config
   const container = typeof root === "string" ? document.querySelector(root) : root
   if (!container) {
     throw new Error(`mountGristWidget: no element matches "${String(root)}" to render the widget into.`)

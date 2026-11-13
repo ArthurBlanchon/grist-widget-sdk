@@ -1,0 +1,86 @@
+version: 2
+updates:
+  # One entry for the whole pnpm workspace -- Dependabot resolves
+  # pnpm-workspace.yaml natively, so this covers packages/core,
+  # packages/create-grist-widget, apps/*, and templates/* together rather
+  # than needing one entry per workspace member.
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    # Matches pnpm-workspace.yaml's `minimumReleaseAge: 10080` (7 days): pnpm
+    # already refuses to resolve anything younger than that, so proposing it
+    # sooner only produces PRs whose versions the workspace's own install
+    # policy wouldn't pick -- and gives freshly published (sometimes soon
+    # yanked or compromised) releases a week to surface problems first.
+    # Applies to version updates only; Dependabot security updates ignore it.
+    cooldown:
+      default-days: 7
+    open-pull-requests-limit: 10
+    groups:
+      # Patch/minor land grouped, one PR to review instead of a flood --
+      # majors are deliberately excluded from the group (see below) so
+      # they never get silently bundled with a routine bump.
+      routine:
+        update-types:
+          - "minor"
+          - "patch"
+      # Majors otherwise land one per PR, each with its own CI signal --
+      # except packages that cannot move independently. @vitejs/plugin-react
+      # pins a `vite` major in its peer range (6.x needs vite ^8), so a
+      # plugin-react major proposed on its own fails every workspace still on
+      # the previous vite major (seen live: #142 red alone, green with #158).
+      vite:
+        patterns:
+          - "vite"
+          - "@vitejs/*"
+        update-types:
+          - "major"
+    ignore:
+      # TypeScript 7 (the native port) ships without the JS compiler API that
+      # typescript-eslint and tsup's d.ts build depend on: #146 failed lint,
+      # build and every smoke job. Revisit when typescript-eslint supports it;
+      # the next convergence step is the workspace-wide move to TS 6 (apps/www
+      # is already there).
+      - dependency-name: "typescript"
+        versions: [">=7"]
+      # eslint/@eslint/js majors are done by hand: apps/www lints through
+      # eslint-config-next, whose bundled eslint-plugin-react/-import/-jsx-a11y
+      # crash on eslint 10 (`contextOrFilename.getFilename is not a function`),
+      # so www stays on eslint 9 while every other workspace is on 10. No CI job
+      # lints apps/www, so a Dependabot PR bumping it would show green while
+      # breaking `pnpm --filter www lint`. Drop these two entries once
+      # eslint-config-next supports the next eslint major.
+      - dependency-name: "eslint"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@eslint/js"
+        update-types: ["version-update:semver-major"]
+      # @changesets/cli majors are tied to changesets/action majors (the
+      # action's v2 requires CLI 3 and vice versa); proposed alone (#179),
+      # merging it would have left release.yml on an incompatible action.
+      # Take both by hand, together (see the github-actions entry below).
+      - dependency-name: "@changesets/cli"
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: "github-actions"
+    directories:
+      - "/"
+      # The template's deploy workflow ships inside every scaffolded widget
+      # but sits outside /.github/workflows, so "/" alone never sees it (its
+      # actions were still on the Node-20 v4s while this repo was on v7).
+      # The workflows directory itself, not the template root: for any
+      # directory other than "/", Dependabot's github-actions fetcher reads
+      # YAML files directly in that directory and does not descend into a
+      # nested .github/workflows (dependabot-core github_actions
+      # file_fetcher.rb, workflow_files). Bumps here touch the template, so
+      # dependabot-changeset.yml adds a create-grist-widget changeset.
+      - "/templates/grist-widget-template-vite/.github/workflows"
+    schedule:
+      interval: "weekly"
+    ignore:
+      # changesets/action's majors are tied to @changesets/cli's (v2 requires
+      # CLI 3, and renamed every input release.yml uses). A PR bumping it
+      # shows green CI regardless, because the release job only runs on
+      # main -- so take its next major by hand, together with the CLI.
+      - dependency-name: "changesets/action"
+        update-types: ["version-update:semver-major"]

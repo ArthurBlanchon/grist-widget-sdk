@@ -1,0 +1,131 @@
+---
+title: "Reading data"
+description: "Choosing between the SDK's two paths for reading data out of a Grist document."
+---
+
+There are two read paths in the SDK:
+
+1. **Subscriptions** — reactive, re-render on Grist updates.
+2. **One-shot fetches** — explicit calls you trigger from event handlers or effects.
+
+Use subscriptions for the widget's primary view; use fetches for everything else.
+
+## Subscriptions
+
+The provider subscribes to four Grist event streams under the hood:
+
+| Stream | Exposed as | Notes |
+| --- | --- | --- |
+| `grist.onRecord` | `w.record`, `w.mappings` | Single-row stream, decoded. |
+| `grist.onRecords` | `w.records`, `w.mappings` | All visible rows in the section, decoded, row-shaped. |
+| `grist.onOptions` | `w.widgetOptions` | Persistent widget options (and the access Grist grants). |
+| `grist.onNewRecord` | `w.mode === "new-row"` | The blank "new row" placeholder. |
+
+Decoded means `keepEncoded: false` and `format: "rows"` — your code sees JS-native values, not `["D", 1700000000, "UTC"]` tuples.
+
+### Single record
+
+```tsx
+function RowPanel() {
+  const w = useGrist<MyRow>()
+  if (w.mode === "empty") return <p>Select a row.</p>
+  return <pre>{JSON.stringify(w.record, null, 2)}</pre>
+}
+```
+
+### All records visible in the section
+
+```tsx
+function Counts() {
+  const w = useGrist()
+  return <p>Visible rows: {w.records?.length ?? 0}</p>
+}
+```
+
+### Mapped record
+
+`w.mappedRecord` is `w.record` rewritten under your logical names. See [Column mapping](/docs/sdk/guide/column-mapping).
+
+### New-row placeholder
+
+```tsx
+if (w.mode === "new-row") return <CreateRowForm mappings={w.mappings} />
+```
+
+## One-shot fetches
+
+The hook returns several read methods. All return promises and throw if the SDK isn't ready (`status !== "ready"` — guard with `<GristBoundary>` to avoid).
+
+| Method | Returns | Notes |
+| --- | --- | --- |
+| `w.fetchTable(tableId)` | columnar `{ [col]: unknown[] }` | Raw `docApi.fetchTable`. |
+| `w.fetchTableRows(tableId, options?)` | `GristRowRecord<T>[]` | Decoded rows, in Grist's order. |
+| `w.fetchSelectedTable(options?)` | columnar | The section's rows (what its filters show); `tableDataToRows()` turns them into rows. |
+| `w.listTables(options?)` | `string[]` | User table ids (system/hidden tables filtered by default). Pass `{ includeSystem: true }` for all. |
+| `w.listColumns(tableId, options?)` | `GristColumnInfo[]` | Column metadata (`colId`, `type`, `label`, …) without fetching row data. Noise columns filtered by default. |
+
+### `fetchTableRows` with decode
+
+```ts
+const rows = await w.fetchTableRows<MyTask>("Tasks", {
+  // Column metadata for type-aware decoding (Dates → Date, …), e.g. useGristSchema().table.columns.
+  columns: schema.columns,
+  order: "grist", // "grist" | "id" | "none"; default "grist" (manualSort, fallback id)
+})
+```
+
+For the section's own rows, the mapped records are typed and checked
+without full access: see [Typed reads](/docs/sdk/guide/typing).
+
+## Polling
+
+The reactive `w.records` stream covers the *current section*. To watch a **different** table for changes, you have to poll — there is no system-wide row-change event.
+
+Poll from an effect, with `fetchTableRows`:
+
+```tsx
+function useReports() {
+  const { isReady, fetchTableRows } = useGrist()
+  const [rows, setRows] = useState<GristRowRecord[]>([])
+  useEffect(() => {
+    if (!isReady) return
+    const load = () => void fetchTableRows("Reports").then(setRows, () => {})
+    load()
+    const timer = setInterval(load, 10_000)
+    return () => clearInterval(timer)
+  }, [isReady, fetchTableRows])
+  return rows
+}
+```
+
+## Schema reads for LLMs
+
+When you need a structured snapshot of the whole document (e.g. as system context for a model), use `useGristSchema()` (full access):
+
+```ts
+const schema = useGristSchema({
+  excludeSystemTableData: true,
+  replicaRowMode: "schema+samples",
+  sampleRowLimit: 5,
+})
+
+console.log(schema.documentJson) // JSON string ready to feed an LLM
+```
+
+See [`useGristSchema`](/docs/sdk/api/use-grist-schema) and [Replica document](/docs/sdk/design/replica-document) for the full data model.
+
+## Cell decoding helpers
+
+For ad-hoc access to raw cells, two functions cover most cases:
+
+```ts
+import { decodeGristValue, encodeGristValue } from "grist-widget-sdk"
+
+const cell = decodeGristValue(rawValue, columnMeta)
+// Date columns → Date, Ref columns → { __ref, rowId, tableId? }, etc.
+
+const wireValue = encodeGristValue(date, columnMeta)
+// Date → epoch seconds, RefList → ["L", id1, id2, ...]
+```
+
+To check a value against a Grist type yourself, use [`checkGristCell`](/docs/sdk/api/helpers#typed-reads).

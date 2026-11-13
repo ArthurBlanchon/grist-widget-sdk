@@ -1,0 +1,98 @@
+---
+title: "useGristSchema"
+description: "Reference for the hook that snapshots a Grist document's schema, and optionally its data."
+---
+
+Builds a JSON snapshot of the current Grist document — schema, optional samples, optional full data. Useful for:
+
+- Passing context to LLMs (system prompts, function definitions).
+- Generating type definitions for a known document.
+- Test fixtures that mirror a real document.
+
+```ts
+import { useGristSchema } from "grist-widget-sdk"
+```
+
+## Signature
+
+```ts
+function useGristSchema(options?: UseGristSchemaOptions): UseGristSchemaResult
+```
+
+## `UseGristSchemaOptions`
+
+```ts
+type UseGristSchemaOptions = {
+  // Same shape as GristReadyOptions; defaulted to { requiredAccess: "read table" }
+  requiredAccess?: "none" | "read table" | "full"
+  columns?: GristColumnDescriptor[]
+
+  // What to put in the replica
+  replicaRowMode?: "schema-only" | "schema+samples" | "schema+data"
+  sampleRowLimit?: number              // default 5
+  source?: string                      // recorded into document.source
+  excludeSystemTableData?: boolean     // default true
+
+  // JSON output
+  jsonSpace?: number                   // default 2
+}
+```
+
+## `UseGristSchemaResult`
+
+```ts
+type UseGristSchemaResult = {
+  document: GristReplicaDocument | null   // typed object form
+  documentJson: string | null             // JSON.stringified version
+  loading: boolean
+  error: string | null
+  reload: () => Promise<void>
+}
+```
+
+The hook performs the read once at mount and on `refresh()`. It does **not** subscribe to row changes — call `refresh()` when you need a fresh snapshot.
+
+## Common patterns
+
+### Feed an LLM
+
+```tsx
+const { documentJson } = useGristSchema({
+  replicaRowMode: "schema+samples",
+  sampleRowLimit: 3,
+})
+
+const systemPrompt = `
+You are an assistant helping the user query their Grist document.
+Schema (with sample rows):
+${documentJson ?? "<loading>"}
+`
+```
+
+### Generate types
+
+```ts
+import type { GristReplicaDocument } from "grist-widget-sdk"
+
+const { document } = useGristSchema()
+// document.tables.Tasks.columns is { Title: { type: "Text" }, ... }
+```
+
+### Reuse across tests
+
+Save `useGristSchema({ replicaRowMode: "schema+data" }).getDocumentJson()` from a real document as a `.replica.json` fixture, then feed it to `createGristEmulator({ document })` in tests.
+
+## Pairing with `<GristBoundary>`
+
+The hook returns `loading: true` until the SDK is ready and the schema fetch resolves. Render a skeleton:
+
+```tsx
+const { document, loading } = useGristSchema()
+if (loading) return <Skeleton />
+```
+
+## Pitfalls
+
+- Don't request `replicaRowMode: "schema+data"` on huge documents — you'll send the whole thing across the iframe boundary.
+- Set `requiredAccess: "full"` if you need to read tables the user hasn't explicitly granted read access to.
+- The schema does not reflect access-controlled column hiding — it shows everything the widget can see.

@@ -1,0 +1,361 @@
+---
+title: CLI reference
+description: "How create-grist-widget scaffolds a project, starts from a real example, and what the bundled GitHub Pages deploy pipeline does."
+---
+
+Getting started here covers the CLI's main commands and scaffolding a new
+project from a terminal, CLI-only. If you'd rather copy the template repo on
+GitHub, set up an AI coding agent, or connect a deployed widget to a real
+Grist document, see the [Quickstart](/docs/quickstart) — both paths produce
+identical code.
+
+## `npm create grist-widget`
+
+```bash
+npm create grist-widget my-widget
+cd my-widget
+pnpm dev
+```
+
+Then open `http://localhost:5173/demo/index.html`: the widget in real Grist,
+running in the browser (no Docker, nothing saved), on the dev server's
+build, so edits reload in place. The scaffold ships that demo page
+(`public/demo/`) for its starting widget; `pnpm demo --save` regenerates it
+once the widget's columns change.
+
+The template — and every starting example, and the logic that composes them
+— are embedded directly in the CLI. Nothing is fetched from GitHub or npm
+at scaffold time; the dependency install right after is the only network
+access any of this makes. Scaffolding via the CLI is the same starting
+point as [grist-widget-template](https://github.com/ArthurBlanchon/grist-widget-template)
+(what the [Quickstart](/docs/quickstart)'s template-copy path gives you), so
+both paths converge on identical code.
+
+By default the scaffold is blank — a two-field editor — and its
+dependencies install automatically, with pnpm, whichever package manager
+runs the command: the widget's workflows install with pnpm and only read
+its lockfile. Without pnpm installed, nothing is installed and the CLI says
+how to get it. Run `npm create grist-widget` with no name for an
+interactive prompt instead, which asks for both a name and a starting
+example.
+
+### What you get
+
+<Files>
+  <File name="index.html" />
+  <Folder name="src" defaultOpen>
+    <Folder name="app" defaultOpen>
+      <File name="App.tsx" />
+      <File name="App.test.tsx" />
+      <File name="App.smoke.test.tsx" />
+    </Folder>
+    <Folder name="components">
+      <Folder name="ui" />
+    </Folder>
+    <File name="index.css" />
+    <File name="main.tsx" />
+  </Folder>
+  <File name="eslint.config.js" />
+  <File name=".prettierrc" />
+  <File name="package.json" />
+</Files>
+
+- `index.html` has the `grist-plugin-api.js` script tag wired in.
+- `src/main.tsx` is one call to [`mountGristWidget()`](/docs/sdk/api/app):
+  the widget inside Grist, a local-dev or release page anywhere else. It
+  reads what `src/app/App.tsx` exports, so it is never edited.
+- `src/app/` is the widget, and everything in it is yours. `src/app/App.tsx`
+  declares the widget with `defineGristWidget()` (access, columns, title) and
+  shows a typed read and write, with UI you can immediately
+  replace — or, with `--example`, a real starting widget instead of the
+  placeholder. Put the widget's other files (components, hooks, helpers,
+  assets) next to it.
+- `src/app/App.test.tsx` is a working test of that widget, using
+  `renderWithGrist(<App />, { widget, rows })` — run it, then edit it
+  alongside `App.tsx`.
+- `src/app/App.smoke.test.tsx` checks that the widget renders inside an
+  emulated Grist with every declared column mapped, whatever the widget does
+  ([Smoke test](/docs/emulator/testing#smoke-test)).
+- `src/components/ui/` (shadcn primitives) and `src/index.css` (the theme)
+  are yours too. `src/main.tsx`, the workflows and the build configuration
+  belong to the template: their changes ship with new CLI releases
+  ([Upgrading a widget](/docs/cli/upgrading) lists them).
+- Tailwind preconfigured for theme-aware widgets (light / dark / system).
+- Prettier + ESLint with project-wide rules.
+- `tsconfig.app.json` and `tsconfig.node.json` extend the TypeScript settings
+  `grist-widget-sdk` ships, so compiler-setting changes arrive with SDK
+  updates. Each keeps only the widget's own files, paths and types.
+- `pnpm-lock.yaml` in the first commit: the CLI installs with pnpm before
+  committing, so dependency versions and their integrity hashes are pinned
+  from the start. A widget scaffolded within a day of a release also gets
+  age-check exceptions for the SDK and CLI versions it was made with, written
+  by pnpm itself (see the template README).
+
+After scaffolding, the first edit is typically `src/app/App.tsx` — replace the
+placeholder with the widget you want. The
+[Cookbook](/docs/sdk/guide/cookbook) has ten ready-to-paste recipes for
+common shapes, and `create-grist-widget list` shows every example the CLI
+itself can start you from directly (see below).
+
+## The commands
+
+| Command | What it does |
+| --- | --- |
+| `create <name> [--example <id>]` | Scaffold a new widget into `./<name>` — same as `npm create grist-widget <name>` |
+| `init [--example <id>]` | Scaffold into the **current** directory instead of a new one |
+| `use <example-id>` | Swap the current project's widget for a different example |
+| `upgrade` | Bring an existing widget's template files up to this version's template |
+| `demo [--port <n>]` | Open the widget in a real Grist on your machine (Docker); `pnpm demo` in a widget |
+| `demo --save` | Write the widget's demo page, `public/demo/`: a real Grist in the browser, from static files (Docker to generate) |
+| `manifest --base <path>` | Write `dist/grist-widget.json`, the widget's Grist manifest; the deploy workflow runs it |
+| `list [--json]` | Print the available starting examples |
+
+Common flags for `create`/`init`: `--yes` (skip interactive prompts),
+`--no-install` (skip the automatic dependency install, so the first commit
+has no lockfile), `--pm <name>`
+(install with another package manager instead of pnpm; the bundled
+workflows only read `pnpm-lock.yaml`). `init` also takes `--name <name>`
+(default: the current directory's name) and `--force` (see below).
+
+### Starting from a real example
+
+```bash
+npm create grist-widget my-widget --example form-edit
+# or interactively:
+npm create grist-widget
+```
+
+`create-grist-widget list` prints every available id with a short
+description; `list --json` gives the same as machine-readable JSON. Every
+row below is exactly what `list` returns, generated from the same manifest
+the CLI itself embeds — the id is what `--example <id>` / `use <id>` take,
+and the same slug as in its demo URL (`/examples/<id>/demo/`).
+
+<ExamplesCatalog />
+
+### `init` — scaffolding into an already-initialized directory
+
+`create` refuses a non-empty target directory. `init` is the fix for the
+case that comes up constantly with cloud coding agents, which typically
+start from an already-cloned or already-`git init`'d repo rather than an
+empty one:
+
+```bash
+mkdir my-widget && cd my-widget
+git init   # or: this is already a repo clone
+npx create-grist-widget init --example form-edit
+```
+
+Files that already exist and are identical to the template are left
+untouched; the four identity-bearing files (`package.json`, `README.md`,
+`index.html`, `src/app/App.tsx`) get the usual name/title substitution even if
+present. Anything else that already exists **and** differs from the
+template's own copy stops the run and lists the conflicting paths — pass
+`--force` to overwrite anyway. If `.git` already exists, `init` never
+auto-commits; review and commit the result yourself. If it doesn't, `init`
+sets up `main` + `dev` and an initial commit exactly like `create` does.
+
+### `use` — swapping to a different example later
+
+```bash
+create-grist-widget use task-board
+```
+
+Replaces the widget, `src/app/`, with a different example, adding any
+`src/components/ui/` primitive or dependency it needs. It touches nothing
+else — never `main.tsx`, `vite.config.ts`, or the deploy workflow — and it
+requires a clean git working tree first, so the swap is always a single
+reviewable, revertible diff. Commit or stash first if you have uncommitted
+changes; `use` refuses to run otherwise. It also refuses a widget scaffolded
+before the `src/app/` layout, still in `src/App.tsx`, until it is
+[moved](/docs/cli/upgrading#widgets-scaffolded-before-srcapp).
+
+### `upgrade` — picking up template changes
+
+```bash
+git switch dev
+pnpm exec create-grist-widget upgrade
+```
+
+Run inside a widget, on `dev` with nothing uncommitted, after updating its
+`create-grist-widget` dependency. It rewrites the template's files
+(`src/main.tsx`, the workflows, the build configuration) to this version's
+copies, deletes the ones earlier templates wrote that are gone now, and
+merges the template's scripts and dependency versions into `package.json`.
+Nothing of the widget's own is touched. It refuses to run on
+`main`, with uncommitted changes, or on a widget still in `src/App.tsx`, and
+to overwrite a `src/main.tsx` the widget changed (`--force` overrides).
+[Upgrading a widget](/docs/cli/upgrading#template-changes) has the details.
+
+### `demo` — the widget in a real Grist on your machine
+
+```bash
+pnpm demo                 # in a widget; same as pnpm exec create-grist-widget demo
+pnpm demo --port 9090  # Grist on another port than 8484
+```
+
+Needs Docker, for this command only. It starts the widget's Vite dev server
+and a Grist from a pinned Docker image, without authentication, then creates
+a document from the widget's declaration: a table with a typed column per
+declared column and sample rows, and the widget's section with the access it
+requests, every column mapped and linked to the table. It prints the URL that
+opens that page, signed in as the local default user. Edits reload in place;
+Ctrl-C stops Grist and the dev server, and the next run starts from a fresh
+document. The widget gets the plugin API from that Grist rather than
+docs.getgrist.com, so the demo works offline.
+
+It is real Grist, not the emulator, so it shows what `pnpm test` can't: the
+real handshake, column mapping and theme. It doesn't replace the `dev`
+branch's `/dev/` preview in your own documents, with your data.
+
+#### `demo --save` — a demo page anyone can open
+
+```bash
+pnpm demo --save          # writes public/demo/demo.grist and public/demo/index.html
+```
+
+Generates the same document as `pnpm demo` in the same Docker Grist, and
+writes it with a page that opens it in Grist running in the browser, from
+static files ([grist-static](https://github.com/gristlabs/grist-static), the
+pinned version gristwidgets.com serves). No server, no account, nothing
+saved: a link you can put in a README or the registry.
+
+Commit both files. Vite copies `public/` into every build, so each deployed
+channel serves its own demo next to the widget: `…/latest/demo/`,
+`…/v1.2.0/demo/`, `…/dev/demo/`. The document holds a placeholder widget URL
+that the page points at the build beside it (`../`) before Grist opens it,
+so one document serves every channel and host.
+
+To change the demo data, open `public/demo/demo.grist` in any Grist (import
+it as a document), edit it, and download it back over the file; leave the
+widget section's URL as it is. Attachments and imports aren't available in
+grist-static.
+
+### `manifest` — the widget's Grist manifest
+
+The deploy workflow's build job runs it after `vite build`:
+
+```bash
+pnpm exec create-grist-widget manifest --base "/<repo>/v<version>/"   # --owner-repo defaults to $GITHUB_REPOSITORY
+```
+
+It writes `dist/grist-widget.json`, served next to `index.html` on every
+channel (`/v<version>/`, `/latest/`, `/dev/`). The file is a Grist custom
+widget entry, the format of the widget lists a self-hosted Grist reads
+through `GRIST_WIDGET_LIST_URL`:
+
+```json
+{
+  "name": "World map",
+  "widgetId": "@arthurblanchon/world-map",
+  "url": "https://arthurblanchon.github.io/world-map/v0.2.0/",
+  "published": true,
+  "accessLevel": "read table",
+  "columns": [{ "name": "CountryISO", "type": "Text" }, { "name": "Count", "type": "Numeric" }],
+  "renderAfterReady": false,
+  "description": "Choropleth of country counts from a table.",
+  "authors": [{ "name": "ArthurBlanchon", "url": "https://github.com/ArthurBlanchon" }],
+  "lastUpdatedAt": "2026-11-07T12:00:00.000Z",
+  "gristWidgetSdk": {
+    "schema": 1, "channel": "release", "version": "0.2.0", "license": "MIT",
+    "repository": "https://github.com/ArthurBlanchon/world-map",
+    "sdk": "0.3.27", "createGristWidget": "0.3.32"
+  }
+}
+```
+
+`name` and `description` come from `WIDGET_METADATA`, `accessLevel` and
+`columns` from the widget's declaration, so the manifest always says what the widget
+declares. A `/dev/` build is marked `"published": false`: listed, but not
+offered in Grist's widget picker. `gristWidgetSdk` holds what Grist doesn't
+read: the widget's version and license, and the SDK and CLI versions it was
+built with. The [widget registry](https://github.com/ArthurBlanchon/awesome-grist-widgets)
+reads it from a widget's install URL.
+
+> `create`, `init`, `use`, `upgrade`, `demo`, `manifest`, and `list` are themselves valid widget names —
+> `create-grist-widget list` runs the list command, not "scaffold a widget
+> named list." Use the explicit form (`create-grist-widget create list`)
+> for a widget with one of these names.
+
+## The bundled deploy pipeline
+
+Every scaffolded repo ships its own `.github/workflows/deploy.yml`, two
+channels from one workflow:
+
+- **Push to `main`** → the release channel: an immutable `/<repo>/v<version>/`
+  plus a mutable `/<repo>/latest/` (and the same build at the repo's Pages
+  root). Re-pushing `main` without bumping `package.json`'s version is a
+  no-op — it only rebuilds when a new `v<version>` doesn't exist yet.
+- **Push to `dev`** → the dev channel: a mutable `/<repo>/dev/`, for live
+  review inside Grist as you iterate.
+
+Every channel also serves `grist-widget.json`, the widget's Grist manifest
+(see [`manifest`](#manifest--the-widgets-grist-manifest)), which the build job
+writes after `vite build`.
+
+The deploy logic is the `grist-widget-deploy` command of `create-grist-widget`,
+a devDependency of every scaffold: fixes to it arrive as dependency updates,
+with no file to copy.
+
+It builds in a job with a read-only token, and publishes in a separate job
+that installs with `--ignore-scripts` and runs only `grist-widget-deploy`, at
+the version the lockfile pins. So dependency code (Vite, its plugins,
+anything they pull in) never runs next to the token that can push to your
+repo and its `gh-pages` branch.
+
+If you scaffolded via ["Use this template"](https://github.com/ArthurBlanchon/grist-widget-template/generate)
+with **Include all branches** checked, GitHub Pages is already pointed at
+the copied `gh-pages` branch — nothing else to configure. Scaffolding a
+fresh, non-template repo yourself needs two one-time steps instead:
+
+1. **Settings → Pages → Source: Deploy from a branch → `gh-pages` → `/`**
+   (the workflow creates the `gh-pages` branch itself, but Pages has to be
+   pointed at it once — left on `main`, you'd see a blank page with a 404
+   for `/src/main.tsx` even though the workflow reports success).
+2. **Settings → Actions → General → Workflow permissions → Read and write
+   permissions.**
+
+After the first release, whichever way you scaffolded, protect the branches
+with a ruleset (Settings → Rules → Rulesets). Not before: the first release
+itself commits to `main` and resets `dev`.
+
+- **`main`:** require a pull request and the `check` status from `ci.yml`,
+  block force pushes and deletion. A change then reaches `main` only
+  through a green pull request.
+- **`dev`:** block force pushes and deletion. The version bump before a
+  release is pushed straight to `dev`, so no pull-request rule there.
+
+An AI agent working on the repo acts through your account, so the rules
+can't tell it from you: they guarantee nothing red reaches `main`, whoever
+merges.
+
+### Pull request checks and dependency updates
+
+Two more files keep the repo current without any setup:
+
+- `.github/workflows/ci.yml` runs `pnpm lint`, `pnpm test` and `pnpm build`
+  on every pull request. `deploy.yml` only builds, and only after a push.
+- `.github/dependabot.yml` opens weekly update pull requests, against `dev`,
+  for your npm dependencies (`grist-widget-sdk` and `create-grist-widget` included) and the workflows'
+  GitHub Actions.
+
+[Upgrading a widget](/docs/cli/upgrading) covers the update loop, and how to
+pick up template changes in a widget scaffolded earlier.
+
+## Hand-rolled (no template)
+
+If you want the bare minimum instead of the CLI:
+
+```bash
+mkdir my-widget && cd my-widget
+pnpm init
+pnpm add react react-dom grist-widget-sdk
+pnpm add -D typescript @types/react @types/react-dom vite @vitejs/plugin-react
+```
+
+Then create `index.html` (with the plugin-api script tag), `src/main.tsx`
+(React root), and `src/App.tsx` (your widget) — see the
+[Cheat sheet](/docs/sdk/guide/cheatsheet) for the smallest possible code,
+or the [Cookbook](/docs/sdk/guide/cookbook) for ten ready-to-paste
+recipes. The template path saves about ten minutes of boilerplate and one
+or two configuration gotchas, but the SDK works fine without it.

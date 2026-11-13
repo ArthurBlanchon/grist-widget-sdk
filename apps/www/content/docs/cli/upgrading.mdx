@@ -1,0 +1,218 @@
+---
+title: Upgrading a widget
+description: "Keep a scaffolded widget current: dependency updates arrive as Dependabot pull requests, template changes through create-grist-widget upgrade."
+---
+
+A scaffold is a copy. Once `npm create grist-widget` has run, the widget repo
+is yours and nothing in it changes by itself. What can need updating falls into
+four groups:
+
+| What | Examples | How it gets updated |
+| --- | --- | --- |
+| Dependencies and workflow actions | `grist-widget-sdk`, `create-grist-widget` (the deploy command), React, Vite, `actions/checkout` | [Dependabot pull requests](#dependency-updates), on `dev` |
+| Compiler settings | what `tsconfig.app.json` and `tsconfig.node.json` extend from `grist-widget-sdk` | With `grist-widget-sdk`'s own updates |
+| [The template's files](#the-templates-files) | `src/main.tsx`, `.github/workflows/*.yml`, `vite.config.ts`, `eslint.config.js` | [`create-grist-widget upgrade`](#template-changes), on `dev` |
+| Your widget | `src/app/`, `src/components/ui/`, `src/index.css`, and everything else you add | Never touched |
+
+## Dependency updates
+
+Every scaffold ships `.github/dependabot.yml`, which opens weekly pull requests
+against `dev`:
+
+- one grouping every minor and patch bump,
+- one per `grist-widget-sdk` update, so its release notes aren't buried,
+- one per other major version (Vite and `@vitejs/*` majors together, since
+  `@vitejs/plugin-react` only builds against its own Vite major),
+- one for the GitHub Actions your workflows use.
+
+TypeScript 7 is held back: `typescript-eslint` doesn't support it yet, so
+`pnpm lint` would fail on every pull request proposing it.
+
+A version is only proposed once it is a week old, which leaves time for a
+broken or compromised release to be pulled. Each pull request runs
+`.github/workflows/ci.yml` (`pnpm lint`, `pnpm test`, `pnpm build`), so you
+know before merging whether the update breaks the widget.
+
+Updates then follow the same loop as your own changes:
+
+<Steps>
+<Step>
+**Merge the green pull request into `dev`.** The live preview at `/dev/`
+redeploys and self-reloads inside your open Grist document, so you can check
+the update against real data.
+</Step>
+<Step>
+**Release it**: bump `package.json`'s `version` on `dev`, open a pull request
+from `dev` into `main`, and merge it. Without the version bump nothing is
+published.
+</Step>
+</Steps>
+
+A few things to know:
+
+- **`create-grist-widget` gets a pull request of its own.** Merging it
+  updates the deploy command; the template's other files come with
+  [`upgrade`](#template-changes), which you run on `dev` once it's merged.
+- **`grist-widget-sdk` is still 0.x**, where a minor bump (0.3 → 0.4) may
+  break things. Dependabot widens your `^0.3.x` range for it, so read the
+  [SDK changelog](https://github.com/ArthurBlanchon/grist-widget-sdk/blob/main/packages/core/CHANGELOG.md)
+  before merging that one.
+- **Security updates target `main`.** GitHub ignores `target-branch` for
+  them. After merging one, merge `main` back into `dev` (`git switch dev && git merge main`)
+  and release it with your next version bump.
+- **Keep `dev`.** It is the permanent preview branch, and while it doesn't
+  exist Dependabot reports an error instead of opening pull requests.
+- If you commit `pnpm-lock.yaml`, Dependabot updates it along with
+  `package.json`.
+
+## The template's files
+
+The scaffold writes these and keeps them identical in every widget, so leave
+them as they are: [`upgrade`](#template-changes) rewrites them.
+
+- `src/main.tsx`, `src/vite-env.d.ts`, `src/components/theme-provider.tsx`,
+  `src/lib/utils.ts`
+- `.github/workflows/deploy.yml`, `.github/workflows/ci.yml`,
+  `.github/dependabot.yml`
+- `vite.config.ts`, `tsconfig.json`, `eslint.config.js`, `.prettierrc`,
+  `.prettierignore`
+- `AGENTS.md`, `CLAUDE.md`
+
+Everything else is your widget's. Its code lives in `src/app/`, whose
+`App.tsx` the template's `src/main.tsx` imports as the
+[entry module](/docs/sdk/api/app#the-entry-module): a default export, the
+widget, and its declaration, `widget` from `defineGristWidget()` (or
+`GRIST_OPTIONS`, in a widget made before it), defined there or re-exported
+from a file of its own. What the widget customises in the wiring is an export
+of that file too (`Alerts`, `LocalDevPage`, `ReleasePage`), never an edit of
+`src/main.tsx`. Put the widget's other files next to it, tests included: the smoke test,
+`src/app/App.smoke.test.tsx`, is yours to extend, say with a `vi.mock` for a
+browser API jsdom lacks. shadcn primitives stay in `src/components/ui/`,
+where `shadcn add` writes them, the theme in `src/index.css`, and shadcn's
+configuration in `components.json`, with any registry you add to it.
+`tsconfig.app.json` and `tsconfig.node.json` take their compiler settings from
+`grist-widget-sdk` and keep the widget's own paths and types.
+
+## Template changes
+
+Fixes to the deploy pipeline, the build configuration or the wiring in
+`src/main.tsx` reach a widget through `create-grist-widget upgrade`. It
+rewrites the template's files to the copies of the `create-grist-widget`
+version your widget depends on, and leaves the widget's own files alone.
+
+<Steps>
+<Step>
+**Update `create-grist-widget`** on `dev`: merge Dependabot's pull request for
+it, or run `pnpm update create-grist-widget` and commit.
+</Step>
+<Step>
+**Run the upgrade** on `dev`, with nothing uncommitted:
+
+```bash
+pnpm exec create-grist-widget upgrade
+pnpm install
+pnpm typecheck && pnpm lint && pnpm test
+git diff
+```
+
+`pnpm exec` runs the version your widget depends on, which pnpm only
+installed once it was a day old. `upgrade` refuses to run on `main`, with
+uncommitted changes, or on a widget [still in `src/App.tsx`](#widgets-scaffolded-before-srcapp).
+It also refuses to overwrite something of the widget's own:
+
+- **a `src/main.tsx` the widget changed:** it knows every `src/main.tsx` the
+  template has shipped (formatting aside). Move what you added into
+  `src/app/App.tsx` (an `Alerts`, `LocalDevPage` or `ReleasePage` export, a
+  provider inside `App`, a `lazy()` App), restore the template's file, and
+  run it again;
+- **a file of the widget's at a path a newer template starts using:** move
+  it into `src/app/`, which no template writes to.
+
+`upgrade --force` overwrites them anyway.
+</Step>
+<Step>
+**Commit and push `dev`**, check the `/dev/` preview inside Grist, then
+release as usual.
+</Step>
+</Steps>
+
+What `upgrade` changes:
+
+- **[The template's files](#the-templates-files)**, each rewritten to this
+  version's copy, or added if missing.
+- **Files earlier templates wrote and the current one doesn't**, such as
+  `scripts/deploy.mjs` or the old landing-page components, are deleted. If one
+  of your files still refers to one, `upgrade` keeps it and says which file
+  does.
+- **`tsconfig.app.json` and `tsconfig.node.json`**, if one doesn't extend
+  `grist-widget-sdk`'s settings yet, are switched to the template's, keeping
+  the `types` yours listed. Once they extend the SDK's, they're left alone.
+- **`package.json`**: the template's scripts replace yours of the same name.
+  Each template dependency is added if missing, or raised to the template's
+  version if your range allows older ones; none is lowered or removed.
+  `createGristWidgetVersion` records the version you upgraded to.
+- **`pnpm-workspace.yaml`**: `minimumReleaseAgeExclude` entries for versions
+  now old enough for pnpm's age check are removed. `upgrade` asks the npm
+  registry when they were published, and keeps an entry it can't check.
+
+A template change that needs more, say in `index.html` (which is your
+widget's), says so in the
+[create-grist-widget changelog](https://github.com/ArthurBlanchon/grist-widget-sdk/blob/main/packages/create-grist-widget/CHANGELOG.md),
+under "Existing widgets can…". `upgrade` prints the link.
+
+### Widgets declared with `GRIST_OPTIONS`
+
+A widget made before `create-grist-widget` 0.5.0 exports `GRIST_OPTIONS` (and
+`WIDGET_METADATA`) from `src/app/App.tsx`. It needs nothing: the 0.5.0
+`src/main.tsx` and smoke test read either form. To get `widget.useGrist()`
+typed with no generics, and `updateRecord` / `addRecord` typed, replace them
+with one declaration, when convenient:
+
+```ts
+export const widget = defineGristWidget({ ...GRIST_OPTIONS, ...WIDGET_METADATA })
+```
+
+then use `widget.useGrist()` where the widget called `useGrist<TRow, TMapped>()`.
+
+### Widgets without `create-grist-widget` in their dependencies
+
+Widgets scaffolded before the deploy command shipped in `create-grist-widget`
+have a `scripts/deploy.mjs` instead, and some have no Dependabot config or
+`ci.yml`. Add the dependency on `dev`, then upgrade as above: `upgrade` writes
+the current workflows and Dependabot config, and deletes `scripts/deploy.mjs`.
+
+```bash
+git switch dev
+pnpm add -D create-grist-widget
+git commit -am "chore: depend on create-grist-widget"
+```
+
+pnpm picks the newest version that is at least a day old. `ci.yml` runs
+`pnpm lint`, `pnpm test` and `pnpm build`, so run all three after the
+upgrade: a widget from an older scaffold may need a fix, or a `test` script,
+before its first pull request can go green.
+
+### Widgets scaffolded before `src/app/`
+
+Widgets used to live in `src/App.tsx`, next to the template's files, and
+`upgrade` refuses to run until yours is in `src/app/`. Move it, with its
+tests, on `dev`:
+
+```bash
+git switch dev
+mkdir -p src/app
+git mv src/App*.tsx src/app/   # App.tsx, App.test.tsx, App.smoke.test.tsx
+# What they imported from src/ now goes through the @/ alias (src/ itself),
+# except the tests' own import of ./App:
+sed -E -i.bak -e 's#(from|import) "\./#\1 "@/#' -e 's#"@/App"#"./App"#' src/app/App*.tsx
+rm src/app/*.bak
+```
+
+If `GRIST_OPTIONS` lives in a file of its own, such as `src/grist-options.ts`,
+re-export it from `src/app/App.tsx`:
+`export { GRIST_OPTIONS } from "@/grist-options"`. Commit, then
+[upgrade](#template-changes): it rewrites `src/main.tsx` to import
+`./app/App`, and `pnpm typecheck` lists any import left to fix.
+
+The widget's other files can stay where they are. Move them into `src/app/`
+whenever convenient, so the next template change can't collide with them.

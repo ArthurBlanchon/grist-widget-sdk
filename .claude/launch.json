@@ -1,0 +1,25 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "www-dev",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "--filter",
+        "www",
+        "dev"
+      ],
+      "port": 3000
+    },
+    {
+      "name": "template-dev",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "--filter",
+        "grist-widget-template-vite",
+        "dev"
+      ],
+      "port": 5173
+    }
+  ]
+}

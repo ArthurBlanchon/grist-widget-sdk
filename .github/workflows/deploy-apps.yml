@@ -1,0 +1,142 @@
+name: Deploy apps to GitHub Pages
+
+# Builds apps/www and every examples/<id>/ (with its demo page) and
+# publishes them as ONE GitHub Pages deployment at
+# https://arthurblanchon.github.io/grist-widget-sdk/: apps/www at that root
+# (which includes its own /docs/* -- quickstart, CLI reference, SDK
+# guide/API/design, registry), each example under /examples/<id>/ and its
+# grist-static demo under /examples/<id>/demo/.
+#
+# This is ONE OF TWO independent origins. The same site is also served at
+# https://gristwidgets.com/ by Cloudflare Pages, running the same
+# scripts/build-site.mjs with no SITE_BASE. Neither origin redirects to the
+# other and each carries a complete copy, deliberately: some enterprise
+# networks allowlist github.io while blocking unknown domains, and some do
+# the reverse, so a reader blocked from one can still reach the other.
+#
+# That is also why NO CNAME is written here. Setting a custom domain on a
+# GitHub Pages site makes GitHub 301 this github.io URL to that domain,
+# which would collapse the two origins back into one -- see
+# apps/www/content/docs/contributing/deploy.mdx.
+#
+# Uses the modern Actions-native Pages flow
+# (actions/upload-pages-artifact + actions/deploy-pages) rather than
+# committing to a gh-pages branch -- build and deploy happen in this one
+# workflow run, so there's no separate hidden "pages build and deployment"
+# listener workflow to race or time out waiting on.
+#
+# apps/www (Next.js + fumadocs, static-exported) is now the only source of
+# both the landing page and the documentation. It replaced two earlier apps
+# that have since been deleted from the repo: apps/web (Vite + shadcn landing
+# site) at the site root, and apps/docs (VitePress) at /docs -- apps/www's own
+# /docs/sdk/{guide,api,design} is a full port of the latter, plus
+# quickstart/cli/registry/contributing pages VitePress never had.
+#
+# Requires this repo's Settings -> Pages -> Source to be "GitHub Actions"
+# (not "Deploy from a branch"). The three apps used to each push their own
+# commit to a shared gh-pages branch (deploy-docs.yml / deploy-playground.yml
+# / deploy-web.yml, now removed) -- multiple independent pushes to that one
+# branch in quick succession is exactly what caused GitHub's native listener
+# to queue up and occasionally hit its own 10-minute timeout. Consolidating
+# to a single artifact + a single deploy call removes that race by
+# construction: one workflow run, one deployment, every time.
+#
+# This does NOT cover templates/grist-widget-template-vite's own showcase --
+# that used to deploy to /template/ on this same gh-pages branch
+# (deploy-template-showcase.yml) but has been removed entirely; the
+# template's live preview now lives only on the external
+# github.com/ArthurBlanchon/grist-widget-template repo via
+# template-canary.yml, which this workflow has no bearing on.
+#
+# scripts/build-site.mjs builds apps/www, the example widgets and their
+# demos (grist-static) into one tree, shipped together on both origins --
+# see apps/www/content/docs/contributing/deploy.mdx.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/www/**"
+      - "packages/core/**"
+      - "examples/**"
+      - "templates/grist-widget-template-vite/**"
+      - "scripts/**"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - ".github/workflows/deploy-apps.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# GitHub's own documented pattern for Actions-based Pages deploys: only one
+# deployment in flight at a time, never cancel one mid-flight.
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build and assemble site
+        # Same script Cloudflare Pages runs for the gristwidgets.com origin --
+        # only SITE_BASE differs. Keeping one script means the two origins
+        # can't drift in what they contain, only in where they're served.
+        run: node scripts/build-site.mjs
+        env:
+          # This is a GitHub Pages *project* site, served under
+          # https://<user>.github.io/<repo>/ -- that /<repo>/ segment is a real
+          # path prefix, so every asset and link needs it or resolves against
+          # the domain root and 404s. Cloudflare passes no SITE_BASE at all.
+          SITE_BASE: /${{ github.event.repository.name }}/
+          # Makes OG/preview images absolute on THIS origin rather than the
+          # canonical one, so a github.io page's link preview doesn't depend on
+          # gristwidgets.com being reachable. Cloudflare leaves this unset and
+          # falls back to the canonical origin, which is what serves it.
+          SITE_ORIGIN: https://${{ github.repository_owner }}.github.io
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
+        with:
+          # Default is 10 minutes. Found live, repeatedly: this specific
+          # deployment sometimes sits in `deployment_in_progress` right up
+          # to that mark before actions/deploy-pages self-aborts (its own
+          # client-side timeout, not evidence the deployment itself was
+          # truly stuck forever) -- backend Pages flakiness on this repo,
+          # unrelated to anything in this workflow (single artifact, single
+          # deploy call, no race). Widened so a genuinely-slow-but-would-
+          # have-succeeded deployment gets more room. See
+          # retry-deploy-pages.yml for the other half of this: an
+          # automatic one-time retry if it still times out or fails.
+          timeout: 900000

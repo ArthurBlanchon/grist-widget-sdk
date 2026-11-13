@@ -1,0 +1,152 @@
+---
+title: "Column mapping"
+description: "Why widgets should declare logical column names in code and let users map them to real ones."
+---
+
+A widget should not depend on a user's exact column names. Instead, declare **logical** names your code uses; the user maps them to real columns through the section configuration UI.
+
+## Declare columns once
+
+Pass `columns` to the provider:
+
+```tsx no-check
+<GristWidgetProvider
+  options={{
+    requiredAccess: "full",
+    columns: [
+      { name: "Title", type: "Text" },
+      { name: "Done", type: "Bool" },
+      {
+        name: "Tags",
+        type: "ChoiceList",
+        allowMultiple: true,
+        optional: true,
+        description: "Optional tags to filter rows.",
+      },
+    ],
+  }}
+>
+```
+
+Field reference:
+
+| Field | Notes |
+| --- | --- |
+| `name` | **Required.** Must be a valid JS identifier. This is the name your code uses. |
+| `title` | Short label in the Grist mapping UI. |
+| `description` | Long help text in the mapping UI. |
+| `type` | Comma-separated allowed Grist column types. Defaults to `"Any"`. |
+| `optional` | Default `false`. Required columns gate `mappedRecord`. |
+| `allowMultiple` | `true` lets the user map several real columns to one logical name. The corresponding mapping becomes `string[]`. |
+| `strictType` | `true` makes the type match exact (so `"Any"` only matches `"Any"`). |
+
+You can also pass plain strings (`columns: ["Title", "Done"]`) when you don't need type hints.
+
+## Read mapped data
+
+`useGrist()` exposes:
+
+```ts
+const w = useGrist<MyMappedRow>()
+
+w.mappedRecord      // { id, Title, Done, Tags: [...] }: the selected row under declared names (or null)
+w.mappings          // { Title: "Name", Done: "isDone", Tags: ["tagA","tagB"] }
+w.columnMappingStatus
+//   { ok: boolean, pending?: boolean, missing: string[], emptyMultiples: string[] }
+```
+
+`mappedRecord` is `null` when **any required column is unmapped**. Never silently fall back to the raw record.
+
+### Typing
+
+Type the SDK with two generics — your raw row shape (real column ids) and the mapped logical shape:
+
+```ts
+type RawTask = {
+  Name: string
+  isDone: boolean
+  tag_list: string[]
+}
+
+type MappedTask = {
+  Title: string | null   // null when the cell doesn't match its declared type
+  Done: boolean | null
+  Tags?: string[] | null
+}
+
+const w = useGrist<RawTask, MappedTask>()
+w.record?.Name          // typed
+w.mappedRecord?.Title   // typed
+```
+
+`GristMappedRow<typeof GRIST_OPTIONS>` writes the mapped shape for you from
+the declaration: see [Typed reads](/docs/sdk/guide/typing).
+
+See [Typing your rows](/docs/sdk/guide/typing) for more.
+
+## Gate UI on missing mappings
+
+```tsx
+if (!w.columnMappingStatus.ok) {
+  return (
+    <p>
+      Map these columns first: {w.columnMappingStatus.missing.join(", ")}
+    </p>
+  )
+}
+```
+
+A widget mounted with `mountGristWidget()` doesn't need this check: its
+`<GristBoundary>` shows "Map your columns" until every required declared
+column is mapped, and the widget renders once they are.
+
+## Write through the mapping
+
+Writing back uses real column ids. Use `w.mapBack(patch)` to reverse the logical names:
+
+```ts
+async function toggle() {
+  const patch = w.mapBack({ Done: !w.mappedRecord!.Done })
+  await w.table.update({
+    id: w.record!.id,
+    fields: patch,
+  })
+}
+```
+
+`mapBack`:
+
+- Writes each declared name to the column mapped to it, and passes a name
+  with no mapping through unchanged.
+- Skips `allowMultiple` columns (you must choose which underlying column to
+  write); the `map-back-skip` alert names them.
+
+## Resolve a single mapped column
+
+For ad-hoc work, e.g. to set a `Group by` field:
+
+```ts
+const col = w.resolveMappedColumnId("Tags")
+// returns the first real id when allowMultiple, or the logical name as a last-resort fallback
+```
+
+## Dynamic mappings
+
+Mappings update as the user reconfigures the section: Grist sends them with
+the records, and `useGrist()` re-renders with the new `mappings`,
+`mappedRecord` and `columnMappingStatus`. The declared columns themselves
+are read once, at mount (`GRIST_OPTIONS.columns`).
+
+## Allow-multiple recipes
+
+```tsx
+const tagCols = (w.mappings.Tags as string[] | undefined) ?? []
+const tags = w.record
+  ? tagCols.flatMap((col) => {
+      const v = (w.record as Record<string, unknown>)[col]
+      return typeof v === "string" ? [v] : []
+    })
+  : []
+```
+
+`w.mappedRecord.Tags` already holds that list, one value per mapped column.

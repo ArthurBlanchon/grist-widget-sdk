@@ -1,0 +1,224 @@
+---
+title: "SDK"
+description: "Add grist-widget-sdk to an existing Vite or Next.js project, then the core hooks every widget uses."
+---
+
+`grist-widget-sdk` wraps the Grist plugin API — the JavaScript bridge
+between a custom widget iframe and a Grist document — into one hook, a
+provider, and a boundary. New here? [What is grist-widget-sdk?](/docs/quickstart/introduction)
+covers why it exists and when to reach for the raw plugin API instead.
+
+Already have a scaffolded project from the [template or the CLI](/docs/quickstart)?
+Its dependencies and plugin-api script tag are pre-wired — skip ahead to
+[Hello world](#hello-world). This page is for adding the SDK to a project
+you already have.
+
+## Install
+
+```bash
+pnpm add grist-widget-sdk
+# or
+npm install grist-widget-sdk
+# or
+yarn add grist-widget-sdk
+```
+
+Peer dependencies:
+
+```text
+react       >=18
+react-dom   >=18
+```
+
+## Load the Grist plugin API
+
+The SDK expects the **global `grist` object** at runtime. Add the script in
+your app shell:
+
+<Tabs items={["Plain HTML", "Vite (index.html)", "Next.js (app/layout.tsx)"]}>
+<Tab value="Plain HTML">
+
+```html
+<script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
+```
+
+</Tab>
+<Tab value="Vite (index.html)">
+
+```html
+<!doctype html>
+<html>
+  <head>
+    <script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+```
+
+</Tab>
+<Tab value="Next.js (app/layout.tsx)">
+
+```tsx no-check
+import Script from "next/script"
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en">
+      <body>
+        <Script src="https://docs.getgrist.com/grist-plugin-api.js" />
+        {children}
+      </body>
+    </html>
+  )
+}
+```
+
+</Tab>
+</Tabs>
+
+## Hello world
+
+**[hello-world](/examples/hello-world/demo/)**
+is the canonical minimal widget. It is type-checked on every
+`pnpm typecheck:examples` run (root `pnpm test` includes that step).
+
+```tsx
+import { useGrist, type UseGristOptions } from "grist-widget-sdk"
+
+export const GRIST_OPTIONS: UseGristOptions = {
+  requiredAccess: "read table",
+}
+
+export function WidgetApp() {
+  const w = useGrist()
+  const rowKey =
+    w.record && typeof w.record.id === "number" ? String(w.record.id) : w.mode
+
+  if (w.mode === "empty") return <p>Select a row.</p>
+  if (w.mode === "new-row") return <p>New row flow</p>
+  return <p key={rowKey}>Selected row #{String(w.record!.id)}</p>
+}
+```
+
+Wrap it with `GristWidgetProvider` + `GristBoundary` — the
+[template](/docs/quickstart) does exactly this in `main.tsx`. That's
+everything you need to:
+
+- Wait for Grist to finish its handshake.
+- Render a friendly fallback when the page is opened outside Grist.
+- Render an error UI if anything goes wrong, with a retry button.
+- Subscribe to the currently selected row.
+- Switch between `empty` / `row` / `new-row` modes.
+
+See [Provider & boundary](/docs/sdk/api/provider-boundary) for what each
+piece does, and [Raw plugin API vs SDK](/docs/sdk/guide/raw-plugin-api-vs-sdk)
+for why you use this package instead of calling `grist` directly.
+
+## What `useGrist()` returns
+
+| Group | Properties |
+| --- | --- |
+| **Connection** | `status`, `isAvailable`, `isReady`, `error`, `reload()`, `theme` |
+| **Selection and mapping** | `record`, `records`, `mode`, `currentTableId`, `mappings`, `columnMappingStatus`, `mappedRecord`, `resolveMappedColumnId`, `mapBack` |
+| **Writes (records)** | `table`, `getTable(id)`, `actionStatus`, `actionError` |
+| **Writes (schema)** | `applyActions(actions)` |
+| **Reads** | `fetchSelectedTable`, `listTables`, `fetchTable`, `fetchTableRows`, `listColumns` |
+| **Widget options** | `widgetOptions`, `setWidgetOptions`, `patchWidgetOptions` |
+| **Linking** | `setCursorPosition`, `setLinkedRowSelection` |
+| **Attachments / REST** | `getAttachmentUrl`, `fetchAttachmentBlob`, `uploadAttachment`, `fetchWithAuth` |
+
+See the [API reference](/docs/sdk/api/use-grist) for every field.
+
+## Asking for write access and declared columns
+
+**[declared-columns](/examples/declared-columns/demo/)**
+shows `GRIST_OPTIONS.columns` and `columnMappingStatus` — full source in the
+Cheat sheet under [Mappings + column gate](/docs/sdk/guide/cheatsheet#mappings--column-gate).
+
+In the widget configuration panel, the user maps these logical names
+to real columns. You consume them via `w.mappedRecord` and
+`w.mapBack(...)` on writes — see [Column mapping](/docs/sdk/guide/column-mapping).
+
+## Run a write
+
+**[mark-done](/examples/mark-done/demo/)** is a single-row
+`table.update`; its source is in the [Cheat sheet](/docs/sdk/guide/cheatsheet).
+
+For bulk writes, pass an array and the SDK forwards it to Grist as one
+`BulkUpdateRecord` action — see
+**[bulk-mark-done](/examples/bulk-mark-done/demo/)** in the
+[Cookbook](/docs/sdk/guide/cookbook).
+
+For schema changes, see
+**[schema-migration](/examples/schema-migration/demo/)**, also
+in the [Cookbook](/docs/sdk/guide/cookbook).
+
+## Explore the rest of the SDK
+
+<Cards>
+  <Card
+    title="Singleton hook"
+    description="A single useGrist() handles all Grist states to avoid race conditions and code drift."
+    href="/docs/sdk/api/use-grist"
+  />
+  <Card
+    title="Robust handshake"
+    description="Provider, boundary, and modes for clean errors and status management within your app."
+    href="/docs/sdk/api/provider-boundary"
+  />
+  <Card
+    title="Decoded values"
+    description="Mapped records typed from GRIST_OPTIONS and checked cell by cell, read-only."
+    href="/docs/sdk/guide/reading-data"
+  />
+  <Card
+    title="Mapped columns"
+    description="mappedRecord and mapBack for simple read/write on Grist tables."
+    href="/docs/sdk/guide/column-mapping"
+  />
+  <Card
+    title="Cookbook"
+    description="Ten end-to-end recipes — and the working demo widgets behind each one."
+    href="/docs/sdk/guide/cookbook"
+  />
+  <Card
+    title="Design rationale"
+    description="Why the API looks the way it does — for teams evaluating the trade-offs."
+    href="/docs/sdk/design/principles"
+  />
+</Cards>
+
+## Guide contents
+
+| Topic | What it covers |
+| --- | --- |
+| [Raw plugin API vs SDK](/docs/sdk/guide/raw-plugin-api-vs-sdk) | Why use this package instead of calling `grist` directly |
+| [Column mapping](/docs/sdk/guide/column-mapping) | Declaring logical column names, letting users map them |
+| [Reading data](/docs/sdk/guide/reading-data) | The two paths for reading data out of a document |
+| [Writing data](/docs/sdk/guide/writing-data) | The two write paths, and when to use each |
+| [Widget options](/docs/sdk/guide/widget-options) | Persisting per-section settings in Grist's own store |
+| [Attachments & REST](/docs/sdk/guide/attachments-and-rest) | Attachment bytes, SQL, and the REST API via pre-authenticated fetch |
+| [Widget linking & theme](/docs/sdk/guide/linking-and-theme) | Driving another widget's cursor; adopting the document theme |
+| [Typing your rows](/docs/sdk/guide/typing) | The two generics on `useGrist()` |
+| [Error handling](/docs/sdk/guide/error-handling) | Where errors surface, and which layer to read |
+| [Performance](/docs/sdk/guide/performance) | How `useGrist()` re-renders, and keeping large widgets fast |
+| [Cheat sheet](/docs/sdk/guide/cheatsheet) | Copy-pasteable shapes for daily reference |
+| [Troubleshooting](/docs/sdk/guide/troubleshooting) | Symptom-first fixes |
+| [Cookbook](/docs/sdk/guide/cookbook) | Ten ready-to-paste recipes |
+
+See the [API reference](/docs/sdk/api) for every exported symbol, or
+[Design](/docs/sdk/design/principles) for the rationale behind the API's
+shape.
+
+## Where to go next
+
+- [What is grist-widget-sdk?](/docs/quickstart/introduction) — why it
+  exists, and when to reach for the raw plugin API instead.
+- [Core concepts](/docs/quickstart/concepts) — the mental model behind
+  selection modes, mappings, and the ready handshake.
+- [CLI reference](/docs/cli) — scaffold a new project instead of adding the
+  SDK to an existing one.
+- [Emulator](/docs/emulator) — test widgets without a live Grist document.

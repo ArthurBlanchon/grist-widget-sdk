@@ -1,0 +1,51 @@
+version: 2
+
+# Weekly update PRs for this widget's npm dependencies (grist-widget-sdk
+# included) and for the GitHub Actions its workflows use. Each PR runs
+# .github/workflows/ci.yml (lint, test, build) before you merge it.
+#
+# Updates land on `dev`, the same loop as your own changes: merging one
+# redeploys the live preview at /dev/ inside Grist; release it by bumping
+# package.json's `version` and merging dev into main. Dependabot *security*
+# updates ignore `target-branch` and always open against the default branch.
+# If you delete `dev`, Dependabot reports an error until it exists again.
+
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    target-branch: "dev"
+    # Propose a release only once it is a week old: freshly published
+    # versions are the ones that get yanked (or turn out compromised).
+    cooldown:
+      default-days: 7
+    groups:
+      # Minor/patch bumps arrive together as one PR. grist-widget-sdk and
+      # create-grist-widget (the deploy command deploy.yml runs) are left out
+      # so their updates get a PR of their own, whose description links
+      # their release notes.
+      routine:
+        update-types: ["minor", "patch"]
+        exclude-patterns: ["grist-widget-sdk", "create-grist-widget"]
+      # @vitejs/plugin-react pins a vite major in its peer range, so their
+      # majors only build when they move together.
+      vite:
+        patterns: ["vite", "@vitejs/*"]
+        update-types: ["major"]
+    ignore:
+      # TypeScript 7 (the native port) drops the JavaScript compiler API that
+      # typescript-eslint is built on: `pnpm lint` fails with "typescript-eslint
+      # does not support TS 7.0". Remove this once typescript-eslint supports it.
+      - dependency-name: "typescript"
+        versions: [">=7"]
+
+  - package-ecosystem: "github-actions"
+    # "/" covers .github/workflows/.
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    target-branch: "dev"
+    groups:
+      actions:
+        patterns: ["*"]

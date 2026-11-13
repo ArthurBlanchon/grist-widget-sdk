@@ -1,0 +1,12 @@
+{
+  "title": "API",
+  "pages": [
+    "index",
+    "provider-boundary",
+    "use-grist",
+    "use-grist-schema",
+    "helpers",
+    "types",
+    "app"
+  ]
+}

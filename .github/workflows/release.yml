@@ -1,0 +1,139 @@
+name: release
+
+# Publishes `grist-widget-sdk` and `create-grist-widget` to npm via Trusted
+# Publishing (OIDC) -- no stored NPM_TOKEN. npm Trusted Publishing trust is
+# scoped to an exact `repo + workflow file` pair (npm's UI allows ONE trusted
+# workflow file per package), so everything that publishes lives in this file.
+#
+# ── release (push to main) ──────────────────────────────────────────────
+#   1. A PR adds a changeset (`pnpm changeset`) describing its change + semver
+#      bump. Merging it to `main` runs this job.
+#   2. With pending changesets, changesets/action opens/updates a
+#      "Version Packages" PR that bumps the package versions.
+#   3. Merging that PR runs this job again; with no pending changesets it
+#      runs `changeset publish` -- publishes to npm over OIDC (tag: latest)
+#      and creates the git tags + GitHub Releases.
+#
+#   One-time npm setup (see RELEASING.md): after 0.2.0 was claimed manually,
+#   add a Trusted Publisher for the package pointing at repo + this file.
+#
+# Runs on pushes to `main` only, and grants permissions to the release job
+# only (none at workflow level). A `publish-staging` job used to publish an
+# `-rc.N` SDK, tagged `next`, from any other branch; it was the only path
+# that could publish from a branch other than `main`, and was retired on
+# 2026-11-01 (docs/history/2026-11-01-widget-lifecycle-plan.md, U2 / D1).
+# RELEASING.md describes how to test an unreleased SDK without publishing.
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+# Nothing at workflow level: each job states what it needs (principle 5 of
+# docs/history/2026-11-01-widget-lifecycle-plan.md).
+permissions: {}
+
+jobs:
+  release:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    # npm's trusted publishers for both packages name this environment, and
+    # the environment only accepts `main` (RELEASING.md, one-time setup). A
+    # branch carrying a modified copy of this workflow, pushed by anyone with
+    # write access (an agent included), can then never mint a token npm
+    # accepts. Until the maintainer restricts it, GitHub creates it on first
+    # use, unrestricted, and npm accepts it either way.
+    environment: npm
+    permissions:
+      contents: write        # commit the version PR, push tags, create releases
+      pull-requests: write   # open/update the "Version Packages" PR
+      id-token: write        # OIDC Trusted Publishing
+      # `workflows` is NOT a valid key here -- it's a GitHub Apps
+      # installation-level permission, not one of the fixed set of scopes the
+      # GITHUB_TOKEN's `permissions:` block accepts (actions, checks, contents,
+      # deployments, id-token, issues, packages, pages, pull-requests,
+      # security-events, statuses, ...). Adding it doesn't grant anything --
+      # it makes the whole workflow file invalid, failing every run at
+      # parse time with zero jobs scheduled, found live: worse than the
+      # problem it was meant to fix, since that took down npm publishing too,
+      # not just the git tag push. Reverted.
+      #
+      # The actual, narrower problem this can't fix: the default GITHUB_TOKEN
+      # can never create or update a ref (branch or tag) whose history
+      # introduces .github/workflows/*.yml changes, and there is no
+      # `permissions:` setting that lifts this for GITHUB_TOKEN specifically --
+      # found live, create-grist-widget@0.3.2's git tag push after a release
+      # that happened to land near deploy-apps.yml's introduction. npm
+      # publishing itself is unaffected either way (OIDC Trusted Publishing
+      # doesn't go through this token). The fix is a credential other than
+      # GITHUB_TOKEN: changesets/action v2 pushes the Version Packages commit
+      # and the release tags through the GitHub API with its `github-token`
+      # input, which this job's "Version PR or publish" step sets to CHANGESET_PUSH_TOKEN when
+      # that secret exists -- a fine-grained PAT with
+      # Contents, Pull requests and Workflows read/write on this repo only (see
+      # RELEASING.md). It also makes the Version Packages PR's own CI start on
+      # its own: anything pushed with GITHUB_TOKEN gets its runs parked as
+      # "action_required" (found live on 0.3.16's Version Packages PR, whose
+      # CI needed a manual re-run). Without the secret, both fall back to
+      # GITHUB_TOKEN, i.e. the previous behavior.
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          registry-url: "https://registry.npmjs.org"
+          cache: pnpm
+
+      # Trusted Publishing (OIDC) needs npm >= 11.5; Node 22 ships an older npm.
+      # Pinned to the 11.x line, NOT @latest: npm 12's `npm info --json` wraps
+      # its result in an array instead of a bare object, which crashes
+      # @changesets/cli@2.31.0's isAlreadyPublishedError check with
+      # "Cannot read properties of undefined (reading 'includes')" — verified
+      # by reproducing both npm 11.x's and 12's `npm info --json` output
+      # locally. @changesets/cli 3 (now in use) lists npm 12 fixes in its
+      # changelog, so this pin can likely be lifted -- deliberately left for
+      # its own change rather than riding along with the Changesets v3 +
+      # changesets/action v2 migration, so a broken release has one suspect.
+      - name: Upgrade npm
+        run: npm install -g 'npm@^11.5.0'
+
+      - name: Install deps
+        run: pnpm install --frozen-lockfile
+
+      - name: Build the SDK (published artifact)
+        run: pnpm --filter grist-widget-sdk build
+
+      # create-grist-widget's own `prepack` (packages/create-grist-widget/scripts/build-template.mjs,
+      # batch H) now embeds widgets.json as manifest.json alongside the
+      # template, and throws if it's missing. `changeset publish` below runs
+      # each changed package's npm lifecycle scripts (including prepack) as
+      # part of `npm publish` -- a fresh checkout has no widgets.json yet,
+      # so a create-grist-widget release failed outright until this step
+      # existed (found live: create-grist-widget@0.3.8's publish attempt).
+      - name: Build the widget examples manifest (create-grist-widget's prepack needs it)
+        run: pnpm build:widgets-manifest
+
+      # changesets/action v2 (requires @changesets/cli 3): inputs are
+      # kebab-case and renamed from v1 (version/publish/commit/title), the
+      # token is read ONLY from `github-token` (the GITHUB_TOKEN env var is
+      # ignored), and commits + tags go through the GitHub API by default
+      # (push-with-git-cli: false), so no `git push` -- and no pre-push hook
+      # -- is involved. Published packages are detected via the
+      # CHANGESETS_OUTPUT file the action exports, which `pnpm run release`
+      # -> `changeset publish` inherits.
+      - name: Version PR or publish
+        uses: changesets/action@v2
+        with:
+          version-script: pnpm run version-packages
+          publish-script: pnpm run release
+          commit-message: "chore(release): version packages"
+          pr-title: "chore(release): version packages"
+          github-token: ${{ secrets.CHANGESET_PUSH_TOKEN || secrets.GITHUB_TOKEN }}

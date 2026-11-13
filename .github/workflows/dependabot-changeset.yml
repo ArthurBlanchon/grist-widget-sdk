@@ -1,0 +1,105 @@
+name: dependabot-changeset
+
+# Dependabot never runs `pnpm changeset`, so its PRs trip ci.yml's changeset job
+# whenever the diff lands in a published-package path -- in practice, the
+# grouped "routine" PR touching templates/grist-widget-template-vite/package.json,
+# since a manifest-only bump there is the one path check-changeset.sh treats
+# as published-package source without needing a src/ change (see
+# scripts/check-changeset.sh's comment for why: the template's dependency
+# versions ship inside every scaffold create-grist-widget produces). This
+# workflow closes that gap: on a Dependabot PR missing a changeset, it
+# commits one naming whichever published package(s) the diff falls under,
+# instead of requiring a human to push it by hand every week.
+#
+# Runs as pull_request_target (not pull_request) so it gets a write-capable
+# GITHUB_TOKEN -- PRs from dependabot[bot] get a read-only token under the
+# plain pull_request event. pull_request_target plus a checkout of the PR
+# branch is the classic way to run untrusted code with a write token, so this
+# job never executes anything from that branch:
+#   (1) it only runs for PRs *authored* by dependabot[bot] on a same-repo
+#       (never forked) head;
+#   (2) the scripts it runs come from a checkout of the PR's *base* commit
+#       (`trusted/`, no credentials), never from the Dependabot branch;
+#   (3) the Dependabot branch (`pr/`) is data only -- git reads its diff and
+#       the generated changeset is committed onto it -- and nothing installs
+#       or runs its dependency tree (no `pnpm install`);
+#   (4) event values reach the shell through `env:`, never by `${{ }}`
+#       interpolation inside `run:`, so a branch name can't inject commands.
+# (2) matters even with (1): anyone with write access can push to a
+# Dependabot branch, and this workflow reruns on `synchronize`.
+#
+# Gated on github.event.pull_request.user.login, not github.actor: this
+# workflow also fires on `synchronize` (a PR branch being updated), and
+# github.actor there is whoever *caused* that particular push -- e.g. a
+# maintainer clicking "Update branch" after merging a base-branch change --
+# not the PR's author. Checking github.actor here would silently skip every
+# Dependabot PR the moment anyone else touches its branch (caught live: PR
+# #141 stayed red after #151 merged because "Update branch" reran this job
+# under github.actor == the maintainer who clicked it).
+
+on:
+  pull_request_target:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  add-changeset:
+    if: >
+      github.event.pull_request.user.login == 'dependabot[bot]' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    env:
+      BASE_REF: ${{ github.event.pull_request.base.ref }}
+      HEAD_REF: ${{ github.event.pull_request.head.ref }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+    steps:
+      - name: Check out the base commit (the only code this job runs)
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: trusted
+          persist-credentials: false
+
+      - name: Check out the Dependabot branch (data only, never executed)
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          path: pr
+          fetch-depth: 0
+          # The push below uses whatever token checkout persists. With the
+          # default GITHUB_TOKEN, GitHub parks every CI run on the pushed
+          # changeset commit as "action_required" (found live: #156-#159's
+          # runs sat unapproved until they expired after 30 days, and #172's
+          # needed a manual re-run each), so the PR shows only the
+          # Cloudflare check. Pushed with CHANGESET_PUSH_TOKEN (a
+          # fine-grained PAT, see RELEASING.md), it triggers CI like any
+          # maintainer push. Falls back to GITHUB_TOKEN while the secret
+          # doesn't exist, i.e. exactly today's behavior.
+          token: ${{ secrets.CHANGESET_PUSH_TOKEN || github.token }}
+
+      - name: Check whether a changeset is already present
+        id: check
+        working-directory: pr
+        run: |
+          if bash "$GITHUB_WORKSPACE/trusted/scripts/check-changeset.sh" "$BASE_REF"; then
+            echo "needed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "needed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Add changeset(s) for the affected published package(s)
+        if: steps.check.outputs.needed == 'true'
+        working-directory: pr
+        run: node "$GITHUB_WORKSPACE/trusted/scripts/add-dependabot-changeset.mjs" "$BASE_REF" "$PR_NUMBER"
+
+      - name: Commit and push
+        if: steps.check.outputs.needed == 'true'
+        working-directory: pr
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .changeset/*.md
+          git commit -m "chore: add changeset for Dependabot update (#${PR_NUMBER})"
+          git push origin "HEAD:${HEAD_REF}"

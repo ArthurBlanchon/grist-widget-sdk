@@ -1,0 +1,136 @@
+---
+title: "Replica document"
+description: "Design rationale for the portable JSON shape a Grist document is reduced to for tests and tooling."
+---
+
+The replica document is a JSON snapshot of a Grist document — its tables, columns, optional sample rows, optional full data. It's used by:
+
+- `useGristSchema()` — passing context to LLMs or generating types.
+- The emulator — `createGristEmulator({ document })` accepts only a replica.
+- Test fixtures — `.replica.json` or `.grist.json` files.
+
+This is the **only canonical shape** for "snapshot of a Grist document" in the SDK. We don't ship multiple formats.
+
+## Shape
+
+```ts
+type GristReplicaDocument = {
+  generatedAt: string                       // ISO 8601
+  source?: string                           // provenance hint, safe to log
+  mode?: "schema-only" | "schema+samples" | "schema+data"
+  docName?: string
+  selection?: GristReplicaSelection
+  tables: Record<string, GristReplicaTable>
+}
+
+type GristReplicaTable = {
+  label?: string
+  columns: Record<string, GristReplicaColumn>
+  rows?: GristReplicaRow[]
+  rowCount?: number
+  dataOmitted?: boolean
+  error?: string
+}
+
+type GristReplicaColumn = {
+  type: string                              // "Text", "Bool", "Date", "Ref:Tasks", ...
+  label?: string
+  description?: string
+  isFormula?: boolean
+  widgetOptions?: Record<string, unknown>
+}
+
+type GristReplicaRow = { id: number; [col: string]: unknown }
+
+type GristReplicaSelection = {
+  tableId?: string
+  rowId?: number | null
+  rowIds?: number[]
+  mode?: "empty" | "row" | "new-row"
+}
+```
+
+## Modes
+
+| `mode` | `rows` field | Use case |
+| --- | --- | --- |
+| `"schema-only"` | omitted / empty | Type generation, LLM "what tables exist?" |
+| `"schema+samples"` | up to `sampleRowLimit` rows | LLM context, examples in docs. |
+| `"schema+data"` | every row | Replicating the document for tests. |
+
+`mode` is **a hint, not a contract**. Consumers should look at `rows` directly. Use `normalizeReplicaTableInput` / `normalizeReplicaDocumentInput` to fill in defaults (omitted `rows` becomes `[]`).
+
+## Row shape
+
+Rows are **row-shaped**, not columnar:
+
+```ts
+{ id: 1, Title: "Buy milk", Done: false, CreatedAt: "2026-01-01T00:00:00Z" }
+```
+
+Date/Time columns are serialised as ISO strings. Ref columns are serialised as row ids (not `{ __ref, rowId }` objects). The replica is a **JSON-safe** projection; the live decoder (`decodeGristValue`) produces richer types that aren't JSON-safe.
+
+When you need to round-trip a replica through the live API, decode it manually with `decodeColumnarToReplicaRows` or build it from `docApi.fetchTable` directly.
+
+## Building a replica
+
+### From the React context
+
+```tsx
+const schema = useGristSchema({ replicaRowMode: "schema+samples", sampleRowLimit: 5 })
+const replica = schema.replicaDocument // null until loaded
+```
+
+### As JSON
+
+```ts
+import { getDocumentJson, buildDocumentJson } from "grist-widget-sdk"
+
+const json = getDocumentJson(replica, { space: 2 })
+const json2 = await buildDocumentJson(docApi, { includeRows: "samples" })
+```
+
+## Consuming a replica
+
+### In tests
+
+```ts
+import { createGristEmulator, parseDocument } from "grist-widget-sdk/emulator"
+
+const emulator = createGristEmulator({
+  document: parseDocument(json),
+})
+```
+
+`parseDocument` runs a Zod schema. It throws with a useful path when the input is malformed.
+
+### In LLM prompts
+
+```ts
+const { documentJson } = useGristSchema({
+  replicaRowMode: "schema+samples",
+  sampleRowLimit: 3,
+})
+```
+
+Pass `documentJson` as system content. We do not pre-format it — it's plain JSON.
+
+## Why a typed replica instead of just `fetchTable` payloads?
+
+`docApi.fetchTable` returns a columnar payload tied to wire encoding. It's not stable across Grist versions, and it's not JSON-safe (Dates as epoch seconds, Refs as ids, etc.).
+
+The replica is:
+
+- Stable — its shape is governed by this SDK, not Grist.
+- JSON-safe — fits in a file, fits in a prompt, fits in a fixture.
+- Human-readable — the format is small enough to inspect.
+- Extensible — `source`, `mode`, `selection`, `widgetOptions` evolve under semver.
+
+## Open questions on the replica
+
+Tracked in [/design/open-questions](/docs/sdk/design/open-questions):
+
+- Should we include foreign-key relationships explicitly (`column.references`)?
+- Should we record column widget options (`alignment`, `numericFormat`)?
+- Should `selection` be included by default in `useGristSchema()` output?
+- Should we provide a one-shot CLI to write `.replica.json` from a deployed widget?

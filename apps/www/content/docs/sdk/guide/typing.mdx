@@ -1,0 +1,133 @@
+---
+title: "Typed reads"
+description: "Mapped records typed from GRIST_OPTIONS and checked cell by cell, with read-only access — and the two generics on useGrist()."
+---
+
+A widget declares the columns it needs, with their Grist types, in
+`GRIST_OPTIONS.columns`. That one declaration gives it typed records, checked
+at runtime, with no schema to fetch and no full access.
+
+## Declare once
+
+```tsx
+import { defineGristWidget } from "grist-widget-sdk"
+
+export const widget = defineGristWidget({
+  title: "Tasks",
+  requiredAccess: "read table",
+  columns: [
+    { name: "Title", type: "Text" },
+    { name: "Due", type: "Date", optional: true },
+    { name: "Owner", type: "Ref:People" },
+  ],
+})
+
+function Tasks() {
+  const w = widget.useGrist()
+  // w.mappedRecords: { id: number; Title: string | null; Owner: number | null; Due?: Date | null }[] | null
+  return (
+    <ul>
+      {(w.mappedRecords ?? []).map((t) => (
+        <li key={t.id}>{t.Title}{t.Due ? ` — ${t.Due.toLocaleDateString()}` : ""}</li>
+      ))}
+    </ul>
+  )
+}
+```
+
+`defineGristWidget()` keeps the column names and types literal, so
+`widget.useGrist()` is typed from the declaration: no generics, no
+annotation. `GristWidgetRow<typeof widget>` names the record type for a
+component's props. `src/app/App.tsx` exports `widget`, and `mountGristWidget()`
+reads it (with the title, for the page).
+
+A widget that declares `GRIST_OPTIONS` instead gets the same type with
+`GristMappedRow<typeof GRIST_OPTIONS>`, provided the options are declared
+`as const satisfies UseGristOptions` (a plain `: UseGristOptions` annotation
+widens the names and types), and passes it to `useGrist<GristRowRecord, Row>()`.
+
+## What a cell becomes
+
+Grist's mapping panel only offers the columns of the declared type, and the
+plugin API's values already say what they are, so each mapped cell is turned
+into the value its type promises:
+
+| Declared type | Value | Empty cell |
+| --- | --- | --- |
+| `Text` | `string` | `""` |
+| `Numeric`, `Int` | `number` | `null` |
+| `Bool` | `boolean` | `false` |
+| `Date`, `DateTime` | `Date` | `null` |
+| `Choice` | `string` | `null` |
+| `ChoiceList` | `string[]` | `[]` |
+| `Ref` | the row id, `number` | `null` |
+| `RefList`, `Attachments` | row ids, `number[]` | `[]` |
+| `Any`, or no type | as Grist sends it | — |
+
+A column that accepts several types (`"Text,Ref"`) takes the first that
+matches. An `allowMultiple` column is a list, one value per mapped column.
+
+## Cells that don't match
+
+A cell that doesn't match its declared type is `null` in `mappedRecord` /
+`mappedRecords`, and listed in `w.cellIssues`. That is why `GristMappedRow`
+types every declared column as its value or `null`, `Text` and `Bool`
+included:
+
+```ts
+type GristCellIssue = { rowId: number; column: string; message: string; value: unknown }
+// { rowId: 4, column: "Amount", message: "not a number", value: "n/a" }
+```
+
+This happens when a Numeric cell holds text Grist couldn't parse (Grist
+keeps the text), a formula fails (`formula error (ZeroDivisionError)`), or a
+column's type changed after it was mapped. `mountGristWidget()` shows an
+alert above the widget naming the first one (`cell-issues`).
+
+## More rules: a Standard Schema
+
+For rules beyond the type (a range, an email format), pass any
+[Standard Schema](https://standardschema.dev) validator as `schema` in
+`GRIST_OPTIONS`: zod 4, valibot and arktype all implement it. It runs on each
+mapped record after the type checks; its issues join `cellIssues`, and its
+output (coercions, defaults) becomes the record. The SDK depends on none of
+these libraries: a widget ships one only if it uses it.
+
+```ts no-check
+import { z } from "zod"
+
+export const GRIST_OPTIONS = {
+  requiredAccess: "read table",
+  columns: [{ name: "Email", type: "Text" }, { name: "Age", type: "Int" }],
+  schema: z.object({ Email: z.string().email(), Age: z.number().min(0).nullable() }).passthrough(),
+} satisfies UseGristOptions
+```
+
+Only synchronous validators: an asynchronous one is reported as an issue.
+
+## Any table
+
+`checkGristCell(type, value)` checks one value against a Grist type, for data
+read some other way (`fetchTableRows`, with the types from `listColumns`):
+
+```ts
+import { checkGristCell } from "grist-widget-sdk"
+
+const check = checkGristCell("Numeric", row.Amount)
+if (!check.ok) console.warn(check.message)
+```
+
+## The two generics
+
+```ts
+useGrist<TRow, TMapped>()
+```
+
+| Generic | Types | Shape |
+| --- | --- | --- |
+| `TRow` | `record`, `records` | The raw row: real Grist column ids as keys, values as Grist sends them. |
+| `TMapped` | `mappedRecord`, `mappedRecords`, `mapBack()` | The declared names, checked values: `GristMappedRow<typeof GRIST_OPTIONS>`. |
+
+`id` is always there and always a `number` (`GristRowRecord<T> = T & { id: number }`).
+`TRow` is an assertion: Grist doesn't type raw columns for you. Prefer the
+mapped records, which are checked.

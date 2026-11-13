@@ -1,0 +1,21 @@
+{
+  "name": "examples",
+  "private": true,
+  "description": "The SDK's example widgets: each examples/<id>/ is a widget's src/app/. This package is only their host for the monorepo's scripts (widgets.json, the site's example builds); see examples/vite.config.ts.",
+  "type": "module",
+  "dependencies": {
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "grist-widget-sdk": "workspace:^",
+    "lucide-react": "^1.66.0",
+    "radix-ui": "^1.8.1",
+    "react": "^19.3.1",
+    "react-datasheet-grid": "^4.11.6",
+    "react-dom": "^19.3.1",
+    "tailwind-merge": "^3.7.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^6.2.1",
+    "vite": "^8.3.5"
+  }
+}

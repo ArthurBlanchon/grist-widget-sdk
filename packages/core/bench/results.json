@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "environment": "jsdom+vitest",
+  "fixture": "presets.todoList()",
+  "scenarios": {
+    "fullRecordSubscription": {
+      "renders": 1,
+      "notes": "useGrist() subscriber re-renders when selection changes (todoList, selectRow 1→2)"
+    },
+    "write": {
+      "renders": 3,
+      "notes": "useGrist() subscriber re-renders across table.create"
+    },
+    "schemaFetch": {
+      "renders": 1,
+      "notes": "useGristSchema() subscriber re-renders on reload()"
+    }
+  }
+}

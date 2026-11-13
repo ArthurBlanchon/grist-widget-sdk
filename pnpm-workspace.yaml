@@ -1,0 +1,47 @@
+packages:
+  - 'packages/*'
+  - 'apps/*'
+  - 'templates/*'
+  - 'examples'
+
+engineStrict: true
+minimumReleaseAge: 10080
+
+overrides:
+  '@types/react': ^19.2.14
+  '@types/react-dom': ^19.2.3
+  # packages/core's peer range (`>=18`) is wide by design (published-package
+  # compatibility, see Batch P notes), but that means nothing pins which
+  # exact patch pnpm resolves it against -- and a workspace member with a
+  # React instance boundary against packages/core's build (the template's
+  # own react-dom render calls hooks that run inside grist-widget-sdk) needs
+  # to land on the *same* copy, or React throws "Invalid hook call". Found
+  # live: reinstalling after adding unrelated devDependencies to
+  # packages/core flipped its resolution from 19.2.6 to 19.2.8 while the
+  # template stayed on 19.2.6, breaking every test that renders a widget.
+  # Pinned to match apps/www's own explicit `^19.2.8` want -- the newest
+  # version already in the graph, and it satisfies every workspace member's
+  # declared range.
+  react: ^19.2.8
+  react-dom: ^19.2.8
+  # fumadocs-core/fumadocs-mdx declare zod as a peer satisfied by either
+  # major; without a pin, pnpm's resolution can land on either 3.x or 4.x
+  # depending on what else changes in the graph -- and apps/www/lib/source.ts
+  # calls zod v4's `ctx.addIssue()` API. Found live: adding unrelated
+  # devDependencies elsewhere in the workspace flipped this resolution from
+  # 4.4.3 to 3.25.76 and broke `pnpm --filter www build` with a type error,
+  # with no change to any file under apps/www. Pinned to match
+  # packages/core's own declared range so the two can never disagree again.
+  zod: ^4.3.6
+
+allowBuilds:
+  esbuild: true
+  msw: true
+  # sharp: Next.js's optional native image-optimization dep (pulled in via
+  # apps/www's fumadocs-ui/fumadocs-core -> next). Not exercised at runtime
+  # since apps/www uses `output: "export"` (images.unoptimized), but its
+  # postinstall still needs to run for `next build` to proceed.
+  sharp: true
+  # unrs-resolver: native TS resolver helper pulled in by
+  # eslint-import-resolver-typescript (via eslint-config-next in apps/www).
+  unrs-resolver: true

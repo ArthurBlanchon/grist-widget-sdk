@@ -1,0 +1,244 @@
+name: ci
+
+# Every check a pull request into main needs, in one workflow, behind one
+# required status: `gate`.
+#
+# Before this file each check was its own path-filtered workflow, and a
+# required check that a path filter skips never reports, so every docs-only or
+# CLI-only pull request needed the maintainer's bypass. A bypass used routinely
+# stops being a safeguard. Now `changes` decides which jobs a diff needs
+# (scripts/ci/changes.mjs, one rule per job, tested), the jobs it doesn't need
+# are skipped, and `gate` always runs: it fails when a job it depends on failed
+# or was cancelled, and passes when they passed or were skipped.
+#
+# Required check in the main ruleset: `gate` only.
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      core: ${{ steps.diff.outputs.core }}
+      cli: ${{ steps.diff.outputs.cli }}
+      lint: ${{ steps.diff.outputs.lint }}
+      external_install: ${{ steps.diff.outputs.external_install }}
+      create_widget: ${{ steps.diff.outputs.create_widget }}
+      template_deploy: ${{ steps.diff.outputs.template_deploy }}
+      real_widgets: ${{ steps.diff.outputs.real_widgets }}
+      size: ${{ steps.diff.outputs.size }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - id: diff
+        name: Which jobs this change needs
+        env:
+          BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+          HEAD: ${{ github.sha }}
+        run: |
+          # An unknown base (a new branch, a force push) runs every job.
+          if git cat-file -e "$BASE^{commit}" 2>/dev/null; then
+            git diff --name-only "$BASE...$HEAD" | node scripts/ci/changes.mjs | tee -a "$GITHUB_OUTPUT"
+          else
+            node scripts/ci/changes.mjs --all < /dev/null | tee -a "$GITHUB_OUTPUT"
+          fi
+
+  # The SDK: build, types, lint, unit tests, and the render budget
+  # (packages/core/bench: a scenario rendering more than its baseline fails).
+  core:
+    needs: changes
+    if: needs.changes.outputs.core == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter grist-widget-sdk build
+      - run: pnpm --filter grist-widget-sdk exec tsc --noEmit
+      # Compile-time tests of the SDK's types (GristMappedRow).
+      - run: pnpm --filter grist-widget-sdk exec tsc -p tsconfig.type-tests.json
+      - run: pnpm --filter grist-widget-sdk run lint
+      - run: pnpm --filter grist-widget-sdk test
+      - run: pnpm --filter grist-widget-sdk bench
+
+  # The CLI's own source (bin/, scripts/, src/, tests/): lint and unit tests.
+  # The smokes below test its packed, published shape.
+  cli:
+    needs: changes
+    if: needs.changes.outputs.cli == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter create-grist-widget run lint
+      - run: pnpm --filter create-grist-widget test
+
+  # Lints the workspaces the two jobs above don't. None is type-aware against
+  # grist-widget-sdk, so no SDK build is needed. The template ships in every
+  # scaffold: a lint error there is one in every new widget.
+  lint:
+    needs: changes
+    if: needs.changes.outputs.lint == 'true'
+    name: lint (${{ matrix.workspace }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        workspace: [www, grist-widget-template-vite]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter ${{ matrix.workspace }} run lint
+
+  # Every pull request: the CI scripts' own tests, the examples import cleanly
+  # (widgets.json), and every command and path the AGENTS.md files name exists.
+  # No path rule: an unrelated rename is the drift this catches.
+  repo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: node --test scripts/ci/*.test.mjs scripts/example-demos.test.mjs
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build:widgets-manifest
+      - run: node scripts/example-demos.mjs check
+      # The check loads the template's declaration through Vite, which
+      # resolves grist-widget-sdk to its built dist/.
+      - run: pnpm --filter grist-widget-sdk build
+      - run: node scripts/template-demo.mjs check
+      - run: pnpm check:agents-md
+
+  # Published-package source (SDK, CLI, template) changed without a
+  # .changeset/*.md file: nothing would be released. scripts/check-changeset.sh
+  # is also the local pre-push hook (.githooks/pre-push).
+  changeset:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      # check-changeset.sh fetches the base branch: it needs the checkout's
+      # read-only credentials (a private repo), so they stay.
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+        run: bash scripts/check-changeset.sh "$BASE_REF"
+
+  # The SDK and the template for a real external consumer: pack the SDK,
+  # install the template against the tarball outside the workspace, build.
+  external-install:
+    needs: changes
+    if: needs.changes.outputs.external_install == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: bash scripts/smoke/external-install.sh
+
+  # `npm create grist-widget` for a real consumer: scaffold with the packed
+  # CLI outside the workspace and build against the packed SDK.
+  create-widget:
+    needs: changes
+    if: needs.changes.outputs.create_widget == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: bash scripts/smoke/create-widget.sh
+
+  # The deploy every scaffold runs (grist-widget-deploy + the template's
+  # deploy.yml), on local git only: release, re-release skip, dev channel,
+  # concurrent push recovery, dev removal.
+  template-deploy:
+    needs: changes
+    if: needs.changes.outputs.template_deploy == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: bash scripts/smoke/template-deploy.sh
+
+  # The SDK's weight in every widget: the template's built JavaScript, gzipped,
+  # against a budget (scripts/ci/size-budget.mjs).
+  size:
+    needs: changes
+    if: needs.changes.outputs.size == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter grist-widget-sdk build
+      - run: pnpm --filter grist-widget-template-vite build
+      - run: node scripts/ci/size-budget.mjs templates/grist-widget-template-vite/dist
+
+  # The reference widgets against this change's packed SDK and CLI.
+  real-widgets:
+    needs: changes
+    if: needs.changes.outputs.real_widgets == 'true'
+    uses: ./.github/workflows/real-widgets.yml
+
+  gate:
+    if: always()
+    needs: [changes, core, cli, lint, repo, changeset, external-install, create-widget, template-deploy, real-widgets, size]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Every needed job passed
+        env:
+          RESULTS: ${{ toJSON(needs.*.result) }}
+        run: |
+          echo "$RESULTS"
+          if echo "$RESULTS" | grep -Eq '"(failure|cancelled)"'; then
+            echo "A job this change needs failed or was cancelled."
+            exit 1
+          fi

@@ -1,0 +1,7 @@
+{
+  "title": "Emulator",
+  "description": "Preview widgets without a live Grist document.",
+  "icon": "FlaskConical",
+  "root": true,
+  "pages": ["index", "testing", "api"]
+}

@@ -1,0 +1,59 @@
+---
+title: Widget registry
+description: "How the widget list is sourced from each widget's own manifest, and how to add a widget you built with the SDK."
+---
+
+The widgets shown on [`/widgets`](/widgets) come from
+[awesome-grist-widgets](https://github.com/ArthurBlanchon/awesome-grist-widgets),
+a public list of Grist custom widgets **built with `grist-widget-sdk`**.
+
+## Where the details come from
+
+Each widget's deploy publishes `grist-widget.json` next to the widget, on
+every channel ([`create-grist-widget manifest`](/docs/cli#manifest--the-widgets-grist-manifest)):
+its name and description from `WIDGET_METADATA`, the access level and the
+columns it expects from `GRIST_OPTIONS`, its version and license, and the
+SDK version it was built with. The registry reads it from the widget's
+install URL, and so does the [`/widgets`](/widgets) page, live: what you see
+there is what the widget's latest release declares, not text typed into a
+list.
+
+The registry also publishes the list in Grist's own format,
+`grist-widgets.json`. A self-hosted Grist shows those widgets in its custom
+widget gallery with:
+
+```bash
+GRIST_WIDGET_LIST_URL=https://raw.githubusercontent.com/ArthurBlanchon/awesome-grist-widgets/main/grist-widgets.json
+```
+
+Widgets marked **Reference** are checked by this SDK's CI against every
+change before it is released: typecheck, tests and build on each pull
+request, and weekly inside a real Grist ([Real widgets](/docs/contributing/real-widgets)).
+
+## Submitting a widget
+
+1. Add an entry with two URLs to that repo's `registry.json`: `repoUrl`, the
+   widget's GitHub repository, and `widgetUrl`, the install URL its README
+   documents (a widget scaffolded with `npm create grist-widget` writes it
+   there at its first release, `https://<owner>.github.io/<repo>/latest/`).
+2. Run `npm run build`: it fetches the widget's manifest and rewrites the
+   README and the JSON files. Commit them.
+3. Open a pull request. CI fetches every manifest again: it must be a
+   release build that names the entry's own repository.
+
+A coding agent can do this end to end: see that repo's
+[`AGENTS.md`](https://github.com/ArthurBlanchon/awesome-grist-widgets/blob/main/AGENTS.md).
+The one rule it must never break: **never invent a `widgetUrl`**.
+
+## Requirements
+
+- Built with `grist-widget-sdk`, deployed with `create-grist-widget` 0.3.32
+  or later, so it publishes `grist-widget.json`.
+- A public, open-source GitHub repository, with a license, documentation,
+  installation instructions, and active maintenance.
+
+## Building a widget to submit
+
+Start with the [quickstart](/docs/quickstart) or the [CLI reference](/docs/cli).
+A widget scaffolded today publishes its manifest from its first deploy; an
+older one gets it with [`create-grist-widget upgrade`](/docs/cli/upgrading).

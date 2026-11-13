@@ -1,0 +1,108 @@
+---
+title: "Cookbook"
+description: "Ready-to-paste source for the ten most common widget shapes, each running in a real Grist."
+---
+
+Ten end-to-end recipes for the most common widget shapes. Each recipe
+below is copied from the canonical source at
+`examples/<id>/WidgetApp.tsx`. Open the **Live demo**
+link to run the widget in a real Grist in your browser, or paste the
+widget's URL (`/examples/<id>/latest/`) into a Grist document.
+
+## Edit the selected row
+
+> **Live demo:** [Row editor](/examples/form-edit/demo/)
+
+Declares mappings on the provider, reads the current selection via
+`mappedRecord`, writes back via `table.update` + `mapBack`.
+
+<include cwd>../../examples/form-edit/WidgetApp.tsx</include>
+
+## Group rows on a Kanban board
+
+> **Live demo:** [Task board](/examples/task-board/demo/)
+
+Render every row from the selected table in columns grouped by a
+Status field. Iterate `w.records`, resolve the physical column id via
+`resolveMappedColumnId`, project into typed cards.
+
+<include cwd>../../examples/task-board/WidgetApp.tsx</include>
+
+## Bulk update many rows
+
+> **Live demo:** [Bulk mark done](/examples/bulk-mark-done/demo/)
+
+`table.update` accepts an array. The SDK forwards it to Grist as a
+single `BulkUpdateRecord` action — one round-trip, all-or-nothing.
+
+<include cwd>../../examples/bulk-mark-done/WidgetApp.tsx</include>
+
+## Read the schema and feed it to an LLM
+
+> **Live demo:** [Schema preview](/examples/schema-preview/demo/)
+
+`useGristSchema()` returns a `GristReplicaDocument` — a single JSON
+object describing every table, column, and (optionally) sample rows.
+Drop it into an LLM prompt as context.
+
+<include cwd>../../examples/schema-preview/WidgetApp.tsx</include>
+
+## Run a schema migration
+
+> **Live demo:** [Schema migration](/examples/schema-migration/demo/)
+
+Schema mutations go through `applyActions` with the exported builders.
+Each builder returns a `GristUserActionTuple`; the array runs as one
+transaction.
+
+<include cwd>../../examples/schema-migration/WidgetApp.tsx</include>
+
+## Display attachments
+
+> **Live demo:** [Attachment gallery](/examples/attachment-gallery/demo/)
+
+`extractGristAttachmentIdsFromCell` reads a Grist attachment column
+value (which is an array of file refs).
+`useGrist().fetchAttachmentBlob` returns a `Blob` you can hand to
+`URL.createObjectURL` for previews.
+
+<include cwd>../../examples/attachment-gallery/WidgetApp.tsx</include>
+
+## Drive the cursor in linked sections
+
+> **Live demo:** [Task board](/examples/task-board/demo/)
+
+A widget that displays a list of rows can move the cursor in linked
+sections of the same Grist page by calling `setCursorPosition`. Set
+`allowSelectBy: true` on the provider so Grist treats this widget as a
+linking source (see `GRIST_OPTIONS` in the task-board source).
+
+<include cwd>../../examples/task-board/WidgetApp.tsx</include>
+
+## Persist a widget option
+
+> **Live demo:** [Widget options](/examples/widget-options/demo/)
+
+`widgetOptions` survive reloads and travel with the document. Store a
+view mode, a filter, a layout flag — anything that should not be
+re-asked on every open.
+
+<include cwd>../../examples/widget-options/WidgetApp.tsx</include>
+
+## Typed records, checked, with read-only access
+
+> **Live demo:** [Typed reads](/examples/typed-reads/demo/)
+
+The declared columns type the mapped records (`GristMappedRow`), and each
+cell is checked against its declared type: one that doesn't match is `null`
+and listed in `cellIssues`, never thrown.
+
+<include cwd>../../examples/typed-reads/WidgetApp.tsx</include>
+
+## Test a widget with the emulator
+
+`renderWithGrist` from `grist-widget-sdk/emulator/testing` boots the
+real SDK inline against an in-memory fake host. The hook code paths
+run unchanged — see [Testing](/docs/emulator/testing) and the SDK unit tests under
+`packages/core/tests/sdk/` for full examples (this recipe is a test
+harness pattern, not a Custom Widget iframe bundle).

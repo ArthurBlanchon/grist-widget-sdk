@@ -1,0 +1,318 @@
+---
+title: Deploy notes
+description: "Repo-maintenance notes: how this site reaches two independent hosting origins from one build script."
+---
+
+> Audience: contributors and LLM agents working in this repository.
+> This is repo maintenance, not widget deployment — for deploying a widget
+> you built, see the [CLI reference](/docs/cli).
+
+Use this document when deployment behavior or CI build commands are
+involved.
+
+## Two origins, on purpose
+
+The site is published at **two independent origins**, each carrying a complete
+copy — docs, the example widgets and their demos:
+
+| Origin | Host | `SITE_BASE` |
+| --- | --- | --- |
+| `https://arthurblanchon.github.io/grist-widget-sdk/` | GitHub Pages | `/grist-widget-sdk/` |
+| `https://gristwidgets.com/` | Cloudflare Pages | *(unset — domain root)* |
+
+Neither redirects to the other. The reason is access, not vanity: some
+enterprise networks allowlist `github.io` while blocking unfamiliar domains,
+and others block `github.io` as user-generated content while permitting
+everything else. Two origins on **two different providers** means a reader
+blocked from one can still reach the other — which also rules out hosting both
+on GitHub, since an org-wide GitHub block would take out both at once.
+
+`gristwidgets.com` is the **canonical** origin: both builds emit
+`<link rel="canonical">` pointing at it, so search engines index one copy
+while humans can browse either.
+
+### Why this can't be one deployment
+
+Two things force it.
+
+**GitHub redirects.** Setting a custom domain on a GitHub Pages site makes
+GitHub 301 that site's `github.io` URL to the custom domain. Not configurable.
+So `gristwidgets.com` must *not* be a GitHub Pages custom domain, and no
+`CNAME` is written into the artifact.
+
+**Base paths are baked in.** `github.io/grist-widget-sdk/` needs a
+`/grist-widget-sdk` prefix on every asset and link; `gristwidgets.com/` needs
+none. Next embeds that prefix in emitted hrefs **and in JS chunks**, so one
+artifact cannot be correct at both. DNS can't bridge this either — DNS maps
+names to IPs and has no concept of paths, and a proxy that rewrote them would
+have to rewrite minified JS at request time.
+
+Hence: same source, same script, two build runs.
+
+## Other deploy targets
+
+- template app from `templates/grist-widget-template-vite` (Cloudflare Pages)
+
+`apps/docs` (VitePress) and `apps/web` (the earlier Vite + shadcn landing
+site) have both been **removed** from the repo. `apps/www` — Next.js +
+fumadocs, static-exported — replaced both: it serves the landing page at the
+site root and the full documentation under `/docs/*`.
+
+## The shared build script
+
+Both origins run **`scripts/build-site.mjs`**. It builds `apps/www` and every
+example widget, and assembles them into `./site`:
+
+| Path | What |
+| --- | --- |
+| `/` | `apps/www` (landing page, `/docs/*`) |
+| `/examples/<id>/latest/` | the example widget, built from a composed widget project |
+| `/examples/<id>/demo/` | the example in a real Grist, from static files: grist-static, plus the committed `examples/_demos/<id>.grist` pointed at `../latest/` |
+| `/grist-static/<version>/` | grist-static, the version demo pages load — the site's own and every widget's (`GRIST_STATIC_BASE` in `packages/create-grist-widget/src/demo-page.mjs`) |
+| `/template-preview/` | the template's own build |
+
+It also writes `.nojekyll`, and `_headers` (Cloudflare) so widgets' demo
+pages on other origins can fetch grist-static's files. Keeping one script means the two origins can
+only differ in *where* they're served, never in *what* they contain.
+
+```bash
+node scripts/build-site.mjs                        # domain root  -> gristwidgets.com
+SITE_BASE=/grist-widget-sdk/ node scripts/build-site.mjs   # subpath -> github.io
+```
+
+`SITE_BASE` is the only base knob, deliberately. It used to be two independent
+vars that had to agree with each other, and disagreeing is exactly how the
+first `gristwidgets.com` deploy broke. The script derives every base from one
+value, so a mismatch is unrepresentable.
+
+| Consumed as | Value at root | Value on the project site |
+| --- | --- | --- |
+| `WWW_BASE` (`apps/www/next.config.mjs`) | `""` | `/grist-widget-sdk/` |
+| examples' Vite `base` | `/examples/<id>/latest/` | `/grist-widget-sdk/examples/<id>/latest/` |
+| demo pages' grist-static | `/grist-static/<version>/` | `/grist-widget-sdk/grist-static/<version>/` |
+
+### grist-static
+
+The site serves one pinned grist-static version. The build fetches its npm
+tarball, checks it against the integrity pinned in
+`scripts/site/grist-static.mjs`, and copies `dist/` without source maps
+(about 90 MB, 1,500 files, none over 10 MB). It is not a workspace
+dependency: at 188 MB it would weigh on every install, and only this build
+needs it. A new version is a change to `GRIST_STATIC_VERSION` and a new line
+in `GRIST_STATIC_INTEGRITY`; widgets' demo pages pick it up with their next
+`create-grist-widget demo --save`.
+
+### The examples' demo documents
+
+Each example's demo document is committed under `examples/_demos/` (the
+Cloudflare build has no Docker to generate them).
+`node scripts/example-demos.mjs build` regenerates them in a real Grist
+(Docker); CI's `node scripts/example-demos.mjs check` fails when an example's
+columns, access or title changed since its document was generated.
+
+### GitHub Pages origin
+
+`.github/workflows/deploy-apps.yml` runs the script with
+`SITE_BASE=/<repo>/` on every push to `main` touching `apps/www/**`,
+`packages/core/**`, `examples/**` or `scripts/**` (or `workflow_dispatch`), then publishes
+with `actions/upload-pages-artifact` + `actions/deploy-pages` — the modern
+Actions-native Pages flow, not a `gh-pages` branch. **Requires this repo's
+Settings → Pages → Source to be "GitHub Actions"**, and its custom domain
+field to stay **empty** (see "Why this can't be one deployment" above).
+
+### Cloudflare Pages origin
+
+A Pages project on the same repo, serving `gristwidgets.com`:
+
+- Build command: `pnpm install --frozen-lockfile && node scripts/build-site.mjs`
+- Build output directory: `site`
+- No `SITE_BASE` — the domain root needs no prefix.
+
+### The base-path trap
+
+This is the sharp edge, and it has been shipped wrong in both directions:
+
+- **Too little prefix.** A GitHub Pages *project* site is served at
+  `https://<user>.github.io/<repo>/`, where `/<repo>/` is a real path prefix.
+  Framework defaults that assume the domain root make every asset absolute
+  against the domain root and 404 everything. Found live the first time
+  `apps/web` deployed end-to-end — `index.html` loaded, every asset 404'd,
+  white screen.
+- **Too much prefix.** The inverse, hit on the first `gristwidgets.com`
+  deploy: `WWW_BASE=/<repo>/` was still set, so assets resolved to
+  `gristwidgets.com/grist-widget-sdk/_next/…` (nonexistent — 404s, broken
+  display) and internal links pointed off-domain.
+
+Local testing catches neither: `next start` or serving `out/` directly runs at
+the actual domain root of `localhost`, where no base path is correct. Verify
+against the built output instead:
+
+```bash
+node scripts/build-site.mjs
+grep -o 'href="[^"]*_next[^"]*"' site/index.html | head -2
+# expect /_next/…              — any /<repo>/ prefix here is the bug
+
+SITE_BASE=/grist-widget-sdk/ node scripts/build-site.mjs
+grep -o 'href="[^"]*_next[^"]*"' site/index.html | head -2
+# expect /grist-widget-sdk/_next/…  — a bare /_next/ here is the bug
+```
+
+### Keeping the origins in sync
+
+They deploy on independent triggers, so they can drift for a few minutes after
+a push — and "the site is stale" will sometimes mean "one of the two is
+stale." Point the Cloudflare project at the same branch (`main`) to keep the
+window small. Neither origin depends on the other at runtime, so a failed
+deploy on one leaves the other serving the previous good build.
+
+No release/dev channel for either app — every push to `main` touching their
+paths overwrites the whole deployment. `concurrency: { group: "pages",
+cancel-in-progress: false }` is GitHub's documented pattern for
+Actions-based Pages deploys: one deployment in flight, none cancelled
+mid-flight.
+
+### Transient Pages backend flakiness — timeout + auto-retry
+
+Found live, repeatedly, unrelated to anything in this workflow: the
+`actions/deploy-pages` step sometimes sits in `deployment_in_progress` for
+its full internal timeout and then self-aborts (conclusion: `cancelled`), or
+occasionally fails outright — backend GitHub Pages flakiness on this repo,
+not a race (confirmed via the Actions API: exactly one deployment in flight,
+build already succeeded). Two things address this without a human having to
+notice and re-trigger:
+
+- The `deploy` step sets `timeout: 900000` (15 min, up from the
+  `deploy-pages` default of 10), giving a genuinely-slow-but-would-have-
+  succeeded deployment more room.
+- `.github/workflows/retry-deploy-pages.yml`, a separate `workflow_run`-
+  triggered workflow, re-runs just the failed/cancelled jobs of
+  `deploy-apps.yml` (via the "re-run failed jobs" API — reuses the
+  already-uploaded artifact, no rebuild) exactly once, gated on
+  `run_attempt`. Still failing after that retry? It stops and leaves it
+  alone — two failures in a row stops looking transient.
+
+### Why one workflow, not three
+
+This used to be three independent workflows (`deploy-docs.yml`, a
+playground one, `deploy-web.yml`), each pushing its own commit to a
+shared `gh-pages` branch. That worked for the git side, but every successful
+push to that branch *independently* triggered GitHub's hidden native
+`pages-build-deployment` workflow (injected automatically whenever Pages
+Source is "Deploy from a branch"). A merge touching multiple apps' trigger
+paths at once — routine, e.g. a lockfile change — fired all three, each
+pushing a commit, each spawning its own native deployment. GitHub Pages
+processes one deployment at a time, so later ones queued behind earlier ones
+and occasionally hit `actions/deploy-pages`'s ~10-minute timeout waiting.
+
+One workflow, one artifact, one `deploy-pages` call removes the race by
+construction: structurally only ever one deployment per merge.
+
+This deliberately does **not** cover `templates/grist-widget-template-vite`
+— see below.
+
+## Template showcase (removed)
+
+`templates/grist-widget-template-vite` used to have a *second*, independent
+GitHub Pages presence inside this monorepo: its own copy deployed to
+`/template/` on this repo's `gh-pages` branch
+(`deploy-template-showcase.yml` + `scripts/deploy/template-showcase.mjs`),
+alongside a `dev/template-showcase` branch for a `/template/dev/` channel.
+Both the workflow and the script have been deleted, along with their smoke
+test.
+
+**This does not affect the template's own bundled deploy pipeline** —
+`templates/grist-widget-template-vite/.github/workflows/deploy.yml`, which
+every scaffolded widget repo gets from `create-grist-widget`, and the
+`grist-widget-deploy` command it runs, which ships in `create-grist-widget`
+(a devDependency of every scaffold) — and deploys *that* repo's own separate
+GitHub Pages site. That pipeline is untouched and this repo's Pages settings
+have no bearing on it.
+
+The template's only remaining live preview is the external
+`github.com/ArthurBlanchon/grist-widget-template` repo, maintained by
+`template-canary.yml` (`dev` branch for pre-release preview, `main` promoted
+automatically from stable `@latest` — see [Releasing](/docs/contributing/releasing)).
+
+## Cloudflare Pages
+
+One Pages project per target. The safest default is:
+
+- set **Root directory** to repository root
+- use `pnpm --filter …` commands with real workspace names
+- set **Build output directory** to a path relative to repository root
+
+### templates project
+
+Template code imports `grist-widget-sdk`, so core must be built first.
+
+- Build command:
+
+```bash
+pnpm install --frozen-lockfile && pnpm --filter grist-widget-sdk build && pnpm --filter grist-widget-template-vite build
+```
+
+- Build output directory:
+
+```text
+templates/grist-widget-template-vite/dist
+```
+
+There is no longer a `docs` Cloudflare project — it built `apps/docs`, which
+has been removed. `apps/www` is GitHub-Pages-only.
+
+## Common Cloudflare errors and fixes
+
+<Accordions>
+  <Accordion title="No projects matched the filters">
+    The `--filter` value does not match `package.json:name`.
+  </Accordion>
+  <Accordion title='Output directory ".../.../dist" not found'>
+    Root directory + output path are duplicated. If Root is already
+    `templates/grist-widget-template-vite`, output should be `dist`, not
+    `templates/grist-widget-template-vite/dist`.
+  </Accordion>
+  <Accordion title="Cannot find module 'grist-widget-sdk'">
+    Build `grist-widget-sdk` first in the same command chain.
+  </Accordion>
+  <Accordion title="No Wrangler configuration file found / No functions dir at /functions found">
+    Expected for static Pages deployments.
+  </Accordion>
+</Accordions>
+
+## Build commands (workspace-safe)
+
+From repository root:
+
+```bash
+node scripts/build-site.mjs   # the deployable tree, exactly as CI builds it
+pnpm build                    # all workspaces (no assembly)
+pnpm build:www                # apps/www only
+```
+
+## Build ordering guarantees
+
+`turbo.json` uses `build.dependsOn: ["^build"]` and
+`test.dependsOn: ["^build"]`, so dependent apps build against a freshly built
+`grist-widget-sdk`.
+
+## Static hosting notes
+
+- `apps/www` outputs Next's static export to `out/`; `scripts/build-site.mjs`
+  copies it to the root of `site/`.
+- That script writes `.nojekyll` at the assembled site's root so GitHub Pages'
+  default Jekyll processing doesn't drop the `_next/` static asset folder —
+  Jekyll ignores underscore-prefixed directories, and everything else about
+  the deploy can be correct while this alone 404s every asset. It's harmless
+  on hosts that don't run Jekyll, so it's written unconditionally rather than
+  branching on `SITE_BASE`.
+- It deliberately writes **no** `CNAME` — that would re-enable GitHub's
+  redirect and collapse the two origins.
+
+## Checklist before touching deploy config
+
+- Confirm workspace/package names still match commands.
+- Confirm output paths used by the hosting provider still match build output.
+- Confirm no deploy instructions reference removed directories.
+- After any base-path or domain change, grep the built output for asset
+  prefixes before merging — that check is what both historical failures
+  needed and neither had.

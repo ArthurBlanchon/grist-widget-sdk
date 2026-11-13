@@ -1,0 +1,117 @@
+/**
+ * Theme bridge: react-datasheet-grid uses :root defaults and several hard-coded
+ * colors. This wrapper scopes shadcn design tokens (--background, --border,
+ * oklch, …) so the grid matches the rest of the UI in light/dark mode.
+ */
+.shadcn-dsg {
+  --dsg-border-color: var(--border);
+  --dsg-selection-border-color: var(--ring);
+  --dsg-selection-border-radius: 0;
+  --dsg-selection-border-width: 2px;
+  --dsg-selection-background-color: color-mix(in oklch, var(--primary) 14%, transparent);
+  --dsg-selection-disabled-border-color: color-mix(
+    in oklch,
+    var(--muted-foreground) 50%,
+    transparent
+  );
+  --dsg-selection-disabled-background-color: color-mix(
+    in oklch,
+    var(--muted) 55%,
+    transparent
+  );
+  --dsg-corner-indicator-width: 10px;
+  --dsg-header-text-color: var(--muted-foreground);
+  --dsg-header-active-text-color: var(--foreground);
+  --dsg-cell-background-color: var(--background);
+  --dsg-cell-disabled-background-color: var(--muted);
+  --dsg-transition-duration: 0.1s;
+  --dsg-expand-rows-indicator-width: 10px;
+  --dsg-scroll-shadow-width: 7px;
+  --dsg-scroll-shadow-color: color-mix(in oklch, var(--foreground) 14%, transparent);
+}
+
+.shadcn-dsg .dsg-container {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: inherit;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+.shadcn-dsg .dsg-row-header .dsg-cell {
+  background: var(--muted) !important;
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.shadcn-dsg .dsg-cell-header.dsg-cell-gutter {
+  box-shadow:
+    1px 0 var(--dsg-border-color),
+    0 1px var(--dsg-border-color);
+}
+
+.shadcn-dsg .dsg-active-cell-focus {
+  box-shadow: 0 0 0 2px color-mix(in oklch, var(--ring) 55%, transparent);
+}
+
+.shadcn-dsg .dsg-add-row {
+  background: var(--muted);
+  color: var(--foreground);
+  border-color: var(--border);
+}
+
+.shadcn-dsg .dsg-add-row-btn,
+.shadcn-dsg .dsg-add-row-input {
+  background: var(--background);
+  color: var(--foreground);
+  border-color: var(--border);
+  border-radius: var(--radius);
+}
+
+.shadcn-dsg .dsg-add-row-btn:hover,
+.shadcn-dsg .dsg-add-row-input:hover {
+  border-color: var(--input);
+  background: color-mix(in oklch, var(--accent) 35%, var(--background));
+}
+
+.shadcn-dsg .dsg-add-row-btn:focus,
+.shadcn-dsg .dsg-add-row-input:focus {
+  border-color: var(--ring);
+  outline: none;
+  box-shadow: 0 0 0 2px color-mix(in oklch, var(--ring) 35%, transparent);
+}
+
+.shadcn-dsg .dsg-add-row-btn::before,
+.shadcn-dsg .dsg-add-row-btn::after {
+  background: var(--muted-foreground);
+}
+
+.shadcn-dsg .dsg-context-menu {
+  background: var(--popover);
+  color: var(--popover-foreground);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow:
+    0 4px 6px -1px color-mix(in oklch, var(--foreground) 8%, transparent),
+    0 2px 4px -2px color-mix(in oklch, var(--foreground) 8%, transparent);
+}
+
+.shadcn-dsg .dsg-context-menu-item:hover {
+  background: var(--accent);
+  color: var(--accent-foreground);
+}
+
+.shadcn-dsg .dsg-expand-rows-rect {
+  background: color-mix(in oklch, var(--primary) 10%, transparent);
+}
+
+.shadcn-dsg .dsg-input {
+  color: var(--foreground);
+}
+
+.shadcn-dsg .dsg-input::placeholder {
+  color: var(--muted-foreground);
+}

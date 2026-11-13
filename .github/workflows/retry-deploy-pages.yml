@@ -1,0 +1,53 @@
+name: Retry deploy-apps on transient Pages failure
+
+# actions/deploy-pages (inside deploy-apps.yml) has been observed, live and
+# repeatedly, sitting in `deployment_in_progress` for its full timeout and
+# then self-aborting (conclusion: cancelled), or occasionally failing
+# outright -- backend GitHub Pages flakiness on this repo, not evidence of
+# anything wrong in deploy-apps.yml itself (one artifact, one deploy call,
+# no race between workflows). Previously this needed a human to notice and
+# manually re-trigger the workflow every time.
+#
+# This automates exactly that, once: re-runs just the failed/cancelled
+# jobs of the SAME run via the "re-run failed jobs" API (reuses the
+# already-built + already-uploaded Pages artifact -- no rebuild) if
+# deploy-apps.yml completes with conclusion cancelled or failure. Gated on
+# run_attempt to retry exactly once -- if it's still cancelled/failed on
+# the retry (attempt 2), this stops and leaves it alone: two failures in a
+# row stops looking like transient flakiness and starts looking like a
+# real problem that needs a human.
+#
+# workflow_run triggers always execute the version of this file that's on
+# the default branch, regardless of what triggered deploy-apps.yml itself
+# -- a GitHub security property, not a bug: a PR can't alter this
+# workflow's own behavior before it's merged.
+
+on:
+  workflow_run:
+    workflows: ["Deploy apps to GitHub Pages"]
+    types: [completed]
+
+permissions:
+  actions: write
+
+jobs:
+  retry:
+    if: >
+      github.event.workflow_run.conclusion == 'cancelled' ||
+      github.event.workflow_run.conclusion == 'failure'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Re-run failed jobs (once only)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+          ATTEMPT: ${{ github.event.workflow_run.run_attempt }}
+          CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+        run: |
+          set -euo pipefail
+          if [ "$ATTEMPT" -ge 2 ]; then
+            echo "Run $RUN_ID already retried once (this was attempt $ATTEMPT, conclusion: $CONCLUSION) -- not retrying again, this needs a human to look."
+            exit 0
+          fi
+          echo "Run $RUN_ID finished with conclusion=$CONCLUSION on attempt $ATTEMPT -- retrying its failed jobs."
+          gh api --method POST "repos/${{ github.repository }}/actions/runs/${RUN_ID}/rerun-failed-jobs"

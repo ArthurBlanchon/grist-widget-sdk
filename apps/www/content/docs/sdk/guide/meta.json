@@ -1,0 +1,18 @@
+{
+  "title": "Guide",
+  "pages": [
+    "raw-plugin-api-vs-sdk",
+    "column-mapping",
+    "reading-data",
+    "writing-data",
+    "widget-options",
+    "attachments-and-rest",
+    "linking-and-theme",
+    "typing",
+    "error-handling",
+    "performance",
+    "cheatsheet",
+    "troubleshooting",
+    "cookbook"
+  ]
+}

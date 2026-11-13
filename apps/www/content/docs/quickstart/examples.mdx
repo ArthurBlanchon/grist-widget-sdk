@@ -1,0 +1,60 @@
+---
+title: Examples
+description: "16 real widgets you can try in a real Grist and start a new project from, via the template or the CLI."
+---
+
+Every example below is a real, working widget — not a snippet. Each one is
+type-checked on every `pnpm typecheck:examples` run, runnable in a real Grist
+right in your browser, and directly startable from either the template or the
+CLI.
+
+## Try one
+
+Click any example's name to open it in Grist, running in your browser from
+static files ([grist-static](https://github.com/gristlabs/grist-static)), with
+a sample document. Edit the data and the widget follows; nothing is saved.
+
+<ExamplesCatalog />
+
+## Start a new project from one
+
+<Tabs items={["From the template repo", "From the CLI"]}>
+<Tab value="From the template repo">
+
+[Copy the template](https://github.com/ArthurBlanchon/grist-widget-template/generate),
+then swap the placeholder for a real example:
+
+```bash
+npx create-grist-widget use form-edit
+```
+
+`use` replaces the widget, `src/app/`, with the example's files — it
+touches nothing else but the `src/components/ui/` primitives and
+dependencies the example needs, and requires a clean git working tree first, so
+the swap is always a single reviewable diff. See
+[Getting started](/docs/quickstart#copy-the-template-repo) for the full
+template flow.
+
+</Tab>
+<Tab value="From the CLI">
+
+Start directly from an example instead of the blank placeholder:
+
+```bash
+npm create grist-widget my-widget --example form-edit
+```
+
+See the [CLI reference](/docs/cli) for `init`, `use`, and `list` — the other
+three verbs, including swapping examples later and scaffolding into an
+already-`git init`'d directory.
+
+</Tab>
+</Tabs>
+
+## Where to go next
+
+- [Cookbook](/docs/sdk/guide/cookbook) — the same recipes, with the
+  surrounding "why" explained.
+- [Cheat sheet](/docs/sdk/guide/cheatsheet) — one-page API reference for
+  daily use.
+- [SDK guide](/docs/sdk) — add the SDK to your own Vite or Next.js project.

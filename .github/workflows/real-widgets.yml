@@ -1,0 +1,133 @@
+name: Real widgets
+
+# Plan R3 / R3b (docs/history/2026-11-01-widget-lifecycle-plan.md): check the
+# reference widgets (list-widgets.mjs: the awesome-grist-widgets entries
+# marked "reference": true, plus scripts/real-widgets/pending.json) against
+# this branch's packed SDK and CLI, so a change that breaks a real widget shows up before
+# it is released. A failure the published versions share is reported, not
+# counted (check-widget.mjs), so a widget broken on its own doesn't block.
+#
+# Called by ci.yml for a change to the SDK, the CLI or these scripts (part of
+# its `gate`): typecheck, test and build each widget. Weekly and on demand:
+# the same, plus each build embedded in a real Grist (pinned Docker image,
+# e2e-grist.mjs), with screenshots kept as an artifact.
+#
+# It runs the widgets' code, so: pull_request and push only (never
+# pull_request_target), a read-only token (`contents: read`, needed to check
+# out this private repo; the widget repos are public and cloned without it),
+# no secrets, no dependency cache, and only the reference widgets, which the
+# maintainer curates in the registry. Each name is validated before use and
+# reaches the shell through an environment variable.
+
+on:
+  workflow_call:
+  schedule:
+    - cron: "23 4 * * 1"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: real-widgets-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pack:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      widgets: ${{ steps.list.outputs.widgets }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - run: pnpm install --frozen-lockfile
+      - name: Unit tests of the scripts
+        run: node --test "scripts/real-widgets/*.test.mjs"
+      - name: Pack the SDK and the CLI
+        run: |
+          mkdir -p "$RUNNER_TEMP/tarballs"
+          node scripts/build-widgets-manifest.mjs
+          pnpm --filter grist-widget-sdk run build
+          pnpm --filter create-grist-widget run build
+          (cd packages/core && mv "$(pnpm pack --pack-destination "$RUNNER_TEMP" | tail -1)" "$RUNNER_TEMP/tarballs/sdk.tgz")
+          (cd packages/create-grist-widget && mv "$(pnpm pack --pack-destination "$RUNNER_TEMP" | tail -1)" "$RUNNER_TEMP/tarballs/cli.tgz")
+      - uses: actions/upload-artifact@v7
+        with:
+          name: tarballs
+          path: ${{ runner.temp }}/tarballs
+          retention-days: 3
+      - id: list
+        name: List the reference widgets
+        run: echo "widgets=$(node scripts/real-widgets/list-widgets.mjs)" >> "$GITHUB_OUTPUT"
+
+  widget:
+    needs: pack
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        repo: ${{ fromJSON(needs.pack.outputs.widgets) }}
+    env:
+      E2E: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - uses: actions/download-artifact@v8
+        with:
+          name: tarballs
+          path: ${{ runner.temp }}/tarballs
+      - name: Install Playwright's Chromium (real Grist runs only)
+        if: env.E2E == 'true'
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm exec playwright install --with-deps chromium
+      - name: Check ${{ matrix.repo }}
+        env:
+          REPO: ${{ matrix.repo }}
+        run: >-
+          node scripts/real-widgets/check-widget.mjs "$REPO"
+          --sdk "$RUNNER_TEMP/tarballs/sdk.tgz" --cli "$RUNNER_TEMP/tarballs/cli.tgz"
+          --work "$RUNNER_TEMP/work" ${{ env.E2E == 'true' && '--e2e' || '' }}
+      - name: Keep the screenshots
+        if: always() && env.E2E == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: screenshots-${{ strategy.job-index }}
+          path: ${{ runner.temp }}/work/screenshots
+          if-no-files-found: ignore
+          retention-days: 14
+
+  # Weekly and on demand: what typed reads give, encoded by the SDK
+  # (encodeGristCell, what mapBack does), written into a real Grist and read
+  # back, every declared type. A bare list is an error cell in Grist and
+  # nowhere else, so only a real Grist shows it.
+  write-round-trip:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter grist-widget-sdk build
+      - name: Write every declared type into a real Grist and read it back
+        run: node scripts/real-widgets/write-round-trip.mjs

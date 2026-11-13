@@ -1,0 +1,158 @@
+---
+title: "Troubleshooting"
+description: "Symptom-first fixes, organized so you can scan headings for the one matching your widget's misbehavior."
+---
+
+Symptoms-first. If your widget is misbehaving, scan the headings — the
+match is usually obvious.
+
+## "Grist is not available"
+
+You see the `<GristBoundary>` fallback even though the rest of your
+React tree renders fine.
+
+**Cause.** The plugin-api script tag is missing or has not finished
+loading by the time React hydrates.
+
+**Fix.**
+
+1. Confirm the script is in your app shell:
+
+   ```html
+   <script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
+   ```
+
+   It must be present in `index.html` (Vite), `app/layout.tsx`
+   (Next.js), or wherever your shell lives. The SDK does not inject
+   it for you.
+2. If the script is there, you are probably running outside a Grist
+   iframe — open the dev URL inside a Grist Custom Widget section.
+   The "not available" fallback is the correct behaviour in standalone
+   mode.
+
+## `w.mapBack(...)` returns an empty object
+
+You declared `columns` on `<GristWidgetProvider>` but `mapBack({ X: "y" })`
+returns `{}`.
+
+**Cause.** The user has not finished mapping `X` to a real column in
+the widget configuration panel.
+
+**Fix.** Gate writes on `w.columnMappingStatus.ok`:
+
+```tsx
+if (!w.columnMappingStatus.ok) {
+  return (
+    <p>Missing: {w.columnMappingStatus.missing.join(", ")}</p>
+  )
+}
+```
+
+If `columnMappingStatus.ok === true` and a write leaves a field
+unchanged, check the `map-back-skip` alert: `mapBack` can't write an
+`allowMultiple` column (it maps to several real columns) and skips it.
+
+## `table.update` silently does nothing
+
+The call resolves without throwing, but your row never changes.
+
+**Causes** (in order of likelihood):
+
+1. **Wrong fields object.** You passed mapped logical names instead
+   of physical column ids. Wrap the fields in `w.mapBack({ ... })`
+   when mappings are declared.
+2. **Wrong table.** `w.table` is the *selected* table. To write to a
+   different table use `w.getTable(tableId).update(...)`.
+3. **Insufficient access.** Bump `requiredAccess` on the provider from
+   `"read table"` to `"full"` — read-only providers ignore writes.
+
+## Type error on `w.actionStatus === "pending"`
+
+The SDK uses `"idle" | "running" | "error"`. There is no `"pending"`
+and no `"success"`.
+
+**Fix.** Replace with `"running"`. The action returns to `"idle"` on
+success.
+
+## `useGristSchema()` returns `null`
+
+You call `useGristSchema()` and `result.replicaDocument` stays `null`.
+
+**Causes.**
+
+- The Grist plugin api has not finished its handshake yet — wait for
+  `w.isReady === true` (the schema hook auto-runs once `isReady`
+  flips to true).
+- The widget does not have `read table` access. Schema discovery
+  needs at least read access to enumerate tables.
+
+## `theme` is `null` indefinitely
+
+`useGrist().theme` returns `null` even after the page is loaded.
+
+**Cause.** Grist only emits theme events for widgets that are
+configured to receive them. Pre-Grist-1.6 widgets never see a theme
+update.
+
+**Fix.** Treat `null` as "use system theme" rather than an error
+state. The cheat sheet pattern is:
+
+```tsx
+<div data-theme={w.theme ?? "light"} />
+```
+
+## Attachment upload: `Failed to fetch` / CORS
+
+Upload worked from a **dev URL** (e.g. `localhost:5173`, ngrok) but fails after you **deploy** the widget to another host (GitHub Pages, a static CDN, etc.).
+
+**Cause.** The widget and Grist are on **different origins**. The browser sends a CORS preflight before `POST /attachments`. Your Grist server must allow the **exact widget origin** you configured in the custom widget URL — changing the URL without updating CORS breaks upload (downloads may still work in some setups).
+
+**Fix (self-hosted / team admin).**
+
+1. Note the widget origin from the browser address bar when embedded in Grist (e.g. `https://abc123.ngrok-free.app` or `https://your-user.github.io`).
+2. Add that origin to Grist CORS settings (`GRIST_ALLOWED_WEBHOOK_DOMAINS` / Traefik `accesscontrolalloworiginlist` / equivalent for your install). Allow headers such as `X-Requested-With` — see [grist-core#2040](https://github.com/gristlabs/grist-core/issues/2040).
+3. Reload the Grist page and retry.
+
+**Not a build regression.** Production `vite build` uses the same `?auth=` upload path as dev; only the **widget origin** changes.
+
+**Grist Cloud.** If you cannot change server CORS, host the widget on an origin Grist already allows for custom widgets, or use a tunnel origin you have allowlisted.
+
+## `fetchWithAuth` returns 401
+
+Authenticated REST calls fail with `401 Unauthorized`.
+
+**Causes.**
+
+1. The widget has only `read table` access but the endpoint needs
+   write access. Bump `requiredAccess`.
+2. The cached access token expired between the call and the server
+   receiving it. The SDK auto-retries once with a fresh token; if you
+   still see 401, the issue is permissions, not staleness.
+3. The endpoint is not in the same Grist instance. `fetchWithAuth`
+   only signs requests against the host that served the widget.
+
+## Tests fail with `window.grist is undefined`
+
+Your vitest run fails inside the hook code, complaining the global
+is missing.
+
+**Fix.** Use `renderWithGrist`:
+
+```tsx
+import { presets, renderWithGrist } from "grist-widget-sdk/emulator/testing"
+
+renderWithGrist(<MyWidget />, { emulator: { document: presets.blank() } })
+```
+
+It installs the emulator before React hydrates, so every hook sees a
+valid `grist` global. See [Testing](/docs/emulator/testing) for the full pattern.
+
+## The widget re-renders too often
+
+A deep tree re-renders on every selection change even though only one
+component reads the record.
+
+**Fix.** Call `useGrist()` where the data is used, and pass the rest of
+the tree only what it shows, behind `React.memo`: a component that
+receives `w.records` re-renders when the records change, not when the
+cursor moves. See [Performance](/docs/sdk/guide/performance).

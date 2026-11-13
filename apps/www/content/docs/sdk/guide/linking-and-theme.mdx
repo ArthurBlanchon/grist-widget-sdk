@@ -1,0 +1,84 @@
+---
+title: "Widget linking & theme"
+description: "How a selector widget drives another widget's cursor, and how a widget adopts the document's theme."
+---
+
+## Widget linking
+
+Two Grist sections can be linked. A "selector" widget drives the cursor or row selection of another linked widget. Two methods cover this:
+
+```ts
+await w.setCursorPosition({ rowId: 42 })
+await w.setLinkedRowSelection([1, 3, 7])
+```
+
+To **enable your widget as a linking source**, declare it at provider time:
+
+```tsx no-check
+<GristWidgetProvider options={{ allowSelectBy: true }}>
+```
+
+### `setCursorPosition`
+
+Moves the cursor in the linked widget. Accepts a subset of Grist `CursorPos`:
+
+```ts
+type GristCursorPos = {
+  rowId?: number
+  field?: string
+  colRef?: string
+  sectionId?: number   // ignored in linking flows; useful for some embeddings
+}
+```
+
+### `setLinkedRowSelection`
+
+Sets the rows visible in a linked target widget. Pass `null` to clear:
+
+```ts
+await w.setLinkedRowSelection(null)
+```
+
+Both methods throw if the Grist version doesn't expose them. Guard accordingly when supporting older hosts.
+
+## Theme
+
+`useGrist()` exposes `w.theme` which reflects the host theme:
+
+```ts
+type GristTheme = "light" | "dark"
+w.theme  // GristTheme | null   (null until the host emits the first event)
+```
+
+Use this to set up a class on your root element:
+
+```tsx
+<div className={w.theme === "dark" ? "dark" : ""}>
+  <YourWidget />
+</div>
+```
+
+### How it works
+
+The SDK listens on `grist.on("message")` for host theme updates (`msg.theme`, with
+`appearance: "light" | "dark"` in production Grist). The latest parsed value is
+stored and surfaced. If the host never sends a theme message, `w.theme` stays
+`null` — fall back to `prefers-color-scheme` or a stored option.
+
+## Combined example
+
+```tsx
+function App() {
+  const w = useGrist()
+
+  if (w.mode === "empty") return <p>Select a row.</p>
+
+  return (
+    <div data-theme={w.theme ?? "light"}>
+      <button onClick={() => w.setCursorPosition({ rowId: w.record!.id })}>
+        Re-center cursor
+      </button>
+    </div>
+  )
+}
+```

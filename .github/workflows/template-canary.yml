@@ -1,0 +1,388 @@
+name: Template canary
+
+# Confirms the *actual published* create-grist-widget package still
+# produces a working, deployable scaffold -- not just that `pnpm test`
+# passes in this repo, but that a real `npm create grist-widget` user gets
+# a real, live GitHub Pages site. This is the automated version of the
+# `run-grist-widget-template-deploy` skill's manual driver, run against a
+# standing reference repo instead of a fresh throwaway one each time.
+#
+# dev/ tracks the published `next` dist-tag (falling back to `latest` if no
+# pre-release has ever been published): scaffold -> overlay onto the
+# reference repo's `dev` branch -> commit on top of its real history ->
+# push -> poll the live URL. This can regularly show *unreleased* content
+# -- that's the point, a live preview of what's about to ship.
+#
+# Because dev can now sit ahead on a pre-release, it's no longer a safe
+# source to promote from: pushing dev straight onto main could push
+# unreleased rc content into production. So every run also force-pushes
+# `main` directly, but always from a fresh `@latest`-only scaffold, never
+# from dev -- a pure git push, no GitHub API call, so it needs no credential
+# beyond the existing deploy key, and no PR to remember to open or merge.
+# Promotion is automatic: main is a distribution artifact for this reference
+# repo, same as any real scaffolded widget's own main once its first-release
+# guard has run (see resetBranchesIfFirstRelease in
+# packages/create-grist-widget/src/deploy.mjs) -- force-
+# pushed fresh from @latest every real release, never developed on directly.
+# This used to be a disposable `canary/latest` branch a human promoted into
+# main by hand; that manual step was flagged non-negotiable to close once
+# the template is the front door (a forgotten promotion would silently start
+# every "Use this template" user on a stale pinned SDK, and nothing would
+# notice), so `canary/latest` is retired -- deleted by this workflow the
+# first time it runs after this comment was written.
+#
+# Deliberately NOT `npm create grist-widget`'s own fresh `git init` pushed
+# straight over dev: found live, that replaces dev's entire history with an
+# unrelated one every single run, so GitHub's compare view permanently loses
+# the ability to diff/PR dev against main ("There isn't anything to compare
+# -- main and dev are entirely different commit histories"). Building each
+# canary commit on top of dev's real, continuous history keeps that path
+# open, same as every other widget's dev branch in this project.
+#
+# Runs after every release.yml completion on main, including ones that only
+# opened/updated the Version Packages PR without actually publishing --
+# a harmless no-op re-check in that case (same published versions, same
+# result). `workflow_run` only guarantees release.yml's `npm publish` step
+# has *finished*, not that the registry already *serves* what it accepted,
+# so the first step below waits for the versions on the triggering commit
+# to be visible before anything reads `npm view` or scaffolds.
+#
+# The dev scaffold's package.json version is stamped with whichever of
+# next/latest it used, not the template's static "0.0.1" -- this repo
+# exists to demonstrate specific CLI releases, so its version should track
+# them, same reasoning as the monorepo's own /template/ showcase.
+#
+# Needs TEMPLATE_CANARY_DEPLOY_KEY: an SSH deploy key (write access)
+# scoped to ONLY arthurblanchon/grist-widget-template -- deliberately not
+# a PAT, so a leak of this secret can't reach any other repo.
+
+on:
+  workflow_run:
+    workflows: ["release"]
+    types: [completed]
+    # release.yml used to run on every branch push (its since-retired
+    # publish-staging job), and the canary re-ran after each one -- found
+    # live: five runs in five minutes when Dependabot opened four PRs right
+    # after the 0.3.18 release. release.yml now runs on main only; this
+    # filter stays as a guard, since only main's release run can publish
+    # what this checks.
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CANARY_OWNER: arthurblanchon
+  CANARY_REPO: grist-widget-template
+
+jobs:
+  canary:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Configure git identity
+        # The CLI's own auto-init (git init + commit + `dev` branch) degrades
+        # gracefully to a no-op with printed manual instructions when no git
+        # identity is configured -- true by default on a fresh Actions
+        # runner. Found live: without this, the scaffold has no commit and
+        # no dev branch at all, so the push step below fails with
+        # "pathspec 'dev' did not match any file(s) known to git".
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Read the package versions on the triggering commit
+        uses: actions/checkout@v7
+        with:
+          # The commit whose release.yml run triggered this one (or the
+          # dispatched ref): its package.json versions are what that release
+          # just published -- or what is already live, when the run only
+          # opened/updated the Version Packages PR.
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          path: .release-src
+          sparse-checkout: |
+            package.json
+            packages/core/package.json
+            packages/create-grist-widget/package.json
+            LICENSE
+            scripts/template-repo-extras.mjs
+            packages/create-grist-widget/src/deploy.mjs
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+
+      - name: Setup pnpm
+        # The CLI installs a new widget with pnpm (whichever package manager
+        # runs it), so the reference repo carries the pnpm-lock.yaml a real
+        # user gets. Without pnpm on PATH it would install nothing, and the
+        # reference repo would have no lockfile at all. Same pnpm version the
+        # CLI stamps into the scaffold's packageManager field.
+        uses: pnpm/action-setup@v6
+        with:
+          package_json_file: .release-src/package.json
+
+      - name: Wait until npm actually serves those versions
+        # Found live on 0.3.17: ~30s after `changeset publish` succeeded,
+        # `npm view create-grist-widget version` still answered 0.3.16, so
+        # dev was refreshed with the *previous* release; seconds later the
+        # CLI was visible but grist-widget-sdk@0.3.17 was not, so the
+        # promoted main's own deploy failed `pnpm install` with
+        # ERR_PNPM_NO_MATCHING_VERSION for grist-widget-sdk@^0.3.17 and this
+        # job sat in its 10-minute URL poll. Both took ~100s to show up.
+        run: |
+          SDK_VERSION="$(node -p "require('./.release-src/packages/core/package.json').version")"
+          CLI_VERSION="$(node -p "require('./.release-src/packages/create-grist-widget/package.json').version")"
+          echo "== waiting for npm to serve grist-widget-sdk@$SDK_VERSION, and create-grist-widget@$CLI_VERSION (or newer) as latest"
+          for i in $(seq 1 40); do  # 40 * 15s = 10min
+            SDK_SEEN="$(npm view "grist-widget-sdk@$SDK_VERSION" version 2>/dev/null || true)"
+            CLI_LATEST="$(npm view create-grist-widget dist-tags.latest 2>/dev/null || true)"
+            # "or newer" (sort -V), not equality: a later manual publish
+            # must not turn this into a 10-minute false failure.
+            if [ "$SDK_SEEN" = "$SDK_VERSION" ] && [ -n "$CLI_LATEST" ] &&
+               [ "$(printf '%s\n%s\n' "$CLI_VERSION" "$CLI_LATEST" | sort -V | head -n1)" = "$CLI_VERSION" ]; then
+              echo "   served after ~$(( (i - 1) * 15 ))s (grist-widget-sdk@$SDK_SEEN, create-grist-widget latest $CLI_LATEST)"
+              exit 0
+            fi
+            sleep 15
+          done
+          echo "::error::after 10min npm still doesn't serve grist-widget-sdk@$SDK_VERSION (got '$SDK_SEEN') and create-grist-widget latest >= $CLI_VERSION (got '$CLI_LATEST')"
+          exit 1
+
+      - name: Determine the version to preview (next, falling back to latest)
+        run: |
+          NEXT_VERSION="$(npm view create-grist-widget dist-tags.next 2>/dev/null)"
+          if [ -z "$NEXT_VERSION" ]; then
+            NEXT_VERSION="$(npm view create-grist-widget version)"
+          fi
+          echo "DEV_VERSION=$NEXT_VERSION" >> "$GITHUB_ENV"
+          echo "== dev preview will scaffold create-grist-widget@$NEXT_VERSION"
+
+      - name: Scaffold the dev preview (next, falling back to latest)
+        run: |
+          # Scaffold's target directory name IS create-grist-widget's
+          # rawName (they're the same positional arg) -- so use the
+          # reference repo's own name, not a placeholder like "scaffold-dev"
+          # patched up afterward. The CLI's rename step touches four places
+          # (package.json's name, README.md's heading, index.html's <title>,
+          # App.tsx's title prop), all derived from rawName -- an earlier
+          # version of this step only patched package.json afterward, so the
+          # other three still diverged between this step's "scaffold-dev"
+          # and the latest step's "scaffold-latest", still conflict-marking
+          # every merge between dev and main/canary-latest. Using the same
+          # rawName ("$CANARY_REPO") for both scaffolds makes the CLI itself
+          # produce identical content in all four places -- rm'd first since
+          # the CLI refuses a non-empty target, and the latest step below
+          # scaffolds into this same name later in the same job.
+          rm -rf "$CANARY_REPO"
+          npm create grist-widget@"$DEV_VERSION" "$CANARY_REPO"
+          # Stamp the scaffold's version with whichever of next/latest it
+          # used, not the template's static "0.0.1" -- without this,
+          # merging dev -> main here is a silent no-op deploy forever: the
+          # release step skips whenever v<version>/ already exists, and
+          # "0.0.1" never changes.
+          node -e '
+            const fs = require("fs");
+            const p = process.argv[2] + "/package.json";
+            const pkg = JSON.parse(fs.readFileSync(p, "utf8"));
+            pkg.version = process.argv[1];
+            fs.writeFileSync(p, JSON.stringify(pkg, null, 2) + "\n");
+          ' "$DEV_VERSION" "$CANARY_REPO"
+
+      - name: Setup SSH deploy key
+        uses: webfactory/ssh-agent@v0.10.0
+        with:
+          ssh-private-key: ${{ secrets.TEMPLATE_CANARY_DEPLOY_KEY }}
+
+      - name: Trust github.com's host key
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -t ed25519 github.com >> ~/.ssh/known_hosts
+
+      - name: Clone the reference repo's dev branch
+        run: |
+          # A single clone (default branch, main), then decide what to do
+          # about dev -- never a second `git clone ... reference-repo` into
+          # the same directory as a fallback. Found live: when dev doesn't
+          # exist (e.g. deleted by GitHub's "Automatically delete head
+          # branches" setting after merging dev -> main), `git clone -b dev`
+          # fails but still leaves reference-repo partially initialized, so
+          # a follow-up `git clone ... reference-repo` fails too ("destination
+          # path already exists and is not an empty directory") -- the
+          # fallback never got a clean shot.
+          git clone --depth 1 "git@github.com:${CANARY_OWNER}/${CANARY_REPO}.git" reference-repo
+          if git -C reference-repo ls-remote --exit-code --heads origin dev >/dev/null 2>&1; then
+            # Explicit dst refspec (dev:dev) is required here -- a plain
+            # `fetch origin dev` only populates FETCH_HEAD, it does not
+            # create a local or remote-tracking `dev` ref. That's harmless
+            # after a normal full clone (an established `origin/*` fetch
+            # refspec plus checkout's remote-branch DWIM paper over it),
+            # but this clone is `--depth 1` with no `--branch` (single-
+            # branch mode), so no such refspec exists and `checkout dev`
+            # right after fails outright: "pathspec 'dev' did not match any
+            # file(s) known to git" -- found live, the very first real
+            # run after this file's previous fix.
+            git -C reference-repo fetch --depth 1 origin dev:dev
+            git -C reference-repo checkout dev
+          else
+            echo "== dev branch not found on ${CANARY_REPO} -- creating it fresh off main"
+            git -C reference-repo checkout -b dev
+          fi
+
+      - name: Overlay the dev scaffold onto the reference repo's tracked files
+        run: |
+          # Replace every tracked file with the fresh scaffold's, but keep
+          # reference-repo's own .git (and thus its real history) intact --
+          # this is what keeps dev a fast-forward of its own past, instead
+          # of an unrelated git init replacing it outright.
+          find reference-repo -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          find "$CANARY_REPO" -mindepth 1 -maxdepth 1 ! -name .git -exec cp -r {} reference-repo/ \;
+          # What the registry requires on top of the scaffold: a license and the install URL.
+          node .release-src/scripts/template-repo-extras.mjs reference-repo "${CANARY_OWNER}/${CANARY_REPO}" .release-src/LICENSE
+
+      - name: Commit + push dev on top of its existing history
+        working-directory: reference-repo
+        run: |
+          git add -A
+          git commit -q -m "canary: refresh dev preview @ create-grist-widget@${DEV_VERSION}" || {
+            echo "== no changes vs. dev's current tip -- nothing to push"
+            exit 0
+          }
+          git push origin dev
+
+      - name: Poll the live URLs and assert real content
+        run: |
+          DEV_URL="https://${CANARY_OWNER}.github.io/${CANARY_REPO}/dev/"
+          LATEST_URL="https://${CANARY_OWNER}.github.io/${CANARY_REPO}/latest/"
+          ROOT_URL="https://${CANARY_OWNER}.github.io/${CANARY_REPO}/"
+
+          echo "== waiting for $DEV_URL to pick up this push (self-reload snippet as the freshness marker)"
+          # 90 attempts * 15s = ~22min: when dev didn't exist and was just
+          # recreated (e.g. deleted by "Automatically delete head branches"
+          # after a merge), this push also triggers grist-widget-template's
+          # own deploy.yml as a *separate* run to rebuild and republish
+          # /dev/ from scratch -- slower than a plain re-push to an
+          # already-live dev, which the previous, tighter 10min budget
+          # assumed. Cache-bust every request (a query param + no-cache
+          # header): GitHub Pages is CDN-backed, so a bare repeated curl can
+          # keep hitting a stale cached response for a while after a fresh
+          # publish -- same defense the self-reload snippet's own internal
+          # polling already uses (fetch(..., { cache: "no-store" })).
+          BODY=""
+          for i in $(seq 1 90); do
+            BODY="$(curl -s -H 'Cache-Control: no-cache' "${DEV_URL}?cb=$(date +%s)" || true)"
+            echo "$BODY" | grep -q "grist-widget-sdk dev channel" && break
+            sleep 15
+          done
+          echo "$BODY" | grep -q "grist-widget-sdk dev channel" || {
+            echo "::error::$DEV_URL never showed the self-reload snippet -- check https://github.com/${CANARY_OWNER}/${CANARY_REPO}/actions"
+            exit 1
+          }
+          echo "$BODY" | grep -q "/src/main.tsx" && {
+            echo "::error::$DEV_URL is serving raw unbuilt source (a /src/main.tsx reference) instead of the build -- check that repo's Pages source setting (must be gh-pages, not main)"
+            exit 1
+          }
+          echo "   OK -- dev/ is live and correctly built"
+
+          for URL in "$ROOT_URL" "$LATEST_URL"; do
+            CODE="$(curl -s -o /dev/null -w '%{http_code}' "$URL")"
+            echo "   $URL -> $CODE"
+            [ "$CODE" = "200" ] || {
+              echo "::error::$URL did not return 200"
+              exit 1
+            }
+          done
+
+          echo "== OK -- create-grist-widget@${DEV_VERSION} scaffolds a working, deployable widget"
+
+      - name: Scaffold the latest release candidate
+        run: |
+          LATEST_VERSION="$(npm view create-grist-widget version)"
+          # Same rawName ("$CANARY_REPO") as the dev scaffold above, so the
+          # CLI's rename step produces identical package.json/README.md/
+          # index.html/App.tsx content in both -- rm'd first since the dev
+          # step above already scaffolded into this same directory name.
+          rm -rf "$CANARY_REPO"
+          npm create grist-widget@"$LATEST_VERSION" "$CANARY_REPO"
+          node -e '
+            const fs = require("fs");
+            const p = process.argv[2] + "/package.json";
+            const pkg = JSON.parse(fs.readFileSync(p, "utf8"));
+            pkg.version = process.argv[1];
+            fs.writeFileSync(p, JSON.stringify(pkg, null, 2) + "\n");
+          ' "$LATEST_VERSION" "$CANARY_REPO"
+          echo "LATEST_VERSION=$LATEST_VERSION" >> "$GITHUB_ENV"
+
+      - name: Clone the reference repo's main branch
+        run: |
+          git clone --depth 1 --branch main "git@github.com:${CANARY_OWNER}/${CANARY_REPO}.git" reference-repo-latest
+          git -C reference-repo-latest config user.name "github-actions[bot]"
+          git -C reference-repo-latest config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Overlay the latest scaffold onto main's tracked files
+        run: |
+          find reference-repo-latest -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          find "$CANARY_REPO" -mindepth 1 -maxdepth 1 ! -name .git -exec cp -r {} reference-repo-latest/ \;
+          # What the registry requires on top of the scaffold: a license and the install URL.
+          node .release-src/scripts/template-repo-extras.mjs reference-repo-latest "${CANARY_OWNER}/${CANARY_REPO}" .release-src/LICENSE
+
+      - name: Commit + force-push main -- promotion is automatic, not a manual PR
+        working-directory: reference-repo-latest
+        run: |
+          git add -A
+          git commit -q -m "canary: refresh main @ create-grist-widget@${LATEST_VERSION}" || {
+            echo "== main already matches @latest -- nothing to push"
+            exit 0
+          }
+          # Always force-push: main is a distribution artifact for this
+          # reference repo (see the header comment above), rebuilt fresh off
+          # @latest every run -- same as any real scaffolded widget's own
+          # main once its first-release guard has run.
+          git push --force origin HEAD:main
+
+      - name: Delete the retired canary/latest branch, if it still exists
+        run: |
+          # `-C reference-repo-latest`, not a bare `git push <url>` from the
+          # job's own $GITHUB_WORKSPACE -- this job never runs
+          # actions/checkout (nothing here needs this repo's own source), so
+          # the workspace root isn't a git repository at all, and even a
+          # push given a full URL still needs *some* local .git to run from.
+          # Found live: the very first run of this step "succeeded" by
+          # falling into the `|| echo` fallback on a masked
+          # "fatal: not a git repository" error, never actually deleting the
+          # branch it claimed to.
+          git -C reference-repo-latest push origin --delete canary/latest || \
+            echo "== canary/latest already gone -- nothing to delete"
+
+      - name: Wait for the promoted main to actually deploy, and assert gh-pages exists
+        run: |
+          VERSION_URL="https://${CANARY_OWNER}.github.io/${CANARY_REPO}/v${LATEST_VERSION}/"
+          LATEST_URL="https://${CANARY_OWNER}.github.io/${CANARY_REPO}/latest/"
+          ROOT_URL="https://${CANARY_OWNER}.github.io/${CANARY_REPO}/"
+
+          echo "== waiting for the just-pushed main to publish v${LATEST_VERSION}/ + latest/ (deploy.yml's own release run on ${CANARY_REPO})"
+          for URL in "$VERSION_URL" "$LATEST_URL" "$ROOT_URL"; do
+            CODE=""
+            for i in $(seq 1 40); do  # 40 * 15s = 10min
+              CODE="$(curl -s -o /dev/null -w '%{http_code}' -H 'Cache-Control: no-cache' "${URL}?cb=$(date +%s)")"
+              [ "$CODE" = "200" ] && break
+              sleep 15
+            done
+            echo "   $URL -> $CODE"
+            [ "$CODE" = "200" ] || {
+              echo "::error::$URL never returned 200 after promoting main -- check https://github.com/${CANARY_OWNER}/${CANARY_REPO}/actions"
+              exit 1
+            }
+          done
+
+          echo "== confirming gh-pages actually exists on ${CANARY_REPO} (a distinct check from the HTTP polling above, which a stale CDN response could pass even if the branch were gone)"
+          git ls-remote --exit-code --heads "git@github.com:${CANARY_OWNER}/${CANARY_REPO}.git" gh-pages >/dev/null || {
+            echo "::error::gh-pages branch does not exist on ${CANARY_REPO} after promoting main"
+            exit 1
+          }
+
+          echo "== OK -- create-grist-widget@${LATEST_VERSION} promoted straight to main and is live"

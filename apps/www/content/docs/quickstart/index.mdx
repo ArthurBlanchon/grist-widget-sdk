@@ -1,0 +1,130 @@
+---
+title: Quickstart
+description: "Copy the template repo, hand it to an AI coding agent or the CLI, connect it to a real Grist document, and ship."
+---
+
+## What it looks like
+
+The **[hello-world](/examples/hello-world/demo/)** demo is the
+whole idea in a handful of lines. The provider and boundary handle the Grist
+handshake; you only write:
+
+```tsx
+import { defineGristWidget } from "grist-widget-sdk"
+
+export const widget = defineGristWidget({
+  requiredAccess: "read table",
+})
+
+export function WidgetApp() {
+  const w = widget.useGrist()
+
+  if (w.mode === "empty") return <p>Select a row.</p>
+  if (w.mode === "new-row") return <p>New row flow</p>
+  return <p>Selected row #{w.record?.id}</p>
+}
+```
+
+`defineGristWidget()` declares what the widget asks Grist for (here, read
+access to the selected table; a widget that maps columns lists them, with
+their types), and `widget.useGrist()` is typed from it.
+
+[Try it](/examples/hello-world/demo/) in a real Grist, running in your
+browser. See [Examples](/docs/quickstart/examples) for the
+other 15 starting points.
+
+## Copy the template repo
+
+<Steps>
+<Step>
+
+### Copy this starter repo
+
+Use [grist-widget-template](https://github.com/ArthurBlanchon/grist-widget-template/generate)
+to create your own copy. On the next page, check **Include all branches**
+so GitHub Pages comes already configured — no manual Settings step.
+
+</Step>
+<Step>
+
+### Grant your AI coding agent access
+
+If you're driving the repo with an AI coding agent (Claude Code, Codex,
+Cursor, …), install its GitHub App on the new repo so it can see and push
+to it: [Claude](https://github.com/apps/claude),
+[Codex](https://github.com/apps/chatgpt-codex-connector), or
+[Cursor](https://github.com/apps/cursor). Skip this step if you're driving
+the repo yourself.
+
+</Step>
+<Step>
+
+### Push and go
+
+Your new widget starts deploying on its first push. Ask your AI coding
+agent for two URLs: the **dev build** (auto-reloads as you iterate) and
+the **latest build** (ready to paste into a production Grist document). See
+[Understand the deploy](#understand-the-deploy) below for what actually
+runs.
+
+</Step>
+</Steps>
+
+<Callout title="If your AI can't see the new widget repo">
+  Check its GitHub App has been granted access to it — same three links as
+  above.
+</Callout>
+
+Prefer the CLI over copying the template, or scaffolding with an agent from
+an empty repo? See [Getting started with the CLI](/docs/cli).
+
+## Connect it to a real Grist document
+
+Once you have a deployed URL — the `dev` build while iterating, or the
+`latest` build once you're happy with it:
+
+1. Open a Grist document.
+2. Add a **Custom Widget** section.
+3. Paste the deployed URL into the URL field and press **Save**.
+
+The widget now renders inside Grist with full plugin-api access — real
+tables, real selection, real writes.
+
+## Understand the deploy
+
+Every scaffolded repo ships its own `.github/workflows/deploy.yml`, doing
+two things from one workflow:
+
+- **Push to `main`** → the release channel: an immutable `/<repo>/v<version>/`
+  plus a mutable `/<repo>/latest/` — what you paste into a production Grist
+  document.
+- **Push to `dev`** → the dev channel: a mutable `/<repo>/dev/`, for live
+  review inside Grist as you iterate — every push self-reloads it.
+
+If you used ["Use this template"](https://github.com/ArthurBlanchon/grist-widget-template/generate)
+with **Include all branches** checked, nothing else needs configuring — GitHub
+Pages is already pointed at the branch the workflow publishes to. See the
+[CLI reference](/docs/cli#the-bundled-deploy-pipeline) for the two one-time
+Settings steps a hand-rolled (non-template) repo needs instead, and for what
+each channel actually contains.
+
+## CLI commands
+
+The template repo and `npm create grist-widget` scaffold identical code —
+the CLI embeds the same template and examples, offline. See the
+[CLI reference](/docs/cli) for its commands (`create`, `init`, `use`,
+`upgrade`, `list`) if you'd rather drive the scaffold from a terminal than copy the
+repo on GitHub.
+
+## Where to go next
+
+- [What is grist-widget-sdk?](/docs/quickstart/introduction) — why it
+  exists, and when to reach for the raw plugin API instead.
+- [Core concepts](/docs/quickstart/concepts) — the mental model behind
+  selection modes, mappings, and the ready handshake.
+- [Examples](/docs/quickstart/examples) — the 16 starting widgets, each in
+  a real Grist in your browser.
+- [SDK guide](/docs/sdk) — add the SDK to an existing Vite or Next.js
+  project, and the core hooks you'll write against.
+- [CLI reference](/docs/cli) — scaffold and manage widgets from a terminal.
+- [Emulator](/docs/emulator) — test widgets without a live Grist document.

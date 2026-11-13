@@ -1,0 +1,141 @@
+---
+title: "Core concepts"
+description: "The handful of Grist ideas -- sections, records, mapping, handshake -- every widget author needs."
+---
+
+A short mental model for the parts of Grist your widget interacts with, and how the SDK reflects them.
+
+## The widget lives in an iframe
+
+A Custom Widget is an iframe embedded by the Grist host. Communication happens through `grist-plugin-api.js`, which exposes a global `grist` object and a request/event channel back to the document.
+
+```text
+┌─────────────────────────────┐
+│ Grist host document         │
+│  ┌───────────────────────┐  │
+│  │ widget iframe         │  │
+│  │  grist-plugin-api.js  │  │
+│  │  grist-widget-sdk     │  │
+│  │  your React widget    │  │
+│  └───────────────────────┘  │
+└─────────────────────────────┘
+```
+
+The SDK shields you from the iframe lifecycle, the `grist.ready` handshake, and the event streams.
+
+## The `ready` handshake
+
+You declare your widget's needs **once** via `grist.ready(...)`. The SDK does this for you when you mount `<GristWidgetProvider>` — concurrent calls are coalesced, and the access level is only re-issued if it widens (e.g. from `"read table"` to `"full"`).
+
+The options you can pass:
+
+```tsx no-check
+<GristWidgetProvider
+  options={{
+    requiredAccess: "read table",        // or "full" or "none"
+    columns: [/* see Column mapping */],
+    allowSelectBy: true,                 // surface widget as a linking source
+    hasCustomOptions: true,              // show the "Open configuration" gear icon
+    onEditOptions: () => navigate("/settings"),
+  }}
+>
+```
+
+## Sections, selection, and modes
+
+A Custom Widget is attached to a **section** of a Grist page. The section has:
+
+- A **current table** (`w.currentTableId`).
+- A **cursor row** — what `grist.onRecord` reports as `w.record`.
+- A **visible row set** — what `grist.onRecords` reports as `w.records`.
+- A **new-row placeholder** — when the user clicks the blank trailing row, `grist.onNewRecord` fires.
+
+The SDK derives a single `w.mode` for you:
+
+```ts
+type GristWidgetMode = "empty" | "row" | "new-row"
+```
+
+| mode | meaning |
+| --- | --- |
+| `empty` | No row selected (or section is empty). |
+| `row` | A real row is selected. `w.record` is non-null. |
+| `new-row` | The user is on the blank "create" row. |
+
+Render branches against `mode` instead of combining `record == null` with other flags yourself.
+
+## Column mapping
+
+Widgets declare **logical** column names (the names *your code* uses). The user maps them to real columns in the section configuration UI. This means a widget that wants `Title` and `Done` works on any table that has any two columns the user is willing to map.
+
+The SDK exposes:
+
+- `w.mappings` — `{ logicalName → realColId }`, as Grist reports it.
+- `w.mappedRecord` — `w.record` rewritten under logical names, or `null` when required mappings are missing.
+- `w.columnMappingStatus` — `{ ok, pending?, missing, emptyMultiples }` to gate UI.
+- `w.mapBack(patch)` — reverse-map a logical patch to a real-column patch ready for writes.
+
+See [Column mapping](/docs/sdk/guide/column-mapping) for full patterns.
+
+## Decoded vs encoded
+
+Grist sometimes sends cell values as marshalled tuples: dates as `["D", epochSeconds, tz]`, errors as `["E", ...]`, references as `["R", tableId, rowId]`, lists as `["L", ...]`.
+
+The SDK **pins decoding on**:
+
+- `w.record` / `w.records` (event streams) — decoded.
+- `w.fetchSelectedTable()` — the section's decoded rows, column-oriented.
+- `w.fetchTableRows()` — decoded rows when you pass `columns` metadata.
+
+`w.fetchTable()` returns the raw columnar payload. Use `decodeGristValue(value, column)` to decode, or `fetchTableRows(tableId, { columns })`. The mapped records go further: each cell is checked against its declared type ([Typed reads](/docs/sdk/guide/typing)).
+
+## Reads vs writes
+
+| Path | Use for |
+| --- | --- |
+| `w.record` / `w.records` (subscriptions) | Reactive selection — *re-renders when Grist updates*. |
+| `w.fetchSelectedTable` | One-off read of the current section. |
+| `w.fetchTable` / `w.fetchTableRows` | One-off read of any table by id (full access). |
+| `w.table.*` / `w.getTable(id).*` | All record CRUD. |
+| `w.applyActions([...])` | Schema mutations (add/rename/remove tables, columns) or operations needing custom undo descriptions. |
+
+## The provider, the boundary, and the hook
+
+These three pieces compose:
+
+```tsx no-check
+<GristWidgetProvider options={...}>     // connects: grist.ready() once, Grist's streams
+  <GristBoundary>                        // connecting / access / mapping screens
+    <YourWidget />                       // useGrist()
+  </GristBoundary>
+</GristWidgetProvider>
+```
+
+- `mountGristWidget()` renders both: a scaffolded widget only writes `App`.
+- The provider connects to Grist exactly once; `useGrist()` under it reads that connection.
+- The boundary shows a screen until the widget is connected, granted the access it declares, and mapped, with a retry where one helps.
+- Inside the boundary, you can assume `status === "ready"` and stop guarding.
+
+## The connection
+
+The connection is synchronous: the widget is in Grist's iframe with the
+plugin API loaded, or it isn't. The SDK calls `grist.ready()` once, then
+every Grist stream (records, options, mappings, theme) updates one store
+that `useGrist()` reads. There is no polling and no heartbeat: the widget's
+iframe lives and dies with the Grist page, and a call that fails fails
+where it was made, with Grist's error.
+
+## Tests look like production
+
+`renderWithGrist(ui, { emulator: { document } })` mounts an in-process emulator behind `window.grist` so the SDK takes its real code path. Records, mappings, writes, options, attachments — everything works.
+
+```ts
+import { renderWithGrist } from "grist-widget-sdk/emulator/testing"
+
+const { emulator, getByText } = renderWithGrist(<MyWidget />, {
+  emulator: { document: presets.todoList() },
+})
+emulator.mutate.addRow("Tasks", { Title: "Buy milk" })
+```
+
+See [Testing](/docs/emulator/testing).

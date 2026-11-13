@@ -1,0 +1,6 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": { "noEmit": true, "types": ["vitest/globals"] },
+  "include": ["src", "tests/unit/cells.test.ts", "tests/unit/define-widget.test.tsx"],
+  "exclude": ["node_modules", "dist"]
+}

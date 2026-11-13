@@ -1,0 +1,122 @@
+---
+title: "Raw plugin API vs SDK"
+description: "A side-by-side of Grist's bare `grist-plugin-api.js` global against what the SDK adds on top of it."
+---
+
+Grist ships **`grist-plugin-api.js`**, which exposes a global `grist` object in your widget iframe. The **`grist-widget-sdk`** package wraps that bridge for React: one handshake, decoded values, mapping helpers, and tests without opening a real document.
+
+Use this page when you are tempted to call `grist` directly in widget code — or when you are migrating an older custom widget.
+
+## Mental model
+
+```text
+Grist host (full frontend, doc already loaded)
+  ↔ plugin API channel (not “your widget calling HTTPS for table data”)
+    ↔ grist-widget-sdk (React)
+      ↔ your components
+```
+
+Most widget reads/writes are **RPC to the host runtime** (`grist.docApi`, `onRecord`, …). Only **REST helpers** (`fetchWithAuth`, attachment URLs) hit HTTP.
+
+## Comparison
+
+| Task | `grist-plugin-api` (raw) | `grist-widget-sdk` |
+| --- | --- | --- |
+| Handshake | `grist.ready({ requiredAccess, columns, … })` in every app; coalesce yourself | `<GristWidgetProvider options={…}>` once |
+| Boot / not in Grist | Custom detection + loading UI | `<GristBoundary>`, rendered by `mountGristWidget()` |
+| Selected row | `grist.onRecord(cb)` + interpret `null` / new row | `useGrist()` → `w.record`, `w.mode` (`empty` \| `row` \| `new-row`) |
+| Decoded values (Date, ref, …) | Manual decode of wire tuples | Decoded by default on section reads; `decodeGristValue` exported |
+| Column mapping | `mapColumnNames` / `mapColumnNamesBack` + config panel | `w.mappedRecord`, `w.mapBack()`, `w.columnMappingStatus`, alerts |
+| Gate UI until mapped | Custom checks | `<GristBoundary>` waits for the required declared columns; `w.columnMappingStatus.ok` |
+| Update one field | Build `UpdateRecord` user-action tuple | `w.table.update({ id, fields })` |
+| Bulk row CRUD | `applyActions([…])` tuples | `w.table.create` / `update` / `upsert` / `destroy` (single or array) |
+| Schema changes | Hand-built action tuples | `w.applyActions([gristAddColumnAction(…), …])` |
+| TypeScript | Loose global | `useGrist<MyRow, MyMapped>()` + exported types |
+| Tests in CI | Mock `window.grist` by hand | `renderWithGrist` + `presets` (same code paths as production) |
+
+## Side-by-side snippets
+
+### Handshake + first row
+
+**Raw**
+
+```js
+grist.ready({ requiredAccess: "read table" }).then(() => {
+  grist.onRecord((record) => {
+    if (!record) {
+      /* empty? new row? — ambiguous without more listeners */
+      return
+    }
+    root.render(<App record={record} />)
+  })
+})
+```
+
+**SDK**
+
+```tsx
+<GristWidgetProvider options={{ requiredAccess: "read table" }}>
+  <GristBoundary>
+    <App />
+  </GristBoundary>
+</GristWidgetProvider>
+
+function App() {
+  const w = useGrist()
+  if (w.mode === "empty") return <p>Select a row.</p>
+  if (w.mode === "new-row") return <p>New row</p>
+  return <p>Row {String(w.record!.id)}</p>
+}
+```
+
+### Declared columns + write
+
+**Raw**
+
+```js
+grist.ready({
+  requiredAccess: "full",
+  columns: [{ name: "Done", type: "Bool" }],
+})
+// … onRecord …
+const patch = grist.mapColumnNamesBack?.({ Done: true })
+await grist.docApi.applyUserActions([["UpdateRecord", tableId, id, patch]])
+```
+
+**SDK**
+
+```tsx
+export const GRIST_OPTIONS = {
+  requiredAccess: "full",
+  columns: [{ name: "Done", type: "Bool" }],
+} satisfies UseGristOptions
+
+function App() {
+  const w = useGrist<TaskRow, { Done: boolean }>()
+  if (!w.columnMappingStatus.ok) return <p>Map the Done column in widget settings.</p>
+  return (
+    <button
+      onClick={() =>
+        w.table.update({ id: w.record!.id as number, fields: w.mapBack({ Done: true }) })
+      }
+    >
+      Mark done
+    </button>
+  )
+}
+```
+
+## When raw `grist` is still OK
+
+- Non-React widgets (vanilla JS).
+- Prototyping inside the browser console.
+- **Inside the SDK repo** — the package owns the global once.
+
+Widget apps should import **`grist-widget-sdk` only**; the template ESLint rule blocks accidental `grist` usage.
+
+## Next steps
+
+- [SDK guide](/docs/sdk) — install + hello world
+- [Cheat sheet](/docs/sdk/guide/cheatsheet) — daily reference
+- [Column mapping](/docs/sdk/guide/column-mapping) — `columns`, `mappedRecord`, alerts
+- [Testing](/docs/emulator/testing) — `renderWithGrist`

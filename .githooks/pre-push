@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# Local early-warning for two CI gates -- runs the exact same checks before
+# a push instead of finding out after opening a PR. Best-effort only:
+# skippable with `git push --no-verify`, and only installed at all if
+# `pnpm install` has been run (see the root package.json's `prepare`
+# script, which sets `core.hooksPath` to this directory). The matching
+# workflows (require-changeset.yml, agent-surface.yml) are the real,
+# unbypassable gates -- this is just a courtesy.
+set -euo pipefail
+
+# Never in CI: the workflows are the real gates there, and `pnpm install`
+# installs this hook on runners too. Found live: release.yml's
+# changesets/action pushes each release tag with its own concurrent
+# `git push`, so this hook ran twice at once, the two
+# build-widgets-manifest runs raced on a shared scratch directory,
+# and the create-grist-widget@0.3.16 tag push was rejected after npm had
+# already published.
+[ -n "${CI:-}" ] && exit 0
+
+ZERO="0000000000000000000000000000000000000000"
+any_relevant_push=false
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+  # Deleting a remote ref (local_sha all-zero) -- nothing to check.
+  [ "$local_sha" = "$ZERO" ] && continue
+  # Only feature branches heading toward a PR into main are checked. Pushing
+  # main itself would be an empty/self diff against origin/main, and tags or
+  # other refs are not PR candidates at all.
+  case "$remote_ref" in
+  refs/heads/main) continue ;;
+  refs/heads/*) any_relevant_push=true ;;
+  *) continue ;;
+  esac
+done
+
+$any_relevant_push || exit 0
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+
+bash "$REPO_ROOT/scripts/check-changeset.sh" main
+
+# require the widget manifest to build before checking AGENTS.md against
+# it -- same order as agent-surface.yml.
+node "$REPO_ROOT/scripts/build-widgets-manifest.mjs"
+node "$REPO_ROOT/scripts/check-agents-md.mjs"

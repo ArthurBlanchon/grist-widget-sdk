@@ -1,0 +1,16 @@
+{
+  // Compiler settings come from grist-widget-sdk and update with it. This
+  // file keeps what is specific to this widget: its files, paths and types.
+  "extends": "grist-widget-sdk/tsconfig/app.json",
+  "compilerOptions": {
+    // Also set in the base. Repeated so that a missing base (a grist-widget-sdk
+    // too old to ship it) fails the typecheck without writing .js files into src/.
+    "noEmit": true,
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
+    "types": ["vite/client"],
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": ["src"]
+}

@@ -1,0 +1,99 @@
+---
+title: "Types"
+description: "Index of every TypeScript type `grist-widget-sdk` exports, organized by area."
+---
+
+Every type exported from `grist-widget-sdk`. Grouped by area. Each table below is
+generated from the real exported type in `packages/core/src/sdk` — see
+[`useGrist`](/docs/sdk/api/use-grist) for the full `UseGristResult` field enumeration.
+
+## Core results
+
+<AutoTypeTable path="../../packages/core/src/sdk/types.ts" name="GristRowRecord" />
+
+`GristRowRecord<T = Record<string, unknown>>` defaults its generic to a plain record —
+`T` itself only shows once you pass a concrete row type.
+
+<AutoTypeTable path="../../packages/core/src/sdk/use-grist.ts" name="GristWidgetMode" />
+
+<AutoTypeTable path="../../packages/core/src/sdk/runtime/derive.ts" name="GristWidgetStatus" />
+
+<AutoTypeTable path="../../packages/core/src/sdk/runtime/runtime.ts" name="GristWidgetActionStatus" />
+
+<AutoTypeTable path="../../packages/core/src/sdk/runtime/runtime.ts" name="GristTheme" />
+
+<AutoTypeTable path="../../packages/core/src/sdk/types.ts" name="GristWidgetColumnMap" />
+
+<AutoTypeTable path="../../packages/core/src/sdk/helpers/grist-mappings.ts" name="ValidateColumnMappingsResult" />
+
+## Provider / hook options
+
+<AutoTypeTable path="../../packages/core/src/sdk/types.ts" name="GristReadyOptions" />
+
+<AutoTypeTable path="../../packages/core/src/sdk/types.ts" name="GristColumnToMap" />
+
+`UseGristOptions` is `GristReadyOptions` plus `suppressAlerts` — see
+[`useGrist`](/docs/sdk/api/use-grist#usegristoptions).
+
+<AutoTypeTable path="../../packages/core/src/sdk/helpers/grist-sdk-alerts.ts" name="GristSdkAlertKind" />
+
+## Result types
+
+`UseGristResult<TRow, TMapped>` is the return type of [`useGrist()`](/docs/sdk/api/use-grist) —
+see that page for the full, per-member table (connection, selection and
+mapping, reads, writes, options, linking, attachments and REST).
+
+<AutoTypeTable path="../../packages/core/src/sdk/runtime/api.ts" name="GristColumnInfo" />
+
+## Linking
+
+<AutoTypeTable path="../../packages/core/src/sdk/types.ts" name="GristCursorPos" />
+
+## Writes
+
+<AutoTypeTable path="../../packages/core/src/sdk/helpers/grist-user-actions.ts" name="GristUserActionTuple" />
+
+<AutoTypeTable path="../../packages/core/src/sdk/types.ts" name="GristTableOperations" />
+
+<AutoTypeTable path="../../packages/core/src/sdk/types.ts" name="GristTableUpsertOptions" />
+
+## Reads
+
+<AutoTypeTable path="../../packages/core/src/sdk/helpers/grist-table-data.ts" name="FetchGristTableRowsOptions" />
+
+## Attachments / REST
+
+<AutoTypeTable path="../../packages/core/src/sdk/helpers/grist-attachment-download.ts" name="GristFetchedAttachmentBlob" />
+
+<AutoTypeTable path="../../packages/core/src/sdk/helpers/grist-attachment-upload.ts" name="GristAttachmentUploadResult" />
+
+## Replica document
+
+See [/design/replica-document](/docs/sdk/design/replica-document) for full discussion.
+
+<AutoTypeTable path="../../packages/core/src/sdk/replica-document.ts" name="GristReplicaDocument" />
+
+<AutoTypeTable path="../../packages/core/src/sdk/replica-document.ts" name="GristReplicaTable" />
+
+<AutoTypeTable path="../../packages/core/src/sdk/replica-document.ts" name="GristReplicaColumn" />
+
+<AutoTypeTable path="../../packages/core/src/sdk/replica-document.ts" name="GristReplicaRow" />
+
+<AutoTypeTable path="../../packages/core/src/sdk/types.ts" name="GristReplicaSelection" />
+
+## Typed reads
+
+<AutoTypeTable path="../../packages/core/src/sdk/runtime/cells.ts" name="GristCellIssue" />
+
+`GristMappedRow<typeof GRIST_OPTIONS>` is the mapped record a declaration
+gives, and `StandardSchema` the validator `UseGristOptions.schema` takes: see
+[Typed reads](/docs/sdk/guide/typing).
+
+## Component props
+
+<AutoTypeTable path="../../packages/core/src/sdk/components/grist-widget-provider.tsx" name="GristWidgetProviderProps" />
+
+<AutoTypeTable path="../../packages/core/src/sdk/components/grist-boundary.tsx" name="GristBoundaryProps" />
+
+See [`<GristWidgetProvider>` and `<GristBoundary>`](/docs/sdk/api/provider-boundary) for what
+each one does and shows.

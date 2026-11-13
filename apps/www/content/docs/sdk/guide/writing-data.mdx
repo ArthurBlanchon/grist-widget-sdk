@@ -1,0 +1,226 @@
+---
+title: "Writing data"
+description: "Choosing between the SDK's two write paths based on what you're doing, not how much data it is."
+---
+
+For the selected row, or a new one, under the declared names:
+
+```tsx
+import { defineGristWidget } from "grist-widget-sdk"
+
+export const widget = defineGristWidget({
+  requiredAccess: "full",
+  columns: [{ name: "Title", type: "Text" }, { name: "Tags", type: "ChoiceList" }],
+})
+
+function Actions() {
+  const w = widget.useGrist()
+  return (
+    <>
+      <button onClick={() => w.updateRecord({ Tags: ["urgent"] })}>Tag urgent</button>
+      <button onClick={() => w.addRecord({ Title: "New task" })}>Add</button>
+    </>
+  )
+}
+```
+
+`updateRecord` and `addRecord` map the names to the columns Grist mapped and
+encode each value for its declared type (see
+[Encoding values](#encoding-values-for-the-wire)). Below them, the SDK
+supports two write paths, and you should choose between them based on intent — not "size of payload".
+
+| Path | Use it for |
+| --- | --- |
+| **`TableOperations`** — `w.table.*` / `w.getTable(id).*` | All record CRUD (single or bulk). |
+| **`w.applyActions([...])`** | Schema mutations, multi-action atomic updates, custom undo descriptions. |
+
+Both update `w.actionStatus` (`"idle" | "running" | "error"`) and `w.actionError` so your UI can show a spinner or alert from one place.
+
+## TableOperations
+
+`w.table` is a `TableOperations` handle on the **currently selected** table. `w.getTable(tableId)` returns one for any table id (and is memoized).
+
+```ts
+type GristTableOperations = {
+  getTableId(): Promise<string>
+  create(records, options?): Promise<{id: number} | {id: number}[]>
+  update(records, options?): Promise<void>
+  upsert(records, options?): Promise<void>
+  destroy(recordIds: number | number[]): Promise<void>
+}
+```
+
+Each method accepts a single record or an array of records natively.
+
+### Create
+
+```ts
+await w.table.create({ fields: { Title: "Buy milk" } })
+
+await w.getTable("Tasks").create([
+  { fields: { Title: "Buy milk" } },
+  { fields: { Title: "Walk dog" } },
+])
+```
+
+Returns `{ id }` for single, `{ id }[]` for bulk.
+
+### Update
+
+```ts
+await w.table.update({ id: 42, fields: { Done: true } })
+
+await w.getTable("Tasks").update([
+  { id: 1, fields: { Done: true } },
+  { id: 2, fields: { Done: true } },
+])
+```
+
+### Upsert
+
+`upsert` matches on a `require` key set, then updates or inserts:
+
+```ts
+await w.getTable("Contacts").upsert({
+  require: { Email: "alice@example.com" },
+  fields: { Name: "Alice", LastSeen: new Date() },
+})
+```
+
+Options:
+
+| Option | Default | Meaning |
+| --- | --- | --- |
+| `add` | `true` | Insert when no match found. |
+| `update` | `true` | Update when match found. |
+| `onMany` | `"first"` | `"first" \| "none" \| "all"` when multiple rows match `require`. |
+| `allowEmptyRequire` | `false` | Allow no-key upsert (advanced; usually a mistake). |
+| `parseStrings` | — | Pass strings through Grist's parser (dates, numbers). |
+
+### Destroy
+
+```ts
+await w.table.destroy(42)
+await w.getTable("Tasks").destroy([1, 2, 3])
+```
+
+## Mapping logical fields on writes
+
+The most common pattern: read mapped, write real. Use `w.mapBack(...)` to translate.
+
+```tsx
+async function toggle(w, m) {
+  await w.table.update({
+    id: w.record!.id,
+    fields: w.mapBack({ Done: !m.Done }),
+  })
+}
+```
+
+Pitfall: `allowMultiple` columns can't be reverse-mapped automatically — you have to pick which real column to write.
+
+## Schema mutations via `applyActions`
+
+For changes beyond record CRUD, compose **user-action builders** and pass them to `w.applyActions(actions, { desc })`.
+
+```ts
+import {
+  gristAddColumnAction,
+  gristRenameColumnAction,
+  gristAddTableAction,
+  gristReplaceTableDataAction,
+} from "grist-widget-sdk"
+
+await w.applyActions(
+  [
+    gristAddTableAction("Reports", {
+      columns: [
+        { id: "Title", type: "Text" },
+        { id: "Priority", type: "Choice" },
+      ],
+    }),
+    gristAddColumnAction("Reports", "CreatedAt", { type: "DateTime" }),
+    gristRenameColumnAction("Reports", "Title", "Name"),
+  ],
+  { desc: "Bootstrap Reports table" },
+)
+```
+
+Available builders:
+
+| Builder | Action tuple |
+| --- | --- |
+| `gristAddRecordAction(tableId, values)` | `["AddRecord", tableId, null, values]` |
+| `gristUpdateRecordAction(tableId, rowId, patch)` | `["UpdateRecord", ...]` |
+| `gristRemoveRecordAction(tableId, rowId)` | `["RemoveRecord", ...]` |
+| `gristAddColumnAction(tableId, colId, colInfo)` | `["AddColumn", ...]` |
+| `gristAddVisibleColumnAction(tableId, colId, colInfo)` | `["AddVisibleColumn", ...]` |
+| `gristModifyColumnAction(tableId, colId, colInfo)` | `["ModifyColumn", ...]` |
+| `gristRenameColumnAction(tableId, colId, newColId)` | `["RenameColumn", ...]` |
+| `gristRemoveColumnAction(tableId, colId)` | `["RemoveColumn", ...]` |
+| `gristAddTableAction(tableId, tableInfo)` | `["AddTable", ...]` |
+
+Any other action is a raw tuple (`["BulkAddRecord", "Tasks", [null, null], { Title: ["a", "b"] }]`, `["RenameTable", "Old", "New"]`): `applyActions` takes any `GristUserActionTuple`. For bulk record writes, `w.table.create([...])` / `update([...])` / `destroy([...])` take arrays.
+
+## Encoding values for the wire
+
+`mapBack` encodes each value for the type its column declares in
+`GRIST_OPTIONS.columns`, so what `mappedRecord` gives can be written back as
+is: a ChoiceList's `string[]`, a RefList's row ids or an Attachments list
+become `["L", ...]`, a `Date` for a Date or DateTime column becomes seconds,
+a Ref's `Reference` its row id.
+
+```ts
+const { Tags, Due } = w.mappedRecord!                    // string[], Date
+await w.table.update({ id: w.record!.id, fields: w.mapBack({ Tags: [...Tags, "urgent"], Due }) })
+```
+
+Grist's plugin API writes values as given, so a bare array written to a list
+column any other way (`w.table.update` with real column ids, `applyActions`,
+`getTable(...)`) is stored as an **error cell**. Encode those values
+yourself, with the column's type:
+
+```ts
+import { encodeGristCell } from "grist-widget-sdk"
+
+encodeGristCell("ChoiceList", ["a", "b"])          // ["L", "a", "b"]
+encodeGristCell("RefList:Tasks", [1, 2, 3])        // ["L", 1, 2, 3]
+encodeGristCell("Date", new Date(Date.UTC(2026, 10, 12))) // 1794441600
+```
+
+A value already encoded passes through unchanged. The emulator stores a bare
+list the way Grist does, so `pnpm test` shows the mistake: the cell is an
+error, listed in `w.cellIssues`.
+
+## Tracking action status
+
+```tsx
+{w.actionStatus === "running" && <Spinner />}
+{w.actionStatus === "error" && <Alert>{w.actionError}</Alert>}
+```
+
+`mountGristWidget()` also shows a failed write as an alert above the widget
+(`action-error`, or `access-insufficient` when Grist refused it for lack of
+access); see [Error handling](/docs/sdk/guide/error-handling#alerts).
+
+Overlapping writes count as one run: `actionStatus` stays `"running"` until
+the last one ends, then is `"error"` if any of them failed. A write's promise
+still rejects for whoever awaits it, but a write nobody awaits
+(`onClick={() => w.table.update(...)}`) doesn't log an unhandled rejection:
+the alert is enough.
+
+## Optimistic UI
+
+The reactive `record` / `records` streams update from Grist after a write completes. For optimistic flows, mutate local state in your `onClick` and reconcile on the next stream update.
+
+```tsx
+const [pending, setPending] = useState(false)
+async function onToggle() {
+  setPending(true)
+  try {
+    await w.table.update({ id: w.record!.id, fields: { Done: true } })
+  } finally {
+    setPending(false)
+  }
+}
+```

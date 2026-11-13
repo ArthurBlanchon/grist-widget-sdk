@@ -1,0 +1,230 @@
+---
+title: "Testing"
+description: "Run widget tests against an in-process plugin-API emulator, with no live Grist document needed."
+---
+
+The SDK ships an **emulator** under `grist-widget-sdk/emulator` that recreates the plugin API in-process. Used through `renderWithGrist(...)`, your hooks take their real code path inside vitest/Jest.
+
+## Quick start
+
+```ts
+import { expect, it } from "vitest"
+import { fireEvent, renderWithGrist, screen, waitFor } from "grist-widget-sdk/emulator/testing"
+import App, { widget } from "./App"
+
+it("marks the selected task done", async () => {
+  const { emulator } = renderWithGrist(<App />, { widget, rows: [{ Title: "Ship", Done: false }] })
+  fireEvent.click(await screen.findByRole("checkbox"))
+  await waitFor(() => expect(emulator.state.tables.get("Table1")!.rows[0]).toMatchObject({ Done: true }))
+})
+```
+
+With `widget` (the declaration from `defineGristWidget()`, or `GRIST_OPTIONS`),
+`renderWithGrist` runs the widget as `mountGristWidget()` does inside Grist
+(provider, boundary, alerts), against one table, `Table1`, with a column per
+declared column, every one mapped, and the access the widget asks for. `rows`
+are under the declared names, as typed reads give them (a `Date`, a
+`string[]`); the first is selected. Without `widget`, it renders `ui` as
+given against `emulator: { document }` (a preset by default), for tests that
+set up the document and mappings themselves.
+
+`renderWithGrist`:
+
+- Reuses `@testing-library/react` (`render(ui, options)` semantics).
+- Mounts the emulator behind `window.grist` exactly once.
+- Cleans up the singletons on `unmount`.
+
+## Smoke test
+
+Every scaffolded widget ships `src/app/App.smoke.test.tsx`, a test that reads
+nothing but the widget's declaration:
+
+```tsx no-check
+import { it } from "vitest"
+import { smokeTestWidget } from "grist-widget-sdk/emulator/testing"
+import * as entry from "./App"
+
+it("renders inside Grist with every declared column mapped", () => smokeTestWidget(entry))
+```
+
+It takes the entry module as [`mountGristWidget()`](/docs/sdk/api/app#the-entry-module)
+does, so the same test works for a widget declared with `defineGristWidget`
+(`widget`) or `GRIST_OPTIONS`. `smokeTestWidget({ App, widget })` and
+`smokeTestWidget({ App, options })` work too.
+
+`smokeTestWidget()` mounts the widget the way
+[`mountGristWidget()`](/docs/sdk/api/app) does inside Grist. The emulated
+document has one table, with a column for each column the widget declares
+(typed after the first type it accepts) and a row of sample values. Every
+column is mapped, the widget gets the access it requests, and the test waits
+until the widget renders past `GristBoundary`. It:
+
+- resolves once the widget has rendered something;
+- rejects with the widget's own error if it throws while rendering;
+- rejects with what the page showed instead (a connecting or mapping screen)
+  if the widget never gets there within `timeout` (10 s by default).
+
+An error the widget leaves unhandled, such as a rejected promise in an
+effect, fails the run too: Vitest reports it. Pass `document` to run against
+your own data.
+
+Since it only reads `GRIST_OPTIONS`, the test stays valid as the widget
+changes, and each SDK release can improve it. `ci.yml` runs it on every pull
+request, so an SDK update that breaks the widget turns that pull request red
+before it's merged.
+
+### `installJsdomStubs()`
+
+jsdom has no `ResizeObserver` or `window.matchMedia`, which charts,
+virtualized lists and theme code use. `smokeTestWidget()` installs inert
+stand-ins for whichever is missing. For your other tests, call
+`installJsdomStubs()` at the top of the test file or in a Vitest setup file.
+A mock of your own stays in place.
+
+## Configuration
+
+```ts
+renderWithGrist(<App />, {
+  // anything from RenderOptions (container, wrapper, etc.) is accepted
+  emulator: {
+    document: presets.contacts(),  // or your own GristReplicaDocument
+    transport: { kind: "inline" }, // default
+  },
+})
+```
+
+You can also bring your own emulator instance:
+
+```ts
+const emulator = createGristEmulator({ document: presets.blank() })
+renderWithGrist(<App />, { existing: emulator })
+```
+
+## Document fixtures
+
+The emulator only accepts a complete `GristReplicaDocument`. Three preset shortcuts are available, or build your own:
+
+```ts
+import { presets } from "grist-widget-sdk/emulator/testing"
+
+presets.blank()      // one empty Table1
+presets.todoList()   // Tasks table with sample rows
+presets.contacts()   // Contacts table with multiple types
+```
+
+Custom fixtures live in your test repo:
+
+```ts
+import type { GristReplicaDocument } from "grist-widget-sdk"
+
+export const fixture: GristReplicaDocument = {
+  generatedAt: "2026-01-01T00:00:00Z",
+  tables: {
+    Tasks: {
+      columns: { Title: { type: "Text" }, Done: { type: "Bool" } },
+      rows: [
+        { id: 1, Title: "Buy milk", Done: false },
+        { id: 2, Title: "Walk dog", Done: true },
+      ],
+    },
+  },
+}
+```
+
+Validate fixtures with `parseDocument` (Zod-backed) if they come from disk:
+
+```ts
+import { parseDocument } from "grist-widget-sdk/emulator"
+const doc = parseDocument(JSON.parse(json))
+```
+
+## Mutating data in tests
+
+The emulator gives you imperative mutators:
+
+```ts
+emulator.mutate.addRow("Tasks", { Title: "Pay bills" })
+emulator.mutate.updateRow("Tasks", 1, { Done: true })
+emulator.mutate.removeRow("Tasks", 2)
+
+emulator.cursor.select("Tasks", 1)            // moves the cursor
+emulator.cursor.selectNewRow()                // sets mode: "new-row"
+emulator.cursor.clear()                       // mode: "empty"
+
+emulator.options.set({ theme: "dark" })       // widget options
+emulator.theme.set("dark")                    // host theme
+```
+
+After each call, React state updates automatically through the normal subscription path.
+
+## Custom matchers
+
+```ts
+import { actionsOf, eventsOf, waitForEvent } from "grist-widget-sdk/emulator/testing"
+
+// All user actions Grist saw during the test
+expect(actionsOf(emulator)).toContainEqual([
+  "UpdateRecord",
+  "Tasks",
+  1,
+  { Done: true },
+])
+
+// Every event Grist emitted to the widget
+expect(eventsOf(emulator)).toEqual([
+  { kind: "ready" },
+  { kind: "record", record: { id: 1, ... } },
+  ...
+])
+
+// Wait for the *next* bus event of a kind (ignores history — start the waiter first)
+const optionsEvent = waitForEvent(emulator, "options")
+await userEvent.click(screen.getByText("Save"))
+await optionsEvent
+```
+
+### `useGristSchema` snapshots
+
+The SDK test suite snapshots `useGristSchema()` output for `presets.blank()`,
+`presets.todoList()`, and `presets.contacts()` across `schema-only`,
+`schema+samples`, and `schema+data`. Intentional replica changes require updating
+snapshots: `pnpm --filter grist-widget-sdk test -- -u use-grist-schema.snapshot`.
+
+## Component-level testing patterns
+
+### Hooks in isolation
+
+When the unit under test is a hook, render a probe component:
+
+```tsx no-check
+function Probe({ onResult }: { onResult: (w: ReturnType<typeof useGrist>) => void }) {
+  const w = useGrist()
+  React.useEffect(() => onResult(w), [w])
+  return null
+}
+
+renderWithGrist(<Probe onResult={spy} />, { emulator: {...} })
+```
+
+### Live mutations
+
+```ts
+emulator.mutate.updateRow("Tasks", 1, { Title: "Renamed" })
+expect(await findByText("Renamed")).toBeInTheDocument()
+```
+
+### Action assertions
+
+```ts
+fireEvent.click(getByRole("button", { name: /save/i }))
+await waitFor(() => {
+  expect(actionsOf(emulator)).toContainEqual(["UpdateRecord", "Tasks", 1, expect.any(Object)])
+})
+```
+
+## Beyond tests
+
+The emulator is for tests. To see a widget run, use a real Grist: `pnpm demo`
+on your machine, or the widget's demo page in the browser (see
+[Emulator](/docs/emulator)). See [Emulator API](/docs/emulator/api) for
+`createGristEmulator` itself.

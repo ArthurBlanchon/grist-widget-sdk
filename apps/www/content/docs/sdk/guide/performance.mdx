@@ -1,0 +1,41 @@
+---
+title: "Performance"
+description: "How useGrist() re-renders, and how to keep a widget fast."
+---
+
+## One store, one subscription per component
+
+`useGrist()` reads one store through `useSyncExternalStore`. A component that
+calls it re-renders when a value Grist sends changes: a cursor move, the
+section's data, the widget options, the theme, a write's status. The render
+budget (`packages/core/bench/`, checked in CI) pins how many:
+
+| Scenario | Renders of a `useGrist()` component |
+| --- | --- |
+| Cursor change | 1 |
+| `table.create` (status running, the new rows, status idle) | 3 |
+| `useGristSchema()` reload | 1 |
+
+## Keep expensive work out of the render path
+
+- **Derive with `useMemo`** from the members you use (`w.records`,
+  `w.mappings`), not from `w` itself: the result object is new on every
+  change, its members aren't.
+- **Methods are stable**: `w.fetchTableRows`, `w.table`, `w.listColumns`…
+  keep their identity for the widget's lifetime, so they are safe in effect
+  dependencies.
+- **Split a heavy view** into a component that receives only what it shows
+  (`<Grid rows={w.records} />` with `React.memo`), so a theme or status change
+  doesn't re-render the grid.
+
+## Reads are not cached
+
+`fetchTable`, `fetchTableRows`, `fetchSelectedTable` and `listColumns` call
+Grist each time. Call them from an effect (or a query library such as React
+Query), not during render. For the section's own rows, `w.records` is already
+there and kept current by Grist.
+
+## Attachments
+
+Prefer `fetchAttachmentBlob` and `URL.createObjectURL` over embedding file
+contents in state; revoke the URL when the component unmounts.

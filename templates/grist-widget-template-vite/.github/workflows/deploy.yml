@@ -1,0 +1,313 @@
+name: Deploy widget to GitHub Pages
+
+# Two channels, one workflow:
+#   - push to main / manual dispatch -> release channel: immutable
+#     /<repo>/v<version>/ + mutable /<repo>/latest/, plus the same build at
+#     the site root (the showcase hub landing page).
+#     Rebuilt only when package.json's version has no v<version> dir yet, so
+#     re-pushing main without a version bump is a no-op deploy.
+#     A repo's first genuine release always resolves to v0.0.1 regardless of
+#     package.json's version, so "Use this template" (whose initial push to
+#     main by GitHub's web-flow bot fires this workflow) publishes a clean
+#     v0.0.1 + /latest/ + root right away, discarding any inherited canary
+#     version. On that same first release, the "Reset repo to a clean
+#     first-release state" step below rewrites package.json's version back to
+#     0.0.1 in the repo itself (so the *next* release bumps to 0.0.2 rather
+#     than the inherited number) and, since "Use this template" never runs
+#     the CLI's own rename step, also personalizes the four placeholder-
+#     identity spots (package.json's name, README.md's heading, index.html's
+#     <title>, App.tsx's title) to match this repo's real name -- a no-op
+#     wherever that placeholder text is already gone.
+#   - push to dev                    -> dev channel: mutable /<repo>/dev/
+#     with version.json + a self-reload snippet, for live review inside Grist.
+#
+# All logic lives in the `grist-widget-deploy` command of create-grist-widget,
+# a devDependency (node builtins only), so deploy fixes arrive as dependency
+# updates.
+#
+# Two jobs, so no dependency code ever runs next to a write token. `build`
+# installs and builds (Vite and its plugins are third-party code) with a
+# read-only token, and hands dist/ over as an artifact. `publish` holds
+# `contents: write`: it installs with --ignore-scripts, so no dependency code
+# runs, and then runs grist-widget-deploy alone, at the version the lockfile
+# pins.
+#
+# One-time setup this workflow can't do for you: enable Pages (Settings ->
+# Pages -> Source: Deploy from a branch -> gh-pages -> / (root); this workflow
+# creates the gh-pages branch itself if missing, but Pages must be pointed at
+# it once -- NOT main, which serves this repo's raw unbuilt source instead
+# (symptom: a blank page with a 404 for /src/main.tsx in the browser
+# console, even though this workflow reports success) and make sure Actions
+# has write access (Settings -> Actions -> General -> Workflow permissions ->
+# Read and write permissions).
+
+on:
+  push:
+    branches: [main, dev]
+  # Retire the dev URL when the `dev` branch is deleted (see `cleanup` job).
+  delete:
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Rebuild even if v<version> already exists."
+        type: boolean
+        required: false
+        default: false
+
+# Nothing at workflow level: each job states what it needs.
+permissions: {}
+
+# Serialize deploys onto the single shared gh-pages branch. grist-widget-deploy
+# additionally rebases-and-retries on push, so interleaving runs never clobber.
+concurrency:
+  group: pages-gh-pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    # Build/publish on push + manual dispatch. The delete event is handled by `cleanup`.
+    if: github.event_name != 'delete'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      REPO_NAME: ${{ github.event.repository.name }}
+    outputs:
+      context: ${{ steps.plan.outputs.context }}
+      skip: ${{ steps.plan.outputs.skip }}
+      version: ${{ steps.plan.outputs.version }}
+      firstRelease: ${{ steps.plan.outputs.firstRelease }}
+    steps:
+      # Action majors track the monorepo's own workflows (Dependabot watches
+      # this file via the template's directory in .github/dependabot.yml);
+      # the v4s here ran on the deprecated Node 20 action runtime.
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          # Never cache: a pnpm cache hard-requires a committed
+          # pnpm-lock.yaml, which a scaffold made with --no-install doesn't
+          # have (see the install step below). Explicit rather than relying
+          # on setup-node's npm-only default.
+          package-manager-cache: false
+
+      # A plain `pnpm install`, not --frozen-lockfile. A scaffold commits
+      # pnpm-lock.yaml in its first commit, and with one committed pnpm
+      # freezes the install in CI by itself: the versions and integrity
+      # hashes in the lockfile are what gets installed. A scaffold made
+      # with --no-install has no lockfile until its author commits one, and
+      # there --frozen-lockfile (or `cache: pnpm`) fails outright with
+      # "Dependencies lock file is not found" (found live, on the very
+      # first real deploy); a plain install resolves fresh instead.
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Clone gh-pages into ./site (read-only, to plan against)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          git clone --depth 1 --branch gh-pages \
+            "https://x-access-token:${GH_TOKEN}@github.com/${REPO}.git" site \
+            || {
+              echo "gh-pages branch not found; creating an orphan."
+              git clone --depth 1 "https://x-access-token:${GH_TOKEN}@github.com/${REPO}.git" site
+              git -C site checkout --orphan gh-pages
+              git -C site rm -rf . >/dev/null 2>&1 || true
+              touch site/.nojekyll
+            }
+          git -C site config user.name  "github-actions[bot]"
+          git -C site config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Resolve deploy plan
+        id: plan
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REF: ${{ github.ref }}
+          FORCE: ${{ github.event.inputs.force == 'true' && '--force' || '' }}
+        run: |
+          PLAN=$(node_modules/.bin/grist-widget-deploy plan \
+            --site site --repo "$REPO_NAME" \
+            --event "$EVENT_NAME" \
+            --ref "$REF" \
+            $FORCE)
+          echo "Plan: $PLAN"
+          node -e '
+            const p = JSON.parse(process.argv[1]);
+            const fs = require("fs");
+            const out = process.env.GITHUB_OUTPUT;
+            fs.appendFileSync(out, `context=${p.context}\n`);
+            fs.appendFileSync(out, `skip=${p.skip ? "true" : "false"}\n`);
+            fs.appendFileSync(out, `version=${p.version || ""}\n`);
+            fs.appendFileSync(out, `base=${p.base}\n`);
+            fs.appendFileSync(out, `firstRelease=${p.firstRelease ? "true" : "false"}\n`);
+          ' "$PLAN"
+
+      - name: Build
+        if: steps.plan.outputs.skip != 'true'
+        env:
+          BASE: ${{ steps.plan.outputs.base }}
+        run: |
+          pnpm exec tsc -b
+          pnpm exec vite build --base "$BASE"
+          # grist-widget.json, the widget's Grist manifest (name, access,
+          # columns, versions), served next to index.html on every channel.
+          pnpm exec create-grist-widget manifest --base "$BASE"
+
+      - name: Hand the build over to the publish job
+        if: steps.plan.outputs.skip != 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: dist
+          path: dist
+          if-no-files-found: error
+          # Same files as before the split: upload-artifact skips dotfiles by
+          # default, and a widget's public/ may well ship some.
+          include-hidden-files: true
+          retention-days: 1
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      REPO_NAME: ${{ github.event.repository.name }}
+      CONTEXT: ${{ needs.build.outputs.context }}
+      VERSION: ${{ needs.build.outputs.version }}
+      REF: ${{ github.ref }}
+    steps:
+      # Credentials stay persisted here: the first-release reset below pushes
+      # with them. No dependency code runs in this job (see the install step).
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          package-manager-cache: false
+
+      # Only for grist-widget-deploy, at the version (and integrity hash) the
+      # lockfile pins. --ignore-scripts: no dependency's install script runs,
+      # and the steps below call the bin directly, never through `pnpm
+      # exec`/`pnpm run`, whose dependency check may reinstall with scripts.
+      - name: Install the deploy command
+        run: pnpm install --ignore-scripts
+
+      - name: Clone gh-pages into ./site
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          git clone --depth 1 --branch gh-pages \
+            "https://x-access-token:${GH_TOKEN}@github.com/${REPO}.git" site \
+            || {
+              echo "gh-pages branch not found; creating an orphan."
+              git clone --depth 1 "https://x-access-token:${GH_TOKEN}@github.com/${REPO}.git" site
+              git -C site checkout --orphan gh-pages
+              git -C site rm -rf . >/dev/null 2>&1 || true
+              touch site/.nojekyll
+            }
+          git -C site config user.name  "github-actions[bot]"
+          git -C site config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Download the build
+        if: needs.build.outputs.skip != 'true'
+        uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist
+
+      - name: Place build in gh-pages tree
+        if: needs.build.outputs.skip != 'true'
+        run: |
+          SHA="$(git rev-parse --short HEAD)"
+          VERSION_ARG=""
+          [ -n "$VERSION" ] && VERSION_ARG="--version $VERSION"
+          node_modules/.bin/grist-widget-deploy place \
+            --site site --repo "$REPO_NAME" \
+            --channel "$CONTEXT" $VERSION_ARG \
+            --dist dist \
+            --sha "$SHA" --ref "$REF"
+
+      - name: Skip (already published)
+        if: needs.build.outputs.skip == 'true'
+        run: echo "== skip — v${VERSION} already published"
+
+      - name: Finalize (versions.json + commit + push)
+        env:
+          SHA_FULL: ${{ github.sha }}
+        run: |
+          UPDATE_VERSIONS=""
+          if [ "$CONTEXT" = "release" ]; then
+            UPDATE_VERSIONS="--update-versions"
+          fi
+          node_modules/.bin/grist-widget-deploy finalize \
+            --site site --repo "$REPO_NAME" $UPDATE_VERSIONS --push \
+            --commit-message "deploy: ${CONTEXT} @ ${SHA_FULL}"
+
+      - name: Reset repo to a clean first-release state
+        if: needs.build.outputs.context == 'release' && needs.build.outputs.firstRelease == 'true'
+        run: node_modules/.bin/grist-widget-deploy reset-branches --repo "$REPO_NAME"
+
+  cleanup:
+    # When the `dev` branch is deleted, remove /dev/ so the dev URL retires
+    # (404) instead of serving a stale build forever.
+    if: github.event_name == 'delete' && github.event.ref_type == 'branch' && github.event.ref == 'dev'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout (default branch — for its pinned grist-widget-deploy)
+        uses: actions/checkout@v7
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          package-manager-cache: false
+
+      # As in `publish`: no dependency scripts run, and the bin is called directly.
+      - name: Install the deploy command
+        run: pnpm install --ignore-scripts
+
+      - name: Clone gh-pages into ./site (skip if it does not exist)
+        id: clone
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          if git clone --depth 1 --branch gh-pages \
+              "https://x-access-token:${GH_TOKEN}@github.com/${REPO}.git" site; then
+            git -C site config user.name  "github-actions[bot]"
+            git -C site config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "gh-pages branch not found; nothing to clean up."
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Remove dev dir + push
+        if: steps.clone.outputs.exists == 'true'
+        env:
+          DELETED_REF: ${{ github.event.ref }}
+        run: |
+          node_modules/.bin/grist-widget-deploy remove --site site
+          node_modules/.bin/grist-widget-deploy finalize \
+            --site site --push \
+            --commit-message "cleanup: retire dev URL for ${DELETED_REF}"

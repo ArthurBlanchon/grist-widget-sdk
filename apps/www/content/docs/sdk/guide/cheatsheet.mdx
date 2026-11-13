@@ -1,0 +1,106 @@
+---
+title: "Cheat sheet"
+description: "Copy-pasteable widget shapes for daily reference, organized by the pattern each one demonstrates."
+---
+
+One page for daily reference once you understand the
+[mental model](/docs/quickstart/concepts). Every TypeScript example below is the full
+**`WidgetApp.tsx`** from `examples/<id>/`, deployed standalone at
+`/examples/<id>/latest/` and running in a real Grist at
+`/examples/<id>/demo/`.
+
+The deployed example wraps it in `GristWidgetProvider` and `GristBoundary`;
+snippets show only `WidgetApp` (and `GRIST_OPTIONS`).
+
+## Provider + hook (selection modes)
+
+**[hello-world](/examples/hello-world/demo/)**
+
+<include cwd>../../examples/hello-world/WidgetApp.tsx</include>
+
+| `w.mode` | Meaning |
+| --- | --- |
+| `"empty"` | The Custom Widget section has no selected row. |
+| `"row"` | A real row is selected. `w.record` and `w.mappedRecord` are populated. |
+| `"new-row"` | The user is on the add-row placeholder. |
+
+## Mappings + column gate
+
+**[form-edit](/examples/form-edit/demo/)** —
+`mappedRecord`, `mapBack`, `columnMappingStatus`, and writes:
+
+<include cwd>../../examples/form-edit/WidgetApp.tsx</include>
+
+Declared columns only (mapping panel):
+
+**[declared-columns](/examples/declared-columns/demo/)**
+
+<include cwd>../../examples/declared-columns/WidgetApp.tsx</include>
+
+## Writes
+
+**[writes-demo](/examples/writes-demo/demo/)** —
+`create`, `update`, `upsert`, `destroy` (single or array via `table`):
+
+<include cwd>../../examples/writes-demo/WidgetApp.tsx</include>
+
+Single-row update:
+
+**[mark-done](/examples/mark-done/demo/)**
+
+<include cwd>../../examples/mark-done/WidgetApp.tsx</include>
+
+## Schema mutations
+
+**[schema-migration](/examples/schema-migration/demo/)**
+
+<include cwd>../../examples/schema-migration/WidgetApp.tsx</include>
+
+## Reads
+
+**[reads-demo](/examples/reads-demo/demo/)**
+
+<include cwd>../../examples/reads-demo/WidgetApp.tsx</include>
+
+## Typed reads (checked against the declared types, read-only)
+
+**[typed-reads](/examples/typed-reads/demo/)**
+
+<include cwd>../../examples/typed-reads/WidgetApp.tsx</include>
+
+## Attachments
+
+**[attachment-gallery](/examples/attachment-gallery/demo/)**
+
+<include cwd>../../examples/attachment-gallery/WidgetApp.tsx</include>
+
+## REST
+
+**[rest-fetch](/examples/rest-fetch/demo/)**
+
+<include cwd>../../examples/rest-fetch/WidgetApp.tsx</include>
+
+## Theme
+
+**[theme-demo](/examples/theme-demo/demo/)**
+
+<include cwd>../../examples/theme-demo/WidgetApp.tsx</include>
+
+## Linked sections
+
+**[task-board](/examples/task-board/demo/)** —
+`setCursorPosition` on card click:
+
+<include cwd>../../examples/task-board/WidgetApp.tsx</include>
+
+## Widget options
+
+**[widget-options](/examples/widget-options/demo/)**
+
+<include cwd>../../examples/widget-options/WidgetApp.tsx</include>
+
+## Schema for LLM context
+
+**[schema-preview](/examples/schema-preview/demo/)**
+
+<include cwd>../../examples/schema-preview/WidgetApp.tsx</include>

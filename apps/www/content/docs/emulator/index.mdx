@@ -1,0 +1,45 @@
+---
+title: Emulator
+description: "Test widgets without a live Grist document: the emulator behind renderWithGrist and smokeTestWidget."
+---
+
+`grist-widget-sdk/emulator` is a self-contained reimplementation of the
+parts of the Grist plugin API the SDK uses. It installs as `window.grist`,
+so your widget's real code path runs unmodified — no mocking `useGrist()`
+itself.
+
+<Cards>
+  <Card
+    title="Testing"
+    description="renderWithGrist, presets, and custom matchers for vitest/Jest."
+    href="/docs/emulator/testing"
+  />
+  <Card
+    title="Emulator API"
+    description="createGristEmulator and the methods that drive and inspect it."
+    href="/docs/emulator/api"
+  />
+</Cards>
+
+## A test harness, not a preview
+
+The emulator runs your widget's tests: `renderWithGrist` and
+`smokeTestWidget` mount it as `window.grist` in jsdom. To *see* a widget,
+use a real Grist instead, where nothing has to match Grist because it is
+Grist:
+
+- `pnpm demo` in a widget opens it in a Grist running on your machine
+  (Docker).
+- Its demo page (`create-grist-widget demo --save`, then `<channel>/demo/`
+  once deployed) opens it in Grist running in the browser, from static
+  files ([grist-static](https://github.com/gristlabs/grist-static)). Every
+  [example](/docs/quickstart/examples) has one, at `/examples/<id>/demo/`.
+
+## Where to go next
+
+- [Testing](/docs/emulator/testing) — `renderWithGrist` and the recommended
+  test patterns.
+- [Emulator API](/docs/emulator/api) — the lower-level `createGristEmulator`
+  surface.
+- [Replica document](/docs/sdk/design/replica-document) — the document
+  shape the emulator (and `presets`) build on.

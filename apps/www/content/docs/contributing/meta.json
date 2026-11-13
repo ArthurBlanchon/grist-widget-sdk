@@ -1,0 +1,11 @@
+{
+  "title": "Contributing",
+  "description": "Repo maintenance: deploy, release, and real-widget checks.",
+  "icon": "GitPullRequest",
+  "root": true,
+  "pages": [
+    "deploy",
+    "releasing",
+    "real-widgets"
+  ]
+}

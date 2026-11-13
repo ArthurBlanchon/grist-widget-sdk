@@ -1,0 +1,7 @@
+{
+  "title": "Quickstart",
+  "description": "Build a widget in minutes, by hand or with AI.",
+  "icon": "Rocket",
+  "root": true,
+  "pages": ["index", "introduction", "concepts", "examples"]
+}

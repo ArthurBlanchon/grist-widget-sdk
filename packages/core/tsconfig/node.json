@@ -1,0 +1,36 @@
+{
+  // Shared TypeScript settings for a widget's build config (vite.config.ts),
+  // which runs in Node.
+  //
+  //   // tsconfig.node.json
+  //   { "extends": "grist-widget-sdk/tsconfig/node.json", ... }
+  //
+  // The widget's own file keeps tsBuildInfoFile and include (TypeScript
+  // resolves those relative to the file that declares them) and types
+  // (e.g. "node").
+  //
+  // Needs TypeScript 5.8 or later (erasableSyntaxOnly). Making a check
+  // stricter can fail a widget's typecheck, so it only happens in a minor
+  // (breaking, before 1.0) release of grist-widget-sdk.
+  "compilerOptions": {
+    "target": "ES2023",
+    "lib": ["ES2023"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+
+    /* Linting */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "erasableSyntaxOnly": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedSideEffectImports": true
+  }
+}

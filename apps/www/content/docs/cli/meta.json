@@ -1,0 +1,7 @@
+{
+  "title": "CLI",
+  "description": "Scaffold widgets from a terminal, fully offline.",
+  "icon": "Terminal",
+  "root": true,
+  "pages": ["index", "upgrading"]
+}

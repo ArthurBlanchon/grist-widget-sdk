@@ -1,0 +1,78 @@
+---
+title: "`<GristWidgetProvider>` and `<GristBoundary>`"
+description: "The two components at a widget's root: the connection to Grist, and what shows until the widget can run."
+---
+
+`mountGristWidget()` renders both around your `App`:
+
+```tsx no-check
+<GristWidgetProvider options={GRIST_OPTIONS}>
+  <GristBoundary>
+    <App />
+  </GristBoundary>
+</GristWidgetProvider>
+```
+
+Render them yourself only for a page that manages its own React root. One
+provider per widget; nesting providers is unsupported.
+
+## `<GristWidgetProvider>`
+
+```ts
+type GristWidgetProviderProps = {
+  options?: UseGristOptions // read once, at mount
+  children: React.ReactNode
+}
+```
+
+Connects to Grist for the components below it; `useGrist()` under it reads
+this connection. The connection is synchronous: the provider checks that the
+page is in Grist's iframe and that `window.grist` (the plugin API) is loaded,
+calls `grist.ready(options)` once, and listens to Grist's records, options,
+mappings and theme. A page that loads the plugin API asynchronously gets one
+more look once the page has loaded. There is no polling and no heartbeat: the
+widget's iframe lives and dies with the Grist page, and a call that fails
+fails where it was made.
+
+### `UseGristOptions`
+
+```ts
+type UseGristOptions = {
+  requiredAccess?: "none" | "read table" | "full" // default "read table"
+  columns?: Array<string | GristColumnToMap>      // the columns the user maps in Grist
+  allowSelectBy?: boolean                         // other sections can link to this widget
+  hasCustomOptions?: boolean                      // Grist shows "Open configuration"
+  onEditOptions?: () => void | Promise<void>      // ...which calls this
+  suppressAlerts?: GristSdkAlertKind[]            // alerts mountGristWidget() never shows
+}
+
+type GristColumnToMap = {
+  name: string           // the name widget code uses
+  title?: string | null  // label in Grist's mapping panel
+  description?: string | null
+  type?: string          // allowed Grist types, comma-separated: "Text", "Numeric,Int", "Ref:Tasks"...
+  optional?: boolean
+  allowMultiple?: boolean
+  strictType?: boolean
+}
+```
+
+## `<GristBoundary>`
+
+```ts
+type GristBoundaryProps = { children: React.ReactNode }
+```
+
+Renders its children once Grist is connected, has granted the access the
+widget declares, and every required declared column is mapped. Until then it
+shows a screen that says what is missing:
+
+| State | Screen | Retry |
+| --- | --- | --- |
+| Connecting, or mappings not reported yet | "Connecting to Grist" | — |
+| Not in Grist's iframe, or no plugin API | "Open inside Grist" | yes |
+| `grist.ready()` failed or timed out (30 s) | "Something went wrong", with the error | yes |
+| Grist granted less access than declared | "More access needed", with the level to set | yes |
+| A required column isn't mapped | "Map your columns" | — |
+
+Retry calls `useGrist().reload()`. The boundary needs a provider above it.

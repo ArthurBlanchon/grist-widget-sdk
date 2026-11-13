@@ -1,0 +1,35 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "types": ["react"],
+    // Snippets are excerpts, not real modules -- an import a snippet's own
+    // fragment doesn't happen to use, or a `w` the wrapper supplies that a
+    // particular fragment doesn't reference, is expected, not a bug to flag.
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    // A doc snippet illustrating a callback shape (e.g. "async function
+    // toggle(w, m) {...}") often skips parameter types for brevity/focus --
+    // that's a documentation-style choice, not the kind of drift this check
+    // exists to catch (a real SDK symbol renamed/retyped out from under a
+    // sample). `strict` stays on for everything else.
+    "noImplicitAny": false,
+    // Resolve "grist-widget-sdk", "/app" and "/emulator/testing" to
+    // this package's own source, the same public surface public-api.test.ts
+    // pins -- never the published npm package, so a doc sample is checked
+    // against the code about to ship, not last release's.
+    "paths": {
+      "grist-widget-sdk": ["../../../src/sdk/index.ts"],
+      "grist-widget-sdk/app": ["../../../src/app/index.ts"],
+      "grist-widget-sdk/emulator/testing": ["../../../src/emulator/testing/index.ts"]
+    }
+  },
+  "include": [".generated/**/*.tsx"]
+}

@@ -1,0 +1,107 @@
+---
+title: "Error handling"
+description: "Where a widget's errors surface: the connection, the boundary, the alerts, failed writes and cells."
+---
+
+A widget meets errors at four levels:
+
+1. **The connection** — `status` / `error` from `useGrist()`, shown by `<GristBoundary>`.
+2. **What needs the user in Grist** — the alerts `mountGristWidget()` shows above the widget.
+3. **A failed call** — a rejected promise, and `actionStatus` / `actionError` for writes.
+4. **A cell** — a mapped cell that doesn't match its declared type, or a formula error: `w.cellIssues`.
+
+## The connection
+
+```ts
+type GristWidgetStatus = "booting" | "ready" | "unavailable" | "error"
+```
+
+| Status | Meaning |
+| --- | --- |
+| `booting` | Waiting for Grist to answer `grist.ready()`. |
+| `ready` | Connected, with the access the widget declares. |
+| `unavailable` | Not in Grist's iframe, or the plugin API (`grist-plugin-api.js`) didn't load. |
+| `error` | `grist.ready()` failed or didn't answer within 30 s, or Grist granted less access than `requiredAccess`. `error` says which. |
+
+`<GristBoundary>` (rendered by `mountGristWidget()`) shows a screen for each
+non-ready state, and "Map your columns" while a required declared column
+isn't mapped; see [Provider & boundary](/docs/sdk/api/provider-boundary#gristboundary).
+Its retry button calls `useGrist().reload()`, which calls `grist.ready()`
+again.
+
+### Access
+
+Grist reports the access it grants with the widget options (`access_level`:
+`none`, `read table`, `full`). When it is less than the widget's
+`requiredAccess` (the user hasn't accepted the widget's request yet, or set a
+lower level), `status` is `"error"` and the boundary asks for the level to
+set in the Custom widget settings. A call that needs more than the widget
+was granted fails with Grist's "Access not granted" error, and the
+`access-insufficient` alert says what to change.
+
+## Alerts
+
+While the widget runs, `mountGristWidget()` shows what needs the user's
+attention in Grist above it:
+
+| Kind | When | Severity |
+| --- | --- | --- |
+| `mapping-pending` | Grist hasn't reported column mappings yet | `info` |
+| `column-mapping` | A required declared column isn't mapped | `warning` |
+| `access-insufficient` | A read or write failed for lack of access | `error` |
+| `action-error` | The last write failed (its message) | `error` |
+| `map-back-skip` | `mapBack` skipped an `allowMultiple` column | `warning` |
+| `cell-issues` | A mapped cell doesn't match its declared type (or the widget's `schema`) | `warning` |
+| `section-not-linked` | The widget's section is linked to nothing | `warning` |
+| `source-not-wired` | An `allowSelectBy` widget that no section links to | `warning` |
+
+A widget turns off the kinds it doesn't want with
+`suppressAlerts: ["section-not-linked"]` in its `GRIST_OPTIONS`.
+
+## A failed call
+
+Every method of `useGrist()` returns a promise that rejects with Grist's
+error. Writes also set `actionStatus` to `"error"` and `actionError` to the
+message, until the next write:
+
+```tsx
+function Save({ id }: { id: number }) {
+  const w = useGrist()
+  return (
+    <button
+      disabled={w.actionStatus === "running"}
+      onClick={() => void w.table.update({ id, fields: { Done: true } }).catch(() => {})}
+    >
+      {w.actionStatus === "error" ? `Retry (${w.actionError})` : "Mark done"}
+    </button>
+  )
+}
+```
+
+## Cells
+
+A formula error arrives as Grist's tagged value `["E", type, message?]`:
+
+```ts
+import { isGristCellError } from "grist-widget-sdk"
+
+function cellText(value: unknown): string {
+  return isGristCellError(value) ? `#${String(value[1])}` : String(value ?? "")
+}
+```
+
+In the mapped records, a cell that doesn't match its declared type (a
+formula error included) is `null`, and `w.cellIssues` says which and why;
+`mountGristWidget()` shows the `cell-issues` alert. See
+[Typed reads](/docs/sdk/guide/typing).
+
+## Unexpected exceptions
+
+The SDK installs no React error boundary of its own. Use your usual one
+around the widget body:
+
+```tsx no-check
+<ErrorBoundary FallbackComponent={MyErrorScreen}>
+  <App />
+</ErrorBoundary>
+```

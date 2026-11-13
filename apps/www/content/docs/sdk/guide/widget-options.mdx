@@ -1,0 +1,69 @@
+---
+title: "Widget options"
+description: "Persisting per-section settings -- filters, view modes, preferences -- in a Grist widget's own JSON store."
+---
+
+Every Grist custom widget can keep a JSON object with its section: view
+modes, filters, preferences, prompts. It belongs to the section, so two
+sections with the same widget keep their own.
+
+## Read and write
+
+```ts
+const w = useGrist()
+
+w.widgetOptions                              // the current object, or null before Grist sends it
+await w.patchWidgetOptions({ compact: true }) // merge into it
+await w.setWidgetOptions({ compact: true })   // replace it (setWidgetOptions({}) clears it)
+```
+
+`widgetOptions` follows Grist: after a write, Grist sends the options back
+and the widget re-renders, with no re-fetch. Writing needs `"full"` access.
+
+```tsx
+function CompactToggle() {
+  const w = useGrist()
+  const compact = w.widgetOptions?.compact === true
+  return (
+    <button onClick={() => void w.patchWidgetOptions({ compact: !compact })}>
+      {compact ? "Expand" : "Compact"}
+    </button>
+  )
+}
+```
+
+## Typed options
+
+Read them through one function that checks each value, so a missing or
+older option falls back to a default:
+
+```ts
+type Settings = { compact: boolean; pageSize: number }
+
+function readSettings(raw: Record<string, unknown> | null): Settings {
+  return {
+    compact: raw?.compact === true,
+    pageSize: typeof raw?.pageSize === "number" ? raw.pageSize : 25,
+  }
+}
+```
+
+## Opening the configuration panel
+
+`hasCustomOptions: true` in `GRIST_OPTIONS` shows "Open configuration" in
+Grist's widget menu, and Grist calls `onEditOptions` when the user picks it:
+
+```tsx no-check
+export const GRIST_OPTIONS: UseGristOptions = {
+  requiredAccess: "full",
+  hasCustomOptions: true,
+  onEditOptions: () => setShowSettings(true),
+}
+```
+
+## Pitfalls
+
+- **Don't write on every keystroke.** Debounce, or write on blur.
+- **Don't store large data here.** Grist sends the options with every
+  `onOptions` event; keep them under a few KB.
+- **Not a secrets store.** Anyone who can open the document can read them.

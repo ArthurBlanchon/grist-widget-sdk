@@ -1,0 +1,88 @@
+---
+title: "What is `grist-widget-sdk`?"
+description: "Why `grist-widget-sdk` exists, what it wraps, and when to reach for the raw plugin API instead."
+---
+
+`grist-widget-sdk` is a React library that wraps the **Grist plugin API** — the JavaScript bridge between a custom widget iframe and a Grist document. Its goal is one thing:
+
+> **Make 90% of widgets a one-import, one-hook problem; keep the remaining 10% reachable without writing your own bridge.**
+
+## Why this SDK?
+
+The smallest useful widget compresses to this — provider, boundary, hook, done:
+
+```tsx
+import {
+  GristBoundary,
+  GristWidgetProvider,
+  useGrist,
+} from "grist-widget-sdk"
+
+function Widget() {
+  const w = useGrist()
+  if (w.mode === "empty") return <p>Select a row.</p>
+  return <p>Row #{String(w.record!.id)}</p>
+}
+
+export default function App() {
+  return (
+    <GristWidgetProvider options={{ requiredAccess: "read table" }}>
+      <GristBoundary>
+        <Widget />
+      </GristBoundary>
+    </GristWidgetProvider>
+  )
+}
+```
+
+The official `grist-plugin-api.js` is excellent but low-level. Built directly, every widget repeats the same boilerplate:
+
+- Polling `typeof grist !== "undefined"` and detecting iframe context.
+- Calling `grist.ready(...)` exactly once.
+- Subscribing to four uncomposable event streams (`onRecord`, `onRecords`, `onOptions`, `onNewRecord`).
+- Reconciling decoded vs encoded payloads, columnar vs row-shaped data.
+- Tracking action status / errors for writes.
+- Mapping column logical names ↔ real ids both ways.
+- Caching short-lived access tokens for REST calls.
+- Re-doing all of the above in a way React's render cycle is happy with.
+
+The SDK encapsulates this once. Your widget code never imports the `grist` global.
+
+## What it gives you
+
+| Concern | API |
+| --- | --- |
+| Mounting, inside and outside Grist | `mountGristWidget({ App, options })` (`grist-widget-sdk/app`) |
+| Connecting / access / mapping screens | `<GristBoundary>`, rendered by `mountGristWidget()` |
+| Data, mapping, writes, options, REST | `useGrist()` |
+| Schema for LLMs | `useGristSchema()` |
+| Schema mutations | `gristAddColumnAction`, `gristAddTableAction`, … + `w.applyActions([...])` |
+| Decoding / encoding cells | `decodeGristValue`, `encodeGristValue` |
+| Typed reads (checked against the declared types, read-only) | `w.mappedRecords`, `w.cellIssues`, `GristMappedRow` |
+| REST | `w.fetchWithAuth(path)` |
+| Attachments | `w.getAttachmentUrl(id)` / `w.fetchAttachmentBlob(id)` / `w.uploadAttachment(file)` |
+| Testing | `renderWithGrist(ui, { emulator })` |
+
+## Design philosophy
+
+1. **One default surface.** `<GristWidgetProvider>` + `<GristBoundary>` + `useGrist()` is the recommended pattern. Everything else is optional.
+2. **No leaky globals.** Widget code never imports `grist`. The SDK enforces a single `grist.ready` call and a single subscription per event.
+3. **Sane decoding defaults.** Records, rows, and section reads arrive as decoded JS values (`keepEncoded: false`). Opt back into raw wire formats only when you ask for them.
+4. **Composable slices.** Big widgets opt into slice hooks so a write does not re-render the read panel.
+5. **Tests look like production.** The emulator runs in-process under `renderWithGrist` so every hook is exercised by its real code path.
+
+## When *not* to use this SDK
+
+- You're not writing a React widget. (The Grist plugin API is framework-agnostic; this SDK is React-only.)
+- You need to manipulate the Grist UI shell beyond what the plugin API exposes.
+- You're embedding Grist inside *your* app (host-side use case, not widget-side).
+
+For everything else — read tables, render records, persist widget settings, run schema migrations, sign attachments, talk to the REST API — this SDK is the recommended entry point.
+
+## Next steps
+
+- [SDK guide](/docs/sdk) — install and run a minimal widget.
+- [Examples](/docs/quickstart/examples) — 16 widgets, each running in a real Grist in your browser.
+- [Core concepts](/docs/quickstart/concepts) — the mental model behind selection modes, mappings, and the ready handshake.
+- [API reference](/docs/sdk/api) — every exported symbol.
+- [Design principles](/docs/sdk/design/principles) — read this before proposing API changes.

@@ -1,0 +1,130 @@
+---
+title: "Emulator & testing"
+description: "Reference for the emulator's public and testing subpaths, used to run widgets without a real Grist document."
+---
+
+The emulator is a self-contained reimplementation of the parts of the Grist plugin API the SDK uses, for tests. It's available under two subpaths:
+
+| Subpath | Purpose |
+| --- | --- |
+| `grist-widget-sdk/emulator` | Core emulator (`createGristEmulator`, document validators). |
+| `grist-widget-sdk/emulator/testing` | React Testing Library integration (`renderWithGrist`, presets, matchers). |
+
+## `createGristEmulator(options)`
+
+Builds an emulator from a document and installs it as `grist` on the page
+(or on `transport.target`). `renderWithGrist` does this for you; call it
+yourself to share one emulator between renders.
+
+```ts
+import { createGristEmulator, presets } from "grist-widget-sdk/emulator"
+
+const emulator = createGristEmulator({
+  document: presets.todoList(),       // required, a replica document
+  widgetOptions: { color: "red" },    // what grist.getOptions() returns
+  widgetInteraction: { access_level: "read table" }, // the access Grist grants; default: what the widget asks for
+  initialTheme: "dark",               // replayed once on grist.ready()
+})
+emulator.dispose()
+```
+
+`document` must be a complete `GristReplicaDocument` (see
+[Replica document](/docs/sdk/design/replica-document)). Validate untrusted
+input first with `parseDocument(json)` (throws) or `safeParseDocument(json)`.
+
+## Driving it
+
+Every change goes through the same event streams Grist uses (`onRecord`,
+`onRecords`, `onOptions`, theme messages): the SDK takes its real path.
+
+```ts
+emulator.mutate.addRow("Tasks", { title: "New" })      // returns the row id
+emulator.mutate.updateRow("Tasks", 1, { done: true })
+emulator.mutate.removeRow("Tasks", 1)
+emulator.apply([["AddRecord", "Tasks", null, { title: "x" }]]) // any user actions
+
+emulator.selectRow(2)            // or "new" (the add-row), or null
+emulator.selectTable("Contacts") // the section's table
+
+emulator.setColumnMappings({ Label: "title" }) // as a user mapping columns
+await emulator.setOptions({ color: "blue" })   // widget options
+emulator.setInteraction({ access_level: "read table" }) // access Grist grants
+emulator.theme.set("light")
+```
+
+`emulator.state` is the live document (tables, selection, options), and
+`emulator.bus` the event bus every change goes through.
+
+## Inspecting events and actions
+
+```ts
+import { actionsOf, eventsOf } from "grist-widget-sdk/emulator/testing"
+
+actionsOf(emulator) // every user action applied so far, e.g. ["AddRecord", "Tasks", null, {...}]
+eventsOf(emulator)  // every bus event: cursor-change, data-change, options-change, ...
+```
+
+## Testing entry
+
+```ts
+import {
+  renderWithGrist,
+  presets,
+  actionsOf,
+  eventsOf,
+  waitForEvent,
+} from "grist-widget-sdk/emulator/testing"
+```
+
+### `renderWithGrist(ui, options?)`
+
+A thin wrapper over `@testing-library/react`'s `render`. Adds:
+
+```ts
+type RenderWithGristOptions = RenderOptions & {
+  emulator?: CreateGristEmulatorOptions
+  existing?: GristEmulator
+}
+```
+
+If neither `emulator` nor `existing` is given, a blank emulator is created and torn down on `unmount`.
+
+Returns a `RenderResult` with the emulator:
+
+```ts
+type RenderWithGristResult = RenderResult & {
+  emulator: GristEmulator
+}
+```
+
+### `presets`
+
+```ts
+presets.blank()
+presets.todoList()
+presets.contacts()
+```
+
+Returns ready-to-pass `GristReplicaDocument` objects. Useful for quick starts; build your own for thorough tests.
+
+### `waitForEvent(emulator, kind, opts?)`
+
+Waits for the **next** matching bus event (ignores events that were already in history when the call started).
+
+```ts
+await waitForEvent(emulator, "options", { timeoutMs: 2000 })
+await waitForEvent(emulator, (e) => e.type === "user-action" && e.action[0] === "AddRecord")
+```
+
+**Kinds** (map to emulator bus events):
+
+| Kind | Bus event |
+| --- | --- |
+| `ready` | `ready` |
+| `record` | `cursor-change` (drives `onRecord`) |
+| `records` | `data-change` (drives `onRecords`) |
+| `options` | `options-change` |
+| `theme` | `theme-change` |
+| `cursor` | `cursor-change` |
+
+Rejects with `waitForEvent timed out after …ms (kind: …)` and a short list of recent bus event types. Useful for async write flows.

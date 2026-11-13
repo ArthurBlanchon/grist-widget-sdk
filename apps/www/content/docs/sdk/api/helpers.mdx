@@ -1,0 +1,111 @@
+---
+title: "Helpers"
+description: "The SDK's pure functions: cells, attachments, user actions, typed reads, page metadata."
+---
+
+Pure functions, exported from `grist-widget-sdk`. None needs React or Grist.
+
+## Cells
+
+### `tableDataToRows(columnar)`
+
+Turns a column-oriented payload (`fetchSelectedTable()`, `fetchTable()`:
+`{ id: [1, 2], Name: ["a", "b"] }`) into rows (`[{ id: 1, Name: "a" }, …]`),
+in the order of the `id` column.
+
+### `decodeGristValue(value, column?)`
+
+Decode a single cell from its wire format into a JS value.
+
+```ts
+decodeGristValue(1717599600, { type: "DateTime:UTC" })
+// → Date
+
+decodeGristValue(["L", 1, 2], { type: "RefList:Tasks" })
+// → marshalled list
+
+decodeGristValue(["E", "TypeError", "expected number"], col)
+// → { kind: "error", type: "TypeError", message: "expected number" }
+```
+
+If `column` is omitted, the codec applies type-inference based on the tag.
+
+### `encodeGristValue(value, column)`
+
+Inverse — turn a JS value into the wire format Grist expects.
+
+```ts
+encodeGristValue(new Date(), { type: "DateTime:UTC" }) // → epoch seconds
+encodeGristValue([1, 2], { type: "RefList:Tasks" })    // → ["L", 1, 2]
+```
+
+### `isGristCellError(value)`
+
+True when `value` is a formula error, Grist's `["E", type, message?]` tuple.
+
+### `normalizeGristChoiceListEntries(widgetOptions)`
+
+A Choice or ChoiceList column's `widgetOptions` as a flat list for a
+dropdown: `[{ value, label, fillColor?, textColor? }]`.
+
+### `resolveGristFormulaKind(column)`
+
+A replica column's formula kind: `"computed"` (a formula column),
+`"trigger"` (a data column with a trigger formula), `"empty_slot"` or
+`"none"`.
+
+## Attachments
+
+| Symbol | Purpose |
+| --- | --- |
+| `extractGristAttachmentIdsFromCell(cell)` | Every attachment id in an Attachments cell. |
+| `extractGristAttachmentId(cell)` | The first one. |
+| `gristAttachmentCellValue(id)` | The cell value for one file, `["L", id]`. |
+| `gristAttachmentCellValues(ids)` | The cell value for several, `["L", ...ids]`. |
+| `mergeGristAttachmentCellValue(cell, newIds)` | The cell with `newIds` added, without duplicates. |
+
+Downloading and uploading need the document's REST API: `useGrist()`'s
+`getAttachmentUrl`, `fetchAttachmentBlob` and `uploadAttachment`.
+
+## User actions
+
+Builders for `useGrist().applyActions([...])`, which applies them together.
+
+| Builder | Action |
+| --- | --- |
+| `gristAddRecordAction(tableId, values)` | `["AddRecord", tableId, null, values]` |
+| `gristUpdateRecordAction(tableId, rowId, patch)` | `["UpdateRecord", tableId, rowId, patch]` |
+| `gristRemoveRecordAction(tableId, rowId)` | `["RemoveRecord", tableId, rowId]` |
+| `gristAddTableAction(tableId, tableInfo)` | `["AddTable", tableId, tableInfo]` |
+| `gristAddColumnAction(tableId, colId, colInfo)` | `["AddColumn", tableId, colId, colInfo]` |
+| `gristAddVisibleColumnAction(tableId, colId, colInfo)` | `["AddVisibleColumn", ...]`: also shows it in the section |
+| `gristModifyColumnAction(tableId, colId, colInfo)` | `["ModifyColumn", ...]` |
+| `gristRenameColumnAction(tableId, colId, newColId)` | `["RenameColumn", ...]` |
+| `gristRemoveColumnAction(tableId, colId)` | `["RemoveColumn", ...]` |
+
+For other actions, write the tuple: `applyActions` takes any
+`GristUserActionTuple`.
+
+## Typed reads
+
+### `checkGristCell(type, value)`
+
+`{ ok: true, value }`, the value a Grist type promises (`"Numeric"`,
+`"Ref:Tasks"`, `"Text,Ref"`…), or `{ ok: false, message }`. `useGrist()`
+checks the mapped cells with it; use it for data read another way. See
+[Typed reads](/docs/sdk/guide/typing).
+
+### `encodeGristCell(type, value)`
+
+The reverse: a value as Grist stores it in a column of that type. Lists
+become `["L", ...]`, a `Date` for a Date or DateTime column becomes seconds, a
+`Reference` for a Ref column its row id; anything else, or a value already
+encoded, passes through. `mapBack` encodes with it; use it for a write that
+doesn't go through `mapBack`, since Grist stores a bare list as an error cell.
+See [Encoding values for the wire](/docs/sdk/guide/writing-data#encoding-values-for-the-wire).
+
+## Widget metadata
+
+### `useWidgetMetadata({ title, description })`
+
+Sets the page's `<title>` and its description and Open Graph meta tags.

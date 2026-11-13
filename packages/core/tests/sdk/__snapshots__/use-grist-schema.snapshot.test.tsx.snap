@@ -1,0 +1,352 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`useGristSchema() replica snapshots > blank — schema+data 1`] = `
+{
+  "docName": "Blank",
+  "generatedAt": "1970-01-01T00:00:00.000Z",
+  "mode": "schema+data",
+  "source": "vitest-snapshot",
+  "tables": {
+    "Table1": {
+      "columns": {},
+      "rowCount": 1,
+      "rows": [
+        {
+          "id": 1,
+        },
+      ],
+    },
+  },
+}
+`;
+
+exports[`useGristSchema() replica snapshots > blank — schema+samples 1`] = `
+{
+  "docName": "Blank",
+  "generatedAt": "1970-01-01T00:00:00.000Z",
+  "mode": "schema+samples",
+  "source": "vitest-snapshot",
+  "tables": {
+    "Table1": {
+      "columns": {},
+      "rowCount": 1,
+      "rows": [
+        {
+          "id": 1,
+        },
+      ],
+    },
+  },
+}
+`;
+
+exports[`useGristSchema() replica snapshots > blank — schema-only 1`] = `
+{
+  "docName": "Blank",
+  "generatedAt": "1970-01-01T00:00:00.000Z",
+  "mode": "schema-only",
+  "source": "vitest-snapshot",
+  "tables": {
+    "Table1": {
+      "columns": {},
+      "rowCount": 1,
+    },
+  },
+}
+`;
+
+exports[`useGristSchema() replica snapshots > contacts — schema+data 1`] = `
+{
+  "docName": "Contacts",
+  "generatedAt": "1970-01-01T00:00:00.000Z",
+  "mode": "schema+data",
+  "source": "vitest-snapshot",
+  "tables": {
+    "Contacts": {
+      "columns": {
+        "company": {
+          "colRef": 1,
+          "formulaKind": "none",
+          "type": "Text",
+        },
+        "email": {
+          "colRef": 2,
+          "formulaKind": "none",
+          "type": "Text",
+        },
+        "firstName": {
+          "colRef": 3,
+          "formulaKind": "none",
+          "type": "Text",
+        },
+        "lastName": {
+          "colRef": 4,
+          "formulaKind": "none",
+          "type": "Text",
+        },
+      },
+      "rowCount": 3,
+      "rows": [
+        {
+          "company": "British Crown",
+          "email": "ada@analytical.engine",
+          "firstName": "Ada",
+          "id": 1,
+          "lastName": "Lovelace",
+        },
+        {
+          "company": "Linux Foundation",
+          "email": "linus@kernel.org",
+          "firstName": "Linus",
+          "id": 2,
+          "lastName": "Torvalds",
+        },
+        {
+          "company": "NASA",
+          "email": "margaret@apollo.nasa",
+          "firstName": "Margaret",
+          "id": 3,
+          "lastName": "Hamilton",
+        },
+      ],
+    },
+  },
+}
+`;
+
+exports[`useGristSchema() replica snapshots > contacts — schema+samples 1`] = `
+{
+  "docName": "Contacts",
+  "generatedAt": "1970-01-01T00:00:00.000Z",
+  "mode": "schema+samples",
+  "source": "vitest-snapshot",
+  "tables": {
+    "Contacts": {
+      "columns": {
+        "company": {
+          "colRef": 1,
+          "formulaKind": "none",
+          "type": "Text",
+        },
+        "email": {
+          "colRef": 2,
+          "formulaKind": "none",
+          "type": "Text",
+        },
+        "firstName": {
+          "colRef": 3,
+          "formulaKind": "none",
+          "type": "Text",
+        },
+        "lastName": {
+          "colRef": 4,
+          "formulaKind": "none",
+          "type": "Text",
+        },
+      },
+      "rowCount": 3,
+      "rows": [
+        {
+          "company": "British Crown",
+          "email": "ada@analytical.engine",
+          "firstName": "Ada",
+          "id": 1,
+          "lastName": "Lovelace",
+        },
+        {
+          "company": "Linux Foundation",
+          "email": "linus@kernel.org",
+          "firstName": "Linus",
+          "id": 2,
+          "lastName": "Torvalds",
+        },
+        {
+          "company": "NASA",
+          "email": "margaret@apollo.nasa",
+          "firstName": "Margaret",
+          "id": 3,
+          "lastName": "Hamilton",
+        },
+      ],
+    },
+  },
+}
+`;
+
+exports[`useGristSchema() replica snapshots > contacts — schema-only 1`] = `
+{
+  "docName": "Contacts",
+  "generatedAt": "1970-01-01T00:00:00.000Z",
+  "mode": "schema-only",
+  "source": "vitest-snapshot",
+  "tables": {
+    "Contacts": {
+      "columns": {
+        "company": {
+          "colRef": 1,
+          "formulaKind": "none",
+          "type": "Text",
+        },
+        "email": {
+          "colRef": 2,
+          "formulaKind": "none",
+          "type": "Text",
+        },
+        "firstName": {
+          "colRef": 3,
+          "formulaKind": "none",
+          "type": "Text",
+        },
+        "lastName": {
+          "colRef": 4,
+          "formulaKind": "none",
+          "type": "Text",
+        },
+      },
+      "rowCount": 3,
+    },
+  },
+}
+`;
+
+exports[`useGristSchema() replica snapshots > todoList — schema+data 1`] = `
+{
+  "docName": "Todo list",
+  "generatedAt": "1970-01-01T00:00:00.000Z",
+  "mode": "schema+data",
+  "source": "vitest-snapshot",
+  "tables": {
+    "Tasks": {
+      "columns": {
+        "done": {
+          "colRef": 1,
+          "formulaKind": "none",
+          "label": "Done",
+          "type": "Bool",
+        },
+        "priority": {
+          "colRef": 2,
+          "formulaKind": "none",
+          "label": "Priority",
+          "type": "Choice",
+        },
+        "title": {
+          "colRef": 3,
+          "formulaKind": "none",
+          "label": "Title",
+          "type": "Text",
+        },
+      },
+      "rowCount": 3,
+      "rows": [
+        {
+          "done": false,
+          "id": 1,
+          "priority": "high",
+          "title": "Buy milk",
+        },
+        {
+          "done": true,
+          "id": 2,
+          "priority": "high",
+          "title": "Write the SOTA emulator",
+        },
+        {
+          "done": false,
+          "id": 3,
+          "priority": "medium",
+          "title": "Ship it",
+        },
+      ],
+    },
+  },
+}
+`;
+
+exports[`useGristSchema() replica snapshots > todoList — schema+samples 1`] = `
+{
+  "docName": "Todo list",
+  "generatedAt": "1970-01-01T00:00:00.000Z",
+  "mode": "schema+samples",
+  "source": "vitest-snapshot",
+  "tables": {
+    "Tasks": {
+      "columns": {
+        "done": {
+          "colRef": 1,
+          "formulaKind": "none",
+          "label": "Done",
+          "type": "Bool",
+        },
+        "priority": {
+          "colRef": 2,
+          "formulaKind": "none",
+          "label": "Priority",
+          "type": "Choice",
+        },
+        "title": {
+          "colRef": 3,
+          "formulaKind": "none",
+          "label": "Title",
+          "type": "Text",
+        },
+      },
+      "rowCount": 3,
+      "rows": [
+        {
+          "done": false,
+          "id": 1,
+          "priority": "high",
+          "title": "Buy milk",
+        },
+        {
+          "done": true,
+          "id": 2,
+          "priority": "high",
+          "title": "Write the SOTA emulator",
+        },
+        {
+          "done": false,
+          "id": 3,
+          "priority": "medium",
+          "title": "Ship it",
+        },
+      ],
+    },
+  },
+}
+`;
+
+exports[`useGristSchema() replica snapshots > todoList — schema-only 1`] = `
+{
+  "docName": "Todo list",
+  "generatedAt": "1970-01-01T00:00:00.000Z",
+  "mode": "schema-only",
+  "source": "vitest-snapshot",
+  "tables": {
+    "Tasks": {
+      "columns": {
+        "done": {
+          "colRef": 1,
+          "formulaKind": "none",
+          "label": "Done",
+          "type": "Bool",
+        },
+        "priority": {
+          "colRef": 2,
+          "formulaKind": "none",
+          "label": "Priority",
+          "type": "Choice",
+        },
+        "title": {
+          "colRef": 3,
+          "formulaKind": "none",
+          "label": "Title",
+          "type": "Text",
+        },
+      },
+      "rowCount": 3,
+    },
+  },
+}
+`;

@@ -1,0 +1,54 @@
+---
+title: "API reference"
+description: "Every name grist-widget-sdk exports, by entry point."
+---
+
+The complete public surface. Anything not listed here is internal. The list
+is pinned by `packages/core/tests/sdk/public-api.test.ts`: a name can't be
+added or removed without changing it.
+
+## Entry points
+
+| Import path | Use for |
+| --- | --- |
+| `grist-widget-sdk` | The hooks, the provider and boundary, cell and attachment helpers, user actions, types. |
+| `grist-widget-sdk/app` | [`mountGristWidget()`](/docs/sdk/api/app): what `src/main.tsx` wires (inside- and outside-Grist pages, theme), plus `useTheme()` and the deploy channel helpers. |
+| `grist-widget-sdk/emulator` | The emulator, the engine of the testing helpers. |
+| `grist-widget-sdk/emulator/testing` | `renderWithGrist`, `smokeTestWidget`, `presets` and Testing Library. |
+| `grist-widget-sdk/tsconfig/app.json`, `grist-widget-sdk/tsconfig/node.json` | TypeScript settings for a widget's `tsconfig.app.json` and `tsconfig.node.json` to `extends` (TypeScript 5.8 or later). A stricter check only ships in a minor release. |
+
+## Hooks and components
+
+| Symbol | Purpose | Reference |
+| --- | --- | --- |
+| `defineGristWidget(definition)` | The widget's declaration (access, columns, title). `widget.useGrist()` is `useGrist()` typed from it, with no generics. | [Typed reads](/docs/sdk/guide/typing#declare-once) |
+| `useGrist<TRow, TMapped>()` | The widget's one object for Grist: status, records, mapping, writes, options, linking, REST. | [useGrist](/docs/sdk/api/use-grist) |
+| `useGristContext()` | `useGrist()` that throws outside `<GristWidgetProvider>`. | [useGrist](/docs/sdk/api/use-grist#outside-a-provider) |
+| `useGristOptional()` | `useGrist()` inside a provider, `null` outside one. | [useGrist](/docs/sdk/api/use-grist#outside-a-provider) |
+| `useGristSchema(options?)` | The document's schema and sample rows (full access). | [useGristSchema](/docs/sdk/api/use-grist-schema) |
+| `useWidgetMetadata(meta)` | The page's title and meta tags. | [Helpers](/docs/sdk/api/helpers#widget-metadata) |
+| `GristWidgetProvider` | Connects to Grist for the components below it. | [Provider & boundary](/docs/sdk/api/provider-boundary) |
+| `GristBoundary` | Renders the widget once connected, granted and mapped. | [Provider & boundary](/docs/sdk/api/provider-boundary) |
+
+`mountGristWidget()` renders the provider and the boundary: a scaffolded
+widget never renders them itself.
+
+## Helpers
+
+| Symbols | Reference |
+| --- | --- |
+| `tableDataToRows`, `decodeGristValue`, `encodeGristValue`, `isGristCellError`, `normalizeGristChoiceListEntries`, `resolveGristFormulaKind` | [Cells](/docs/sdk/api/helpers#cells) |
+| `extractGristAttachmentId`, `extractGristAttachmentIdsFromCell`, `gristAttachmentCellValue`, `gristAttachmentCellValues`, `mergeGristAttachmentCellValue` | [Attachments](/docs/sdk/api/helpers#attachments) |
+| `gristAddRecordAction`, `gristUpdateRecordAction`, `gristRemoveRecordAction`, `gristAddTableAction`, `gristAddColumnAction`, `gristAddVisibleColumnAction`, `gristModifyColumnAction`, `gristRenameColumnAction`, `gristRemoveColumnAction` | [User actions](/docs/sdk/api/helpers#user-actions) |
+| `checkGristCell`, `encodeGristCell`, and the types `GristMappedRow`, `GristCellIssue`, `StandardSchema` | [Typed reads](/docs/sdk/guide/typing), [Writing data](/docs/sdk/guide/writing-data#encoding-values-for-the-wire) |
+
+## Types
+
+Every exported type, with a line each: [Types](/docs/sdk/api/types).
+
+## Emulator & testing
+
+| Symbol | Reference |
+| --- | --- |
+| `createGristEmulator`, `presets`, `parseDocument`, `safeParseDocument` | [Emulator API](/docs/emulator/api) |
+| `renderWithGrist`, `smokeTestWidget`, `actionsOf`, `eventsOf`, `waitForEvent` | [Testing](/docs/emulator/testing) |

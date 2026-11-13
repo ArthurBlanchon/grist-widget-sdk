@@ -1,0 +1,166 @@
+---
+title: "Mounting a widget"
+description: "Reference for grist-widget-sdk/app: mountGristWidget(), the inside- and outside-Grist pages, the light/dark theme, and the deploy channel helpers."
+---
+
+`grist-widget-sdk/app` does what a widget's `src/main.tsx` otherwise wires
+by hand: it renders the widget inside Grist, shows a page of its own when the
+widget is opened anywhere else, and keeps the light/dark theme on `<html>`.
+
+```tsx no-check
+// src/main.tsx
+import { mountGristWidget } from "grist-widget-sdk/app"
+import "./index.css"
+import * as entry from "./app/App"
+
+mountGristWidget(entry, { dev: import.meta.env.DEV })
+```
+
+This is the whole of a scaffolded widget's `src/main.tsx`. A widget
+scaffolded before `create-grist-widget` 0.3.26 wires it by hand:
+[`create-grist-widget upgrade`](/docs/cli/upgrading#template-changes)
+switches it.
+
+## The entry module
+
+`mountGristWidget(entry, { dev, root })` reads what `src/app/App.tsx`
+exports (`GristWidgetEntry`). Everything a widget customises is there, in its
+own file, so `src/main.tsx` is the same in every widget and
+`create-grist-widget upgrade` rewrites it without losing anything.
+
+| Export | | |
+| --- | --- | --- |
+| `default` | required | The widget component. `React.lazy()` works. |
+| `widget` | `widget` or `GRIST_OPTIONS` | The declaration, from [`defineGristWidget()`](/docs/sdk/guide/typing#declare-once): access, columns, title and description (the page's title and meta tags). |
+| `GRIST_OPTIONS`, `WIDGET_METADATA` | | What a widget made before `defineGristWidget` exports instead. |
+| `Alerts`, `LocalDevPage`, `ReleasePage` | optional | Replace the SDK's alerts or pages (see the options below). `export const Alerts = null` renders the widget alone. |
+
+## `mountGristWidget(config)`
+
+Renders into `#root` (or `config.root`) and returns `{ unmount }`. What it
+renders depends on where the page is open:
+
+- **Inside Grist** (the page is in an iframe): the widget, inside
+  `<GristWidgetProvider options>` and `<GristBoundary>`. The boundary gates
+  on `"canRender"` when `options.columns` declares columns, so the widget
+  waits for them to be mapped, and on `"ready"` otherwise.
+- **Outside Grist**, where there's nothing to connect to: `LocalDevPage` on
+  the dev server (`dev: true`), and `ReleasePage` on a deployed URL.
+
+```tsx no-check
+import { lazy } from "react"
+import type { UseGristOptions } from "grist-widget-sdk"
+import { mountGristWidget } from "grist-widget-sdk/app"
+
+const options: UseGristOptions = { requiredAccess: "read table" }
+
+// A lazily loaded widget: its code (a map library, say) loads only inside Grist.
+const App = lazy(() => import("./widget").then((m) => ({ default: m.Widget })))
+
+mountGristWidget({ App, options, dev: false })
+```
+
+| Option | Default | |
+| --- | --- | --- |
+| `App` | required | The widget component. `React.lazy()` works. |
+| `options` | required | The widget's `GRIST_OPTIONS`, passed to `GristWidgetProvider`. |
+| `dev` | `false` | Pass `import.meta.env.DEV`. Outside Grist, it picks `LocalDevPage` over `ReleasePage`. |
+| `Alerts` | the SDK's alerts | Wraps the widget inside Grist, under the boundary. The default lists what needs the user's attention (column mapping, access level, failed writes, an unlinked section) above the widget. `null` renders the widget alone. |
+| `LocalDevPage` | the SDK's page | Shown outside Grist on the dev server: it points at `pnpm test` and the `dev` loop. |
+| `ReleasePage` | the SDK's page | Shown outside Grist on a deployed URL: links to every channel and version, and the URL to paste into Grist. Receives `{ channel }`. |
+| `root` | `"#root"` | The element to render into, or its selector. |
+
+`mountGristWidget()` throws if the root element doesn't exist.
+
+The default pages and alerts name the widget after the page's `<title>`, and
+style themselves with shadcn's CSS variables (`--background`, `--foreground`,
+`--border`, `--radius`, …) with neutral fallbacks, so they follow the widget's
+theme without depending on its Tailwind config. They only surround the
+widget: nothing inside `App` is styled by the SDK.
+
+## `<GristWidgetApp>`
+
+The same tree as a component, with the same props minus `root`: for a page
+that manages its own React root, or a test.
+
+```tsx
+import { renderWithGrist, screen } from "grist-widget-sdk/emulator/testing"
+import { GristWidgetApp } from "grist-widget-sdk/app"
+
+function Widget() {
+  return <p>Hello from Grist</p>
+}
+
+renderWithGrist(<GristWidgetApp App={Widget} options={{ requiredAccess: "read table" }} />)
+await screen.findByText("Hello from Grist")
+```
+
+## Theme
+
+The page keeps `light` or `dark` on `<html class>`, which Tailwind's `dark:`
+variant (and shadcn's tokens) read.
+
+- **Inside Grist**, the widget follows Grist's theme. Until Grist has sent
+  it, the OS setting applies.
+- **Outside Grist**, the OS setting applies by default. A choice made with
+  `setTheme()` is saved in `localStorage`, and the `d` key switches between
+  light and dark (except while typing in a field).
+
+### `useTheme()`
+
+For components that need the theme in JavaScript, such as a toaster or a
+chart. Its shape matches shadcn's `useTheme()`, so a shadcn component can
+import it in place of the template's theme provider.
+
+```tsx
+import { useTheme } from "grist-widget-sdk/app"
+
+function ThemeLabel() {
+  const { theme, resolvedTheme } = useTheme()
+  return <span>{theme === "system" ? `system (${resolvedTheme})` : theme}</span>
+}
+```
+
+```ts
+type UseThemeResult = {
+  theme: "light" | "dark" | "system" // inside Grist: Grist's theme, "system" until it arrives
+  resolvedTheme: "light" | "dark" // what <html class> carries
+  setTheme: (theme: "light" | "dark" | "system") => void // does nothing inside Grist
+}
+```
+
+Rendered without `mountGristWidget()` (a unit test, for instance), it reports
+the system theme instead of throwing.
+
+## Deploy channels
+
+A widget's deploy pipeline publishes the same build at its root and at
+`/latest/`, a preview at `/dev/`, and each release at `/v<version>/`, with a
+`versions.json` listing the releases. These helpers serve a page shown
+outside Grist, such as a custom `ReleasePage`.
+
+### `parseDeployPath(pathname)`
+
+```ts
+import { parseDeployPath, deployChannelLabel } from "grist-widget-sdk/app"
+
+parseDeployPath("/my-widget/v1.2.0/")
+// { channel: { kind: "version", version: "1.2.0" }, basePath: "/my-widget/" }
+
+deployChannelLabel({ kind: "dev" }) // "dev"
+```
+
+A path without a channel segment (the deployed root, or the dev server) is
+`latest`.
+
+### `useReleasedVersions(pathname?)`
+
+Fetches `versions.json` from the base path of `pathname` (the current page by
+default).
+
+```ts
+type UseReleasedVersionsResult = {
+  versions: { version: string; publishedAt: string }[] | null // null until loaded
+  error: boolean
+}
+```

@@ -1,0 +1,132 @@
+---
+title: "Attachments & REST"
+description: "Reach data the plugin API withholds directly -- attachment bytes, SQL, REST -- via a pre-authenticated fetch."
+---
+
+When you need data the plugin API doesn't expose directly — attachment bytes, SQL queries, the document's REST endpoints — the SDK gives you a signed `fetch` that handles authentication for you.
+
+## Access tokens
+
+Grist's short-lived access tokens authorize REST calls against the current
+document. The SDK gets them for you: `w.fetchWithAuth(...)`,
+`w.getAttachmentUrl(...)`, `w.fetchAttachmentBlob(...)` and
+`w.uploadAttachment(...)` each attach one. Tokens are cached briefly (~45 s)
+per `readOnly` flag; on a 401 the cache clears and the call is retried once.
+A token only ever goes to the document's own Grist instance: an absolute URL
+on another origin throws instead of leaking it.
+
+### Widget tokens vs API keys
+
+Grist documents two REST credentials:
+
+| Credential | Use case | How to send it |
+| --- | --- | --- |
+| **Widget access token** | Custom widgets (what the SDK's REST members use) | Query parameter `?auth=<token>` on URLs under `baseUrl` — [Grist `AccessTokenResult`](https://support.getgrist.com/code/interfaces/grist_plugin_api.AccessTokenResult/) |
+| **API key** | Server scripts, curl, integrations | `Authorization: Bearer <API-KEY>` — [REST API usage](https://support.getgrist.com/rest-api/) |
+
+Never put an API key in widget code. The SDK attaches widget tokens as `?auth=` for all browser REST calls (downloads and uploads).
+
+## REST `fetch`
+
+```ts
+const response = await w.fetchWithAuth("/sql", {
+  method: "POST",
+  body: JSON.stringify({ sql: "SELECT * FROM Tasks LIMIT 10" }),
+  headers: { "Content-Type": "application/json" },
+})
+const data = await response.json()
+```
+
+`path` may be:
+
+- An absolute URL (`https://...`) on the document's own Grist instance —
+  used as-is. Any other origin is refused: the token travels in the URL, and
+  must never reach another host. Use plain `fetch()` for those.
+- A path with leading `/` — resolved against the token's `baseUrl`, the document's API root (`…/api/docs/<docId>`).
+- A relative path — treated as `/${path}`.
+
+For all methods (including `POST` uploads), the widget access token is appended as `?auth=` (Grist’s documented widget pattern). The SDK does **not** send `Authorization: Bearer` with access tokens from the browser; use API keys only outside widgets.
+
+Pass `readOnly: true` when calling read-only endpoints; the token is scoped lower and stays valid longer.
+
+```ts
+await w.fetchWithAuth("/tables/Tasks/records", { readOnly: true })
+```
+
+## Attachments
+
+Grist attachment columns store an array of file refs. The SDK handles extracting ids and downloading bytes.
+
+### Upload (write access)
+
+Requires `requiredAccess: "full"`. Prefer the built-in helper:
+
+```ts
+const { ids, firstId } = await w.uploadAttachment(file)
+```
+
+This performs `POST /attachments` with `multipart/form-data` field `upload`, header `X-Requested-With: XMLHttpRequest`, and a write token as `?auth=`. Grist returns a **JSON array of ids**, e.g. `[42]` — see `parseGristAttachmentUploadResponseIds` if you call `fetchWithAuth` yourself.
+
+Uploading only stores the file on the document; you still **link the id to a row**:
+
+```ts
+const { firstId } = await w.uploadAttachment(file)
+
+// New row: single attachment
+const fields = w.mapBack({ Photos: gristAttachmentCellValue(firstId) })
+await w.table.create({ fields })
+
+// Existing row: append to the cell
+const fields = w.mapBack({
+  Photos: mergeGristAttachmentCellValue(row.Photos, [firstId]),
+})
+await w.table.update({ id: row.id, fields })
+```
+
+#### Cross-origin widgets (CORS)
+
+If the widget is hosted on a different origin than Grist (e.g. `localhost:5173`, ngrok), the browser blocks REST unless the Grist server allows your widget origin and headers such as `X-Requested-With`. A failed preflight often shows as `TypeError: Failed to fetch` with no HTTP status. See [grist-core#2040](https://github.com/gristlabs/grist-core/issues/2040) for operator notes.
+
+### Signed URL only
+
+```ts
+const url = await w.getAttachmentUrl("123", { readOnly: true })
+// Use the URL directly in <img src={url} />, <a download href={url} />, etc.
+```
+
+### Blob (preferred for large files)
+
+```ts
+const { blob, contentType } = await w.fetchAttachmentBlob("123")
+const objectUrl = URL.createObjectURL(blob)
+// remember to URL.revokeObjectURL(objectUrl) when unmounting
+```
+
+### Working with cells
+
+Attachment columns hold arrays of file refs. Use the helpers from the package root:
+
+```ts
+import { extractGristAttachmentIdsFromCell } from "grist-widget-sdk"
+
+const ids = extractGristAttachmentIdsFromCell(row.Photos)
+const urls = await Promise.all(ids.map((id) => w.getAttachmentUrl(id)))
+```
+
+## Required access level
+
+You need at least `requiredAccess: "read table"` for read-only tokens, and `requiredAccess: "full"` for read-write REST. Set it in the widget's `GRIST_OPTIONS`.
+
+## Error handling
+
+Both `fetchWithAuth` and attachment helpers throw on non-2xx responses with a generic message. For richer handling, inspect the `Response` yourself:
+
+```ts
+const response = await w.fetchWithAuth("/tables/Tasks/records", { readOnly: true })
+if (!response.ok) {
+  const body = await response.text()
+  throw new Error(`Grist REST failed (${response.status}): ${body}`)
+}
+```
+
+For the 401 retry path, the SDK's internal token cache is cleared automatically — your code keeps working after a brief renewal.

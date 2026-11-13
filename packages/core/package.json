@@ -1,6 +1,6 @@
 {
   "name": "grist-widget-sdk",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "description": "React hooks and helpers for Grist custom widgets",
   "license": "MIT",
   "engines": {

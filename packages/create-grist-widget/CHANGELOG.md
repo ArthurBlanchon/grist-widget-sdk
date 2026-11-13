@@ -1,5 +1,39 @@
 # create-grist-widget
 
+## 0.6.0
+
+### Minor Changes
+
+- a66b203: **`upgrade` rewrites the deprecated `grist-widget-sdk` names in a widget's code.** Once the template depends on `grist-widget-sdk` 0.6, `pnpm exec create-grist-widget upgrade` also migrates the widget's own files under `src/` (not the template's, not comments), where the replacement means the same:
+  
+  - `useGristContext()` → `useGrist()`;
+  - `w.isReady` → `w.status === "ready"` (and `!w.isReady` → `w.status !== "ready"`);
+  - `fetchTableRows(…)` → `fetchRows(…)`, `fetchSelectedTable()` → `fetchRows({ columnar: true })`, `fetchTable(id)` → `fetchRows(id, { columnar: true })`;
+  - the user-action builders' imports → `grist-widget-sdk/actions`.
+  
+  What it can't rewrite safely (`isAvailable`, a destructured flag, a reader called with options) it lists by file and line. Every rewrite is idempotent, and only runs in a file that imports `grist-widget-sdk`. https://gristwidgets.com/docs/cli/upgrading#deprecated-sdk-names
+  
+  Existing widgets can run `upgrade` as usual after updating `create-grist-widget`, then `pnpm typecheck`.
+
+### Patch Changes
+
+- 04fcfe6: **One way to do each thing: `fetchRows()`, `grist-widget-sdk/actions`, and soft deprecations.**
+  
+  ```ts
+  const rows = await w.fetchRows()                       // the section's rows, in its order
+  const people = await w.fetchRows("People")             // any table's rows (full access)
+  const columns = await w.fetchRows({ columnar: true })  // Grist's own column-oriented payload
+  
+  import { gristAddColumnAction } from "grist-widget-sdk/actions"
+  ```
+  
+  - `useGrist().fetchRows(tableId?, options?)` replaces three readers. Without a table id it reads the widget's own section (filters and sort applied); with one, any table, in Grist's order (`order`, `columns` as before). Rows by default, `{ columnar: true }` for columns.
+  - `grist-widget-sdk/actions` is the user actions' own entry point, with the bulk record builders (`gristBulkAddRecordAction`, `gristBulkUpdateRecordAction`, `gristBulkRemoveRecordAction`) the root entry never exported.
+  - Deprecated, removed in 1.0: `useGristContext()` (use `widget.useGrist()` or `useGrist()`); `useGrist().isReady` and `isAvailable`, and `useGristSchema().isAvailable` (use `status`); `fetchSelectedTable`, `fetchTable` and `fetchTableRows` (use `fetchRows`); the nine user-action builders in the root entry (import them from `grist-widget-sdk/actions`). Each still works, is struck through in the editor (`@deprecated`), and warns once in development with what replaces it; a production build stays silent. https://gristwidgets.com/docs/sdk/api/deprecated lists them.
+  - The examples (`create-grist-widget --example`) are declared with `defineGristWidget()` and use none of the deprecated names.
+  
+  Existing widgets keep working unchanged. To clear the warnings, replace each name as the deprecations page says.
+
 ## 0.5.0
 
 ### Minor Changes

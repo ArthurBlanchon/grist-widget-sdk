@@ -80,7 +80,7 @@ widget says what to change in Grist.
 | `fetchRows(tableId, options?)` | `"full"` | Any table's rows, in Grist's order (`order: "id"` or `"none"` to change it; `columns` to decode with the [replica's column metadata](/docs/sdk/design/replica-document)). |
 | `fetchRows(…, { columnar: true })` | as above | Grist's column-oriented payload (`{ id: [...], Name: [...] }`) instead. |
 | `listTables(options?)` | `"read table"` | Table ids; Grist's own tables only with `{ includeSystem: true }`. |
-| `listColumns(tableId, options?)` | `"full"` | Column ids, types, labels, formulas. |
+| `listColumns(tableId, options?)` | `"full"` | Column ids, types, labels, formulas; each column's settings (`widgetOptions`, such as a Choice column's `choices`), and for a Ref or RefList column the referenced table's column it shows (`visibleCol`). |
 
 ### Writes (`"full"`)
 

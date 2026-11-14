@@ -15,19 +15,26 @@ const ALERT_OPTIONS: GristSdkAlertsOptions = {
  */
 export function WidgetAlerts({ children }: { children: ReactNode }) {
   const alerts = useGristSdkAlerts(ALERT_OPTIONS)
-  if (alerts.length === 0) return <>{children}</>
-
+  const shown = alerts.length > 0
+  // One structure whether or not there are alerts: the widget keeps its place in the tree, so
+  // an alert coming or going (a failed write, a mapping being changed) never remounts it and
+  // never loses its state. Without alerts the wrapper is `display: contents`, as if absent.
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-      <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", padding: "0.75rem 0.75rem 0" }}>
-        {alerts.map((alert) => (
-          <WidgetAlert key={alert.id} alert={alert} />
-        ))}
-      </div>
+    <div style={shown ? COLUMN : CONTENTS}>
+      {shown ? (
+        <div style={{ ...COLUMN, padding: "0.75rem 0.75rem 0" }}>
+          {alerts.map((alert) => (
+            <WidgetAlert key={alert.id} alert={alert} />
+          ))}
+        </div>
+      ) : null}
       {children}
     </div>
   )
 }
+
+const COLUMN: CSSProperties = { display: "flex", flexDirection: "column", gap: "0.75rem" }
+const CONTENTS: CSSProperties = { display: "contents" }
 
 function WidgetAlert({ alert }: { alert: GristSdkAlertDescriptor }) {
   const linkIcon = alert.kind === "section-not-linked" || alert.kind === "source-not-wired"

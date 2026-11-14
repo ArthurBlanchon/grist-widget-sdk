@@ -159,6 +159,8 @@ export type GristColumnInfo = {
     isFormula?: boolean;
     formula?: string;
     description?: string;
+    widgetOptions?: Record<string, unknown>;
+    visibleCol?: string;
 };
 
 // @public

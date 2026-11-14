@@ -37,6 +37,7 @@ no required spec file.
 | Test the SDK | `pnpm --filter grist-widget-sdk test` |
 | Full suite (SDK + example typecheck + site) | `pnpm test` |
 | Type-check the SDK | `pnpm --filter grist-widget-sdk exec tsc --noEmit` |
+| Regenerate the SDK's API report (after `build`; commit `packages/core/api/`) | `pnpm --filter grist-widget-sdk api:report` |
 | Site dev / build | `pnpm --filter www dev` / `pnpm build:www` |
 | Regenerate the examples' demo documents (Docker) | `node scripts/example-demos.mjs build` |
 | Scaffold a new widget repo | `npm create grist-widget <name>` |
@@ -107,6 +108,8 @@ taught:
 
 - [ ] `pnpm --filter grist-widget-sdk test` green
 - [ ] `tsc --noEmit` + `build` green
+- [ ] `api:report` regenerated and committed if the public API changed
+  ([versioning policy](https://gristwidgets.com/docs/sdk/api/versioning))
 - [ ] `pnpm --filter www build` when docs changed
 - [ ] `TODO.md` updated: the item done removed, any new one added
 - [ ] `pnpm changeset` run and committed if user-visible

@@ -1,0 +1,65 @@
+---
+title: "Versioning policy"
+description: "What a version number promises, how a name is retired, and what is supported."
+---
+
+`grist-widget-sdk` and `create-grist-widget` always carry the same version
+number: `create-grist-widget` x.y.z scaffolds and upgrades widgets on
+`grist-widget-sdk` x.y.z.
+
+## What a version promises
+
+From 1.0, the version follows [semantic versioning](https://semver.org/):
+
+| Release | Contains | A widget… |
+| --- | --- | --- |
+| **Patch** (1.0.x) | Fixes, and dependency updates | takes it without change |
+| **Minor** (1.x.0) | New names and options, and deprecations | takes it without change; its tests may log deprecation warnings |
+| **Major** (x.0.0) | The removal of names deprecated in an earlier minor, and nothing else breaking without one | runs `upgrade`, whose codemods do the mechanical part |
+
+Before 1.0, a minor could break a widget. Since 0.6, the same rules
+already apply: a name goes only after a release in which it was deprecated.
+
+## How a name is retired
+
+A name, option or behaviour on its way out:
+
+1. **Is deprecated in a minor.** Its type is marked `@deprecated`, so the
+   editor strikes it through, and its first use logs one console warning in
+   development (`process.env.NODE_ENV` is not `"production"`, as in `pnpm
+   dev` and `pnpm test`). A production build stays silent. The
+   [deprecated names](/docs/sdk/api/deprecated) page says what replaces it.
+2. **Keeps working for at least one minor.**
+3. **Comes with its migration.** When the change is mechanical,
+   `pnpm exec create-grist-widget upgrade` rewrites it; otherwise `upgrade`
+   lists each use by file and line with what to write instead
+   ([Upgrading a widget](/docs/cli/upgrading)).
+4. **Is removed in the next major.**
+
+## What the public API is
+
+- **The entry points:** `grist-widget-sdk`, `grist-widget-sdk/app`,
+  `grist-widget-sdk/actions`, `grist-widget-sdk/emulator`,
+  `grist-widget-sdk/emulator/testing`, and the TypeScript configurations
+  `grist-widget-sdk/tsconfig/app.json` and `tsconfig/node.json`.
+- **Their names and types**, as recorded in the repository's API reports
+  (`packages/core/api/*.api.md`). CI fails a change to a public name or type
+  until its report is regenerated, so every API change shows in review.
+- **Not public:** paths under `grist-widget-sdk/src/` or `dist/`, names
+  marked `@internal`, and the HTML and CSS the SDK's components render.
+
+## What is supported
+
+- **React** 18 and 19. CI runs the SDK's tests on both.
+- **Node.js** 22.22.2 or later on the 22 line, or 24.15 or later, for
+  `create-grist-widget` and a widget's tooling.
+- **The latest minor only.** Fixes, security fixes included, go into a new
+  patch of the latest minor; older minors are not patched
+  ([security policy](https://github.com/ArthurBlanchon/grist-widget-sdk/security/policy)).
+
+## When releases happen
+
+Changes are released together **once a week**; a security fix is released
+as soon as it is ready. A widget installs a version once it is a day old
+(pnpm's `minimumReleaseAge`). Its Dependabot pull requests bring the new
+versions to its `dev` branch, and `upgrade` brings the template's files.

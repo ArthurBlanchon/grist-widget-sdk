@@ -33,7 +33,7 @@ test("a file rule matches that file only, not a prefix of it", () => {
 test("ci.yml: gate needs every job, and changes outputs every rule", async () => {
   const { readFileSync } = await import("node:fs")
   const yml = readFileSync(new URL("../../.github/workflows/ci.yml", import.meta.url), "utf8")
-  const jobs = [...yml.slice(yml.indexOf("\njobs:")).matchAll(/^ {2}([a-z][a-z-]*):$/gm)].map((m) => m[1])
+  const jobs = [...yml.slice(yml.indexOf("\njobs:")).matchAll(/^ {2}([a-z][a-z0-9-]*):$/gm)].map((m) => m[1])
   const needs = /^ {4}needs: \[(.*)\]$/m.exec(yml.slice(yml.indexOf("\n  gate:")))[1].split(",").map((s) => s.trim())
   assert.deepEqual([...needs].sort(), jobs.filter((j) => j !== "gate").sort())
   for (const rule of Object.keys(RULES)) {

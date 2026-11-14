@@ -19,7 +19,7 @@ The reasoning behind 0.4.0, and what it left for later, is the
 
 From the [project review and plan to 1.0](./docs/planning/2026-11-14-review-and-1.0-plan.md) §5;
 its decisions D1–D5 were accepted as recommended. Releases follow the weekly
-train (`RELEASING.md`).
+train (`docs/operations/releasing.md`).
 
 - [ ] **A. Catch up:** the six reference widgets on 0.6.2 on `dev` (from the
   unmerged 0.5.0 branches; scheduled 2026-11-15), released 0.3.0, the
@@ -53,8 +53,8 @@ widgets at most. This repository becomes the factory: catalog widgets in
 absorbed and archived, widgets served by the site that already exists
 (GitHub Pages and Cloudflare Pages). Simple and durable above all (plan §0.1).
 
-- [ ] **F0.** 0.7 released (#28) and the maintainer docs moved into the
-  repository (docs plan, M1).
+- [ ] **F0.** 0.7 released (#28). The maintainer docs are in the repository
+  (docs plan, M1: done).
 - [ ] **F1. Layout, with one pilot.** In place: `widgets/` with the Kanban
   board as the pilot, `widgets/_shared/` (shadcn components, theme,
   translations, Vite and ESLint configuration), `SPEC.md` and its check

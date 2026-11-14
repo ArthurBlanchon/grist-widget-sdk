@@ -3,7 +3,7 @@
 // updates merged since the last release that reach a published package.
 // Dependabot can't write a changeset itself (scripts/check-changeset.sh lets
 // its pull requests through), so whoever prepares a release runs this before
-// merging the Version Packages pull request (RELEASING.md).
+// merging the Version Packages pull request (docs/operations/releasing.md).
 //
 // What counts as reaching a published package:
 // - create-grist-widget: any change under templates/grist-widget-template-vite/

@@ -17,7 +17,7 @@ name: Deploy apps to GitHub Pages
 # That is also why NO CNAME is written here. Setting a custom domain on a
 # GitHub Pages site makes GitHub 301 this github.io URL to that domain,
 # which would collapse the two origins back into one -- see
-# apps/www/content/docs/contributing/deploy.mdx.
+# docs/operations/site-deploy.md.
 #
 # Uses the modern Actions-native Pages flow
 # (actions/upload-pages-artifact + actions/deploy-pages) rather than
@@ -50,7 +50,7 @@ name: Deploy apps to GitHub Pages
 #
 # scripts/build-site.mjs builds apps/www, the example widgets and their
 # demos (grist-static) into one tree, shipped together on both origins --
-# see apps/www/content/docs/contributing/deploy.mdx.
+# see docs/operations/site-deploy.md.
 
 on:
   push:

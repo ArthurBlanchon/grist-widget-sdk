@@ -591,6 +591,15 @@ describe("patchWidgetOptions", () => {
     await settle(() => w().patchWidgetOptions({ b: 2 }))
     expect(emulator.state.widgetOptions).toEqual({ a: 1, b: 2 })
   })
+
+  it("keeps every patch of several made together", async () => {
+    const { w, emulator } = renderProbe({ requiredAccess: "full" }, {
+      emulator: { document: presets.todoList(), widgetOptions: { a: 1 } },
+    })
+    await untilReady(w)
+    await settle(() => Promise.all([w().patchWidgetOptions({ b: 2 }), w().patchWidgetOptions({ c: 3 })]))
+    expect(emulator.state.widgetOptions).toEqual({ a: 1, b: 2, c: 3 })
+  })
 })
 
 describe("setCursorPosition", () => {

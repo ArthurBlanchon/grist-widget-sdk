@@ -87,8 +87,14 @@ export async function getAttachmentDownloadUrl(
   if (!getAccessToken) {
     throw new Error("getAccessToken is not available on docApi")
   }
+  // The id usually comes from a cell, and the URL carries the document's access
+  // token: anything but a row id (e.g. "1/../tables") could aim it at another route.
+  const id = String(attachmentId).trim()
+  if (!/^[1-9]\d*$/.test(id)) {
+    throw new Error(`getAttachmentDownloadUrl: "${attachmentId}" is not an attachment id (a positive integer).`)
+  }
   const { token, baseUrl } = await getAccessToken({ readOnly: options?.readOnly ?? false })
-  return `${baseUrl}/attachments/${attachmentId}/download?auth=${token}`
+  return `${baseUrl}/attachments/${id}/download?auth=${encodeURIComponent(token)}`
 }
 
 /** URL for the `index`’th attachment in a cell value (0-based). */

@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/ArthurBlanchon/grist-widget-sdk/security/advisories/new
+    about: Please report vulnerabilities privately (SECURITY.md), never in a public issue.
+  - name: Documentation
+    url: https://gristwidgets.com/docs
+    about: Guides and the API reference.

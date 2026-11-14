@@ -183,9 +183,16 @@ function gitInitCommit(target) {
   }
 }
 
-// Package managers are .cmd shims on Windows, which only a shell starts.
+// Package managers are .cmd shims on Windows, which only a shell starts. The
+// shell would interpret metacharacters, so on Windows every argument must be a
+// plain word (a package name, a flag): anything else is refused, not quoted.
+const PLAIN_ARG = /^[A-Za-z0-9@/._:=+-]+$/
 function runCommand(cmd, args, options) {
-  if (process.platform === "win32") return execSync([cmd, ...args].join(" "), options)
+  if (process.platform === "win32") {
+    const unsafe = [cmd, ...args].find((a) => !PLAIN_ARG.test(a))
+    if (unsafe !== undefined) throw new Error(`refusing to pass ${JSON.stringify(unsafe)} to the Windows shell`)
+    return execSync([cmd, ...args].join(" "), options)
+  }
   return execFileSync(cmd, args, options)
 }
 

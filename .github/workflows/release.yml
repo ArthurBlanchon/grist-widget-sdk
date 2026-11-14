@@ -80,13 +80,13 @@ jobs:
       # CI needed a manual re-run). Without the secret, both fall back to
       # GITHUB_TOKEN, i.e. the previous behavior.
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
           registry-url: "https://registry.npmjs.org"
@@ -130,7 +130,7 @@ jobs:
       # CHANGESETS_OUTPUT file the action exports, which `pnpm run release`
       # -> `changeset publish` inherits.
       - name: Version PR or publish
-        uses: changesets/action@v2
+        uses: changesets/action@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2.1.2
         with:
           version-script: pnpm run version-packages
           publish-script: pnpm run release

@@ -26,7 +26,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ArthurBlanchon/grist-widget-sdk.git"
+    "url": "git+https://github.com/ArthurBlanchon/grist-widget-sdk.git",
+    "directory": "packages/create-grist-widget"
   },
   "bugs": {
     "url": "https://github.com/ArthurBlanchon/grist-widget-sdk/issues"

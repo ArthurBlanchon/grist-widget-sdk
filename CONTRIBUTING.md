@@ -46,3 +46,9 @@ almost nothing and still merges without a bypass. A new check is a job in
 ## Language
 
 English for docs, comments, commits, and PR text unless a file explicitly requires otherwise.
+
+## Conduct and security
+
+Everyone taking part follows the [code of conduct](./CODE_OF_CONDUCT.md).
+Report a vulnerability privately, as [SECURITY.md](./SECURITY.md) explains,
+never in a public issue.

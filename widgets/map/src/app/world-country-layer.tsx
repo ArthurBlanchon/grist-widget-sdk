@@ -1,4 +1,5 @@
-import MapLibreGL, { type MapLayerMouseEvent } from "maplibre-gl"
+import * as MapLibreGL from "maplibre-gl"
+import type { MapLayerMouseEvent } from "maplibre-gl"
 import { useCallback, useEffect, useRef } from "react"
 
 import { useMap } from "@shared/ui/map"

@@ -20,6 +20,8 @@ country is coloured by a value (a sum per country, or a count of rows).
 This is the world-map widget brought into the catalog on the component it
 already used, mapcn's map (shadcn registry, MIT, on MapLibre GL,
 BSD-3-Clause), in `widgets/_shared/ui/map.tsx`, with a points mode added.
+It runs on MapLibre GL 6: the 5.x line the world-map used has a critical
+XSS advisory (GHSA-jrc7-96c5-q579), fixed from 6.4.1.
 
 ## Columns
 
@@ -41,7 +43,7 @@ mapped, otherwise countries when Country is.
 
 ## Size
 
-About 375 KB of JavaScript (gzip), budget 400 KB: MapLibre GL is most of
+About 390 KB of JavaScript (gzip), budget 400 KB: MapLibre GL is most of
 it. It loads in a chunk of its own once Grist has answered, so the widget
 shows its first state at once.
 

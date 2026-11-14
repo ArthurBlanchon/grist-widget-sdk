@@ -188,7 +188,9 @@ template's own files (this pipeline, the build config) arrive with
    - `tags`: no tag moved or deleted.
 
    Each ruleset file can also be imported by hand: Settings → Rules →
-   Rulesets → New ruleset → Import a ruleset.
+   Rulesets → New ruleset → Import a ruleset. Until they're in place, each
+   release warns in its run summary, and the first one opens an issue saying
+   so (the workflow's token can read rulesets, not create them).
 
    An AI agent working on this repo acts through your GitHub account, so
    these rules can't tell it from you. They guarantee the outcome (nothing

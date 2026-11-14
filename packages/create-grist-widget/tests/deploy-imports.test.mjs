@@ -37,6 +37,7 @@ describe("grist-widget-deploy", () => {
     expect([...graph.keys()].map((f) => f.slice(pkgRoot.length + 1)).sort()).toEqual([
       "bin/grist-widget-deploy.mjs",
       "src/deploy.mjs",
+      "src/protection-check.mjs",
     ])
     const external = [...graph.values()].flat().filter((s) => !s.startsWith(".") && !s.startsWith("node:"))
     expect(external).toEqual([])

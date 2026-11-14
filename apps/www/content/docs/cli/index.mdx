@@ -346,6 +346,12 @@ and only adds what is missing:
   branches has it already); if Pages serves another branch, it says so and
   leaves it.
 
+The deploy workflow can't apply these itself: creating a ruleset takes the
+repository's Administration permission, which a workflow's token never has.
+It checks them instead. The first release opens an issue, "Protect this
+repository", with the command, and every release warns in its summary while
+the `main`, `dev` or `tags` ruleset is missing.
+
 An AI agent working on the repo acts through your account, so the rules
 can't tell it from you: they guarantee nothing red reaches `main`, whoever
 merges.

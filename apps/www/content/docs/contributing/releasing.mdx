@@ -15,8 +15,9 @@ or `.changeset/`.
 
 Two npm packages are published from this repo — `grist-widget-sdk`
 (`packages/core`) and `create-grist-widget` (`packages/create-grist-widget`)
-— linked via Changesets (`.changeset/config.json` `linked`), so a release
-touching either bumps and republishes both to the same version number.
+— fixed together via Changesets (`.changeset/config.json` `fixed`), so a
+release touching either bumps and republishes both to the same version
+number.
 Everything else in the workspace is `private`.
 
 ## Three moving pieces
@@ -43,7 +44,7 @@ The actual publish is a **two-merge process**, not one:
 1. **Merge a PR with a changeset** → `release.yml` runs, sees the pending
    changeset(s), and opens/updates a **"Version Packages" PR** that bumps
    `packages/core/package.json` (and `create-grist-widget`'s, since
-   they're linked) and writes the new entries into
+   they're fixed together) and writes the new entries into
    `packages/core/CHANGELOG.md`, consuming the changeset files. **No npm
    publish happens yet.**
 2. **Merge that Version Packages PR** → `release.yml` runs again, this

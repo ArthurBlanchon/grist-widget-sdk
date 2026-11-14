@@ -28,6 +28,9 @@ catalog:
   'jotai': ^2.20.0
   'lodash.throttle': ^4.1.1
   '@types/lodash.throttle': ^4.1.9
+  # The Map (mapcn's ui/map.tsx, in widgets/_shared/ui). 6.4.1+ fixes GHSA-jrc7-96c5-q579 (critical XSS in 5.x).
+  'maplibre-gl': ^6.17.0
+  '@types/geojson': ^7946.0.16
   '@eslint/js': ^10.0.1
   '@testing-library/jest-dom': ^7.0.1
   '@testing-library/react': ^16.3.3

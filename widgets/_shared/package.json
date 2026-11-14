@@ -22,6 +22,7 @@
     "jotai": "catalog:",
     "lodash.throttle": "catalog:",
     "lucide-react": "catalog:",
+    "maplibre-gl": "catalog:",
     "radix-ui": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
@@ -32,6 +33,7 @@
   },
   "devDependencies": {
     "@eslint/js": "catalog:",
+    "@types/geojson": "catalog:",
     "@types/lodash.throttle": "catalog:",
     "@types/node": "catalog:",
     "@types/react": "catalog:",

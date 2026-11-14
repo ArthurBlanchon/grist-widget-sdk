@@ -29,3 +29,17 @@ test("every catalog widget passes the static checks", () => {
   assert.ok(slugs.length > 0)
   for (const slug of slugs) assert.deepEqual(checkStatic(slug).problems, [], slug)
 })
+
+test("a generated widget passes the static checks it can before its code is written", async () => {
+  const { mkdtempSync, mkdirSync, writeFileSync } = await import("node:fs")
+  const { tmpdir } = await import("node:os")
+  const { dirname, join } = await import("node:path")
+  const { widgetFiles, SLUG } = await import("./new-widget.mjs")
+  assert.ok(SLUG.test("gantt-chart") && !SLUG.test("Gantt") && !SLUG.test("-x"))
+  const dir = join(mkdtempSync(join(tmpdir(), "w-")), "gantt-chart")
+  for (const [rel, content] of Object.entries(widgetFiles({ slug: "gantt-chart" }))) {
+    mkdirSync(dirname(join(dir, rel)), { recursive: true })
+    writeFileSync(join(dir, rel), content)
+  }
+  assert.deepEqual(checkStatic("gantt-chart", dir).problems, [])
+})

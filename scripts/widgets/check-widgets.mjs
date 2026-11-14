@@ -13,12 +13,18 @@
 //   arbitrary Tailwind value, since the theme in widgets/_shared/ is the only
 //   place they live (ADR 0008).
 //
-// Usage: node scripts/widgets/check-widgets.mjs [slug...]
+// With --sizes, after the widgets are built, also each widget's JavaScript
+// (gzipped) against its budget: `bundle-kb` in its spec's front matter, or
+// DEFAULT_BUNDLE_KB. A heavier budget is a choice its spec states.
+//
+// Usage: node scripts/widgets/check-widgets.mjs [--sizes] [slug...]
 
 import { existsSync, readdirSync, readFileSync } from "node:fs"
 import { createRequire } from "node:module"
 import { dirname, join, relative, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
+
+import { jsGzipBytes } from "../ci/size-budget.mjs"
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..")
 export const WIDGETS_DIR = join(repoRoot, "widgets")
@@ -37,6 +43,20 @@ export const CATEGORIES = [
 export const STATUSES = ["draft", "beta", "stable", "retired"]
 export const ACCESS = ["none", "read table", "full"]
 export const SECTIONS = ["Job", "Columns", "Access", "Acceptance criteria", "Out of scope"]
+
+/** A widget's JavaScript budget, gzipped, unless its spec sets `bundle-kb`: the Kanban board is 98.5 KB. */
+export const DEFAULT_BUNDLE_KB = 125
+
+/** Problems with a built widget's size against its budget. */
+export function checkSize(slug, spec, dir = join(WIDGETS_DIR, slug)) {
+  const dist = join(dir, "dist")
+  if (!existsSync(dist)) return [`dist/ is missing: build the widget before --sizes`]
+  const budget = Number(spec.data["bundle-kb"] ?? DEFAULT_BUNDLE_KB)
+  if (!Number.isFinite(budget) || budget <= 0) return ["SPEC.md: bundle-kb must be a positive number"]
+  const kb = jsGzipBytes(dist) / 1000
+  console.log(`  ${slug}: ${kb.toFixed(1)} KB of JavaScript (gzip), budget ${budget} KB`)
+  return kb > budget ? [`bundle: ${kb.toFixed(1)} KB gzipped, over its ${budget} KB budget`] : []
+}
 
 /** The catalog widgets' slugs. */
 export function listWidgets(dir = WIDGETS_DIR) {
@@ -169,11 +189,14 @@ export async function checkDeclaration(slug, spec, dir = join(WIDGETS_DIR, slug)
 }
 
 async function main(argv) {
-  const slugs = argv.length ? argv : listWidgets()
+  const sizes = argv.includes("--sizes")
+  const named = argv.filter((a) => !a.startsWith("--"))
+  const slugs = named.length ? named : listWidgets()
   let failed = 0
   for (const slug of slugs) {
     const { problems, spec } = checkStatic(slug)
     if (spec) problems.push(...(await checkDeclaration(slug, spec)))
+    if (spec && sizes) problems.push(...checkSize(slug, spec))
     if (problems.length) {
       failed++
       console.error(`✗ ${slug}`)

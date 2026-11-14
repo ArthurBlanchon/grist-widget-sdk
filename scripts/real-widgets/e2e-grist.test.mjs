@@ -60,3 +60,28 @@ test("Grist runs from a pinned image, never latest", () => {
   assert.match(source, /"gristlabs\/grist:\d+\.\d+\.\d+"/)
   if (!process.env.GRIST_IMAGE) assert.notEqual(GRIST_IMAGE.split(":")[1], "latest")
 })
+
+test("a build with relative URLs is served under /<name>/dev/, and unknown paths fall back to index.html", async () => {
+  const { mkdtempSync, mkdirSync, writeFileSync } = await import("node:fs")
+  const { tmpdir } = await import("node:os")
+  const { join } = await import("node:path")
+  const { distFile } = await import("./e2e-grist.mjs")
+  const dist = mkdtempSync(join(tmpdir(), "dist-"))
+  mkdirSync(join(dist, "assets"))
+  writeFileSync(join(dist, "index.html"), "")
+  writeFileSync(join(dist, "assets", "a.js"), "")
+  assert.equal(distFile(dist, "/assets/a.js"), join(dist, "assets", "a.js"))
+  assert.equal(distFile(dist, "/kanban-board/dev/assets/a.js"), join(dist, "assets", "a.js"))
+  assert.equal(distFile(dist, "/kanban-board/dev/"), join(dist, "index.html"))
+  assert.equal(distFile(dist, "/../../etc/passwd"), join(dist, "index.html"))
+})
+
+test("only serious and critical accessibility violations fail, and --axe/--themes parse", async () => {
+  const { failingViolations, parseArgs } = await import("./e2e-grist.mjs")
+  const v = [{ id: "a", impact: "minor" }, { id: "b", impact: "serious" }, { id: "c", impact: "critical" }, { id: "d", impact: "moderate" }]
+  assert.deepEqual(failingViolations(v).map((x) => x.id), ["b", "c"])
+  const args = parseArgs(["w", "--axe", "--themes", "--build"])
+  assert.equal(args.axe, true)
+  assert.equal(args.themes, true)
+  assert.equal(args.build, true)
+})

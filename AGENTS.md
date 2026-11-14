@@ -63,7 +63,8 @@ Repeatable workflows are skills in [`.claude/skills/`](./.claude/skills/):
 | Regenerate the widget catalog | `pnpm build:widgets-manifest` |
 | Check widgets in a real Grist (Docker) | `pnpm e2e:grist <widget dir>` |
 | Check every `AGENTS.md` names only real paths and scripts | `pnpm check:agents-md` |
-| Check the catalog widgets' specs, criteria and design rules | `node scripts/widgets/check-widgets.mjs` |
+| Check the catalog widgets' specs, criteria and design rules | `pnpm check:widgets` |
+| Start a catalog widget | `pnpm new-widget <slug>` |
 
 ## Path map
 

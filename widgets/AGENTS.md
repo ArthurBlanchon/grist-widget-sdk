@@ -17,8 +17,9 @@ a private workspace package; `widgets/_shared/` is what they all share.
 | `package.json` | `@grist-widgets/<slug>`, private, MIT; versions are `catalog:` (`pnpm-workspace.yaml`) |
 | `vite.config.ts`, `eslint.config.js`, `tsconfig.json` | One line each onto `widgets/_shared/` |
 
-Start a new widget from the core widget closest to it (the Kanban board is
-the first), its `SPEC.md` written before its code.
+Start a new widget with `pnpm new-widget <slug>`, then write its `SPEC.md`
+before its code, reading the core widget closest to it (the Kanban board is
+the first).
 
 ## Rules
 
@@ -49,7 +50,8 @@ Run these from the repository root.
 
 | Intent | Command |
 | --- | --- |
-| Check every widget's spec, criteria, declaration and design rules | `node scripts/widgets/check-widgets.mjs` |
+| Start a widget (pnpm new-widget does the same) | `node scripts/widgets/new-widget.mjs <slug>` |
+| Check every widget's spec, criteria, declaration and design rules (pnpm check:widgets does the same) | `node scripts/widgets/check-widgets.mjs` |
 | Test one widget | `pnpm --filter @grist-widgets/kanban-board test` |
 | Type-check it | `pnpm --filter @grist-widgets/kanban-board typecheck` |
 | Lint it | `pnpm --filter @grist-widgets/kanban-board lint` |
@@ -58,6 +60,10 @@ Run these from the repository root.
 
 For every widget at once, as CI runs it:
 `pnpm --filter "./widgets/**" -r --workspace-concurrency=1 run <script>`.
+After a build, `node scripts/widgets/check-widgets.mjs --sizes` checks each
+bundle against its budget (`bundle-kb` in the spec, 125 KB gzipped by
+default). In a real Grist (Docker), with axe and a dark screenshot:
+`pnpm e2e:grist widgets/<slug> --build --axe --themes`.
 
 ## Path map
 
@@ -71,3 +77,5 @@ For every widget at once, as CI runs it:
 | ESLint configuration | `_shared/eslint.config.js` |
 | shadcn configuration | `_shared/components.json` |
 | The checker | `../scripts/widgets/check-widgets.mjs` |
+| The generator | `../scripts/widgets/new-widget.mjs` |
+| The real-Grist check | `../scripts/real-widgets/e2e-grist.mjs` |

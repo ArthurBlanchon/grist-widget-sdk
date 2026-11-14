@@ -95,7 +95,7 @@ size. It uses writes, mapped columns, options and linking, and the
 | 1 | Kanban board ([built](../widgets/kanban-board/SPEC.md)) | Move cards between status columns by dragging; card fields and order chosen in options | full | — | `examples/task-board` | Strong: 1,742 views; asked for since 2023; in every comparable tool |
 | 2 | Record editor ([built](../widgets/record-editor/SPEC.md)) | Edit a record inside Grist: typed fields (Choice, Ref, Date), validation, conditional fields, Save and Cancel | full | multi-step wizard | `examples/form-edit` | Strong: in the forum's "top 5 requests"; Grist Forms are public-only |
 | 3 | Record selector ([built](../widgets/record-selector/SPEC.md)) | Find a row by search and drive the other widgets on the page | read table | — | — | Medium; the piece that makes dashboards work |
-| 4 | Gantt chart | Plan tasks with dependencies and milestones; move and resize bars | full | timeline, resources | gantt-widget | Strong: 2,549 and 3,734 views |
+| 4 | Gantt chart ([built](../widgets/gantt/SPEC.md)) | Plan tasks with dependencies and milestones; move and resize bars | full | timeline, resources | gantt-widget | Strong: 2,549 and 3,734 views |
 | 5 | Map | Points by coordinates or address, colour by category, clusters, linked selection | read table (full to geocode) | choropleth | world-map | Medium; standard everywhere |
 | 6 | Chart builder | Charts beyond Grist's own: combined, heat map, radar, colour scales | read table | — | — | Medium: 897 views on colour scales |
 | 7 | Grouped / Pivot view ([built](../widgets/grouped-view/SPEC.md)) | Group by a value with collapsible groups; aggregate in a pivot | read table | grouped, pivot | — | Medium: 673 views; the official pivot is unmaintained since 2024 |
@@ -112,8 +112,11 @@ Notes for their specs:
 - **Grouped / Pivot view:** read-only, so the total (sum, average,
   minimum, maximum) is chosen for the session, not saved; mapping an Across
   column turns the groups into a pivot table.
-- **Gantt:** it needs a drag-and-drop timeline under an allowed licence.
-  Choosing that library is the first task of its spec.
+- **Gantt:** on kibo-ui's Gantt (shadcn registry `@kibo-ui`, MIT; dnd-kit,
+  date-fns, jotai), the component the gantt-widget already used, kept at
+  the maintainer's request and shared in `widgets/_shared/kibo-ui/`.
+  Version 0.1 is the gantt-widget's behaviour; dependencies, milestones
+  and the resources mode come later.
 - **Map:** the tiles are its only network calls. Their host is fixed in
   its CSP, and so is the geocoder's when geocoding is turned on.
 - **Chart builder:** shadcn's charts (Recharts) by default, so charts take

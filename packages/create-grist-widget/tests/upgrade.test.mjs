@@ -222,6 +222,24 @@ describe("pruneAgeExceptions", () => {
     return at ? new Date(at) : null
   }
 
+  it("never looks up a name that isn't an npm package name (it would reach a shell on Windows)", () => {
+    const asked = []
+    const lookup = (name, version) => {
+      asked.push(name)
+      return publishedAt(name, version)
+    }
+    const yaml = [
+      "minimumReleaseAgeExclude:",
+      '  - "x&calc@1.0.0"',
+      "  - grist-widget-sdk@0.3.27",
+      "",
+    ].join("\n")
+    const result = pruneAgeExceptions(yaml, { publishedAt: lookup, now })
+    expect(asked).toEqual(["grist-widget-sdk"])
+    expect(result.removed).toEqual(["grist-widget-sdk@0.3.27"])
+    expect(result.yaml).toContain("x&calc@1.0.0")
+  })
+
   it("drops the versions older than a day, and the key once none is left", () => {
     const yaml = [
       "allowBuilds:",

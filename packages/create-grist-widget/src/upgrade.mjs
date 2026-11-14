@@ -331,9 +331,13 @@ export function minimumReleaseAge(workspaceYaml) {
 }
 
 /** `{ name, versions }` for a `name@1.2.3` (or `name@1.2.3 || 1.2.4`) entry, or null for any other. */
+/** An npm package name (scoped or not), as npm itself accepts it for a new package. */
+export const NPM_PACKAGE_NAME = /^(?:@[a-z0-9-~][a-z0-9-._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/
+
 export function parseExactEntry(entry) {
   const m = /^(@?[^@\s]+)@(.+)$/.exec(entry)
-  if (!m) return null
+  // The name is later passed to `npm view`: anything but a package name is not an entry.
+  if (!m || !NPM_PACKAGE_NAME.test(m[1])) return null
   const versions = m[2].split("||").map((v) => v.trim())
   return versions.every((v) => parseVersion(v)) ? { name: m[1], versions } : null
 }

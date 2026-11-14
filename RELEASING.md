@@ -133,10 +133,11 @@ back to `GITHUB_TOKEN` otherwise, so nothing breaks without it. To set it up:
 
 Verify: `npm view grist-widget-sdk version` and the repo's Releases page.
 
-> **Provenance** is intentionally off while the repo is private (public
-> attestation expects a publicly inspectable source). Add
-> `NPM_CONFIG_PROVENANCE: true` to the publish job if the repo — or a public
-> mirror — becomes public.
+> **Provenance**: npm attaches a provenance attestation to every version
+> published through Trusted Publishing from this public repo (no setting
+> needed): `npm view grist-widget-sdk@<version> dist.attestations` shows it,
+> and npmjs.com links each version to the commit and workflow run that
+> built it.
 
 ## Post-release verification (template canary)
 

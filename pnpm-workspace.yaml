@@ -32,7 +32,19 @@ overrides:
   # 4.4.3 to 3.25.76 and broke `pnpm --filter www build` with a type error,
   # with no change to any file under apps/www. Pinned to match
   # packages/core's own declared range so the two can never disagree again.
-  zod: ^4.3.6
+  zod: ^4.6.7
+  # Security fixes for development-only dependencies of apps/www (eslint,
+  # eslint-config-next, serve): each selector targets only the vulnerable
+  # range, so nothing else in the graph moves. None of these is published
+  # or shipped to a widget. Drop an entry once its parent requires the fixed
+  # version itself (`pnpm why <name>`). deepmerge (via shadcn) has no fixed
+  # release yet: its advisory is dismissed as a development-only tool.
+  "fast-uri@<3.1.9": ^3.1.9
+  "brace-expansion@<1.1.21": ^1.1.21
+  "js-yaml@>=4.0.0 <4.3.2": ^4.3.2
+  "compression@<1.8.2": ^1.8.2
+  "@babel/core@<7.29.1": ^7.29.13
+  "minimatch@>=7.0.0 <11.0.1": ^11.0.5
 
 allowBuilds:
   esbuild: true

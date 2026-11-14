@@ -73,11 +73,12 @@ the SDK's alerts, in Grist's light or dark theme.
 
 ## Entry points
 
-- **`grist-widget-sdk`**: `defineGristWidget`, `useGrist`, `useGristContext`, `useGristOptional`,
+- **`grist-widget-sdk`**: `defineGristWidget`, `useGrist`, `useGristOptional`,
   `GristWidgetProvider`, `GristBoundary`, `useGristSchema`,
   `useWidgetMetadata`, `checkGristCell`, `encodeGristCell`, the value codec, the attachment
-  helpers, the user-action builders for `applyActions`, and Grist's types.
+  helpers, and Grist's types.
   [API reference](https://gristwidgets.com/docs/sdk/api).
+- **`grist-widget-sdk/actions`**: the user-action builders for `applyActions`.
 - **`grist-widget-sdk/app`**: `mountGristWidget`, `GristWidgetApp`,
   `useTheme`, and the deploy-channel helpers the scaffold's pages use.
   [Reference](https://gristwidgets.com/docs/sdk/api/app).

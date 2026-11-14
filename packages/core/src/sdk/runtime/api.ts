@@ -9,7 +9,6 @@ import { isGristNoiseColumn, type GristNoiseColumnsOptions } from "../helpers/gr
 import { fetchAttachmentBlob, getAttachmentDownloadUrl, type GristFetchedAttachmentBlob } from "../helpers/grist-attachment-download"
 import { uploadGristAttachment, type GristAttachmentUploadResult } from "../helpers/grist-attachment-upload"
 import { fetchWithGristAuth } from "../helpers/grist-fetch-with-auth"
-import { deprecatedFunction } from "../helpers/deprecate"
 import {
   fetchGristTableRows,
   materializeGristRowsFromColumnar,
@@ -74,15 +73,6 @@ export type FetchRows = {
 export type GristApi = {
   reload: () => Promise<void>
   fetchRows: FetchRows
-  /** @deprecated Use `fetchRows({ columnar: true })` (or `fetchRows()` for rows). */
-  fetchSelectedTable: (options?: GristFetchSelectedOptions) => Promise<GristColumnarTable>
-  /** @deprecated Use `fetchRows(tableId, { columnar: true })` (or `fetchRows(tableId)` for rows). */
-  fetchTable: (tableId: string) => Promise<GristColumnarTable>
-  /** @deprecated Use `fetchRows(tableId, options)`. */
-  fetchTableRows: <T extends Record<string, unknown> = Record<string, unknown>>(
-    tableId: string,
-    options?: FetchGristTableRowsOptions
-  ) => Promise<GristRowRecord<T>[]>
   listTables: (options?: ListTablesOptions) => Promise<string[]>
   listColumns: (tableId: string, options?: ListColumnsOptions) => Promise<GristColumnInfo[]>
   table: GristTableOperations
@@ -187,11 +177,6 @@ export function createGristApi(runtime: GristRuntime): GristApi {
     reload: () => runtime.reload(),
 
     fetchRows,
-    fetchSelectedTable: deprecatedFunction("useGrist().fetchSelectedTable()", "use fetchRows({ columnar: true }), or fetchRows() for rows", selectedColumns),
-    fetchTable: deprecatedFunction("useGrist().fetchTable()", "use fetchRows(tableId, { columnar: true }), or fetchRows(tableId) for rows", tableColumns),
-    fetchTableRows: deprecatedFunction("useGrist().fetchTableRows()", "use fetchRows(tableId, options)", (tableId: string, options?: FetchGristTableRowsOptions) =>
-      read(() => fetchGristTableRows(docApi(), tableId, options ?? {}))
-    ) as never,
     listTables: (options) =>
       read(async () => {
         const all = [...(await docApi().listTables())]

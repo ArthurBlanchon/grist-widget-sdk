@@ -57,7 +57,7 @@ export function defineGristWidget<const D extends GristWidgetDefinition>(definit
     definition,
     options,
     metadata: { title, description },
-    useGrist: () => useGrist<GristRowRecord, GristMappedRow<D>>(options),
+    useGrist: () => useGrist<GristRowRecord, GristMappedRow<D>>(),
   }
 }
 

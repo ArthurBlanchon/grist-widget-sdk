@@ -36,7 +36,6 @@ export function WidgetApp() {
   const w = widget.useGrist()
   const schema = useGristSchema({
     tableId: w.currentTableId ?? undefined,
-    requiredAccess: "full",
     excludeManualSort: true,
   })
 

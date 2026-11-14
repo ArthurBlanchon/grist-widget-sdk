@@ -17,7 +17,7 @@ import {
   gristRemoveRecordAction,
   gristRenameColumnAction,
   gristUpdateRecordAction,
-} from "../../src/sdk"
+} from "../../src/actions"
 
 describe("record action builders", () => {
   it("AddRecord uses null for rowId", () => {

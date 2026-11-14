@@ -82,9 +82,23 @@ redirects (the site is a static export on two origins).
    needs more is two pages.
 5. **Examples are quoted, not pasted:** a page shows an example's code by
    including it from `examples/` (as the cookbook already links), so it
-   can't drift.
+   can't drift. Once `examples/` merges into the catalog
+   ([widget factory plan](./2026-11-14-widget-factory-plan.md), W2), the
+   source is a catalog widget, a docs snippet that CI type-checks, or a
+   test fixture.
 6. **Users first:** maintainer material leaves the site for the repository,
    organised for the AI agents that do the development (§3.1).
+7. **Three audiences, AI-first** ([widget factory plan](./2026-11-14-widget-factory-plan.md) §9).
+   Each one has its own part of the docs:
+   - people using widgets in Grist, often no-code: the catalog, generated
+     from each widget's `SPEC.md`;
+   - people building outside the factory: the tutorial, guides, the
+     reference, the template's `AGENTS.md`, skills and `llms.txt`;
+   - the factory itself: the docs in the repository (§3.1).
+
+   For the second, machine-readable contracts (`llms.txt`, per-page
+   markdown, the API report, skills) come before prose: they are what an
+   agent reads.
 
 ## 3. Target structure
 

@@ -44,18 +44,26 @@ train (`RELEASING.md`).
   API report's baseline reset. Done when the six take it through the same
   flow as E.
 
-## 2. Next project — the core widget library
+## 2. Next project — the widget factory
 
-A library of widgets built with the SDK, developed with AI, each a real
-repo scaffolded by `create-grist-widget`, registered in awesome-grist-widgets
-and, where it earns it, a reference widget. Scope to be agreed: which
-widgets, the bar each must meet, and how agents build and verify them
-(`pnpm test`, `pnpm demo`, the real-Grist check).
+From the [widget factory plan](./docs/planning/2026-11-14-widget-factory-plan.md);
+its direction (W1–W5) was agreed 2026-11-14. This repository becomes the
+factory: catalog widgets in `widgets/`, `examples/` merged into the catalog,
+awesome-grist-widgets absorbed and archived.
 
-- [ ] Agree the scope (list, quality bar, process).
-- [ ] The 16 `examples/` become seeds for it; once the library exists,
-  `create --example` starts from a library widget and the CLI stops
-  embedding the examples.
+- [ ] **F0.** 0.7 released (#28) and the maintainer docs moved into the
+  repository (docs plan, M1).
+- [ ] **F1. Layout, with one pilot:** `widgets/`, `SPEC.md` and its check,
+  CI per affected widget, `pnpm new-widget`. Done when the pilot passes the
+  production-grade bar (plan §5) from this repository.
+- [ ] **F2. Hosting:** versioned deploys and a preview per pull request.
+  Done when the pilot works in Grist from `/<slug>/latest/`.
+- [ ] **F3. Bring the widgets home:** first, **pause and choose the first
+  catalog list** with the maintainer (`catalog/roadmap.md`), without
+  porting what exists by default; then port what is on it. Done when
+  `examples/` is gone.
+- [ ] **F4–F8:** intake and triage, the build loop, upkeep, the catalog and
+  registry, a scale check at 50 widgets (plan §10).
 
 ## 3. Later, if they still matter
 

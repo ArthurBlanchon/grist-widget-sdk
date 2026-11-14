@@ -38,6 +38,7 @@ jobs:
       template_deploy: ${{ steps.diff.outputs.template_deploy }}
       real_widgets: ${{ steps.diff.outputs.real_widgets }}
       size: ${{ steps.diff.outputs.size }}
+      widgets: ${{ steps.diff.outputs.widgets }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -83,6 +84,32 @@ jobs:
       # change to a public name or type fails here until the report is
       # regenerated and committed, so reviewers see it as an API change.
       - run: pnpm --filter grist-widget-sdk api:report --check
+
+  # The catalog widgets (widgets/*): the checks of the widget factory plan's
+  # production-grade bar that need no browser. The spec, its acceptance
+  # criteria and the design rules (scripts/widgets/check-widgets.mjs), then
+  # each widget's typecheck, lint, tests and build.
+  widgets:
+    needs: changes
+    if: needs.changes.outputs.widgets == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter grist-widget-sdk build
+      - run: node --test scripts/widgets/*.test.mjs
+      - run: node scripts/widgets/check-widgets.mjs
+      - run: pnpm --filter "./widgets/**" -r --workspace-concurrency=1 run typecheck
+      - run: pnpm --filter "./widgets/**" -r --workspace-concurrency=1 run lint
+      - run: pnpm --filter "./widgets/**" -r --workspace-concurrency=1 run test
+      - run: pnpm --filter "./widgets/**" -r --workspace-concurrency=1 --if-present run build
 
   # The same build, typecheck and tests on React 18, the oldest React the
   # peer range (`>=18`) accepts; the workspace itself is on React 19.
@@ -308,7 +335,7 @@ jobs:
 
   gate:
     if: always()
-    needs: [changes, core, core-react18, cli, lint, repo, workflows, dependency-review, changeset, external-install, create-widget, template-deploy, real-widgets, size]
+    needs: [changes, core, core-react18, cli, lint, repo, workflows, dependency-review, changeset, external-install, create-widget, template-deploy, real-widgets, size, widgets]
     runs-on: ubuntu-latest
     steps:
       - name: Every needed job passed

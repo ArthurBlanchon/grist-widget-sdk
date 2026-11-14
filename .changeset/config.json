@@ -2,10 +2,20 @@
   "$schema": "https://unpkg.com/@changesets/config@3.1.4/schema.json",
   "changelog": "@changesets/cli/changelog",
   "commit": false,
-  "fixed": [["grist-widget-sdk", "create-grist-widget"]],
+  "fixed": [
+    [
+      "grist-widget-sdk",
+      "create-grist-widget"
+    ]
+  ],
   "linked": [],
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
-  "ignore": ["grist-widget-template-vite", "examples"]
+  "ignore": [
+    "grist-widget-template-vite",
+    "examples",
+    "@grist-widgets/shared",
+    "@grist-widgets/kanban-board"
+  ]
 }

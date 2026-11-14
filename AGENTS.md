@@ -35,6 +35,7 @@ widgets, on its way to becoming a widget factory
 | The SDK (`packages/core`) | [`packages/core/AGENTS.md`](./packages/core/AGENTS.md) |
 | The CLI or the template | [`packages/create-grist-widget/AGENTS.md`](./packages/create-grist-widget/AGENTS.md), and the template's own [`AGENTS.md`](./templates/grist-widget-template-vite/AGENTS.md) |
 | The docs site | [`apps/www/AGENTS.md`](./apps/www/AGENTS.md) |
+| The catalog widgets | [`widgets/AGENTS.md`](./widgets/AGENTS.md) |
 | The examples | [`examples/AGENTS.md`](./examples/AGENTS.md) |
 | Releasing to npm | [`docs/operations/releasing.md`](./docs/operations/releasing.md), and the `release-train` skill |
 | The site's deploy | [`docs/operations/site-deploy.md`](./docs/operations/site-deploy.md) |
@@ -62,6 +63,7 @@ Repeatable workflows are skills in [`.claude/skills/`](./.claude/skills/):
 | Regenerate the widget catalog | `pnpm build:widgets-manifest` |
 | Check widgets in a real Grist (Docker) | `pnpm e2e:grist <widget dir>` |
 | Check every `AGENTS.md` names only real paths and scripts | `pnpm check:agents-md` |
+| Check the catalog widgets' specs, criteria and design rules | `node scripts/widgets/check-widgets.mjs` |
 
 ## Path map
 
@@ -74,6 +76,7 @@ Repeatable workflows are skills in [`.claude/skills/`](./.claude/skills/):
 | Active plans | `docs/planning/` |
 | Finished plans, old backlog | `docs/history/` |
 | The first catalog list | `catalog/roadmap.md` |
+| Catalog widgets, and what they share | `widgets/`, `widgets/_shared/` |
 | SDK source | `packages/core/src/sdk/` |
 | SDK tests | `packages/core/tests/` |
 | Scaffolding CLI | `packages/create-grist-widget/` |

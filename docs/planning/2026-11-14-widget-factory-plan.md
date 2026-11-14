@@ -51,6 +51,10 @@ that change from one year to the next. So:
 | W6 | **Install URLs are on `gristwidgets.com`**, for example `https://gristwidgets.com/widgets/<slug>/latest/`. The github.io address is listed beside it as the alternative (§7.4). |
 | W7 | **The repository keeps its name** for now. Any rename is decided before F2 publishes the first install URL. |
 | W8 | **Catalog widgets are MIT-licensed**, as the SDK is. |
+| W9 | **One design system, shadcn/ui, shared.** One copy of the components in `widgets/_shared/ui/` (the factory's only `components.json`) and one theme of tokens, `widgets/_shared/theme.css`, mapped to Grist's light and dark themes: changing it restyles every widget at once. Widgets hard-code no colour or pixel size. |
+| W10 | **English and French from the first wave**, through a small translation helper in `widgets/_shared/`. |
+| W11 | **API keys never go in widget options** (every editor can read them): each person keeps their key in their own browser, with no proxy. |
+| W12 | **The first catalog list** is [`catalog/roadmap.md`](../../catalog/roadmap.md): 19 widgets in three waves, the Kanban board as F1's pilot. |
 
 ## 2. Why one repository
 
@@ -94,7 +98,9 @@ widgets/<slug>/                 one catalog widget each (private package)
   SPEC.md                       what it is for and when it is done (below)
   src/app/                      the widget, as in a scaffolded repository
   demo/                         its demo document
-widgets/_shared/                ui primitives, test helpers (from examples/_ui)
+widgets/_shared/ui/             the shadcn components, one copy, one components.json (W9)
+widgets/_shared/theme.css       the theme's tokens, mapped to Grist's light and dark
+widgets/_shared/                the translation helper, test helpers
 catalog/
   external.json                 widgets built elsewhere, listed on request
   roadmap.md                    the list being built next (F3)
@@ -174,6 +180,8 @@ Each line is enforced by a CI check, not by a document:
 | Safe | no `dangerouslySetInnerHTML` or `eval`; URLs from data limited to http(s); a CSP; the lowest access level that works (`full` must be justified in the spec) |
 | Its dependencies | dependency-review, `minimumReleaseAge`, licences on an allow list |
 | Light and dark | the demo screenshotted in both themes |
+| One design | UI from `widgets/_shared/ui/` only; lint refuses hard-coded colours, pixel sizes and arbitrary Tailwind values in widget code |
+| English and French | CI fails on a translation key missing from either dictionary |
 | Documented | its catalog page generated from `SPEC.md` (§8) |
 
 ## 6. Agents and untrusted input
@@ -336,7 +344,7 @@ three audiences, AI-first in every case:
 | Step | Content | Done when |
 | --- | --- | --- |
 | **F0. Ground** | 0.7 merged (#28) and released; the docs plan's M1 (maintainer docs in the repository) | — |
-| **F1. Layout, with one pilot** | The `widgets/` workspace and a widget's package shape; `SPEC.md` and its check; `widgets/_shared`; CI per affected widget; a `pnpm new-widget <slug>` generator built on the template's code. One example ported as the pilot. | The pilot passes the whole §5 bar from this repository |
+| **F1. Layout, with one pilot** | The `widgets/` workspace and a widget's package shape; `SPEC.md` and its check; `widgets/_shared` with the shadcn components, the theme and the translation helper (W9, W10); CI per affected widget; a `pnpm new-widget <slug>` generator built on the template's code. The Kanban board as the pilot (`catalog/roadmap.md`). | The pilot passes the whole §5 bar from this repository |
 | **F2. Versions in the site** | Catalog widgets in `build-site.mjs` under `/widgets/<slug>/` (§7.3); the `widgets-dist` branch written by the release train; the demo once per widget, shared fonts; the size and file budget | The pilot is served at `/widgets/<slug>/<version>/` and `/latest/` on both origins, works when embedded in Grist, its pull request preview shows it, and its per-version size is known |
 | **1.0.0** | The plan to 1.0's step F, after the pilot has exercised the API from inside the factory | — |
 | **F3. Bring the widgets home** | **Pause first: choose the first catalog list** (below). Then port what is on it, from the six repositories or `examples/`, rewritten to the bar. An example that only illustrates an API becomes a docs snippet or a test fixture. Nothing is ported because it exists. | `catalog/roadmap.md` agreed; the widgets on it pass the bar and are deployed; `examples/` is gone |
@@ -347,6 +355,9 @@ three audiences, AI-first in every case:
 | **F8. Size check** | At 30 widgets, then again at 60: CI time (the whole catalog on an SDK change, sharded), site size against its budget, the maintainer's time per release; the shared runtime built if §7.3's threshold is reached | Each stays within the budget agreed at F1 |
 
 ### The pause at F3: a first list chosen on purpose
+
+> **Done 2026-11-14:** the list is [`catalog/roadmap.md`](../../catalog/roadmap.md). The
+> criteria below are kept for later additions.
 
 Before porting anything, the maintainer and an agent define the first
 catalog list together (about 15–25 widgets). Each candidate is judged on:
@@ -394,4 +405,5 @@ Decided on 2026-11-14: the install URL (W6), the repository's name (W7)
 and the licence (W8). Hosting stays the existing site until a threshold
 in §7.3 is reached.
 
-Left to decide: at F3, the first catalog list.
+The first catalog list was agreed the same day: [`catalog/roadmap.md`](../../catalog/roadmap.md)
+(W12). Nothing is left to decide before F1.

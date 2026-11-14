@@ -56,16 +56,16 @@ absorbed and archived, widgets served by the site that already exists
 - [ ] **F0.** 0.7 released (#28) and the maintainer docs moved into the
   repository (docs plan, M1).
 - [ ] **F1. Layout, with one pilot:** `widgets/`, `SPEC.md` and its check,
-  CI per affected widget, `pnpm new-widget`. Done when the pilot passes the
-  production-grade bar (plan §5) from this repository.
+  the shared shadcn components, theme and translations, CI per affected
+  widget, `pnpm new-widget`; the Kanban board as the pilot. Done when the
+  pilot passes the production-grade bar (plan §5) from this repository.
 - [ ] **F2. Versions in the site:** catalog widgets under `/widgets/<slug>/`
   in `build-site.mjs`, released versions kept on a `widgets-dist` branch,
   a size and file budget. Done when the pilot works in Grist from
   `/widgets/<slug>/latest/` on both origins.
-- [ ] **F3. Bring the widgets home:** first, **pause and choose the first
-  catalog list** with the maintainer (`catalog/roadmap.md`), without
-  porting what exists by default; then port what is on it. Done when
-  `examples/` is gone.
+- [ ] **F3. Bring the widgets home:** the first list is agreed
+  ([`catalog/roadmap.md`](./catalog/roadmap.md): 19 widgets in three
+  waves); build wave 1, then waves 2 and 3. Done when `examples/` is gone.
 - [ ] **F4–F8:** intake and triage, the build loop, upkeep, the catalog and
   registry, a size check at 30 and 60 widgets (plan §10).
 

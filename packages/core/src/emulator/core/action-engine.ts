@@ -346,8 +346,12 @@ function ensureColumns(
   values: Record<string, unknown> | Record<string, unknown[]>,
   bulk = false
 ): void {
+  // Grist refuses a write to a column the table doesn't have ("Invalid column"). A table
+  // with no columns yet takes the columns of its first rows, as a test document can rely on.
+  const known = Object.keys(table.columns).length > 0
   for (const col of Object.keys(values)) {
     if (!table.columns[col]) {
+      if (known) throw new EmulatorActionError(null, `Invalid column "${col}" in table ${table.tableId}`)
       const sample = bulk ? (values as Record<string, unknown[]>)[col]?.[0] : (values as Record<string, unknown>)[col]
       table.columns[col] = inferType(sample)
     }

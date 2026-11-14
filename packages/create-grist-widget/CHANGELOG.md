@@ -1,5 +1,22 @@
 # create-grist-widget
 
+## 0.7.0
+
+### Minor Changes
+
+- c0c75d8: 0.7 deprecates what 1.0 removes from the connection (see [Deprecated names](https://gristwidgets.com/docs/sdk/api/deprecated) and the new [versioning policy](https://gristwidgets.com/docs/sdk/api/versioning)). Each keeps working, and warns once in development:
+  
+  - `useGrist()` outside `<GristWidgetProvider>`, the page-wide connection. Inside Grist, `mountGristWidget()` renders the provider; in a test, pass the declaration, `renderWithGrist(<App />, { widget })`; a component that also runs outside Grist calls `useGristOptional()`.
+  - `useGrist(options)`: declare the options with `defineGristWidget()` and call `widget.useGrist()`. Inside a provider they were already ignored.
+  - `useGristSchema()`'s connection options (`requiredAccess`, `columns`, `allowSelectBy`, `hasCustomOptions`, `onEditOptions`): declare them with `defineGristWidget()`.
+  
+  The types public signatures use are now exported from `grist-widget-sdk`: `GristApi`, `GristCellCheck` (what `checkGristCell` returns), `GristColumnExcludeContext`, `GristDecodedValue`, `GristEncodedError`, `GristEncodedAttachmentList`, `GristMinimalRecord`, `GristReplicaSelection`, `GristTableNewRecord`, `GristTableOpOptions`, `GristTableUpdateRecord`, `GristTableUpsertOptions`, `GristTableUpsertRecord`, `GristWidgetConfiguration` and `GristWidgetLinkingInfo`.
+  
+  `create-grist-widget upgrade` lists, by file and line, each `useGrist(options)`, each `useGristSchema()` given connection options, and each `renderWithGrist(ui)` without `widget`, test files included. Existing widgets can run `pnpm exec create-grist-widget upgrade` after moving to this release and change what it lists by hand; until 1.0 nothing breaks.
+- ef7710f: `create-grist-widget release <patch|minor|major>`, `pnpm release` in a widget: on `dev`, it bumps `package.json`'s version, writes the `CHANGELOG.md` entry from the pull requests `dev` has that `main` doesn't, and commits, then prints the push and the link to the `dev` → `main` pull request whose merge publishes ([Releasing a widget](https://gristwidgets.com/docs/cli/releasing)). It refuses off `dev`, with uncommitted changes, out of step with `origin/dev`, or with nothing to release. The template's Dependabot config now moves `grist-widget-sdk` and `create-grist-widget` in one pull request.
+  
+  Existing widgets can run `pnpm exec create-grist-widget upgrade` after moving to this release: it adds the `release` script, the Dependabot group and the updated `AGENTS.md`.
+
 ## 0.6.2
 
 ### Patch Changes

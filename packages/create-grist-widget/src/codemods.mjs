@@ -116,14 +116,62 @@ function dedupe(text, name) {
   })
 }
 
+/** The connection options useGristSchema no longer takes (0.7). */
+const SCHEMA_CONNECTION_OPTIONS = ["requiredAccess", "columns", "allowSelectBy", "hasCustomOptions", "onEditOptions"]
+
+/** The text between the parenthesis at `open` and its match (not counting strings' contents). */
+function callArguments(text, open) {
+  let depth = 0
+  let quote = null
+  for (let i = open; i < text.length; i++) {
+    const c = text[i]
+    if (quote) {
+      if (c === "\\") i++
+      else if (c === quote) quote = null
+    } else if (c === '"' || c === "'" || c === "`") quote = c
+    else if (c === "(") depth++
+    else if (c === ")" && --depth === 0) return text.slice(open + 1, i)
+  }
+  return text.slice(open + 1)
+}
+
+/**
+ * Calls whose meaning 0.7 deprecated and no rename can migrate: useGrist()
+ * given options, useGristSchema() given connection options, and
+ * renderWithGrist() without the widget's declaration (both rely on the
+ * page-wide connection). `{ line, name, hint }` each.
+ */
+function callHints(text, isComment) {
+  const lines = text.split("\n")
+  const lineOf = (index) => text.slice(0, index).split("\n").length
+  const found = []
+  const calls = /(?<![\w$.])(useGrist|useGristSchema|renderWithGrist)\s*(?:<[^<>()]*>)?\s*\(/g
+  for (const m of text.matchAll(calls)) {
+    const line = lineOf(m.index)
+    if (isComment(lines[line - 1])) continue
+    const args = callArguments(text, m.index + m[0].length - 1).trim()
+    const name = m[1]
+    if (name === "useGrist" && args) {
+      found.push({ line, name, hint: "declare these options with defineGristWidget() and call widget.useGrist(): useGrist(options) only configures the page-wide connection, which goes in 1.0" })
+    } else if (name === "useGristSchema") {
+      const given = SCHEMA_CONNECTION_OPTIONS.filter((key) => new RegExp(`\\b${key}\\b`).test(args))
+      if (given.length) found.push({ line, name, hint: `declare ${given.join(", ")} with defineGristWidget(): useGristSchema() keeps its schema options only` })
+    } else if (name === "renderWithGrist" && args && !/\bwidget\b/.test(args)) {
+      found.push({ line, name, hint: "pass the widget's declaration, renderWithGrist(<App />, { widget }): without it the test runs on the page-wide connection, which goes in 1.0" })
+    }
+  }
+  return found
+}
+
 /** One file's text, migrated: `{ text, changes, manual }` (`manual`: `{ line, name, hint }`). */
 export function migrateSource(source) {
   const changes = []
-  if (!/from\s*["']grist-widget-sdk["']/.test(source)) return { text: source, changes, manual: [] }
-  let text = rewriteImports(source, changes)
-
+  if (!/from\s*["']grist-widget-sdk(?:\/[\w/]+)?["']/.test(source)) return { text: source, changes, manual: [] }
   // Code only: a comment that names an old API keeps its wording (the author rewrites it).
   const isComment = (line) => /^\s*(\/\/|\/?\*)/.test(line)
+  if (!/from\s*["']grist-widget-sdk["']/.test(source)) return { text: source, changes, manual: callHints(source, isComment) }
+  let text = rewriteImports(source, changes)
+
   const rename = (pattern, replacement, change) => {
     const next = text
       .split("\n")
@@ -166,6 +214,8 @@ export function migrateSource(source) {
       manual.push({ line, name, hint: 'import it from "grist-widget-sdk/actions"' })
     }
   }
+  manual.push(...callHints(text, isComment))
+  manual.sort((a, b) => a.line - b.line)
   return { text, changes, manual }
 }
 

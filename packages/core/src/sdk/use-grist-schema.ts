@@ -18,14 +18,31 @@ import type {
   GristRequiredAccess,
 } from "./types"
 
-type ColumnExcludeContext = {
+/** What `extraExcludeColumn` is given for each column. */
+export type GristColumnExcludeContext = {
   tableId: string
   colId: string
   col: GristReplicaColumn
 }
 
+/** The connection options `useGristSchema` used to take (deprecated in 0.7). */
+const CONNECTION_OPTIONS = ["requiredAccess", "columns", "allowSelectBy", "hasCustomOptions", "onEditOptions"] as const
+
 export type UseGristSchemaOptions = {
+  /**
+   * @deprecated Declare it with `defineGristWidget()`. Inside the provider
+   * `mountGristWidget()` renders it is ignored; it only configures the
+   * page-wide connection, which goes in 1.0.
+   */
   requiredAccess?: GristRequiredAccess
+  /** @deprecated Declare it with `defineGristWidget()` (see `requiredAccess`). */
+  columns?: GristReadyOptions["columns"]
+  /** @deprecated Declare it with `defineGristWidget()` (see `requiredAccess`). */
+  allowSelectBy?: GristReadyOptions["allowSelectBy"]
+  /** @deprecated Declare it with `defineGristWidget()` (see `requiredAccess`). */
+  hasCustomOptions?: GristReadyOptions["hasCustomOptions"]
+  /** @deprecated Declare it with `defineGristWidget()` (see `requiredAccess`). */
+  onEditOptions?: GristReadyOptions["onEditOptions"]
   tableId?: string
   excludeSystemTableData?: boolean
   /**
@@ -38,8 +55,8 @@ export type UseGristSchemaOptions = {
   /** Stored on the replica as `source` (e.g. for logging). */
   source?: string
 } & GristNoiseColumnsOptions & {
-    extraExcludeColumn?: (ctx: ColumnExcludeContext) => boolean
-  } & Pick<GristReadyOptions, "columns" | "allowSelectBy" | "hasCustomOptions" | "onEditOptions">
+    extraExcludeColumn?: (ctx: GristColumnExcludeContext) => boolean
+  }
 
 /** Selected table slice with `tableId` for consumers that expect it on the object. */
 export type GristSchemaTableView = GristReplicaTable & { tableId: string }
@@ -77,7 +94,7 @@ export type UseGristSchemaResult = {
 function filterReplicaDocumentColumns(
   document: GristReplicaDocument,
   options?: GristNoiseColumnsOptions,
-  extraExcludeColumn?: (ctx: ColumnExcludeContext) => boolean
+  extraExcludeColumn?: (ctx: GristColumnExcludeContext) => boolean
 ): GristReplicaDocument {
   return {
     ...document,
@@ -115,7 +132,14 @@ export function useGristSchema(options?: UseGristSchemaOptions): UseGristSchemaR
   const excludeManualSort = options?.excludeManualSort ?? false
   const extraExcludeColumn = options?.extraExcludeColumn
 
-  // Inside a provider, its connection; standalone, the page's, with these options.
+  if (options && CONNECTION_OPTIONS.some((key) => options[key] !== undefined)) {
+    warnDeprecated(
+      `useGristSchema({ ${CONNECTION_OPTIONS.filter((key) => options[key] !== undefined).join(", ")} })`,
+      "declare them with defineGristWidget(): inside the provider mountGristWidget() renders they are ignored"
+    )
+  }
+
+  // Inside a provider, its connection; standalone, the page's (deprecated), with these options.
   const w = useGrist({
     requiredAccess,
     columns: options?.columns,

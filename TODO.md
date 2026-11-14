@@ -26,14 +26,13 @@ train (`RELEASING.md`).
   registry refreshed (awesome-grist-widgets#10), their own Dependabot majors
   triaged. Done when every reference widget runs 0.6.2 in production with no
   deprecation warning.
-- [ ] **C. 0.7.0:** the page-wide connection deprecated and
-  `renderWithGrist` always rendering a provider; `useGristSchema` limited to
-  schema options; every type a public signature uses exported from its entry
-  point (API Extractor lists about twenty, e.g. `GristApi`,
-  `GristDecodedValue`, `GristTableUpdateRecord`), or made internal; a
-  codemod or an `upgrade` hint per deprecation. (Done: the API report checked
-  in CI, React 18 and 19 in CI, the versioning policy page.) Done when 0.7.0
-  is released with those deprecations and the report reviewed.
+- [ ] **C. 0.7.0:** released with the next weekly train. Done in the
+  code: the API report and React 18/19 in CI, the versioning policy, the
+  page-wide connection and `useGristSchema()`'s connection options
+  deprecated with `upgrade` hints, the types public signatures use
+  exported. Left for 1.0 to decide: the `emulator` entry's report still
+  names unexported implementation types (`GristApiImpl`, `GristDocApiImpl`,
+  …): export them as types or narrow the entry's signatures to interfaces.
 - [ ] **D. Widget tooling:** the two packages grouped in the template's
   Dependabot config, a widget CI job that runs `upgrade` on that pull
   request; `pnpm release` for widgets. Done when a widget takes a release by

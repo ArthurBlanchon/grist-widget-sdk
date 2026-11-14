@@ -182,8 +182,10 @@ replacement means the same:
 It only rewrites files that import `grist-widget-sdk`, and not comments.
 What it can't rewrite safely it lists by file and line, to change by hand:
 `isAvailable` (read `status`), a flag taken out by destructuring
-(`const { isReady } = w`), a reader called with options. `pnpm typecheck`
-afterwards checks the result.
+(`const { isReady } = w`), a reader called with options; and, from 0.7,
+`useGrist(options)`, `useGristSchema()` given connection options, and
+`renderWithGrist(ui)` without `widget` (in any file importing the SDK, test
+files included). `pnpm typecheck` afterwards checks the result.
 
 ### Widgets declared with `GRIST_OPTIONS`
 

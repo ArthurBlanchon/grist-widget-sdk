@@ -141,6 +141,48 @@ describe("migrateSource", () => {
     expect(manual).toEqual([{ line: 3, name: "gristAddTableAction", hint: expect.stringContaining("grist-widget-sdk/actions") }])
   })
 
+  it("reports useGrist() given options and useGristSchema() given connection options (0.7)", () => {
+    const { text, manual } = migrate(
+      [
+        'import { useGrist, useGristSchema } from "grist-widget-sdk"',
+        "const a = useGrist()",
+        'const b = useGrist<Row>({ requiredAccess: "full" })',
+        "const c = widget.useGrist()",
+        "const s = useGristSchema({",
+        '  tableId: "T",',
+        '  requiredAccess: "full",',
+        "  allowSelectBy: true,",
+        "})",
+        "const t = useGristSchema({ sampleRowLimit: 2 })",
+        '// useGrist({ requiredAccess: "x" })',
+      ].join("\n")
+    )
+    expect(text).toContain('useGrist<Row>({ requiredAccess: "full" })')
+    expect(manual).toEqual([
+      { line: 3, name: "useGrist", hint: expect.stringContaining("defineGristWidget()") },
+      { line: 5, name: "useGristSchema", hint: expect.stringContaining("declare requiredAccess, allowSelectBy with defineGristWidget()") },
+    ])
+  })
+
+  it("reports renderWithGrist() without the widget's declaration, in a file importing only the testing entry (0.7)", () => {
+    const { text, manual } = migrate(
+      [
+        'import { presets, renderWithGrist } from "grist-widget-sdk/emulator/testing"',
+        "renderWithGrist(<App />)",
+        "renderWithGrist(<App />, { widget, rows: [] })",
+        "renderWithGrist(<App />, {",
+        "  emulator: { document: presets.blank() },",
+        "})",
+      ].join("\n")
+    )
+    expect(text).toContain("renderWithGrist(<App />)")
+    expect(manual.map((m) => [m.line, m.name])).toEqual([
+      [2, "renderWithGrist"],
+      [4, "renderWithGrist"],
+    ])
+    expect(manual[0].hint).toContain("renderWithGrist(<App />, { widget })")
+  })
+
   it("knows the nine names the SDK moved", () => {
     expect(MOVED_ACTIONS).toHaveLength(9)
   })

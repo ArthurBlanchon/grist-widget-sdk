@@ -24,10 +24,11 @@ export type GristCellIssue = {
   value: unknown
 }
 
-type Check = { ok: true; value: unknown } | { ok: false; message: string }
+/** What `checkGristCell` returns: the cell's value, or why it doesn't match its declared type. */
+export type GristCellCheck = { ok: true; value: unknown } | { ok: false; message: string }
 
-const ok = (value: unknown): Check => ({ ok: true, value })
-const bad = (message: string): Check => ({ ok: false, message })
+const ok = (value: unknown): GristCellCheck => ({ ok: true, value })
+const bad = (message: string): GristCellCheck => ({ ok: false, message })
 
 /** A formula error, as the plugin API decodes it (`RaisedException`) or encodes it (`["E", name, …]`). */
 function formulaError(value: unknown): string | null {
@@ -60,7 +61,7 @@ function idsOf(value: unknown): number[] | undefined {
   return list?.every((v) => typeof v === "number") ? (list as number[]) : undefined
 }
 
-function checkOne(base: string, value: unknown): Check {
+function checkOne(base: string, value: unknown): GristCellCheck {
   switch (base) {
     case "Any":
       return ok(value)
@@ -114,12 +115,12 @@ function basesOf(type: string | undefined): string[] {
     .filter(Boolean)
 }
 
-export function checkGristCell(type: string | undefined, value: unknown): Check {
+export function checkGristCell(type: string | undefined, value: unknown): GristCellCheck {
   const error = formulaError(value)
   if (error) return bad(`formula error (${error})`)
   const bases = basesOf(type)
   if (bases.length === 0 || bases.includes("Any")) return ok(value === undefined ? null : value)
-  let first: Check | null = null
+  let first: GristCellCheck | null = null
   for (const base of bases) {
     const check = checkOne(base, value)
     if (check.ok) return check

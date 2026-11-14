@@ -127,12 +127,13 @@ where it was made, with Grist's error.
 
 ## Tests look like production
 
-`renderWithGrist(ui, { emulator: { document } })` mounts an in-process emulator behind `window.grist` so the SDK takes its real code path. Records, mappings, writes, options, attachments — everything works.
+`renderWithGrist(ui, { widget })` mounts an in-process emulator behind `window.grist`, maps the declared columns, and renders the widget inside its provider, so the SDK takes its real code path. Records, mappings, writes, options, attachments — everything works.
 
 ```ts
 import { renderWithGrist } from "grist-widget-sdk/emulator/testing"
 
 const { emulator, getByText } = renderWithGrist(<MyWidget />, {
+  widget,
   emulator: { document: presets.todoList() },
 })
 emulator.mutate.addRow("Tasks", { Title: "Buy milk" })

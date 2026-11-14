@@ -140,7 +140,7 @@ is missing.
 ```tsx
 import { presets, renderWithGrist } from "grist-widget-sdk/emulator/testing"
 
-renderWithGrist(<MyWidget />, { emulator: { document: presets.blank() } })
+renderWithGrist(<MyWidget />, { widget, emulator: { document: presets.blank() } })
 ```
 
 It installs the emulator before React hydrates, so every hook sees a

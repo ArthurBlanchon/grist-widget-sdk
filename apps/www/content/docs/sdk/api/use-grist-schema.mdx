@@ -23,9 +23,13 @@ function useGristSchema(options?: UseGristSchemaOptions): UseGristSchemaResult
 
 ```ts
 type UseGristSchemaOptions = {
-  // Same shape as GristReadyOptions; defaulted to { requiredAccess: "read table" }
+  // Deprecated in 0.7, removed in 1.0: declare these with defineGristWidget().
+  // Inside the provider mountGristWidget() renders they are ignored.
   requiredAccess?: "none" | "read table" | "full"
   columns?: GristColumnDescriptor[]
+  allowSelectBy?: boolean
+  hasCustomOptions?: boolean
+  onEditOptions?: () => void
 
   // What to put in the replica
   replicaRowMode?: "schema-only" | "schema+samples" | "schema+data"

@@ -289,15 +289,32 @@ function useGristResult<TRow, TMapped>(connection: GristContextValue): UseGristR
   )
 }
 
+/** Why a page-wide connection is deprecated, and what to use instead (0.7; removed in 1.0). */
+export const PAGE_CONNECTION_INSTEAD =
+  "mountGristWidget() renders the provider; in a test, pass the declaration: renderWithGrist(<App />, { widget }); " +
+  "a component that also runs outside Grist uses useGristOptional()"
+
 /**
- * The widget's Grist state and API. Inside `<GristWidgetProvider>` it uses the
- * provider's connection and ignores `options`; outside one, the page's, made
- * with the first caller's `options`.
+ * The widget's Grist state and API, from the nearest `<GristWidgetProvider>`
+ * (`mountGristWidget()` renders one, as does `renderWithGrist(ui, { widget })`).
+ *
+ * Outside a provider it still works, on a page-wide connection made with the
+ * first caller's `options`: deprecated in 0.7, removed in 1.0.
  */
+export function useGrist<TRow = Record<string, unknown>, TMapped = Record<string, unknown>>(): UseGristResult<TRow, TMapped>
+/**
+ * @deprecated `options` only configure the page-wide connection used outside a
+ * provider, which goes in 1.0: declare them with `defineGristWidget()`, whose
+ * `widget.useGrist()` reads the provider `mountGristWidget()` renders.
+ */
+export function useGrist<TRow = Record<string, unknown>, TMapped = Record<string, unknown>>(
+  options: UseGristOptions | undefined
+): UseGristResult<TRow, TMapped>
 export function useGrist<TRow = Record<string, unknown>, TMapped = Record<string, unknown>>(
   options?: UseGristOptions
 ): UseGristResult<TRow, TMapped> {
   const fromProvider = useContext(GristContext)
+  if (!fromProvider) warnDeprecated("useGrist() outside <GristWidgetProvider>", PAGE_CONNECTION_INSTEAD)
   const connection = fromProvider ?? (pageConnection ??= newConnection(options))
   return useGristResult<TRow, TMapped>(connection)
 }

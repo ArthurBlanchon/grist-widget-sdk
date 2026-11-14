@@ -70,6 +70,7 @@ export type FetchRows = {
   (options: FetchRowsOptions & { columnar: true }): Promise<GristColumnarTable>
 }
 
+/** The methods `useGrist()` returns next to its state: reads, writes, attachments and the cursor. */
 export type GristApi = {
   reload: () => Promise<void>
   fetchRows: FetchRows

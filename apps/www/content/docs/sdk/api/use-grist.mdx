@@ -9,9 +9,16 @@ function useGrist<TRow = Record<string, unknown>, TMapped = Record<string, unkno
 ): UseGristResult<TRow, TMapped>
 ```
 
-Inside `<GristWidgetProvider>` (what `mountGristWidget()` renders),
-`useGrist()` reads the provider's connection and ignores `options`. Outside
-one, it uses a page-wide connection made with the first caller's `options`.
+Inside `<GristWidgetProvider>` (what `mountGristWidget()` renders, and
+`renderWithGrist(ui, { widget })` in a test), `useGrist()` reads the
+provider's connection. `options` are ignored there: a widget declares them
+with `defineGristWidget()`.
+
+Outside a provider, `useGrist()` still works on a page-wide connection made
+with the first caller's `options`. **Deprecated in 0.7, removed in 1.0**, as
+is passing `options` at all: it warns once in development
+([Deprecated names](/docs/sdk/api/deprecated)). A component that also runs
+outside Grist calls `useGristOptional()`, which returns `null` there.
 
 Every call reads one store through `useSyncExternalStore`: a component
 re-renders when a value changes. Every method is referentially stable for the

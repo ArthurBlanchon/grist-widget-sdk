@@ -1,0 +1,35 @@
+{
+  "name": "@grist-widgets/gantt",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Tasks on a timeline, grouped and in rows, coloured by status; drag a bar to move it, or its ends to change its dates.",
+  "license": "MIT",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "typecheck": "tsc -b",
+    "lint": "eslint .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@grist-widgets/shared": "workspace:*",
+    "date-fns": "catalog:",
+    "grist-widget-sdk": "workspace:^",
+    "lucide-react": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "catalog:",
+    "@testing-library/react": "catalog:",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "eslint": "catalog:",
+    "jsdom": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:"
+  }
+}

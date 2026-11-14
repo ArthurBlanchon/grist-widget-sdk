@@ -19,6 +19,7 @@
     "@grist-widgets/attachment-viewer",
     "@grist-widgets/document-template",
     "@grist-widgets/file-uploader",
+    "@grist-widgets/gantt",
     "@grist-widgets/grouped-view",
     "@grist-widgets/kanban-board",
     "@grist-widgets/map",

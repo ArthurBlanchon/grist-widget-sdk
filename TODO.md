@@ -33,6 +33,9 @@ train (`RELEASING.md`).
   exported. Left for 1.0 to decide: the `emulator` entry's report still
   names unexported implementation types (`GristApiImpl`, `GristDocApiImpl`,
   …): export them as types or narrow the entry's signatures to interfaces.
+- [ ] **Docs rewrite** ([plan](./docs/planning/2026-11-14-docs-rewrite-plan.md)):
+  agree the structure (§3), then R1–R6. Done when the old-forms check
+  blocks in CI, about 25 user pages remain and every retired URL redirects.
 - [ ] **E. The six widgets on 0.7:** the Dependabot pull request moving both
   packages, then `pnpm exec create-grist-widget upgrade` as a follow-up on
   `dev`, the hints it lists fixed by hand, and a `pnpm release`. Done when

@@ -99,7 +99,7 @@ size. It uses writes, mapped columns, options and linking, and the
 | 5 | Map | Points by coordinates or address, colour by category, clusters, linked selection | read table (full to geocode) | choropleth | world-map | Medium; standard everywhere |
 | 6 | Chart builder | Charts beyond Grist's own: combined, heat map, radar, colour scales | read table | — | — | Medium: 897 views on colour scales |
 | 7 | Grouped / Pivot view ([built](../widgets/grouped-view/SPEC.md)) | Group by a value with collapsible groups; aggregate in a pivot | read table | grouped, pivot | — | Medium: 673 views; the official pivot is unmaintained since 2024 |
-| 8 | Attachment viewer & gallery | Show the selected row's images and PDFs large; all of a table's attachments in a grid | read table | viewer, gallery | `examples/attachment-gallery` | Strong: 710 views; many hand-written viewers |
+| 8 | Attachment viewer & gallery ([built](../widgets/attachment-viewer/SPEC.md)) | Show the selected row's images and PDFs large; all of a table's attachments in a grid | full (see note) | viewer, gallery | `examples/attachment-gallery` | Strong: 710 views; many hand-written viewers |
 | 9 | File uploader ([built](../widgets/file-uploader/SPEC.md)) | Drop files into an attachments column, with type and size limits | full | — | — | Medium: forms take no attachments |
 | 10 | Document template | One document per row (quote, certificate, letter) from an editable HTML or Liquid template; print to PDF, optionally attach it | read table (full to attach) | list report | — | Strong: 1,082 views; 17,347 at Retool; Airtable's Page designer |
 
@@ -120,7 +120,9 @@ Notes for their specs:
   the theme like everything else. A declarative spec such as Vega-Lite is
   considered only if shadcn's charts fall short.
 - **Attachment viewer:** attachments are read with Grist's temporary
-  access token. The self-hosted case, where the download URL can be wrong,
+  access token, which Grist gives only to a widget with full access, so the
+  viewer asks for `full` (it writes nothing). Whether `read table` can be
+  enough is in "Still to find out". The self-hosted case, where the download URL can be wrong,
   is in its e2e test.
 - **Document template:** the user's template is rendered in a sandbox
   with no scripts.
@@ -191,6 +193,8 @@ example:
   browser's language is available.
 - How widgets behave in Grist Desktop: a 2026 forum thread reports them
   not working in 0.3.13.
+- Whether a widget with `read table` access can get an access token to
+  download attachments (the Attachment viewer asks for `full` until then).
 - The licence of each library a widget bundles, checked when its spec is
   written.
 - Install counts for any widget, here or at competitors: none were found.

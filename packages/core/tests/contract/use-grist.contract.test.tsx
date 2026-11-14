@@ -482,6 +482,23 @@ describe("listColumns", () => {
       ])
     )
   })
+
+  it("gives each column's settings, and the column a reference shows", async () => {
+    const doc = presets.todoList()
+    const tasks = doc.tables.Tasks!
+    tasks.columns!.priority = { ...tasks.columns!.priority, colRef: 13, widgetOptions: { choices: ["high", "medium", "low"] } }
+    doc.tables.People = {
+      columns: { name: { type: "Text", colRef: 21 } },
+      rows: [{ id: 1, name: "Léa" }],
+    }
+    tasks.columns!.owner = { type: "Ref:People", colRef: 14, visibleColRef: 21 }
+    const { w } = renderProbe({ requiredAccess: "full" }, { emulator: { document: doc } })
+    await untilReady(w)
+    const cols = await w().listColumns("Tasks")
+    expect(cols.find((c) => c.colId === "priority")?.widgetOptions).toEqual({ choices: ["high", "medium", "low"] })
+    expect(cols.find((c) => c.colId === "owner")).toMatchObject({ type: "Ref:People", visibleCol: "name" })
+    expect(cols.find((c) => c.colId === "title")?.visibleCol).toBeUndefined()
+  })
 })
 
 describe("table", () => {

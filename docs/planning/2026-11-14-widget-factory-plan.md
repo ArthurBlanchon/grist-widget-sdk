@@ -48,6 +48,8 @@ that change from one year to the next. So:
 | W3 | **awesome-grist-widgets is absorbed, then archived.** Its registry moves here; its README points to the catalog. |
 | W4 | **The template and `create-grist-widget` stay** for people who build a widget outside the factory, in a repository of their own. |
 | W5 | **Bringing the widgets home starts with a pause** to choose a first catalog list on purpose. Porting the six widget repositories and the 16 examples because they exist is not the plan (§10, F3). |
+| W6 | **Install URLs are on `gristwidgets.com`**, for example `https://gristwidgets.com/widgets/<slug>/latest/`. The github.io address is listed beside it as the alternative (§7.4). |
+| W7 | **The repository keeps its name** for now. Any rename is decided before F2 publishes the first install URL. |
 
 ## 2. Why one repository
 
@@ -282,6 +284,26 @@ because Grist documents use them. Their `gh-pages` branches are frozen,
 and a release from the factory adds a page there that sends to the new
 URL.
 
+### 7.4 Which URL a Grist document keeps
+
+`gristwidgets.com` is the install URL the catalog shows (W6); the
+github.io address is listed beside it.
+
+- **It outlives the host and the repository.** The github.io address
+  depends on the account and repository names. As far as we know, GitHub
+  does not redirect Pages URLs after a rename or a transfer. A domain of
+  ours can be pointed at another host by a DNS change, and every Grist
+  document keeps working.
+- **Both origins serve the same files.** Released versions are built once
+  with relative paths (§7.3), so the alternative is the same widget,
+  byte for byte, for networks that block unknown domains.
+- **The domain is now what everything depends on.** It renews
+  automatically for several years, it is locked at the registrar, and
+  the registrar and Cloudflare accounts use two-factor authentication.
+- **The site check covers both origins.** The scheduled site check
+  already compares the two; it also loads a released widget on each of
+  them, so a broken Cloudflare build shows up before a user reports it.
+
 ## 8. Catalog and registry
 
 - `widgets.json` and the Grist list `grist-widgets.json` are generated from
@@ -353,12 +375,10 @@ is `catalog/roadmap.md`: one paragraph per widget that seeds its `SPEC.md`.
 
 ## 12. What the maintainer decides
 
-1. Which of the two origins the catalog shows as a widget's install URL
-   (the other is listed as the alternative), before F2: it is what Grist
-   documents will keep.
-2. Nothing else on hosting. It stays the existing site until a threshold
-   in §7.3 is reached.
-3. The licence for catalog widgets: MIT, as the SDK, recommended.
-4. Whether to rename the repository, for example to `grist-widgets`
-   (GitHub redirects the old name).
-5. At F3: the first catalog list.
+Decided on 2026-11-14: the install URL (W6) and the repository's name
+(W7). Hosting stays the existing site until a threshold in §7.3 is reached.
+
+Left to decide:
+
+1. The licence for catalog widgets: MIT, as the SDK, recommended.
+2. At F3: the first catalog list.

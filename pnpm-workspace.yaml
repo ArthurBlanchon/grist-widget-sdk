@@ -45,6 +45,10 @@ overrides:
   "compression@<1.8.2": ^1.8.2
   "@babel/core@<7.29.1": ^7.29.13
   "minimatch@>=7.0.0 <11.0.1": ^11.0.5
+  # jsdom 31 parses with parse5 8.1 (its tokenizer gained flushCharacters);
+  # without this, parse5-parser-stream kept linking the 8.0.1 already in the
+  # graph and every jsdom test crashed at startup.
+  "parse5@>=8.0.0 <8.1.0": ^8.1.0
 
 allowBuilds:
   esbuild: true

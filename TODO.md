@@ -28,10 +28,12 @@ train (`RELEASING.md`).
   deprecation warning.
 - [ ] **C. 0.7.0:** the page-wide connection deprecated and
   `renderWithGrist` always rendering a provider; `useGristSchema` limited to
-  schema options; an API report checked in CI; React 18 and 19 in the core
-  job's matrix; the versioning policy in the docs; a codemod per
-  deprecation. Done when CI enforces the API report and the policy is
-  published.
+  schema options; every type a public signature uses exported from its entry
+  point (API Extractor lists about twenty, e.g. `GristApi`,
+  `GristDecodedValue`, `GristTableUpdateRecord`), or made internal; a
+  codemod or an `upgrade` hint per deprecation. (Done: the API report checked
+  in CI, React 18 and 19 in CI, the versioning policy page.) Done when 0.7.0
+  is released with those deprecations and the report reviewed.
 - [ ] **D. Widget tooling:** the two packages grouped in the template's
   Dependabot config, a widget CI job that runs `upgrade` on that pull
   request; `pnpm release` for widgets. Done when a widget takes a release by

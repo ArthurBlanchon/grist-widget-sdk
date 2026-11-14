@@ -102,7 +102,8 @@
     "bench": "vitest run --project bench",
     "bench:update": "BENCH_UPDATE=1 vitest run --project bench",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.vitest.json --noEmit",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "api:report": "node scripts/api-report.mjs"
   },
   "peerDependencies": {
     "react": ">=18",
@@ -110,6 +111,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@microsoft/api-extractor": "^7.60.1",
     "@testing-library/dom": "^10",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",

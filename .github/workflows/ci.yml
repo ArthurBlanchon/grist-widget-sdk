@@ -79,6 +79,34 @@ jobs:
       - run: pnpm --filter grist-widget-sdk run lint
       - run: pnpm --filter grist-widget-sdk test
       - run: pnpm --filter grist-widget-sdk bench
+      # The API report (packages/core/api/*.api.md, from the build above): a
+      # change to a public name or type fails here until the report is
+      # regenerated and committed, so reviewers see it as an API change.
+      - run: pnpm --filter grist-widget-sdk api:report --check
+
+  # The same build, typecheck and tests on React 18, the oldest React the
+  # peer range (`>=18`) accepts; the workspace itself is on React 19.
+  core-react18:
+    needs: changes
+    if: needs.changes.outputs.core == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: node scripts/ci/use-react-18.mjs
+      # Not frozen: the lockfile is React 19's. Only the SDK and what it
+      # depends on are installed; minimumReleaseAge still applies.
+      - run: pnpm install --no-frozen-lockfile --filter grist-widget-sdk...
+      - run: node -e "const v=require('./packages/core/node_modules/react/package.json').version; if(!v.startsWith('18.')) throw new Error('React '+v+', not 18'); console.log('React', v)"
+      - run: pnpm --filter grist-widget-sdk build
+      - run: pnpm --filter grist-widget-sdk exec tsc --noEmit
+      - run: pnpm --filter grist-widget-sdk test
 
   # The CLI's own source (bin/, scripts/, src/, tests/): lint and unit tests.
   # The smokes below test its packed, published shape.
@@ -252,7 +280,7 @@ jobs:
 
   gate:
     if: always()
-    needs: [changes, core, cli, lint, repo, changeset, external-install, create-widget, template-deploy, real-widgets, size]
+    needs: [changes, core, core-react18, cli, lint, repo, changeset, external-install, create-widget, template-deploy, real-widgets, size]
     runs-on: ubuntu-latest
     steps:
       - name: Every needed job passed

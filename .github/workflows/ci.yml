@@ -137,7 +137,7 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
-      - run: node --test scripts/ci/*.test.mjs scripts/example-demos.test.mjs
+      - run: node --test scripts/ci/*.test.mjs scripts/site/*.test.mjs scripts/example-demos.test.mjs
       - run: pnpm install --frozen-lockfile
       - run: pnpm build:widgets-manifest
       - run: node scripts/example-demos.mjs check

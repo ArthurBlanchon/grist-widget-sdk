@@ -71,9 +71,20 @@ example widget, and assembles them into `./site`:
 | `/grist-static/<version>/` | grist-static, the version demo pages load — the site's own and every widget's (`GRIST_STATIC_BASE` in `packages/create-grist-widget/src/demo-page.mjs`) |
 | `/template-preview/` | the template's own build |
 
-It also writes `.nojekyll`, and `_headers` (Cloudflare) so widgets' demo
-pages on other origins can fetch grist-static's files. Keeping one script means the two origins can
-only differ in *where* they're served, never in *what* they contain.
+It also writes `.nojekyll`, and `_headers`, the response headers Cloudflare
+Pages sends (GitHub Pages ignores the file), from `scripts/site/headers.mjs`:
+
+- **Every response:** HSTS, `X-Content-Type-Options: nosniff` and a
+  `strict-origin-when-cross-origin` referrer policy.
+- **The docs only:** framed by the site itself, never by another origin
+  (`frame-ancestors 'self'`), and no camera, microphone or location.
+- **`/examples/*` and `/template-preview/*`:** without those two, since any
+  Grist document embeds them as a custom widget.
+- **`/grist-static/*`:** readable cross-origin, so widgets' demo pages on other
+  origins can fetch its files.
+
+Keeping one script means the two origins can only differ in *where* they're
+served, never in *what* they contain.
 
 ```bash
 node scripts/build-site.mjs                        # domain root  -> gristwidgets.com

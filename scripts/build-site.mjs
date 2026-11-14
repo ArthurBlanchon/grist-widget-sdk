@@ -43,6 +43,7 @@ import { allExtraDependencies, composeExample, overlayExampleSrc } from "./compo
 import { DEMOS_DIR } from "./example-demos.mjs"
 import { listExampleIds } from "./example-ids.mjs"
 import { copyGristStatic } from "./site/grist-static.mjs"
+import { siteHeaders } from "./site/headers.mjs"
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..")
 
@@ -267,11 +268,11 @@ for (const entry of readdirSync(join(repoRoot, "apps/www/out"))) {
 // Harmless on hosts that don't use Jekyll, so it is written unconditionally.
 writeFileSync(join(outDir, ".nojekyll"), "")
 
-// Widgets' own demo pages (their <channel>/demo/, on github.io) load
-// grist-static from gristwidgets.com, and it fetches its files (Pyodide,
-// wheels, wasm): they must be readable cross-origin. GitHub Pages already
-// sends this header; Cloudflare Pages reads it from _headers.
-writeFileSync(join(outDir, "_headers"), "/grist-static/*\n  Access-Control-Allow-Origin: *\n")
+// Response headers for Cloudflare Pages (GitHub Pages ignores the file):
+// hardening everywhere, the docs framed only by the site itself, widgets
+// embeddable by any Grist, and grist-static readable cross-origin for
+// widgets' own demo pages (scripts/site/headers.mjs).
+writeFileSync(join(outDir, "_headers"), siteHeaders())
 
 // No CNAME is written. Setting a custom domain on a GitHub Pages site makes
 // GitHub 301 that site's github.io URL to the custom domain, which would

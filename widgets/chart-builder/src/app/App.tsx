@@ -78,7 +78,7 @@ export default function App() {
         <p className="m-auto max-w-sm text-center text-sm text-muted-foreground">{t("empty")}</p>
       ) : (
         <>
-          <ChartContainer config={config} className="min-h-0 w-full flex-1" aria-hidden data-kind={kind}>
+          <ChartContainer config={config} className="min-h-0 w-full flex-1" data-kind={kind}>
             {chart(kind, data, series, kind === "pie" ? data.map((_, i) => colour(i)) : [])}
           </ChartContainer>
           <table className="sr-only">

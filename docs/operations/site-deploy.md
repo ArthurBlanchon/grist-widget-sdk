@@ -106,7 +106,12 @@ its `package.json`, in the pull request that changes it. Then:
    - **Any other build** (a pull request's preview, a local run) builds a
      version that isn't released yet from source, as a preview.
      `WIDGETS_DIST=none` skips the download offline.
-4. **The install URL** is `https://gristwidgets.com/widgets/<slug>/latest/`
+4. **A demo page per widget** at `/widgets/<slug>/demo/`: the release job
+   also makes each widget's demo document in a real Grist (Docker,
+   `scripts/widgets/demos.mjs`) into `widgets-dist/<slug>/demo/`, once,
+   and again when its title, access or columns change. The page shows it in
+   grist-static, on the `/latest/` version.
+5. **The install URL** is `https://gristwidgets.com/widgets/<slug>/latest/`
    ([ADR 0009](../decisions/0009-install-urls.md)), or a pinned
    `/<version>/`.
 

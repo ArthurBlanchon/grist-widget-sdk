@@ -237,6 +237,16 @@ async function buildCatalogWidgets() {
   for (const [slug, list] of Object.entries(versions)) {
     cpSync(join(out, slug, latestVersion(list)), join(out, slug, "latest"), { recursive: true })
   }
+  // Each widget's demo page: the demo document the release job made
+  // (scripts/widgets/demos.mjs), in grist-static, pointed at /latest/.
+  for (const slug of Object.keys(versions)) {
+    const demo = distDir && join(distDir, slug, "demo")
+    if (!demo || !existsSync(join(demo, "demo.grist")) || !existsSync(join(demo, "demo.json"))) continue
+    const { title } = JSON.parse(readFileSync(join(demo, "demo.json"), "utf8"))
+    mkdirSync(join(out, slug, "demo"), { recursive: true })
+    cpSync(join(demo, "demo.grist"), join(out, slug, "demo", "demo.grist"))
+    writeFileSync(join(out, slug, "demo", "index.html"), demoPageHtml({ title, widget: "../latest/", gristStatic: gristStaticBase }))
+  }
   return out
 }
 

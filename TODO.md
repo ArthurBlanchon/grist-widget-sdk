@@ -9,24 +9,44 @@ The reasoning behind 0.4.0, and what it left for later, is the
 
 ## 0. Waiting on the maintainer
 
+- **Decisions D1–D5** of the [plan to 1.0](./docs/planning/2026-11-14-review-and-1.0-plan.md) §4
+  (page-wide connection, release train, Dependabot changesets, 0.7 before
+  1.0, the widget library after 1.0).
 - **Rulesets on the six widget repos** (U5): `main` requires a pull request
   and the `check` status, and blocks force pushes and deletion; `dev`
   blocks force pushes and deletion.
+- **This repository's settings:** private vulnerability reporting on; the
+  deepmerge alert dismissed (dev-only, no fix).
 
-## 1. The developer experience plan
+## 1. The plan to 1.0
 
-From the [developer experience review](./docs/planning/2026-11-12-developer-experience-review.md) §5.
+From the [project review and plan to 1.0](./docs/planning/2026-11-14-review-and-1.0-plan.md) §5.
 
-- [ ] **The six reference widgets on 0.6**, once `grist-widget-sdk` and
-  `create-grist-widget` 0.6.0 are a day old: bump, `pnpm exec
-  create-grist-widget upgrade` (its codemods rewrite the deprecated names),
-  and change by hand what it lists (create-email-draft's `isAvailable`).
-  Done when the six run without a deprecation warning.
-- [ ] **1.0**: deprecated names removed; a written versioning policy (deprecate
-  for a minor, remove in the next major, a codemod for each break); an API
-  report (`.d.ts`) checked in CI; React 18 and 19 in the core job's matrix;
-  grouped Dependabot with an automatic `upgrade` on the widget's PR;
-  `pnpm release` for widgets. Decide the page-wide connection first.
+- [ ] **A. Catch up:** the six reference widgets on 0.6.2 on `dev` (from the
+  unmerged 0.5.0 branches; scheduled 2026-11-15), released 0.3.0, the
+  registry refreshed (awesome-grist-widgets#10), their own Dependabot majors
+  triaged. Done when every reference widget runs 0.6.2 in production with no
+  deprecation warning.
+- [ ] **B. Flow:** #15 (fumadocs-ui); no commit on Dependabot branches,
+  `check-changeset.sh` accepts them, one routine changeset per release
+  train; `pnpm peers check` in CI; the canary skips an unchanged version; a
+  post-deploy check of the site's headers; the weekly release train in
+  `RELEASING.md`. Done when a Dependabot pull request gets CI and merges as
+  is.
+- [ ] **C. 0.7.0:** the page-wide connection deprecated and
+  `renderWithGrist` always rendering a provider; `useGristSchema` limited to
+  schema options; an API report checked in CI; React 18 and 19 in the core
+  job's matrix; the versioning policy in the docs; a codemod per
+  deprecation. Done when CI enforces the API report and the policy is
+  published.
+- [ ] **D. Widget tooling:** the two packages grouped in the template's
+  Dependabot config, a widget CI job that runs `upgrade` on that pull
+  request; `pnpm release` for widgets. Done when a widget takes a release by
+  merging one green pull request.
+- [ ] **E. The six widgets on 0.7** through D, with no deprecation warning.
+- [ ] **F. 1.0.0:** deprecated names removed, a codemod for each break, the
+  API report's baseline reset. Done when the six upgrade by merging D's pull
+  request.
 
 ## 2. Next project — the core widget library
 

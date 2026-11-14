@@ -166,20 +166,81 @@ injection must not be able to ship code.
 
 GitHub Pages limits each site to about 1 GB, on every plan as far as we
 know (to confirm against GitHub's documentation). Cloudflare Pages also
-caps the number of files per deployment. Thousands of widgets, each with
-every version kept, fit neither as a single site.
+caps the number of files per deployment. A single site holding every
+version of thousands of widgets fits neither, unless each version is small.
+
+### 7.1 What a widget version weighs today
+
+Measured on the six reference widgets' builds (2026-11-14):
+
+| Widget | `dist/` | Of which |
+| --- | --- | --- |
+| ask-ai-widget | 25 MB | shiki's language grammars (hundreds of lazy chunks) |
+| world-map | 2.5 MB | the map library (1 MB) and a GeoJSON of countries (0.8 MB) |
+| scan-with-ai | 2.4 MB | pdf.js and its worker (1.6 MB) |
+| gantt-widget | 0.8 MB | main bundle 489 kB |
+| create-email-draft | 0.6 MB | main bundle 323 kB, the demo document 164 kB |
+| news-feed-widget | 0.6 MB | main bundle 310 kB |
+
+React and React DOM alone weigh 223 kB minified (69 kB gzipped): most of
+a simple widget's main bundle. Code from npm makes up nearly all of every
+version. The widget's own code is tens of kilobytes.
+
+### 7.2 Shared code from a public CDN, the widget's own code on the site
+
+A widget's page carries only its own code, its CSS and its assets. Every
+npm dependency (React, React DOM, `grist-widget-sdk`, the shared UI
+package, and heavy libraries such as shiki, pdf.js or a map library and
+its data) is loaded from jsDelivr by exact version, through an
+[import map](https://developer.mozilla.org/docs/Web/HTML/Element/script/type/importmap)
+the build writes.
+
+- **One set of versions per catalog release.** The factory has one
+  lockfile, so every widget built in a release uses the same version of
+  each dependency. A released version keeps its own import map, so its
+  URLs never change.
+- **Integrity on every URL.** The import map's `integrity` field holds the
+  hash of each file. The CSP allows scripts from the site and
+  `cdn.jsdelivr.net` only.
+- **Only the production build changes.** `pnpm dev` and the tests still
+  resolve from `node_modules`. The e2e check runs against the built page
+  with its import map, which catches a wrong mapping.
+- **A self-contained variant.** The same build can point the import map at
+  copies on the site itself. That is for the networks and organisations
+  that forbid third-party CDNs (privacy rules, closed intranets). It still
+  stays small: one copy of each dependency version, shared by every widget.
+
+What it gains and what it doesn't:
+
+- **Storage and deploy size** drop by one to two orders of magnitude: from
+  0.6–25 MB a version to roughly 50–300 kB. GitHub Pages' 1 GB then holds
+  thousands of versions.
+- **Loading speed** gains little. Browsers partition their cache by
+  top-level site, so a cached copy is shared by widgets in the same Grist
+  site whether it comes from the CDN or from our own origin.
+- **The costs:**
+  - jsDelivr has no service-level agreement, and it has had outages;
+  - every user's browser contacts a third party, the privacy point above;
+  - shared UI must be an npm package (`@…/ui`), where the shadcn
+    primitives are copied source today;
+  - Tailwind's CSS stays per widget, around 40 kB, because it is generated
+    from the classes each widget uses.
+
+### 7.3 Options
 
 | Option | For | Against |
 | --- | --- | --- |
-| A. One Pages site holding every version | Today's model | Hits the size or file limits; every deploy re-uploads the whole site |
-| B. Cloudflare Pages, latest versions only | Simple | Pinned versions disappear; still a file cap |
-| C. **An R2 bucket behind a Worker** | Immutable `/<slug>/<version>/` paths with no file limit; `latest` and `dev` as aliases; headers and CSP set in one place; low cost | A Worker to write and maintain |
-| D. Widgets on npm, served by jsDelivr | Free, versioned, immutable | Not checked yet: HTML content type, headers, CSP; npm polluted with thousands of packages |
+| A. One Pages site, every version, dependencies bundled (today) | No new pieces | Hits the size or file limits; every deploy re-uploads the whole site |
+| B. **A, with shared code from the CDN (7.2)** | Each version shrinks 10–100×; stays on GitHub Pages; the hosting is free | jsDelivr at run time (no SLA, privacy); an import-map build to write and maintain |
+| C. An R2 bucket behind a Worker | Immutable `/<slug>/<version>/` paths with no file limit; headers and CSP set in one place | A Worker to write and maintain; a paid service at scale |
+| D. Whole widgets on npm, served by jsDelivr | Free, versioned, immutable | jsDelivr serves HTML as plain text, so the page needs a host anyway; thousands of npm packages |
 
-**Recommendation: C**, decided after F2 measures real sizes. The current
-six widgets' URLs on GitHub Pages keep working, because Grist documents
-use them. Their `gh-pages` branches are frozen, and a release from the
-factory adds a redirect page.
+**Recommendation: B, with C as the fallback** if the measured catalog
+outgrows Pages anyway. F2 builds the pilot both ways (bundled, and with
+the import map), measures them, and checks the pilot in a real Grist,
+including a self-hosted one. The six current widgets' URLs keep working,
+because Grist documents use them. Their `gh-pages` branches are frozen,
+and a release from the factory adds a redirect page.
 
 ## 8. Catalog and registry
 
@@ -213,7 +274,7 @@ three audiences, AI-first in every case:
 | --- | --- | --- |
 | **F0. Ground** | 0.7 merged (#28) and released; the docs plan's M1 (maintainer docs in the repository) | — |
 | **F1. Layout, with one pilot** | The `widgets/` workspace and a widget's package shape; `SPEC.md` and its check; `widgets/_shared`; CI per affected widget; a `pnpm new-widget <slug>` generator built on the template's code. One example ported as the pilot. | The pilot passes the whole §5 bar from this repository |
-| **F2. Hosting** | The chosen option (§7), versioned deploys, a preview per pull request; sizes measured | The pilot is served at `/<slug>/<version>/` and `/<slug>/latest/` and works when embedded in Grist |
+| **F2. Hosting** | The import-map build (§7.2) and the hosting option chosen from F2's measurements (§7.3); versioned deploys; a preview per pull request | The pilot is served at `/<slug>/<version>/` and `/<slug>/latest/`, works when embedded in Grist (its CDN and self-contained variants), and its per-version size is known |
 | **1.0.0** | The plan to 1.0's step F, after the pilot has exercised the API from inside the factory | — |
 | **F3. Bring the widgets home** | **Pause first: choose the first catalog list** (below). Then port what is on it, from the six repositories or `examples/`, rewritten to the bar. An example that only illustrates an API becomes a docs snippet or a test fixture. Nothing is ported because it exists. | `catalog/roadmap.md` agreed; the widgets on it pass the bar and are deployed; `examples/` is gone |
 | **F4. Intake and triage** | Issue forms, labels, the triage workflow (§6), and `SECURITY.md` updated | A real issue is triaged end to end with no write token |
@@ -253,7 +314,8 @@ is `catalog/roadmap.md`: one paragraph per widget that seeds its `SPEC.md`.
 ## 12. What the maintainer decides
 
 1. The domain for widget URLs, for example `widgets.gristwidgets.com`.
-2. The hosting option (§7), after F2's measurements.
+2. The hosting option (§7.3), after F2's measurements, and whether the
+   CDN or the self-contained variant is the default.
 3. The licence for catalog widgets: MIT, as the SDK, recommended.
 4. Whether to rename the repository, for example to `grist-widgets`
    (GitHub redirects the old name).

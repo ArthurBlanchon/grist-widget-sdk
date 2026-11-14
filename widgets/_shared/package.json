@@ -16,6 +16,7 @@
     "class-variance-authority": "catalog:",
     "clsx": "catalog:",
     "lucide-react": "catalog:",
+    "maplibre-gl": "catalog:",
     "radix-ui": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
@@ -26,6 +27,7 @@
   },
   "devDependencies": {
     "@eslint/js": "catalog:",
+    "@types/geojson": "catalog:",
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",

@@ -96,7 +96,7 @@ size. It uses writes, mapped columns, options and linking, and the
 | 2 | Record editor ([built](../widgets/record-editor/SPEC.md)) | Edit a record inside Grist: typed fields (Choice, Ref, Date), validation, conditional fields, Save and Cancel | full | multi-step wizard | `examples/form-edit` | Strong: in the forum's "top 5 requests"; Grist Forms are public-only |
 | 3 | Record selector ([built](../widgets/record-selector/SPEC.md)) | Find a row by search and drive the other widgets on the page | read table | — | — | Medium; the piece that makes dashboards work |
 | 4 | Gantt chart | Plan tasks with dependencies and milestones; move and resize bars | full | timeline, resources | gantt-widget | Strong: 2,549 and 3,734 views |
-| 5 | Map | Points by coordinates or address, colour by category, clusters, linked selection | read table (full to geocode) | choropleth | world-map | Medium; standard everywhere |
+| 5 | Map ([built](../widgets/map/SPEC.md)) | Points by coordinates or address, colour by category, clusters, linked selection | read table (full to geocode) | choropleth | world-map | Medium; standard everywhere |
 | 6 | Chart builder | Charts beyond Grist's own: combined, heat map, radar, colour scales | read table | — | — | Medium: 897 views on colour scales |
 | 7 | Grouped / Pivot view ([built](../widgets/grouped-view/SPEC.md)) | Group by a value with collapsible groups; aggregate in a pivot | read table | grouped, pivot | — | Medium: 673 views; the official pivot is unmaintained since 2024 |
 | 8 | Attachment viewer & gallery ([built](../widgets/attachment-viewer/SPEC.md)) | Show the selected row's images and PDFs large; all of a table's attachments in a grid | full (see note) | viewer, gallery | `examples/attachment-gallery` | Strong: 710 views; many hand-written viewers |
@@ -114,7 +114,11 @@ Notes for their specs:
   column turns the groups into a pivot table.
 - **Gantt:** it needs a drag-and-drop timeline under an allowed licence.
   Choosing that library is the first task of its spec.
-- **Map:** the tiles are its only network calls. Their host is fixed in
+- **Map:** on mapcn's map (shadcn registry, MIT; MapLibre GL, BSD-3), the
+  component the world-map already used, kept at the maintainer's request
+  and shared in `widgets/_shared/ui/map.tsx`. Version 0.1 has the points
+  mode and the world-map's countries (choropleth) mode, coloured from the
+  theme. The tiles are its only network calls. Their host is fixed in
   its CSP, and so is the geocoder's when geocoding is turned on.
 - **Chart builder:** shadcn's charts (Recharts) by default, so charts take
   the theme like everything else. A declarative spec such as Vega-Lite is

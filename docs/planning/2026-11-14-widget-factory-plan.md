@@ -44,7 +44,7 @@ that change from one year to the next. So:
 | # | Decision |
 | --- | --- |
 | W1 | **One factory, in this repository.** `grist-widget-sdk` becomes the factory: the SDK, the CLI, the template, the docs site and the catalog's widgets live together. No new repository. |
-| W2 | **`examples/` merges into the catalog.** There is no separate set of examples: a widget is in the catalog, or it is a code snippet in the docs or a test fixture. |
+| W2 | **`examples/` merges into the catalog.** There is no separate set of examples: a widget is in the catalog, or it is a code snippet in the docs or a test fixture. Examples were written for people learning the SDK; with AI first, their reader is an agent, which needs correct, checked code more than a gallery (§10, F3). |
 | W3 | **awesome-grist-widgets is absorbed, then archived.** Its registry moves here; its README points to the catalog. |
 | W4 | **The template and `create-grist-widget` stay** for people who build a widget outside the factory, in a repository of their own. |
 | W5 | **Bringing the widgets home starts with a pause** to choose a first catalog list on purpose. Porting the six widget repositories and the 16 examples because they exist is not the plan (§10, F3). |
@@ -364,6 +364,20 @@ catalog list together (about 15–25 widgets). Each candidate is judged on:
 The six existing widgets and the 16 examples are candidates like any
 other: each one is kept, reworked or dropped on these criteria. The result
 is `catalog/roadmap.md`: one paragraph per widget that seeds its `SPEC.md`.
+
+What the examples gave, the factory keeps in another form:
+- **Catalog widgets are the reference code.** The skills point agents at
+  them, for example "for a form, read `widgets/<form>`": production code,
+  not a demo nobody maintains.
+- **What no widget uses** (widget options, the schema, attachments, REST,
+  …) is shown by short docs snippets. CI already compiles them
+  (`tests/docs/.generated`).
+- **An API coverage check.** CI fails when a public name of the SDK
+  appears in no catalog widget and no checked snippet, so an agent always
+  has a correct example of each.
+- **Removed:** the `examples/` folder, the site's example gallery, and
+  `create --example`, which starts from a catalog widget instead if it
+  is still wanted.
 
 ## 11. Effect on the plan to 1.0
 

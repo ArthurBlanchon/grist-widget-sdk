@@ -85,7 +85,7 @@ redirects (the site is a static export on two origins).
    can't drift. Once `examples/` merges into the catalog
    ([widget factory plan](./2026-11-14-widget-factory-plan.md), W2), the
    source is a catalog widget, a docs snippet that CI type-checks, or a
-   test fixture.
+   test fixture, and a CI check makes sure every public name has one.
 6. **Users first:** maintainer material leaves the site for the repository,
    organised for the AI agents that do the development (§3.1).
 7. **Three audiences, AI-first** ([widget factory plan](./2026-11-14-widget-factory-plan.md) §9).

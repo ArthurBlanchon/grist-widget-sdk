@@ -23,6 +23,22 @@ factory**: one place where widgets are specified, built, checked,
 released and maintained by a repeatable, agent-driven process, with the
 maintainer approving what ships.
 
+## 0.1 The rule above every other: simple and durable
+
+The factory has to keep working for years with one maintainer and agents
+that change from one year to the next. So:
+
+- **No new service and no new secret** without a measured need. The
+  factory runs on what the project already uses: GitHub (repository,
+  Actions, Pages, releases) and the Cloudflare Pages build of the site.
+- **One way to do each thing.** One build script for the site, one
+  release train, one layout per widget. An agent that has seen one widget
+  has seen them all.
+- **Each new part needs a threshold that is measured, not guessed**
+  (§7.3). Until the threshold is reached, the part is not built.
+- **Static files only.** Widgets are static pages. Nothing runs on a
+  server, so nothing has to be kept running.
+
 ## 1. Decisions (agreed 2026-11-14)
 
 | # | Decision |
@@ -122,8 +138,9 @@ test.
    pull request.
 4. **Gate.** Every touched widget goes through §5; a change to the SDK
    sends the whole catalog through it.
-5. **Preview.** Each pull request deploys the widgets it changes, with
-   their demo pages, and links them in the pull request.
+5. **Preview.** The site's Cloudflare build of the pull request already
+   contains the widgets it changes, with their demo pages (§7.3). That
+   build is also a second, independent run of the build.
 6. **Merge and release.** Only the maintainer merges, and the ruleset
    requires the gate.
    - Widgets are versioned by changesets as private packages, so each
@@ -210,52 +227,55 @@ The heavy libraries stay with the widgets that use them. Trimming them
 pays at any size: shiki with a dozen languages instead of all of them
 takes ask-ai from 25 MB to about 2 MB.
 
-### 7.3 The solution: one GitHub Pages site, a portable artefact
+### 7.3 The solution: the site that already exists
 
-- **Hosting.** One GitHub Pages site, built and deployed from this
-  repository, behind a domain of ours (for example
-  `widgets.gristwidgets.com`). Grist documents point at our domain, not at
-  a host, so changing host is a DNS change. No R2, no CDN at run time, no
-  third party for the people using the widgets, no split across several
-  sites.
-- **One portable artefact.** The release assembles a static `site/`
-  folder that any static host serves unchanged:
-  - `/<slug>/<version>/`, immutable;
-  - `/<slug>/latest/`, a copy of the newest version, because GitHub Pages
-    has no server redirects;
-  - `/<slug>/demo/`, once per widget;
-  - `/_shared/`, the shared fonts and, later, the runtime.
+The documentation site already has the hosting the factory needs:
+- **One build script** (`scripts/build-site.mjs`) assembles `site/`: the
+  docs, every example's widget and its demo page.
+- **Two origins, deliberately:** GitHub Pages
+  (`arthurblanchon.github.io/grist-widget-sdk/`) and Cloudflare Pages
+  (`gristwidgets.com`), each with a complete copy. Some company networks
+  allow github.io and block unknown domains, others the reverse.
+- **Cloudflare builds every pull request.** That gives a preview of the
+  whole site and a second, independent run of the build: a second CI.
 
-  The CSP sits in a `<meta>` tag. Host-specific files sit alongside, and
-  each host ignores the other's: `CNAME` and `.nojekyll` for GitHub Pages;
-  `_headers` (immutable caching, the CSP as a real header) and
-  `_redirects` for Cloudflare Pages.
-- **Cloudflare Pages stays one command away:** `wrangler pages deploy
-  site/`, as a mirror or a replacement, with its API token in a protected
-  environment. It drops Pages' bandwidth ceiling, but caps the number of
-  files per deployment (about 20,000 on the free plan, to confirm).
-- **The store.** The `gh-pages` branch keeps what has been published, as
-  the template's deploy already does. The release adds the new versions
-  to it, and each deploy publishes the whole folder. The branch's history
-  is squashed from time to time so the repository stays small.
-- **A size budget in CI.** The deploy reports the site's size and warns at
-  60 % of the 1 GB limit.
+The factory adds no hosting of its own. Catalog widgets take the place of
+`/examples/<id>/` in that same site:
+- `/widgets/<slug>/<version>/`, immutable;
+- `/widgets/<slug>/latest/`;
+- `/widgets/<slug>/demo/`, once per widget.
 
-**In what order:**
-1. **F2** makes the cheap savings: the demo once per widget, the fonts
-   shared, shiki and the other heavy libraries trimmed, and the size
-   budget.
-2. **The shared runtime comes later.** It is one ESM bundle per catalog
-   release: React, React DOM, the JSX runtime, `grist-widget-sdk` and
-   `grist-widget-sdk/app`. Widgets reach it through an import map of five
-   entries, each with its integrity hash. It is built only when the site
-   passes 40 % of the budget, or the catalog passes 40 widgets. Until
-   then it is complexity with no return, and versions released before it
-   keep their bundle and stay valid.
-3. **A retention rule waits for the 60 % warning.** For example: keep
-   every version under a year old and the last patch of each minor; a
-   removed version becomes a one-line page that sends to `latest`. Grist
-   documents that pinned it keep working, on a newer version.
+The same script builds the site on both origins, so each pull request's
+Cloudflare preview is also the preview of the widgets it changes. Both
+existing origins keep serving, and there is no new domain, CDN, bucket or
+mirror to set up.
+
+**Two pieces are added, and nothing else:**
+1. **Where released versions are kept.** The release train builds each
+   new widget version once, with relative paths, so it works on both
+   origins. It commits the build to an append-only `widgets-dist` branch
+   as `/<slug>/<version>/`. `build-site.mjs` copies that branch into
+   `site/widgets/` on both origins, and the branch's history is squashed
+   from time to time. A version is never rebuilt, so what a Grist document
+   loads never changes under it.
+2. **A size and file budget in CI.** The site is 133 MB and 2,105 files
+   today, which leaves about 870 MB under GitHub Pages' 1 GB. Cloudflare
+   Pages caps the number of files per deployment (about 20,000 on the free
+   plan, to confirm). The site build reports both figures and warns at
+   60 % of each limit.
+
+**What waits for a measured threshold:**
+- **F2's cheap savings**, done from the start: the demo once per widget,
+  the fonts shared under `/_shared/`, shiki and the other heavy libraries
+  trimmed.
+- **A shared runtime.** One ESM bundle per catalog release (React, React
+  DOM, the JSX runtime, `grist-widget-sdk`, `grist-widget-sdk/app`),
+  reached through an import map of five entries, each with its integrity
+  hash. Built only when the budget passes 40 %, or the catalog 40 widgets.
+  Versions released before it keep their bundle.
+- **A retention rule,** at the 60 % warning. For example: keep every
+  version under a year old and the last patch of each minor; a removed
+  version becomes a one-line page that sends to `latest`.
 
 The six current widgets' URLs on their own Pages sites keep working,
 because Grist documents use them. Their `gh-pages` branches are frozen,
@@ -294,7 +314,7 @@ three audiences, AI-first in every case:
 | --- | --- | --- |
 | **F0. Ground** | 0.7 merged (#28) and released; the docs plan's M1 (maintainer docs in the repository) | — |
 | **F1. Layout, with one pilot** | The `widgets/` workspace and a widget's package shape; `SPEC.md` and its check; `widgets/_shared`; CI per affected widget; a `pnpm new-widget <slug>` generator built on the template's code. One example ported as the pilot. | The pilot passes the whole §5 bar from this repository |
-| **F2. Hosting** | The portable `site/` artefact and its GitHub Pages deploy behind our domain (§7.3); the demo once per widget, shared fonts, the size budget; versioned deploys; a preview per pull request; the same folder deployed once to Cloudflare Pages as a check | The pilot is served at `/<slug>/<version>/` and `/<slug>/latest/` on our domain, works when embedded in Grist, and its per-version size is known |
+| **F2. Versions in the site** | Catalog widgets in `build-site.mjs` under `/widgets/<slug>/` (§7.3); the `widgets-dist` branch written by the release train; the demo once per widget, shared fonts; the size and file budget | The pilot is served at `/widgets/<slug>/<version>/` and `/latest/` on both origins, works when embedded in Grist, its pull request preview shows it, and its per-version size is known |
 | **1.0.0** | The plan to 1.0's step F, after the pilot has exercised the API from inside the factory | — |
 | **F3. Bring the widgets home** | **Pause first: choose the first catalog list** (below). Then port what is on it, from the six repositories or `examples/`, rewritten to the bar. An example that only illustrates an API becomes a docs snippet or a test fixture. Nothing is ported because it exists. | `catalog/roadmap.md` agreed; the widgets on it pass the bar and are deployed; `examples/` is gone |
 | **F4. Intake and triage** | Issue forms, labels, the `triage-issue` skill (§4, §6), and `SECURITY.md` updated | A batch of real issues is triaged end to end by the skill |
@@ -333,9 +353,11 @@ is `catalog/roadmap.md`: one paragraph per widget that seeds its `SPEC.md`.
 
 ## 12. What the maintainer decides
 
-1. The domain for widget URLs, for example `widgets.gristwidgets.com`,
-   before F2: it is what Grist documents will keep.
-2. Whether Cloudflare Pages also serves the site as a mirror (§7.3).
+1. Which of the two origins the catalog shows as a widget's install URL
+   (the other is listed as the alternative), before F2: it is what Grist
+   documents will keep.
+2. Nothing else on hosting. It stays the existing site until a threshold
+   in §7.3 is reached.
 3. The licence for catalog widgets: MIT, as the SDK, recommended.
 4. Whether to rename the repository, for example to `grist-widgets`
    (GitHub redirects the old name).

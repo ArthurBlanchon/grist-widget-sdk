@@ -10,9 +10,21 @@
 #     up, see the `prepare` script in the root package.json)
 #
 # Usage: scripts/check-changeset.sh [base-ref]  (default: main)
+#
+# A pull request authored by Dependabot (PR_AUTHOR=dependabot[bot], set by
+# ci.yml) passes without one: Dependabot can't write a changeset, and a bot
+# commit onto its branch stops Dependabot rebasing it and leaves its CI
+# waiting for approval. The release train adds one changeset for every
+# Dependabot update a release carries (scripts/release/routine-changeset.mjs,
+# RELEASING.md).
 set -euo pipefail
 
 BASE_REF="${1:-main}"
+
+if [ "${PR_AUTHOR:-}" = "dependabot[bot]" ]; then
+  echo "::notice::Dependabot pull request: no changeset needed here; the release train adds a routine one (RELEASING.md)."
+  exit 0
+fi
 
 git fetch origin "$BASE_REF" --quiet
 # CHANGELOG.md is changesets' own output, not source -- excluded so a bare

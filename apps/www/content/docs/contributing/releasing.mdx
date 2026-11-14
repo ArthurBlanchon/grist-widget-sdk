@@ -34,10 +34,11 @@ the `changeset` job of `ci.yml` fails a PR that touches `packages/core/src/`,
 hit the failure mode it prevents once (a PR shipped published-package
 source with no changeset, so the merge quietly published nothing).
 
-Dependabot can't run `pnpm changeset`, so it can't satisfy that gate itself
-— `.github/workflows/dependabot-changeset.yml` commits the missing
-changeset onto its PRs automatically instead (naming whichever published
-package the diff falls under). No action needed when reviewing one.
+Dependabot can't run `pnpm changeset`, so the gate lets its pull requests
+through. Nothing commits onto Dependabot's branches: a foreign commit stops
+Dependabot from rebasing them and leaves their CI waiting for approval. The
+release train adds one routine changeset for the Dependabot updates a
+release carries (below).
 
 The actual publish is a **two-merge process**, not one:
 
@@ -54,6 +55,15 @@ The actual publish is a **two-merge process**, not one:
 
 So a normal release is: merge feature PRs (each with a changeset) → merge
 the Version Packages PR. No local publish, no tokens, no OTP.
+
+**The Version Packages PR is merged once a week** (at once for a security
+fix). It collects every changeset merged meanwhile, so a week's work is one
+release. Widgets install a version only once it is a day old (pnpm's
+`minimumReleaseAge`): releases hours apart would have them upgrade to a
+version already replaced. Before merging it, whoever prepares the release
+runs `node scripts/release/routine-changeset.mjs --write` and commits the
+changeset it writes, if any: one entry for the Dependabot updates that
+reached the template or the SDK's own `dependencies`.
 
 The release job runs in the `npm` GitHub environment, which only accepts
 `main`, and both packages' npm trusted publishers name that environment. A
@@ -83,10 +93,10 @@ once the release is out.
 
 ### 3. Template canary — post-release verification + a live preview
 
-`.github/workflows/template-canary.yml` runs after every `release.yml`
-completion on `main` (including ones that only updated the Version Packages PR
-without actually publishing — a harmless no-op re-check in that case). It
-scaffolds from the **actual published** `create-grist-widget` package (not
+`.github/workflows/template-canary.yml` runs after a `release.yml` run on
+`main` that published: its first job checks that the commit is the one
+tagged `create-grist-widget@<version>` and skips the canary otherwise (a
+run that only updated the Version Packages PR). It scaffolds from the **actual published** `create-grist-widget` package (not
 a workspace-linked build) — catching exactly the class of bug a green
 `pnpm test` can't: a package that publishes fine but doesn't actually
 produce a working, deployable widget. Before scaffolding it waits until npm

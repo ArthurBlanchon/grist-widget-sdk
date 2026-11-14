@@ -72,8 +72,8 @@ updates:
       # directory other than "/", Dependabot's github-actions fetcher reads
       # YAML files directly in that directory and does not descend into a
       # nested .github/workflows (dependabot-core github_actions
-      # file_fetcher.rb, workflow_files). Bumps here touch the template, so
-      # dependabot-changeset.yml adds a create-grist-widget changeset.
+      # file_fetcher.rb, workflow_files). Bumps here touch the template: the
+      # release train's routine changeset covers them (RELEASING.md).
       - "/templates/grist-widget-template-vite/.github/workflows"
     schedule:
       interval: "weekly"

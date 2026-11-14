@@ -74,15 +74,12 @@ file — catches the "merged without a changeset, so nothing actually
 published" mistake before it lands instead of after a release quietly ships
 nothing (or, for the template specifically, ships stale content).
 
-Dependabot PRs can't run `pnpm changeset` themselves, so
-`.github/workflows/dependabot-changeset.yml` does it for them: when a
-Dependabot PR trips the check above (in practice, a bump that touches the
-template's `package.json`), it commits a changeset onto the PR naming
-whichever published package(s) the diff falls under. Nothing to do there —
-it's already committed by the time you review the PR. It runs as
-`pull_request_target` to get a write token, so it executes only scripts from
-the PR's *base* commit: the Dependabot branch is checked out as data, never
-run (see the workflow's header comment).
+Dependabot pull requests are the one exception: Dependabot can't run
+`pnpm changeset`, so the check lets a pull request authored by
+`dependabot[bot]` through. Nothing commits onto Dependabot's branches: a
+foreign commit stops Dependabot from rebasing them, and a push with
+`GITHUB_TOKEN` leaves their CI waiting for approval. The release train adds
+the changeset instead (below).
 
 Two changelogs, two audiences:
 
@@ -107,31 +104,53 @@ Two changelogs, two audiences:
 So a normal release is just: merge feature PRs (each with a changeset) → merge
 the Version PR. No local publish, no tokens, no OTP.
 
+### The release train: once a week
+
+The Version Packages PR collects every merged changeset until it is merged,
+so releases are batched by merging it **once a week**, or at once for a
+security fix. Widgets install a version only once it is a day old (pnpm's
+`minimumReleaseAge`): releases hours apart would have them upgrade to a
+version already replaced. Before merging it:
+
+1. Add the routine changeset for the Dependabot updates the release
+   carries, if any reached a published package (the template, or the SDK's
+   own `dependencies`):
+
+   ```bash
+   node scripts/release/routine-changeset.mjs           # dry run: what it would write
+   node scripts/release/routine-changeset.mjs --write   # .changeset/routine-dependencies.md
+   ```
+
+   Commit it in a pull request; once merged, the Version Packages PR
+   includes it.
+2. Read the Version Packages PR's changelog entries: they are what widget
+   owners read when upgrading.
+3. Merge it. A day later, the reference widgets take the release
+   (`TODO.md`).
+
 ### `CHANGESET_PUSH_TOKEN` (optional — makes bot pushes run CI)
 
-Two workflows push commits on their own: `release.yml` (the Version Packages
-branch, then the release tags) and `dependabot-changeset.yml` (the changeset
-it adds to Dependabot PRs). Pushed with the default `GITHUB_TOKEN`, GitHub
-parks every CI run they trigger as **action_required** — the PR shows only
+`release.yml` pushes commits on its own (the Version Packages branch, then
+the release tags). Pushed with the default `GITHUB_TOKEN`, GitHub parks
+every CI run they trigger as **action_required** — the PR shows only
 the Cloudflare check until someone re-runs the runs by hand from the
 Actions tab, and unapproved runs expire as failures after 30 days.
 `GITHUB_TOKEN` also can't push a tag whose history introduces
 `.github/workflows/` changes (hit on `create-grist-widget@0.3.2`).
 
-Both workflows use the `CHANGESET_PUSH_TOKEN` secret when it exists and fall
-back to `GITHUB_TOKEN` otherwise, so nothing breaks without it. To set it up:
+It uses the `CHANGESET_PUSH_TOKEN` secret when it exists and falls back to
+`GITHUB_TOKEN` otherwise, so nothing breaks without it (this repository runs
+without it: approve the Version Packages PR's runs by hand). To set it up:
 
 1. GitHub → Settings → Developer settings → **Fine-grained personal access
    tokens** → Generate new token. Repository access: **only**
    `ArthurBlanchon/grist-widget-sdk`. Permissions: **Contents**, **Pull
    requests** and **Workflows**, all *Read and write* — nothing else.
-2. In this repo, Settings → Secrets and variables, add it as
-   `CHANGESET_PUSH_TOKEN` under **both Actions and Dependabot** (a run
-   attributed to Dependabot only sees Dependabot secrets; `release.yml`
-   sees Actions secrets).
+2. In this repo, Settings → Secrets and variables → Actions, add it as
+   `CHANGESET_PUSH_TOKEN`.
 3. Note the expiry date. **An expired token fails every push** (the release
-   publishes to npm, then its tag push is rejected) — rotate it before then
-   by updating both secrets, or delete both to fall back to `GITHUB_TOKEN`.
+   publishes to npm, then its tag push is rejected) — rotate it before then,
+   or delete the secret to fall back to `GITHUB_TOKEN`.
 
 Verify: `npm view grist-widget-sdk version` and the repo's Releases page.
 
@@ -143,8 +162,10 @@ Verify: `npm view grist-widget-sdk version` and the repo's Releases page.
 
 ## Post-release verification (template canary)
 
-`.github/workflows/template-canary.yml` runs after every `release.yml`
-completion on `main` (not after the runs every other branch push triggers). It first waits (up to 10 minutes) until npm actually *serves*
+`.github/workflows/template-canary.yml` runs after a `release.yml` run on
+`main` that published: its first job checks that the commit is the one
+tagged `create-grist-widget@<version>`, and skips the canary otherwise (a
+push that only updated the Version Packages PR). It first waits (up to 10 minutes) until npm actually *serves*
 the versions on the triggering commit — `workflow_run` fires once
 `npm publish` returns, not once the registry serves it, and on 0.3.17 that
 gap (~100s) made it scaffold the previous release and break the promoted

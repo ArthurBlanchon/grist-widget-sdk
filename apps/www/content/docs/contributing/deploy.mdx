@@ -83,6 +83,11 @@ Pages sends (GitHub Pages ignores the file), from `scripts/site/headers.mjs`:
 - **`/grist-static/*`:** readable cross-origin, so widgets' demo pages on other
   origins can fetch its files.
 
+`.github/workflows/site-headers.yml` checks that gristwidgets.com actually
+serves them (`scripts/site/check-headers.mjs`, on a docs page, a widget and
+a grist-static file): after each deploy to `main`, retrying while Cloudflare
+builds, and weekly.
+
 Keeping one script means the two origins can only differ in *where* they're
 served, never in *what* they contain.
 

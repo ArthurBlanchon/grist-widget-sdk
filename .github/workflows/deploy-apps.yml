@@ -66,10 +66,9 @@ on:
       - ".github/workflows/deploy-apps.yml"
   workflow_dispatch:
 
+# Read-only by default; only the deploy job can write to Pages.
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 # GitHub's own documented pattern for Actions-based Pages deploys: only one
 # deployment in flight at a time, never cancel one mid-flight.
@@ -122,6 +121,9 @@ jobs:
 
   deploy:
     needs: build
+    permissions:
+      pages: write
+      id-token: write
     runs-on: ubuntu-latest
     environment:
       name: github-pages

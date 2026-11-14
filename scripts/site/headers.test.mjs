@@ -15,7 +15,7 @@ test("the docs can only be framed by the site itself", () => {
 })
 
 test("widgets and the template preview stay embeddable by any Grist", () => {
-  for (const url of ["/examples/kanban/latest/", "/examples/kanban/demo/", "/template-preview/"]) {
+  for (const url of ["/examples/kanban/latest/", "/examples/kanban/demo/", "/widgets/kanban-board/0.1.0/", "/widgets/kanban-board/latest/", "/template-preview/"]) {
     const h = headersFor(file, url)
     assert.equal(h.has("content-security-policy"), false, url)
     assert.equal(h.has("x-frame-options"), false, url)

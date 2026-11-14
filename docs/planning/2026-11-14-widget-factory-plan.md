@@ -50,6 +50,7 @@ that change from one year to the next. So:
 | W5 | **Bringing the widgets home starts with a pause** to choose a first catalog list on purpose. Porting the six widget repositories and the 16 examples because they exist is not the plan (§10, F3). |
 | W6 | **Install URLs are on `gristwidgets.com`**, for example `https://gristwidgets.com/widgets/<slug>/latest/`. The github.io address is listed beside it as the alternative (§7.4). |
 | W7 | **The repository keeps its name** for now. Any rename is decided before F2 publishes the first install URL. |
+| W8 | **Catalog widgets are MIT-licensed**, as the SDK is. |
 
 ## 2. Why one repository
 
@@ -375,10 +376,8 @@ is `catalog/roadmap.md`: one paragraph per widget that seeds its `SPEC.md`.
 
 ## 12. What the maintainer decides
 
-Decided on 2026-11-14: the install URL (W6) and the repository's name
-(W7). Hosting stays the existing site until a threshold in §7.3 is reached.
+Decided on 2026-11-14: the install URL (W6), the repository's name (W7)
+and the licence (W8). Hosting stays the existing site until a threshold
+in §7.3 is reached.
 
-Left to decide:
-
-1. The licence for catalog widgets: MIT, as the SDK, recommended.
-2. At F3: the first catalog list.
+Left to decide: at F3, the first catalog list.

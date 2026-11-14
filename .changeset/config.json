@@ -16,6 +16,7 @@
     "grist-widget-template-vite",
     "examples",
     "@grist-widgets/shared",
+    "@grist-widgets/chart-builder",
     "@grist-widgets/attachment-viewer",
     "@grist-widgets/document-template",
     "@grist-widgets/file-uploader",

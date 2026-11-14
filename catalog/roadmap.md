@@ -97,7 +97,7 @@ size. It uses writes, mapped columns, options and linking, and the
 | 3 | Record selector ([built](../widgets/record-selector/SPEC.md)) | Find a row by search and drive the other widgets on the page | read table | — | — | Medium; the piece that makes dashboards work |
 | 4 | Gantt chart ([built](../widgets/gantt/SPEC.md)) | Plan tasks with dependencies and milestones; move and resize bars | full | timeline, resources | gantt-widget | Strong: 2,549 and 3,734 views |
 | 5 | Map ([built](../widgets/map/SPEC.md)) | Points by coordinates or address, colour by category, clusters, linked selection | read table (full to geocode) | choropleth | world-map | Medium; standard everywhere |
-| 6 | Chart builder | Charts beyond Grist's own: combined, heat map, radar, colour scales | read table | — | — | Medium: 897 views on colour scales |
+| 6 | Chart builder ([built](../widgets/chart-builder/SPEC.md)) | Charts beyond Grist's own: combined, heat map, radar, colour scales | read table | — | — | Medium: 897 views on colour scales |
 | 7 | Grouped / Pivot view ([built](../widgets/grouped-view/SPEC.md)) | Group by a value with collapsible groups; aggregate in a pivot | read table | grouped, pivot | — | Medium: 673 views; the official pivot is unmaintained since 2024 |
 | 8 | Attachment viewer & gallery ([built](../widgets/attachment-viewer/SPEC.md)) | Show the selected row's images and PDFs large; all of a table's attachments in a grid | full (see note) | viewer, gallery | `examples/attachment-gallery` | Strong: 710 views; many hand-written viewers |
 | 9 | File uploader ([built](../widgets/file-uploader/SPEC.md)) | Drop files into an attachments column, with type and size limits | full | — | — | Medium: forms take no attachments |
@@ -123,9 +123,11 @@ Notes for their specs:
   mode and the world-map's countries (choropleth) mode, coloured from the
   theme. The tiles are its only network calls. Their host is fixed in
   its CSP, and so is the geocoder's when geocoding is turned on.
-- **Chart builder:** shadcn's charts (Recharts) by default, so charts take
-  the theme like everything else. A declarative spec such as Vega-Lite is
-  considered only if shadcn's charts fall short.
+- **Chart builder:** shadcn's charts (Recharts), confirmed by the
+  maintainer, so charts take the theme like everything else; the component
+  is shared in `widgets/_shared/ui/chart.tsx`. Version 0.1 has bars,
+  stacked bars, lines, areas, bars and lines, pie and radar; the heat map
+  and colour scales come later.
 - **Attachment viewer:** attachments are read with Grist's temporary
   access token, which Grist gives only to a widget with full access, so the
   viewer asks for `full` (it writes nothing). Whether `read table` can be

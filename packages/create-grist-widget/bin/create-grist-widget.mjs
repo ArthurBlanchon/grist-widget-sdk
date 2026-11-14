@@ -9,6 +9,7 @@
 //   upgrade                          bring the template's files up to this CLI's
 //   demo [--save] [--port <n>]       the widget in a real Grist on this machine (Docker);
 //                                    --save writes its static demo into public/demo/
+//   release <patch|minor|major>      the release commit on dev (version, CHANGELOG.md)
 //   manifest --base <path>           write dist/grist-widget.json (the deploy workflow's build job)
 //   list [--json]                    print the available starting examples
 //
@@ -42,6 +43,7 @@ import { addedAgeExceptions } from "../src/age-exceptions.mjs"
 import { installPlan } from "../src/package-manager.mjs"
 import { DEPRECATED_URL } from "../src/codemods.mjs"
 import { runUpgrade, upgradeRefusal } from "../src/upgrade.mjs"
+import { BUMPS, runRelease } from "../src/release.mjs"
 import { DEMO_DIR, demoArgs, demoRefusal, runDemo, saveDemo } from "../src/demo.mjs"
 import { MANIFEST_FILE, writeManifest } from "../src/manifest.mjs"
 
@@ -106,6 +108,10 @@ Usage:
                                                  (needs Docker; in a widget: pnpm demo)
   create-grist-widget demo --save                Write public/demo/: the widget's demo page and
                                                  document, a real Grist from static files (Docker)
+  create-grist-widget release <patch|minor|major>
+                                                 On dev: bump the version, write CHANGELOG.md from
+                                                 what dev has that main doesn't, and commit
+                                                 (in a widget: pnpm release minor)
   create-grist-widget manifest --base <path>     Write dist/grist-widget.json, the widget's Grist
                                                  manifest (run by the deploy workflow after vite build)
   create-grist-widget list [--json]              List available starting examples
@@ -124,7 +130,7 @@ Options (create / init):
   --help, -h       Show this help
   --version, -v    Show this CLI's version
 
-Note: "create", "init", "use", "upgrade", "demo", "manifest", and "list" are themselves valid widget names.
+Note: "create", "init", "use", "upgrade", "demo", "release", "manifest", and "list" are themselves valid widget names.
 A bare "create-grist-widget list" runs the list command, not "scaffold a
 widget named list" — use "create-grist-widget create list" for that.`)
 }
@@ -634,6 +640,31 @@ function printList(title, items) {
   for (const item of items) console.log(`  ${item}`)
 }
 
+function cmdRelease(argv) {
+  const bump = argv.find((a) => !a.startsWith("-"))
+  if (!BUMPS.includes(bump)) {
+    console.error(`Usage: pnpm release <${BUMPS.join("|")}>  (on dev; see https://gristwidgets.com/docs/cli/releasing)`)
+    process.exit(1)
+  }
+  let result
+  try {
+    result = runRelease(process.cwd(), bump)
+  } catch (err) {
+    console.error(`release: ${err.message}`)
+    process.exit(1)
+  }
+  console.log(`Committed release v${result.version} on dev:`)
+  for (const line of result.lines) console.log(`  - ${line}`)
+  console.log("\nNext:")
+  console.log("  git push origin dev")
+  console.log(
+    result.compareUrl
+      ? `  then open the dev → main pull request: ${result.compareUrl}`
+      : "  then open the dev → main pull request"
+  )
+  console.log("Merging it publishes /v" + result.version + "/ and /latest/.")
+}
+
 function cmdUpgrade(argv) {
   const args = parseArgs(argv)
   const cwd = process.cwd()
@@ -748,6 +779,7 @@ async function main() {
   if (first === "use") return cmdUse(rest)
   if (first === "upgrade") return cmdUpgrade(rest)
   if (first === "demo") return cmdDemo(rest)
+  if (first === "release") return cmdRelease(rest)
   if (first === "manifest") return cmdManifest(rest)
   if (first === "init") return cmdInit(rest)
   if (first === "create") return cmdCreate(rest)

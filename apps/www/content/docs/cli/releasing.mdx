@@ -1,0 +1,48 @@
+---
+title: "Releasing a widget"
+description: "pnpm release: the version bump and changelog entry before the dev → main pull request."
+---
+
+A widget publishes when `dev` is merged into `main`: the deploy builds an
+immutable `/v<version>/` and moves `/latest/` to it. It publishes only a
+**new** version: merged without a version bump, the release build finds that
+version already live and does nothing, while the pull request and CI still
+look green.
+
+`pnpm release` makes that bump, with the changelog entry that goes with it:
+
+```bash
+git switch dev && git pull
+pnpm release minor        # or patch, or major
+git push origin dev
+# then open the dev → main pull request: the command prints its link
+```
+
+## What it does
+
+On `dev`, clean and in step with `origin/dev`:
+
+1. **Bumps `package.json`'s `version`:** `patch` for fixes, `minor` for
+   features, `major` for a change that asks something of the people using the
+   widget (a column to map again, an access level raised).
+2. **Writes the `CHANGELOG.md` entry:** one line per change `dev` has that
+   `main` doesn't, from the merged pull requests' titles (merge commits and
+   earlier release commits left out). It creates `CHANGELOG.md` if it is
+   missing.
+3. **Commits** both as `release: v<version>`.
+
+Pushing and opening the pull request stay with you: the command prints the
+`git push` and the link that opens the `dev` → `main` pull request. Merging
+that pull request, once its checks are green, is the release.
+
+It refuses to run off `dev`, with uncommitted changes, out of step with
+`origin/dev`, before the widget's first release (the first merge of `dev`
+into `main` sets the first version), or when `dev` has nothing `main`
+doesn't.
+
+## When to release
+
+After the change has been checked in a real Grist document on `/dev/`. A
+widget that takes SDK updates releases after merging them into `dev`
+([Upgrading a widget](/docs/cli/upgrading)): its users get the fixes the
+update carries.

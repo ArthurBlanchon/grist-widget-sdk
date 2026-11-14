@@ -12,6 +12,7 @@
     "format": "prettier --write \"**/*.{ts,tsx}\"",
     "typecheck": "tsc -b",
     "preview": "vite preview",
+    "release": "create-grist-widget release",
     "test": "vitest run"
   },
   "dependencies": {

@@ -100,7 +100,7 @@ size. It uses writes, mapped columns, options and linking, and the
 | 6 | Chart builder | Charts beyond Grist's own: combined, heat map, radar, colour scales | read table | — | — | Medium: 897 views on colour scales |
 | 7 | Grouped / Pivot view ([built](../widgets/grouped-view/SPEC.md)) | Group by a value with collapsible groups; aggregate in a pivot | read table | grouped, pivot | — | Medium: 673 views; the official pivot is unmaintained since 2024 |
 | 8 | Attachment viewer & gallery | Show the selected row's images and PDFs large; all of a table's attachments in a grid | read table | viewer, gallery | `examples/attachment-gallery` | Strong: 710 views; many hand-written viewers |
-| 9 | File uploader | Drop files into an attachments column, with type and size limits | full | — | — | Medium: forms take no attachments |
+| 9 | File uploader ([built](../widgets/file-uploader/SPEC.md)) | Drop files into an attachments column, with type and size limits | full | — | — | Medium: forms take no attachments |
 | 10 | Document template | One document per row (quote, certificate, letter) from an editable HTML or Liquid template; print to PDF, optionally attach it | read table (full to attach) | list report | — | Strong: 1,082 views; 17,347 at Retool; Airtable's Page designer |
 
 Notes for their specs:

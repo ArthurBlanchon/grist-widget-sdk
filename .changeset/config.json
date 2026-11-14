@@ -17,6 +17,7 @@
     "examples",
     "@grist-widgets/shared",
     "@grist-widgets/attachment-viewer",
+    "@grist-widgets/document-template",
     "@grist-widgets/file-uploader",
     "@grist-widgets/grouped-view",
     "@grist-widgets/kanban-board",

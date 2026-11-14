@@ -101,7 +101,7 @@ size. It uses writes, mapped columns, options and linking, and the
 | 7 | Grouped / Pivot view ([built](../widgets/grouped-view/SPEC.md)) | Group by a value with collapsible groups; aggregate in a pivot | read table | grouped, pivot | — | Medium: 673 views; the official pivot is unmaintained since 2024 |
 | 8 | Attachment viewer & gallery ([built](../widgets/attachment-viewer/SPEC.md)) | Show the selected row's images and PDFs large; all of a table's attachments in a grid | full (see note) | viewer, gallery | `examples/attachment-gallery` | Strong: 710 views; many hand-written viewers |
 | 9 | File uploader ([built](../widgets/file-uploader/SPEC.md)) | Drop files into an attachments column, with type and size limits | full | — | — | Medium: forms take no attachments |
-| 10 | Document template | One document per row (quote, certificate, letter) from an editable HTML or Liquid template; print to PDF, optionally attach it | read table (full to attach) | list report | — | Strong: 1,082 views; 17,347 at Retool; Airtable's Page designer |
+| 10 | Document template ([built](../widgets/document-template/SPEC.md)) | One document per row (quote, certificate, letter) from an editable HTML or Liquid template; print to PDF, optionally attach it | full (see note) | list report | — | Strong: 1,082 views; 17,347 at Retool; Airtable's Page designer |
 
 Notes for their specs:
 - **Kanban:** a card's text is data the widget does not control, so it is
@@ -125,7 +125,10 @@ Notes for their specs:
   enough is in "Still to find out". The self-hosted case, where the download URL can be wrong,
   is in its e2e test.
 - **Document template:** the user's template is rendered in a sandbox
-  with no scripts.
+  with no scripts. Version 0.1 has its own small template language
+  (`{{Column}}` and a `{{#rows}}` section) rather than Liquid, and no
+  attaching yet. It asks for `full` because the template is saved in the
+  widget's options; it writes nothing to the document.
 
 ## Wave 2: widely asked for, low cost
 

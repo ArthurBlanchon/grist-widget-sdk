@@ -15,7 +15,7 @@ Documentation: **[gristwidgets.com](https://gristwidgets.com)** (source in `apps
 
 Requirements:
 
-- Node.js 22.22+ or 24.15+ (jsdom 30, used by the test suites, requires it)
+- Node.js 22.22.2+ or 24.15+ (jsdom 31, used by the test suites, requires it)
 - pnpm 11+ (provisioned automatically via Corepack)
 
 Install and run from repository root:

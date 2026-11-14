@@ -10,9 +10,13 @@ test("docs-only changes run no job (the gate still passes)", () => {
   assert.deepEqual(changedJobs(["TODO.md", "docs/planning/x.md", "README.md"]), none)
 })
 
-test("an SDK change runs its tests, the smokes and the real widgets", () => {
+test("an SDK change runs its tests, the smokes, the real widgets and the catalog", () => {
   const jobs = changedJobs(["packages/core/src/sdk/index.ts"])
-  assert.deepEqual(jobs, { ...none, core: true, external_install: true, create_widget: true, real_widgets: true, size: true })
+  assert.deepEqual(jobs, { ...none, core: true, external_install: true, create_widget: true, real_widgets: true, size: true, widgets: true })
+})
+
+test("a catalog widget's change runs the widgets job only", () => {
+  assert.deepEqual(changedJobs(["widgets/kanban-board/src/app/App.tsx"]), { ...none, widgets: true })
 })
 
 test("the template deploy smoke runs only for the deploy's files", () => {

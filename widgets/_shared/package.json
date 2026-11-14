@@ -1,0 +1,41 @@
+{
+  "name": "@grist-widgets/shared",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "What every catalog widget shares: the shadcn components (ui/), the theme (theme.css), the translation helper (i18n.ts), and the Vite and ESLint configurations. Widgets reach the source through the @shared/* alias; this package holds its dependencies.",
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@fontsource-variable/geist": "catalog:",
+    "@tailwindcss/vite": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "class-variance-authority": "catalog:",
+    "clsx": "catalog:",
+    "lucide-react": "catalog:",
+    "radix-ui": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "shadcn": "catalog:",
+    "tailwind-merge": "catalog:",
+    "tailwindcss": "catalog:",
+    "tw-animate-css": "catalog:"
+  },
+  "devDependencies": {
+    "@eslint/js": "catalog:",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "eslint": "catalog:",
+    "eslint-plugin-react-hooks": "catalog:",
+    "globals": "catalog:",
+    "jsdom": "catalog:",
+    "typescript": "catalog:",
+    "typescript-eslint": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:"
+  }
+}

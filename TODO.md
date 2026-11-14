@@ -55,10 +55,14 @@ absorbed and archived, widgets served by the site that already exists
 
 - [ ] **F0.** 0.7 released (#28) and the maintainer docs moved into the
   repository (docs plan, M1).
-- [ ] **F1. Layout, with one pilot:** `widgets/`, `SPEC.md` and its check,
-  the shared shadcn components, theme and translations, CI per affected
-  widget, `pnpm new-widget`; the Kanban board as the pilot. Done when the
-  pilot passes the production-grade bar (plan §5) from this repository.
+- [ ] **F1. Layout, with one pilot.** In place: `widgets/` with the Kanban
+  board as the pilot, `widgets/_shared/` (shadcn components, theme,
+  translations, Vite and ESLint configuration), `SPEC.md` and its check
+  (`scripts/widgets/check-widgets.mjs`: spec, criteria named by tests,
+  declaration, design rules), the `widgets` CI job. Left: the e2e check in
+  a real Grist, axe, the bundle budget and the light and dark screenshots
+  for catalog widgets, and `pnpm new-widget`. Done when the pilot passes
+  the whole production-grade bar (plan §5).
 - [ ] **F2. Versions in the site:** catalog widgets under `/widgets/<slug>/`
   in `build-site.mjs`, released versions kept on a `widgets-dist` branch,
   a size and file budget. Done when the pilot works in Grist from

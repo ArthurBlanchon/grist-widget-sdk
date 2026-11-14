@@ -33,19 +33,13 @@ train (`RELEASING.md`).
   exported. Left for 1.0 to decide: the `emulator` entry's report still
   names unexported implementation types (`GristApiImpl`, `GristDocApiImpl`,
   …): export them as types or narrow the entry's signatures to interfaces.
-- [ ] **D. Widget tooling:** done: `pnpm release` and the two packages in
-  one Dependabot pull request. Left, waiting on the maintainer: the
-  template's `upgrade` committed onto that pull request. A commit pushed with
-  `GITHUB_TOKEN` gets no CI, so the required `check` never reports and the
-  pull request can't merge; it needs a token per widget repository (a
-  fine-grained PAT, or a GitHub App), or stays a follow-up command after the
-  merge (today's flow). Done when the maintainer has chosen and a widget
-  takes a release by merging one green pull request, or the follow-up is
-  accepted as the flow.
-- [ ] **E. The six widgets on 0.7** through D, with no deprecation warning.
+- [ ] **E. The six widgets on 0.7:** the Dependabot pull request moving both
+  packages, then `pnpm exec create-grist-widget upgrade` as a follow-up on
+  `dev`, the hints it lists fixed by hand, and a `pnpm release`. Done when
+  none of the six logs a deprecation warning.
 - [ ] **F. 1.0.0:** deprecated names removed, a codemod for each break, the
-  API report's baseline reset. Done when the six upgrade by merging D's pull
-  request.
+  API report's baseline reset. Done when the six take it through the same
+  flow as E.
 
 ## 2. Next project — the core widget library
 

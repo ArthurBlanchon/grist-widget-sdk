@@ -73,7 +73,7 @@ updates:
       # YAML files directly in that directory and does not descend into a
       # nested .github/workflows (dependabot-core github_actions
       # file_fetcher.rb, workflow_files). Bumps here touch the template: the
-      # release train's routine changeset covers them (RELEASING.md).
+      # release train's routine changeset covers them (docs/operations/releasing.md).
       - "/templates/grist-widget-template-vite/.github/workflows"
     schedule:
       interval: "weekly"

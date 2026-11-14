@@ -1,7 +1,10 @@
----
-title: "Open questions"
-description: "Unresolved API questions awaiting a decision before the 1.0 surface is frozen."
----
+# SDK open questions (retired 2026-11-14)
+
+> Kept for the record: the docs site's "Open questions" page, as it stood
+> when the maintainer docs moved into the repository. Most of it predates
+> `defineGristWidget()` (0.5) and the removals of 0.7, and is settled or
+> obsolete. A question still worth asking becomes a decision record in
+> `docs/decisions/`.
 
 Things we should decide before locking the 1.0 surface. Each entry is small enough to debate in a single discussion thread.
 

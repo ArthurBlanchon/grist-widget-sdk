@@ -66,7 +66,7 @@ current source is external: `template-canary.yml` scaffolds it via the
 (pre-release preview) and directly to `main` (stable `@latest`, promotion is
 automatic) of
 [`grist-widget-template`](https://github.com/ArthurBlanchon/grist-widget-template)
-after every release — see https://gristwidgets.com/docs/contributing/releasing for the full
+after every release — see https://github.com/ArthurBlanchon/grist-widget-sdk/blob/main/docs/operations/releasing.md for the full
 mechanism. There is no live preview of *unreleased* changes to this
 template; to try one locally, scaffold from your working tree with
 `pnpm --filter create-grist-widget build` (embeds this template verbatim —

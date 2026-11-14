@@ -194,7 +194,7 @@ One PR per step. Each keeps `/llms.txt` and the snippet check green.
 | **R4. Guides: the rest** | Test, Attachments and REST, Options, Linking and theme, Fast, Deploy and embed, Release, Upgrade, Protect, Registry, Troubleshooting | The old-forms check blocks; `cli/index` is gone |
 | **R5. Reference** | Generated API reference per entry point (types and TSDoc, through `fumadocs-typescript` or the API report's doc model); CLI reference from its help text; *Deprecated names* retired | No hand-written list of exports or options is left |
 | **R6. Concepts** | The two concept pages; `cheatsheet` and `cookbook` retired with redirects | About 25 user pages; every retired URL redirects |
-| **M1. Maintainer docs** (independent of R1–R6, can go first) | §3.1: nested `AGENTS.md`, `docs/architecture.md`, `docs/decisions/`, `docs/operations/`, the skills; the site's `contributing` and `design` sections removed with redirects | The site has no maintainer page; `check:agents-md` covers every `AGENTS.md` |
+| **M1. Maintainer docs** (independent of R1–R6, can go first). **Done 2026-11-14.** | §3.1: nested `AGENTS.md`, `docs/architecture.md`, `docs/decisions/`, `docs/operations/`, the skills; the site's `contributing` and `design` sections removed with redirects. The user-facing *Replica document* page stays under `sdk/design/` until R6 moves it to the concepts; the redirect table R1 needs exists (`scripts/site/redirects.mjs`). | The site has no maintainer page; `check:agents-md` covers every `AGENTS.md` |
 
 ## 7. What the maintainer decides
 

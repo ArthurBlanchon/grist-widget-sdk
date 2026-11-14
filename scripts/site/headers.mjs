@@ -79,18 +79,19 @@ export const PROBE_PATHS = ["/docs/", "/examples/hello-world/latest/", `/grist-s
 /**
  * What differs between the headers `_headers` promises for `path` and the
  * `actual` ones (a Headers object or Map): one line per mismatch, empty when
- * they agree. Only the headers the file names are compared.
+ * they agree. Only the headers a rule matching `path` sets or removes are
+ * compared: a header the host adds on its own (Cloudflare Pages sends
+ * `Access-Control-Allow-Origin: *` on every response) is not the file's.
  */
 export function headerMismatches(path, actual, file = siteHeaders()) {
   const get = (name) => (typeof actual.get === "function" ? actual.get(name) : undefined) ?? null
   const expected = headersFor(file, path)
-  const named = new Set(
-    file
-      .split("\n")
-      .map((l) => l.trim())
-      .filter((l) => l && !l.startsWith("/"))
-      .map((l) => (l.startsWith("! ") ? l.slice(2) : l.slice(0, l.indexOf(":"))).toLowerCase())
-  )
+  const named = new Set()
+  for (const block of file.split(/\n(?=\S)/)) {
+    const [rulePath, ...lines] = block.split("\n").map((l) => l.trim()).filter(Boolean)
+    if (!rulePath || headersFor(`${rulePath}\n  X-Probe: 1\n`, path).size === 0) continue
+    for (const line of lines) named.add((line.startsWith("! ") ? line.slice(2) : line.slice(0, line.indexOf(":"))).toLowerCase())
+  }
   const problems = []
   for (const name of named) {
     const want = expected.get(name) ?? null

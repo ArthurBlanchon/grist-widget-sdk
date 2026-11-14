@@ -4,13 +4,12 @@ title: Developer experience review — 2026-11-12
 
 # Developer experience review — 2026-11-12
 
-> **Status: in progress.** SDK and CLI 0.5.0 shipped; the 0.6.0 surface
-> (fetchRows, `grist-widget-sdk/actions`, the deprecations) and `upgrade`'s
-> codemods for it are merged. Left: the six reference widgets on 0.6, then
-> 1.0 (see `TODO.md` §1). The page-wide connection (`useGrist()` outside a
-> provider) stays in 0.6: `renderWithGrist(<App />)` without `widget` and the
-> six widgets' tests use it; 1.0 decides whether `renderWithGrist` always
-> renders a provider.
+> **Status: carried out through 0.6** (2026-11-12 to 11-14): SDK and CLI
+> 0.5.0 (encoded writes, `defineGristWidget`, the template rewrite, `pnpm
+> dev` on grist-static) and 0.6.0 (`fetchRows`, `grist-widget-sdk/actions`,
+> the deprecations and `upgrade`'s codemods). Its 1.0 part (§3.7, §5's last
+> row) continues in the
+> [plan of 2026-11-14](../planning/2026-11-14-review-and-1.0-plan.md).
 >
 > Scope: the SDK's public surface, the template a
 > widget starts from, and how a widget takes in later versions, judged by

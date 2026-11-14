@@ -71,7 +71,9 @@
     --secondary: oklch(0.97 0 0);
     --secondary-foreground: oklch(0.205 0 0);
     --muted: oklch(0.97 0 0);
-    --muted-foreground: oklch(0.556 0 0);
+    /* Darker than shadcn's 0.556, which is 4.3:1 on --muted and --accent: 0.53 keeps
+       muted text at WCAG AA (4.5:1) on those backgrounds too (4.8:1, and 5.3:1 on white). */
+    --muted-foreground: oklch(0.53 0 0);
     --accent: oklch(0.97 0 0);
     --accent-foreground: oklch(0.205 0 0);
     --destructive: oklch(0.577 0.245 27.325);

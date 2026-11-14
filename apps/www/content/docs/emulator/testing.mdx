@@ -93,6 +93,11 @@ renderWithGrist(<App />, {
 })
 ```
 
+Pass `widget` (the declaration, as in the first example) whenever the
+component under test calls `useGrist()`: without it there is no provider,
+and the component runs on the page-wide connection, deprecated in 0.7 and
+removed in 1.0. `upgrade` lists the calls that omit it.
+
 You can also bring your own emulator instance:
 
 ```ts
@@ -203,7 +208,7 @@ function Probe({ onResult }: { onResult: (w: ReturnType<typeof useGrist>) => voi
   return null
 }
 
-renderWithGrist(<Probe onResult={spy} />, { emulator: {...} })
+renderWithGrist(<Probe onResult={spy} />, { widget, emulator: {...} })
 ```
 
 ### Live mutations

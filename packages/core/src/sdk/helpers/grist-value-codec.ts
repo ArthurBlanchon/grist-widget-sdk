@@ -25,6 +25,7 @@ export type GristEncodedBareRef = ["r", number]
 /** `["P", encoded]` — pending marker. */
 export type GristEncodedPending = ["P"]
 
+/** A cell as `decodeGristValue` returns it: plain values, `Date`s and lists, or an error or a reference marker. */
 export type GristDecodedValue =
   | null
   | string

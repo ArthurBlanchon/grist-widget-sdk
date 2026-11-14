@@ -102,3 +102,62 @@ describe("fetchRows types", () => {
     expectTypeOf(columnarOf).returns.resolves.toEqualTypeOf<GristColumnarTable>()
   })
 })
+
+describe("the page-wide connection (0.7)", () => {
+  it("still connects useGrist() outside a provider, warning once with what to do instead", async () => {
+    function Probe() {
+      const w = sdk.useGrist()
+      return <span>{w.status}</span>
+    }
+    renderWithGrist(<Probe />, { emulator: { document: presets.todoList() } })
+    await waitFor(() => expect(screen.getByText("ready")).toBeTruthy())
+    expect(lines()).toEqual([expect.stringContaining("useGrist() outside <GristWidgetProvider> is deprecated")])
+    expect(lines()[0]).toContain("renderWithGrist(<App />, { widget })")
+    expect(lines()[0]).toContain("useGristOptional()")
+  })
+
+  it("is silent inside the provider renderWithGrist renders for a declaration", async () => {
+    const widget = sdk.defineGristWidget({ requiredAccess: "read table" })
+    function App() {
+      const w = sdk.useGrist()
+      return <span>{w.status}</span>
+    }
+    renderWithGrist(<App />, { widget })
+    await waitFor(() => expect(screen.getByText("ready")).toBeTruthy())
+    expect(lines()).toEqual([])
+  })
+
+  it("leaves useGristOptional() silent outside a provider", () => {
+    function Probe() {
+      return <span>{sdk.useGristOptional() === null ? "none" : "some"}</span>
+    }
+    renderWithGrist(<Probe />)
+    expect(screen.getByText("none")).toBeTruthy()
+    expect(lines()).toEqual([])
+  })
+})
+
+describe("useGristSchema's connection options (0.7)", () => {
+  it("warns once, naming the options passed, and still reads the schema", async () => {
+    const widget = sdk.defineGristWidget({ requiredAccess: "full" })
+    function App() {
+      const schema = sdk.useGristSchema({ requiredAccess: "full", allowSelectBy: true })
+      return <span>{schema.loading ? "loading" : "loaded"}</span>
+    }
+    renderWithGrist(<App />, { widget, emulator: { document: presets.todoList() } })
+    await waitFor(() => expect(screen.getByText("loaded")).toBeTruthy())
+    expect(lines()).toEqual([expect.stringContaining("useGristSchema({ requiredAccess, allowSelectBy }) is deprecated")])
+    expect(lines()[0]).toContain("defineGristWidget()")
+  })
+
+  it("is silent with schema options only", async () => {
+    const widget = sdk.defineGristWidget({ requiredAccess: "full" })
+    function App() {
+      const schema = sdk.useGristSchema({ sampleRowLimit: 3 })
+      return <span>{schema.loading ? "loading" : "loaded"}</span>
+    }
+    renderWithGrist(<App />, { widget, emulator: { document: presets.todoList() } })
+    await waitFor(() => expect(screen.getByText("loaded")).toBeTruthy())
+    expect(lines()).toEqual([])
+  })
+})

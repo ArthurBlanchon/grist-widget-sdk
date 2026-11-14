@@ -13,6 +13,18 @@ links here; a production build stays silent. Its type is marked
 `pnpm exec create-grist-widget upgrade` rewrites most of them: see
 [Upgrading a widget](/docs/cli/upgrading).
 
+## Deprecated in 0.7, removed in 1.0
+
+| What | Instead |
+| --- | --- |
+| `useGrist()` outside `<GristWidgetProvider>` (the page-wide connection) | Inside Grist, `mountGristWidget()` renders the provider. In a test, pass the declaration: `renderWithGrist(<App />, { widget })`. A component that also runs outside Grist calls `useGristOptional()`, which returns `null` there. |
+| `useGrist(options)` | Declare the options with `defineGristWidget()` and call `widget.useGrist()`. Inside a provider `options` were already ignored. |
+| `renderWithGrist(ui)` without `widget`, for a component that calls `useGrist()` | `renderWithGrist(ui, { widget })`: the provider, the declared columns mapped, typed `rows`. |
+| `useGristSchema({ requiredAccess, columns, allowSelectBy, hasCustomOptions, onEditOptions })` | Declare them with `defineGristWidget()`. `useGristSchema()` keeps its schema options (`tableId`, `replicaRowMode`, `sampleRowLimit`, the column filters). |
+
+`upgrade` can't rewrite these: it lists each by file and line
+([Upgrading a widget](/docs/cli/upgrading)).
+
 ## Deprecated in 0.6, removed in 1.0
 
 | Name | Instead |

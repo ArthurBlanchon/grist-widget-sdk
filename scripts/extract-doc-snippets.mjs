@@ -98,6 +98,7 @@ const KNOWN_NAMES = [
   { name: "CreateRowForm", kind: "ambient", line: "declare function CreateRowForm(props: { mappings: unknown }): ReactElement" },
   { name: "YourWidget", kind: "ambient", line: "declare function YourWidget(): ReactElement" },
   { name: "App", kind: "ambient", line: "declare function App(): ReactElement" },
+  { name: "widget", kind: "ambient", line: 'declare const widget: import("grist-widget-sdk").GristWidget' },
   { name: "RowPanel", kind: "ambient", line: "declare function RowPanel(): ReactElement" },
   { name: "DocsLink", kind: "ambient", line: "declare function DocsLink(): ReactElement" },
   { name: "ErrorBoundary", kind: "ambient", line: "declare function ErrorBoundary(props: { FallbackComponent: unknown; children?: unknown }): ReactElement" },

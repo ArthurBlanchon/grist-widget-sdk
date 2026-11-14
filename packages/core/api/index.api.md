@@ -8,7 +8,7 @@ import * as react from 'react';
 import { ReactNode } from 'react';
 
 // @public (undocumented)
-export function checkGristCell(type: string | undefined, value: unknown): Check;
+export function checkGristCell(type: string | undefined, value: unknown): GristCellCheck;
 
 // @public
 export function decodeGristValue(value: unknown, column?: GristReplicaColumn): GristDecodedValue;
@@ -62,6 +62,36 @@ export const gristAddTableAction: typeof gristAddTableAction_2;
 export const gristAddVisibleColumnAction: typeof gristAddVisibleColumnAction_2;
 
 // @public
+export type GristApi = {
+    reload: () => Promise<void>;
+    fetchRows: FetchRows;
+    fetchSelectedTable: (options?: GristFetchSelectedOptions) => Promise<GristColumnarTable>;
+    fetchTable: (tableId: string) => Promise<GristColumnarTable>;
+    fetchTableRows: <T extends Record<string, unknown> = Record<string, unknown>>(tableId: string, options?: FetchGristTableRowsOptions) => Promise<GristRowRecord<T>[]>;
+    listTables: (options?: ListTablesOptions) => Promise<string[]>;
+    listColumns: (tableId: string, options?: ListColumnsOptions) => Promise<GristColumnInfo[]>;
+    table: GristTableOperations;
+    getTable: (tableId: string) => GristTableOperations;
+    applyActions: (actions: GristUserActionTuple[], options?: GristApplyUserActionsOptions) => Promise<unknown>;
+    setWidgetOptions: (options: Record<string, unknown>) => Promise<void>;
+    patchWidgetOptions: (patch: Record<string, unknown>) => Promise<void>;
+    setCursorPosition: (pos: GristCursorPos) => Promise<void>;
+    setLinkedRowSelection: (rowIds: number[] | null) => Promise<void>;
+    getAttachmentUrl: (attachmentId: string, options?: {
+        readOnly?: boolean;
+    }) => Promise<string>;
+    fetchAttachmentBlob: (attachmentId: string, options?: {
+        readOnly?: boolean;
+    }) => Promise<GristFetchedAttachmentBlob>;
+    uploadAttachment: (file: Blob | File, options?: {
+        fileName?: string;
+    }) => Promise<GristAttachmentUploadResult>;
+    fetchWithAuth: (path: string, init?: RequestInit & {
+        readOnly?: boolean;
+    }) => Promise<Response>;
+};
+
+// @public
 export type GristApplyUserActionsOptions = {
     desc?: string;
 };
@@ -87,6 +117,15 @@ export type GristBoundaryProps = {
 };
 
 // @public
+export type GristCellCheck = {
+    ok: true;
+    value: unknown;
+} | {
+    ok: false;
+    message: string;
+};
+
+// @public
 export type GristCellIssue = {
     rowId: number;
     column: string;
@@ -104,6 +143,13 @@ export type GristChoiceListEntry = {
 
 // @public
 export type GristColumnarTable = Record<string, unknown[]>;
+
+// @public
+export type GristColumnExcludeContext = {
+    tableId: string;
+    colId: string;
+    col: GristReplicaColumn;
+};
 
 // @public (undocumented)
 export type GristColumnInfo = {
@@ -138,7 +184,25 @@ export type GristCursorPos = {
 };
 
 // @public
+export type GristDecodedValue = null | string | number | boolean | Date | GristDecodedValue[] | {
+    __error: true;
+    type: string;
+    message?: string;
+    traceback?: string;
+} | {
+    __ref: true;
+    tableId?: string;
+    rowId: number;
+};
+
+// @public
 export type GristDocumentMode = "schema-only" | "schema+samples" | "schema+data";
+
+// @public (undocumented)
+export type GristEncodedAttachmentList = ["L", ...(number | string)[]];
+
+// @public
+export type GristEncodedError = ["E", string, string?, string?];
 
 // @public (undocumented)
 export type GristFetchedAttachmentBlob = {
@@ -165,6 +229,11 @@ export type GristMappedRow<O extends {
 } & {
     [N in OptionalName<C>]?: ColumnValue<ByName<C, N>>;
 } : Record<string, unknown>;
+
+// @public (undocumented)
+export type GristMinimalRecord = {
+    id: number;
+};
 
 // @public @deprecated (undocumented)
 export const gristModifyColumnAction: typeof gristModifyColumnAction_2;
@@ -236,6 +305,14 @@ export type GristReplicaDocument = {
 // @public
 export type GristReplicaRow = GristRowRecord;
 
+// @public
+export type GristReplicaSelection = {
+    tableId: string;
+    rowId: number | "new" | null;
+    mappings?: GristWidgetColumnMap | null;
+    cursor?: GristCursorPos;
+};
+
 // @public (undocumented)
 export type GristReplicaTable = {
     label?: string;
@@ -264,12 +341,42 @@ export type GristSchemaTableView = GristReplicaTable & {
 export type GristSdkAlertKind = "column-mapping" | "mapping-pending" | "section-not-linked" | "source-not-wired" | "action-error" | "access-insufficient" | "map-back-skip" | "cell-issues";
 
 // @public
+export type GristTableNewRecord = {
+    fields: Record<string, unknown>;
+};
+
+// @public
 export type GristTableOperations = {
     getTableId: () => Promise<string>;
     create: (records: GristTableNewRecord | GristTableNewRecord[], options?: GristTableOpOptions) => Promise<GristMinimalRecord | GristMinimalRecord[]>;
     update: (records: GristTableUpdateRecord | GristTableUpdateRecord[], options?: GristTableOpOptions) => Promise<void>;
     upsert: (records: GristTableUpsertRecord | GristTableUpsertRecord[], options?: GristTableUpsertOptions) => Promise<void>;
     destroy: (recordIds: number | number[]) => Promise<void>;
+};
+
+// @public
+export type GristTableOpOptions = {
+    parseStrings?: boolean;
+};
+
+// @public
+export type GristTableUpdateRecord = {
+    id: number;
+    fields: Record<string, unknown>;
+};
+
+// @public
+export type GristTableUpsertOptions = GristTableOpOptions & {
+    add?: boolean;
+    update?: boolean;
+    onMany?: "first" | "none" | "all";
+    allowEmptyRequire?: boolean;
+};
+
+// @public
+export type GristTableUpsertRecord = {
+    require: Record<string, unknown>;
+    fields?: Record<string, unknown>;
 };
 
 // @public
@@ -299,6 +406,14 @@ export type GristWidgetActionStatus = "idle" | "running" | "error";
 export type GristWidgetColumnMap = Record<string, string | string[] | undefined>;
 
 // @public
+export type GristWidgetConfiguration = {
+    requiredAccess?: GristRequiredAccess;
+    columns?: GristColumnsToMap;
+    allowSelectBy?: boolean;
+    hasCustomOptions?: boolean;
+};
+
+// @public
 export type GristWidgetDefinition = UseGristOptions & {
     title?: string;
     description?: string;
@@ -309,6 +424,12 @@ export type GristWidgetInteraction = {
     access_level?: string;
     linking?: GristWidgetLinkingInfo;
     [key: string]: unknown;
+};
+
+// @public
+export type GristWidgetLinkingInfo = {
+    asTarget: string | null;
+    asSource: boolean;
 };
 
 // @public
@@ -381,7 +502,10 @@ export type StandardSchema<T = unknown> = {
 export function tableDataToRows<T = Record<string, unknown>>(data: GristColumnarTable): GristRowRecord<T>[];
 
 // @public
-export function useGrist<TRow = Record<string, unknown>, TMapped = Record<string, unknown>>(options?: UseGristOptions): UseGristResult<TRow, TMapped>;
+export function useGrist<TRow = Record<string, unknown>, TMapped = Record<string, unknown>>(): UseGristResult<TRow, TMapped>;
+
+// @public @deprecated (undocumented)
+export function useGrist<TRow = Record<string, unknown>, TMapped = Record<string, unknown>>(options: UseGristOptions | undefined): UseGristResult<TRow, TMapped>;
 
 // @public @deprecated
 export function useGristContext<TRow = Record<string, unknown>, TMapped = Record<string, unknown>>(): UseGristResult<TRow, TMapped>;
@@ -427,14 +551,18 @@ export function useGristSchema(options?: UseGristSchemaOptions): UseGristSchemaR
 // @public (undocumented)
 export type UseGristSchemaOptions = {
     requiredAccess?: GristRequiredAccess;
+    columns?: GristReadyOptions["columns"];
+    allowSelectBy?: GristReadyOptions["allowSelectBy"];
+    hasCustomOptions?: GristReadyOptions["hasCustomOptions"];
+    onEditOptions?: GristReadyOptions["onEditOptions"];
     tableId?: string;
     excludeSystemTableData?: boolean;
     replicaRowMode?: GristDocumentMode;
     sampleRowLimit?: number;
     source?: string;
 } & GristNoiseColumnsOptions & {
-    extraExcludeColumn?: (ctx: ColumnExcludeContext) => boolean;
-} & Pick<GristReadyOptions, "columns" | "allowSelectBy" | "hasCustomOptions" | "onEditOptions">;
+    extraExcludeColumn?: (ctx: GristColumnExcludeContext) => boolean;
+};
 
 // @public (undocumented)
 export type UseGristSchemaResult = {

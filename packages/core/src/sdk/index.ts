@@ -55,6 +55,7 @@ export type { ValidateColumnMappingsResult } from "./helpers/grist-mappings"
 // The document's schema and sample rows (full access)
 export {
   useGristSchema,
+  type GristColumnExcludeContext,
   type GristSchemaTableView,
   type ReplicaDocumentJsonOptions,
   type UseGristSchemaOptions,
@@ -67,7 +68,13 @@ export { useWidgetMetadata, type UseWidgetMetadataInput } from "./use-widget-met
 // Cells
 export { tableDataToRows, type GristColumnarTable } from "./helpers/grist-table-data"
 export type { GristNoiseColumnsOptions } from "./helpers/grist-columns-filters"
-export { decodeGristValue, encodeGristValue, isGristCellError } from "./helpers/grist-value-codec"
+export {
+  decodeGristValue,
+  encodeGristValue,
+  isGristCellError,
+  type GristDecodedValue,
+  type GristEncodedError,
+} from "./helpers/grist-value-codec"
 export { normalizeGristChoiceListEntries, type GristChoiceListEntry } from "./helpers/grist-widget-options"
 export { resolveGristFormulaKind } from "./helpers/grist-schema-formula"
 
@@ -79,6 +86,7 @@ export {
   gristAttachmentCellValues,
   mergeGristAttachmentCellValue,
   type GristAttachmentUploadResult,
+  type GristEncodedAttachmentList,
 } from "./helpers/grist-attachment-upload"
 
 // User actions for `applyActions`: deprecated here, in `grist-widget-sdk/actions` now
@@ -96,7 +104,15 @@ export {
 export type { GristUserActionTuple } from "./helpers/grist-user-actions"
 
 // Typed reads: each mapped cell checked against its declared type
-export { checkGristCell, encodeGristCell, type GristCellIssue, type GristMappedRow, type StandardSchema } from "./runtime/cells"
+export {
+  checkGristCell,
+  encodeGristCell,
+  type GristCellCheck,
+  type GristCellIssue,
+  type GristMappedRow,
+  type StandardSchema,
+} from "./runtime/cells"
+export type { GristApi } from "./runtime/api"
 
 // Grist's data shapes
 export type {
@@ -107,14 +123,23 @@ export type {
   GristDocumentMode,
   GristFetchSelectedOptions,
   GristFormulaKind,
+  GristMinimalRecord,
   GristReadyOptions,
   GristReplicaColumn,
   GristReplicaDocument,
   GristReplicaRow,
+  GristReplicaSelection,
   GristReplicaTable,
   GristRequiredAccess,
   GristRowRecord,
+  GristTableNewRecord,
   GristTableOperations,
+  GristTableOpOptions,
+  GristTableUpdateRecord,
+  GristTableUpsertOptions,
+  GristTableUpsertRecord,
   GristWidgetColumnMap,
+  GristWidgetConfiguration,
   GristWidgetInteraction,
+  GristWidgetLinkingInfo,
 } from "./types"

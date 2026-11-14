@@ -83,7 +83,8 @@ redirects (the site is a static export on two origins).
 5. **Examples are quoted, not pasted:** a page shows an example's code by
    including it from `examples/` (as the cookbook already links), so it
    can't drift.
-6. **Users first:** maintainer material leaves the user's navigation.
+6. **Users first:** maintainer material leaves the site for the repository,
+   organised for the AI agents that do the development (§3.1).
 
 ## 3. Target structure
 
@@ -116,11 +117,31 @@ About 25 user pages, against 41 today.
 | **Concepts** | Grist for widget authors: sections, records, mapping, access | Explanation | `quickstart/concepts` |
 | | How the SDK works: the declaration, provider, boundary, runtime | Explanation | `sdk/design/principles` (user-facing part), `concepts` |
 
-**Leaves the user's navigation** for the repository's `docs/`, linked from
-`CONTRIBUTING.md`:
+**Leaves the site** for the repository (§3.1):
 - `contributing/deploy`, `contributing/releasing`, `contributing/real-widgets`;
 - `sdk/design/principles` (the maintainer rules), `open-questions`,
   `replica-document`.
+
+### 3.1 Maintainer docs: in the repository, written for agents
+
+All development is done by AI agents, so the maintainer docs follow the
+practices agents read best: Markdown in the repository, found from one
+entry point, closest file first, one topic per file, commands that run.
+
+| Where | What | From |
+| --- | --- | --- |
+| `AGENTS.md` (root, `CLAUDE.md` imports it) | The router, short: what the repo is, commands, path map, operating rules, where to read next | today's root `AGENTS.md`, trimmed |
+| `packages/core/AGENTS.md`, `packages/create-grist-widget/AGENTS.md`, `apps/www/AGENTS.md`, `examples/AGENTS.md` (each with a `CLAUDE.md` importing it) | Each area's own rules, invariants and commands, read when an agent works there | the root file's area-specific parts, the design principles, the docs-writing rules of §2 |
+| `docs/architecture.md` | How the pieces fit: SDK runtime, emulator, CLI and template, site, registry, reference widgets | `sdk/design/principles`, `replica-document`, `contributing/deploy` (overview) |
+| `docs/decisions/NNNN-*.md` | One decision per file (context, decision, consequences), numbered, never edited after the fact | the design rules, `open-questions`, D1–D5 of the plan to 1.0, earlier plans' decisions |
+| `docs/operations/` | `releasing.md`, `site-deploy.md`, `real-widgets.md`: procedures with the commands to run | `RELEASING.md`, `contributing/*` |
+| `.claude/skills/` | Repeatable workflows as skills: the weekly release train, the reference widgets' upgrade, adding an example, writing a docs page | the procedures above, today's prompts |
+| `docs/planning/`, `docs/history/`, `TODO.md` | Unchanged: the open plan, finished ones, the ordered work | — |
+
+`CONTRIBUTING.md` stays short and points to `AGENTS.md`; `RELEASING.md`
+becomes `docs/operations/releasing.md`; `README.md`, `SECURITY.md` and
+`CODE_OF_CONDUCT.md` stay where GitHub looks for them. `check:agents-md`
+covers every `AGENTS.md`, so a command or path they name always exists.
 
 **Merged away:** `cheatsheet` (into the guides and the reference), `cookbook`
 (into Examples).
@@ -158,7 +179,8 @@ One PR per step. Each keeps `/llms.txt` and the snippet check green.
 | **R3. Guides: data** | Declare and map columns, Read data, Write data, Errors and alerts | No old form left in them |
 | **R4. Guides: the rest** | Test, Attachments and REST, Options, Linking and theme, Fast, Deploy and embed, Release, Upgrade, Protect, Registry, Troubleshooting | The old-forms check blocks; `cli/index` is gone |
 | **R5. Reference** | Generated API reference per entry point (types and TSDoc, through `fumadocs-typescript` or the API report's doc model); CLI reference from its help text; *Deprecated names* retired | No hand-written list of exports or options is left |
-| **R6. Concepts and maintainers** | The two concept pages; maintainer pages moved to `docs/`; `cheatsheet` and `cookbook` retired with redirects | About 25 user pages; every retired URL redirects |
+| **R6. Concepts** | The two concept pages; `cheatsheet` and `cookbook` retired with redirects | About 25 user pages; every retired URL redirects |
+| **M1. Maintainer docs** (independent of R1–R6, can go first) | §3.1: nested `AGENTS.md`, `docs/architecture.md`, `docs/decisions/`, `docs/operations/`, the skills; the site's `contributing` and `design` sections removed with redirects | The site has no maintainer page; `check:agents-md` covers every `AGENTS.md` |
 
 ## 7. What the maintainer decides
 

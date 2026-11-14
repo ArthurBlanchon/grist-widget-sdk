@@ -106,7 +106,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter grist-widget-sdk build
 
-      - name: Release the widget versions widgets-dist doesn't have
+      - name: Release the widget versions widgets-dist doesn't have, and their demos
         run: |
           set -euo pipefail
           dist="$RUNNER_TEMP/widgets-dist"
@@ -118,15 +118,18 @@ jobs:
             git worktree add --orphan -b widgets-dist "$dist"
           fi
           added=$(node scripts/widgets/release.mjs "$dist")
-          if [ -z "$added" ]; then
-            echo "Every declared widget version is released."
+          # Each widget's demo document, made in a real Grist (Docker) when
+          # missing or when its title, access or columns changed.
+          demos=$(node scripts/widgets/demos.mjs "$dist")
+          if [ -z "$added$demos" ]; then
+            echo "Every declared widget version and demo is released."
             exit 0
           fi
-          echo "$added"
+          echo "Released: ${added:-none}. Demos: ${demos:-none}."
           git -C "$dist" add -A
           git -C "$dist" -c user.name="github-actions[bot]" \
             -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
-            commit -m "Release $(echo "$added" | tr '\n' ' ')" -m "From $GITHUB_SHA."
+            commit -m "Release $(echo "$added $demos" | tr '\n' ' ')" -m "From $GITHUB_SHA."
           git -C "$dist" push origin HEAD:widgets-dist
 
   build:

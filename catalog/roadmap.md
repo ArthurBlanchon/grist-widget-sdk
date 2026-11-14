@@ -93,7 +93,7 @@ size. It uses writes, mapped columns, options and linking, and the
 | # | Widget | Job | Access | Modes | Starts from | Demand |
 | --- | --- | --- | --- | --- | --- | --- |
 | 1 | Kanban board ([built](../widgets/kanban-board/SPEC.md)) | Move cards between status columns by dragging; card fields and order chosen in options | full | — | `examples/task-board` | Strong: 1,742 views; asked for since 2023; in every comparable tool |
-| 2 | Record editor | Edit a record inside Grist: typed fields (Choice, Ref, Date), validation, conditional fields, Save and Cancel | full | multi-step wizard | `examples/form-edit` | Strong: in the forum's "top 5 requests"; Grist Forms are public-only |
+| 2 | Record editor ([built](../widgets/record-editor/SPEC.md)) | Edit a record inside Grist: typed fields (Choice, Ref, Date), validation, conditional fields, Save and Cancel | full | multi-step wizard | `examples/form-edit` | Strong: in the forum's "top 5 requests"; Grist Forms are public-only |
 | 3 | Record selector ([built](../widgets/record-selector/SPEC.md)) | Find a row by search and drive the other widgets on the page | read table | — | — | Medium; the piece that makes dashboards work |
 | 4 | Gantt chart | Plan tasks with dependencies and milestones; move and resize bars | full | timeline, resources | gantt-widget | Strong: 2,549 and 3,734 views |
 | 5 | Map | Points by coordinates or address, colour by category, clusters, linked selection | read table (full to geocode) | choropleth | world-map | Medium; standard everywhere |
@@ -106,6 +106,9 @@ size. It uses writes, mapped columns, options and linking, and the
 Notes for their specs:
 - **Kanban:** a card's text is data the widget does not control, so it is
   rendered as text, never as HTML.
+- **Record editor:** version 0.1 has the typed fields, number checks, Save,
+  Cancel and New. Required and conditional fields, and the wizard mode, come
+  in a later version (its `SPEC.md`).
 - **Gantt:** it needs a drag-and-drop timeline under an allowed licence.
   Choosing that library is the first task of its spec.
 - **Map:** the tiles are its only network calls. Their host is fixed in

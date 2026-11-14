@@ -27,6 +27,7 @@
 import { execFileSync } from "node:child_process"
 import {
   cpSync,
+  existsSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
@@ -44,6 +45,7 @@ import { DEMOS_DIR } from "./example-demos.mjs"
 import { listExampleIds } from "./example-ids.mjs"
 import { copyGristStatic } from "./site/grist-static.mjs"
 import { siteHeaders } from "./site/headers.mjs"
+import { redirectFiles } from "./site/redirects.mjs"
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..")
 
@@ -273,6 +275,18 @@ writeFileSync(join(outDir, ".nojekyll"), "")
 // embeddable by any Grist, and grist-static readable cross-origin for
 // widgets' own demo pages (scripts/site/headers.mjs).
 writeFileSync(join(outDir, "_headers"), siteHeaders())
+
+// Pages that left the site: a one-line page at each old path sends the
+// reader on, the same on both origins (scripts/site/redirects.mjs).
+for (const [path, html] of redirectFiles(siteBase)) {
+  const file = join(outDir, path)
+  if (existsSync(file)) {
+    console.error(`::error::redirect source ${path} is still a real page. Remove the page or the redirect.`)
+    process.exit(1)
+  }
+  mkdirSync(dirname(file), { recursive: true })
+  writeFileSync(file, html)
+}
 
 // No CNAME is written. Setting a custom domain on a GitHub Pages site makes
 // GitHub 301 that site's github.io URL to the custom domain, which would

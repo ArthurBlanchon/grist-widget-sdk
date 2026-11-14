@@ -1,7 +1,8 @@
----
-title: Real widgets
-description: "How SDK and CLI changes are checked against real widget repositories, and in a real Grist."
----
+# Real widgets
+
+> Read this before touching `.github/workflows/real-widgets.yml` or
+> `scripts/real-widgets/`, or when an SDK pull request's real-widgets job
+> turns red.
 
 The SDK's own tests and the emulator check the SDK in isolation. The **Real
 widgets** workflow (`.github/workflows/real-widgets.yml`) checks it against
@@ -38,8 +39,9 @@ pnpm e2e:grist ../world-map --keep       # leaves Grist running and prints the d
 It needs Docker and Playwright's Chromium (`pnpm exec playwright install
 chromium`). For each widget it:
 
-1. reads `GRIST_OPTIONS` from the widget's own module, through its own Vite
-   config (no per-widget configuration);
+1. reads the widget's declaration (`widget`, or `GRIST_OPTIONS` in an older
+   widget) from its own module, through its own Vite config, with no
+   per-widget configuration;
 2. starts Grist from a pinned Docker image (`GRIST_IMAGE` overrides it, to
    try a newer Grist before bumping the pin);
 3. creates a document with a typed column per declared column and a few

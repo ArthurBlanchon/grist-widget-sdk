@@ -1,5 +1,7 @@
 # grist-widget-sdk
 
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/ArthurBlanchon/grist-widget-sdk/badge)](https://scorecard.dev/viewer/?uri=github.com/ArthurBlanchon/grist-widget-sdk)
+
 Monorepo (`grist-widget-sdk-monorepo`) for building Grist widgets with React and TypeScript.
 
 Documentation: **[gristwidgets.com](https://gristwidgets.com)** (source in `apps/www/content/docs/`).

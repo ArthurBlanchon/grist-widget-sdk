@@ -45,6 +45,8 @@ published nor shipped to a widget.
   pull request, zizmor audits this repository's and the template's
   workflows, and a new dependency with a known vulnerability fails the
   dependency review.
+- **Scorecard**: the OpenSSF Scorecard scores these practices weekly and on
+  every push to `main` (badge in the README, results in the Security tab).
 - **Grist access tokens**: `useGrist().fetchWithAuth()` only ever sends the
   document's access token to the Grist instance that issued it; an absolute
   URL to another origin throws.

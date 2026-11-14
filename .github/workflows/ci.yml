@@ -123,8 +123,9 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter ${{ matrix.workspace }} run lint
 
-  # Every pull request: the CI scripts' own tests, the examples import cleanly
-  # (widgets.json), and every command and path the AGENTS.md files name exists.
+  # Every pull request: the CI scripts' own tests, no unmet peer dependency,
+  # the examples import cleanly (widgets.json), and every command and path
+  # the AGENTS.md files name exists.
   # No path rule: an unrelated rename is the drift this catches.
   repo:
     runs-on: ubuntu-latest
@@ -137,8 +138,11 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
-      - run: node --test scripts/ci/*.test.mjs scripts/site/*.test.mjs scripts/example-demos.test.mjs
+      - run: node --test scripts/ci/*.test.mjs scripts/site/*.test.mjs scripts/release/*.test.mjs scripts/example-demos.test.mjs
       - run: pnpm install --frozen-lockfile
+      # A dependency Dependabot can't see (an npm alias) falling behind its
+      # peers fails here, in the pull request that causes it.
+      - run: pnpm peers check
       - run: pnpm build:widgets-manifest
       - run: node scripts/example-demos.mjs check
       # The check loads the template's declaration through Vite, which
@@ -162,6 +166,7 @@ jobs:
           fetch-depth: 0
       - env:
           BASE_REF: ${{ github.event.pull_request.base.ref }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
         run: bash scripts/check-changeset.sh "$BASE_REF"
 
   # The SDK and the template for a real external consumer: pack the SDK,

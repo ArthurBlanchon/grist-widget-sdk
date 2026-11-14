@@ -1,32 +1,7 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 
-import { siteHeaders } from "./headers.mjs"
-
-/** Cloudflare's semantics: every matching rule applies in order; `! Name` removes. */
-function headersFor(file, url) {
-  const rules = []
-  for (const line of file.split("\n")) {
-    if (!line.trim()) continue
-    if (!line.startsWith(" ")) rules.push({ path: line.trim(), lines: [] })
-    else rules.at(-1).lines.push(line.trim())
-  }
-  const matches = (path) => {
-    const re = new RegExp(`^${path.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*")}$`)
-    return re.test(url)
-  }
-  const out = new Map()
-  for (const rule of rules.filter((r) => matches(r.path))) {
-    for (const line of rule.lines) {
-      if (line.startsWith("! ")) out.delete(line.slice(2).toLowerCase())
-      else {
-        const i = line.indexOf(":")
-        out.set(line.slice(0, i).toLowerCase(), line.slice(i + 1).trim())
-      }
-    }
-  }
-  return out
-}
+import { headerMismatches, headersFor, siteHeaders } from "./headers.mjs"
 
 const file = siteHeaders()
 
@@ -61,4 +36,18 @@ test("every response gets the common hardening", () => {
     assert.equal(h.get("referrer-policy"), "strict-origin-when-cross-origin", url)
     assert.match(h.get("strict-transport-security"), /^max-age=\d+/, url)
   }
+})
+
+test("the live check compares what the file promises with what is served", () => {
+  const served = new Map(headersFor(file, "/docs/"))
+  assert.deepEqual(headerMismatches("/docs/", served), [])
+  served.delete("content-security-policy")
+  assert.deepEqual(headerMismatches("/docs/", served), [
+    `/docs/: content-security-policy is absent, expected "frame-ancestors 'self'"`,
+  ])
+  const widget = new Map(headersFor(file, "/examples/x/latest/"))
+  widget.set("x-frame-options", "SAMEORIGIN")
+  assert.deepEqual(headerMismatches("/examples/x/latest/", widget), [
+    `/examples/x/latest/: x-frame-options is "SAMEORIGIN", expected absent`,
+  ])
 })

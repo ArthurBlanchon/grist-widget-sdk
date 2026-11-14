@@ -1,0 +1,41 @@
+name: Site headers
+
+# Checks that gristwidgets.com (Cloudflare Pages) serves the HTTP headers the
+# site's _headers file promises (scripts/site/headers.mjs): the docs framed
+# only by the site itself, widgets embeddable by any Grist, grist-static
+# readable cross-origin. The unit test covers the file; this covers what
+# Cloudflare actually does with it.
+#
+# Cloudflare builds the site on its own after each push to main, at the same
+# time as deploy-apps.yml, so this runs once that workflow finishes and
+# retries for up to 15 minutes. Weekly too, so a change on Cloudflare's side
+# shows without a push.
+
+on:
+  workflow_run:
+    workflows: ["Deploy apps to GitHub Pages"]
+    types: [completed]
+    branches: [main]
+  schedule:
+    - cron: "17 5 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          sparse-checkout: |
+            scripts/site
+            packages/create-grist-widget/src/demo-page.mjs
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+      - run: node scripts/site/check-headers.mjs https://gristwidgets.com --wait 900

@@ -15,7 +15,9 @@
 //   4. it passes when the widget renders past GristBoundary (none of its
 //      connecting / unavailable / error / "map your columns" screens left
 //      after the timeout) with no uncaught exception. Console errors are
-//      reported, not failed on: they include services the widget calls.
+//      reported, not failed on: they include services the widget calls;
+//      with --strict-console, an error logged from the widget's own origin
+//      fails it (a service's network failure comes from the service's).
 //      A screenshot is kept.
 //
 // It checks the emulator rather than replacing it: a widget that passes
@@ -28,6 +30,7 @@
 //   --keep             leave Grist running and print each document's URL
 //   --timeout <s>      seconds to wait for the widget (default 20)
 //   --axe              fail on a serious or critical accessibility violation (axe-core, WCAG 2 A and AA)
+//   --strict-console   fail on an error the widget logs to the console (the catalog's CI uses it)
 //   --themes           also screenshot it with the browser in dark mode (<name>-dark.png)
 //
 // Needs Docker (unless --grist-url) and Playwright's Chromium. The browser
@@ -65,13 +68,14 @@ const EMAIL = "e2e@example.com"
 const BOUNDARY_TITLES = ["Connecting to Grist", "Open inside Grist", "Something went wrong", "Map your columns"]
 
 export function parseArgs(argv) {
-  const out = { dirs: [], build: false, out: "e2e-grist-output", gristUrl: null, keep: false, timeout: 20, axe: false, themes: false }
+  const out = { dirs: [], build: false, out: "e2e-grist-output", gristUrl: null, keep: false, timeout: 20, axe: false, themes: false, strictConsole: false }
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i]
     if (a === "--build") out.build = true
     else if (a === "--keep") out.keep = true
     else if (a === "--axe") out.axe = true
     else if (a === "--themes") out.themes = true
+    else if (a === "--strict-console") out.strictConsole = true
     else if (a === "--out") out.out = argv[++i]
     else if (a === "--grist-url") out.gristUrl = argv[++i]
     else if (a === "--timeout") out.timeout = Number(argv[++i])
@@ -141,7 +145,7 @@ async function waitRendered(page, origin, timeout) {
   return { state, frame: found }
 }
 
-async function checkWidget({ browser, gristUrl, api, wsId, widgetDir, outDir, timeout, build, axe, themes }) {
+async function checkWidget({ browser, gristUrl, api, wsId, widgetDir, outDir, timeout, build, axe, themes, strictConsole }) {
   const pkg = JSON.parse(readFileSync(path.join(widgetDir, "package.json"), "utf8"))
   // A scoped name (@grist-widgets/kanban-board) keeps its last part: it names a URL path and a file.
   const name = pkg.name.replace(/^@[^/]+\//, "")
@@ -209,6 +213,7 @@ async function checkWidget({ browser, gristUrl, api, wsId, widgetDir, outDir, ti
 
     if (state !== "rendered") result.reason = state
     else if (uncaught.length) result.reason = `uncaught: ${uncaught[0]}`
+    else if (strictConsole && result.console.length) result.reason = `console error: ${result.console[0]}`
     else if (a11y) result.reason = a11y
     else result.ok = true
   } finally {
@@ -223,7 +228,7 @@ async function checkWidget({ browser, gristUrl, api, wsId, widgetDir, outDir, ti
 async function main() {
   const args = parseArgs(process.argv.slice(2))
   if (!args.dirs.length) {
-    console.error("Usage: pnpm e2e:grist <widget dir>... [--build] [--axe] [--themes] [--out <dir>] [--grist-url <url>] [--keep] [--timeout <s>]")
+    console.error("Usage: pnpm e2e:grist <widget dir>... [--build] [--axe] [--themes] [--strict-console] [--out <dir>] [--grist-url <url>] [--keep] [--timeout <s>]")
     process.exit(2)
   }
   const gristUrl = args.gristUrl ?? (await startGrist({ container: CONTAINER, port: GRIST_PORT, email: EMAIL }))
@@ -246,6 +251,7 @@ async function main() {
             build: args.build,
             axe: args.axe,
             themes: args.themes,
+            strictConsole: args.strictConsole,
           })
         )
       } catch (e) {

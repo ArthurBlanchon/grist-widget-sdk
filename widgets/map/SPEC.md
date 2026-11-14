@@ -45,7 +45,8 @@ mapped, otherwise countries when Country is.
 
 About 390 KB of JavaScript (gzip), budget 400 KB: MapLibre GL is most of
 it. It loads in a chunk of its own once Grist has answered, so the widget
-shows its first state at once.
+shows its first state at once. MapLibre's worker (about 150 KB gzip) is a
+file of its own, loaded in its own thread, outside the budget.
 
 ## Network
 

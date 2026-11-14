@@ -80,8 +80,10 @@ test("only serious and critical accessibility violations fail, and --axe/--theme
   const { failingViolations, parseArgs } = await import("./e2e-grist.mjs")
   const v = [{ id: "a", impact: "minor" }, { id: "b", impact: "serious" }, { id: "c", impact: "critical" }, { id: "d", impact: "moderate" }]
   assert.deepEqual(failingViolations(v).map((x) => x.id), ["b", "c"])
-  const args = parseArgs(["w", "--axe", "--themes", "--build"])
+  const args = parseArgs(["w", "--axe", "--themes", "--build", "--strict-console"])
   assert.equal(args.axe, true)
   assert.equal(args.themes, true)
   assert.equal(args.build, true)
+  assert.equal(args.strictConsole, true)
+  assert.equal(parseArgs(["w"]).strictConsole, false)
 })

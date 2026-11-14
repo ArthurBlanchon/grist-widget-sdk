@@ -27,11 +27,14 @@
 //   --grist-url <url>  use a running Grist instead of starting one
 //   --keep             leave Grist running and print each document's URL
 //   --timeout <s>      seconds to wait for the widget (default 20)
+//   --axe              fail on a serious or critical accessibility violation (axe-core, WCAG 2 A and AA)
+//   --themes           also screenshot it with the browser in dark mode (<name>-dark.png)
 //
 // Needs Docker (unless --grist-url) and Playwright's Chromium. The browser
 // path can be forced with CHROMIUM_PATH, the Grist image with GRIST_IMAGE.
 
 import { execFileSync } from "node:child_process"
+import { createRequire } from "node:module"
 import { createReadStream, existsSync, mkdirSync, readFileSync, statSync } from "node:fs"
 import http from "node:http"
 import path from "node:path"
@@ -61,12 +64,14 @@ const EMAIL = "e2e@example.com"
 // helpers/grist-boundary-view.ts): still showing one after the timeout fails.
 const BOUNDARY_TITLES = ["Connecting to Grist", "Open inside Grist", "Something went wrong", "Map your columns"]
 
-function parseArgs(argv) {
-  const out = { dirs: [], build: false, out: "e2e-grist-output", gristUrl: null, keep: false, timeout: 20 }
+export function parseArgs(argv) {
+  const out = { dirs: [], build: false, out: "e2e-grist-output", gristUrl: null, keep: false, timeout: 20, axe: false, themes: false }
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i]
     if (a === "--build") out.build = true
     else if (a === "--keep") out.keep = true
+    else if (a === "--axe") out.axe = true
+    else if (a === "--themes") out.themes = true
     else if (a === "--out") out.out = argv[++i]
     else if (a === "--grist-url") out.gristUrl = argv[++i]
     else if (a === "--timeout") out.timeout = Number(argv[++i])
@@ -77,13 +82,26 @@ function parseArgs(argv) {
 
 const TYPES = { ".html": "text/html", ".js": "text/javascript", ".mjs": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".json": "application/json", ".wasm": "application/wasm", ".png": "image/png", ".woff2": "font/woff2" }
 
-/** Serve `dist` with an SPA fallback, so /<name>/dev/ (what older widgets need to render as a widget) loads index.html. */
+/**
+ * The file of `dist` a request path asks for: the path itself, else the path
+ * without its `/<name>/dev` prefix (a build with relative URLs, such as a
+ * catalog widget's, asks for /<name>/dev/assets/…), else index.html, so
+ * /<name>/dev/ (what older widgets need to render as a widget) loads it.
+ */
+export function distFile(dist, requestPath) {
+  const isFile = (f) => f.startsWith(dist) && existsSync(f) && !statSync(f).isDirectory()
+  const direct = path.join(dist, requestPath)
+  if (isFile(direct)) return direct
+  const unprefixed = path.join(dist, requestPath.split("/").slice(3).join("/"))
+  if (isFile(unprefixed)) return unprefixed
+  return path.join(dist, "index.html")
+}
+
+/** Serve `dist` (see distFile). */
 function serve(dist) {
   return new Promise((resolve) => {
     const server = http.createServer((req, res) => {
-      const p = decodeURIComponent(new URL(req.url, "http://x").pathname)
-      let f = path.join(dist, p)
-      if (!f.startsWith(dist) || !existsSync(f) || statSync(f).isDirectory()) f = path.join(dist, "index.html")
+      const f = distFile(dist, decodeURIComponent(new URL(req.url, "http://x").pathname))
       res.writeHead(200, { "Content-Type": TYPES[path.extname(f)] ?? "application/octet-stream" })
       createReadStream(f).pipe(res)
     })
@@ -95,9 +113,38 @@ function serve(dist) {
 // One widget
 // ---------------------------------------------------------------------------
 
-async function checkWidget({ browser, gristUrl, api, wsId, widgetDir, outDir, timeout, build }) {
+/** The axe-core violations that fail the check: serious or critical, WCAG 2 A and AA. */
+export const failingViolations = (violations) => violations.filter((v) => v.impact === "serious" || v.impact === "critical")
+
+/** Wait until the widget's frame renders past GristBoundary: its state and the frame. */
+async function waitRendered(page, origin, timeout) {
+  let state = "no widget frame"
+  let found = null
+  const deadline = Date.now() + timeout * 1000
+  while (Date.now() < deadline) {
+    const frame = page.frames().find((f) => f.url().startsWith(origin))
+    if (frame) {
+      found = frame
+      state = await frame
+        .evaluate((titles) => {
+          for (const h of document.querySelectorAll('[role="status"] h2, [role="alert"] h2')) {
+            if (titles.includes(h.textContent.trim())) return `stuck on "${h.textContent.trim()}"`
+          }
+          const body = document.body
+          return body && (body.innerText.trim() || body.querySelector("canvas, svg, img, input, button")) ? "rendered" : "blank"
+        }, BOUNDARY_TITLES)
+        .catch(() => "loading")
+      if (state === "rendered") break
+    }
+    await new Promise((r) => setTimeout(r, 500))
+  }
+  return { state, frame: found }
+}
+
+async function checkWidget({ browser, gristUrl, api, wsId, widgetDir, outDir, timeout, build, axe, themes }) {
   const pkg = JSON.parse(readFileSync(path.join(widgetDir, "package.json"), "utf8"))
-  const name = pkg.name
+  // A scoped name (@grist-widgets/kanban-board) keeps its last part: it names a URL path and a file.
+  const name = pkg.name.replace(/^@[^/]+\//, "")
   const result = { widget: name, ok: false, reason: "", console: [], screenshot: null, doc: null }
   if (build) execFileSync("node_modules/.bin/vite", ["build"], { cwd: widgetDir, stdio: "inherit" })
   const dist = path.join(widgetDir, "dist")
@@ -126,31 +173,40 @@ async function checkWidget({ browser, gristUrl, api, wsId, widgetDir, outDir, ti
     })
     await page.goto(result.doc)
 
-    let state = "no widget frame"
-    const deadline = Date.now() + timeout * 1000
-    while (Date.now() < deadline) {
-      const frame = page.frames().find((f) => f.url().startsWith(origin))
-      if (frame) {
-        state = await frame
-          .evaluate((titles) => {
-            for (const h of document.querySelectorAll('[role="status"] h2, [role="alert"] h2')) {
-              if (titles.includes(h.textContent.trim())) return `stuck on "${h.textContent.trim()}"`
-            }
-            const body = document.body
-            return body && (body.innerText.trim() || body.querySelector("canvas, svg, img, input, button")) ? "rendered" : "blank"
-          }, BOUNDARY_TITLES)
-          .catch(() => "loading")
-        if (state === "rendered") break
-      }
-      await new Promise((r) => setTimeout(r, 500))
-    }
+    const { state, frame } = await waitRendered(page, origin, timeout)
     if (state === "rendered") await page.waitForTimeout(2000) // let late errors surface
 
     mkdirSync(outDir, { recursive: true })
     result.screenshot = path.join(outDir, `${name}.png`)
     await page.screenshot({ path: result.screenshot })
+
+    let a11y = null
+    if (axe && state === "rendered" && frame) {
+      const require = createRequire(import.meta.url)
+      await frame.addScriptTag({ path: require.resolve("axe-core/axe.min.js") })
+      const { violations } = await frame.evaluate(() =>
+        globalThis.axe.run(document, { runOnly: { type: "tag", values: ["wcag2a", "wcag2aa"] } }),
+      )
+      result.a11y = violations.map((v) => `${v.impact}: ${v.id} (${v.nodes.length})`)
+      const failing = failingViolations(violations)
+      if (failing.length) a11y = `accessibility: ${failing.map((v) => v.id).join(", ")}`
+    }
+
+    if (themes && state === "rendered") {
+      await page.emulateMedia({ colorScheme: "dark" })
+      await page.reload()
+      const dark = await waitRendered(page, origin, timeout)
+      await page.waitForTimeout(1000)
+      result.darkScreenshot = path.join(outDir, `${name}-dark.png`)
+      await page.screenshot({ path: result.darkScreenshot })
+      result.darkApplied = dark.frame
+        ? await dark.frame.evaluate(() => document.documentElement.classList.contains("dark")).catch(() => false)
+        : false
+    }
+
     if (state !== "rendered") result.reason = state
     else if (uncaught.length) result.reason = `uncaught: ${uncaught[0]}`
+    else if (a11y) result.reason = a11y
     else result.ok = true
   } finally {
     await context.close()
@@ -164,7 +220,7 @@ async function checkWidget({ browser, gristUrl, api, wsId, widgetDir, outDir, ti
 async function main() {
   const args = parseArgs(process.argv.slice(2))
   if (!args.dirs.length) {
-    console.error("Usage: pnpm e2e:grist <widget dir>... [--build] [--out <dir>] [--grist-url <url>] [--keep] [--timeout <s>]")
+    console.error("Usage: pnpm e2e:grist <widget dir>... [--build] [--axe] [--themes] [--out <dir>] [--grist-url <url>] [--keep] [--timeout <s>]")
     process.exit(2)
   }
   const gristUrl = args.gristUrl ?? (await startGrist({ container: CONTAINER, port: GRIST_PORT, email: EMAIL }))
@@ -176,7 +232,18 @@ async function main() {
     for (const widgetDir of args.dirs) {
       try {
         results.push(
-          await checkWidget({ browser, gristUrl, api, wsId: ws.id, widgetDir, outDir: path.resolve(args.out), timeout: args.timeout, build: args.build })
+          await checkWidget({
+            browser,
+            gristUrl,
+            api,
+            wsId: ws.id,
+            widgetDir,
+            outDir: path.resolve(args.out),
+            timeout: args.timeout,
+            build: args.build,
+            axe: args.axe,
+            themes: args.themes,
+          })
         )
       } catch (e) {
         results.push({ widget: path.basename(widgetDir), ok: false, reason: String(e?.message ?? e) })
@@ -191,7 +258,11 @@ async function main() {
     console.log(`${r.ok ? "PASS" : "FAIL"}  ${r.widget}${r.ok ? "" : `: ${r.reason}`}`)
     if (r.optionsFrom) console.log(`      Declaration from ${r.optionsFrom}`)
     for (const c of r.console ?? []) console.log(`      console error: ${c}`)
+    for (const v of r.a11y ?? []) console.log(`      axe: ${v}`)
     if (r.screenshot) console.log(`      screenshot: ${r.screenshot}`)
+    if (r.darkScreenshot) {
+      console.log(`      dark screenshot: ${r.darkScreenshot}${r.darkApplied ? "" : " (Grist did not switch to its dark theme)"}`)
+    }
     if (args.keep && r.doc) console.log(`      document: ${r.doc}`)
   }
   if (process.env.GITHUB_STEP_SUMMARY) {

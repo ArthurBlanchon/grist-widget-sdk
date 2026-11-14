@@ -85,10 +85,12 @@ jobs:
       # regenerated and committed, so reviewers see it as an API change.
       - run: pnpm --filter grist-widget-sdk api:report --check
 
-  # The catalog widgets (widgets/*): the checks of the widget factory plan's
-  # production-grade bar that need no browser. The spec, its acceptance
-  # criteria and the design rules (scripts/widgets/check-widgets.mjs), then
-  # each widget's typecheck, lint, tests and build.
+  # The catalog widgets (widgets/*): the widget factory plan's
+  # production-grade bar (§5). The spec, its acceptance criteria and the
+  # design rules (scripts/widgets/check-widgets.mjs); each widget's
+  # typecheck, lint, tests and build; its bundle against its budget; then
+  # each one embedded in a real Grist (Docker), with axe and a light and a
+  # dark screenshot.
   widgets:
     needs: changes
     if: needs.changes.outputs.widgets == 'true'
@@ -110,6 +112,20 @@ jobs:
       - run: pnpm --filter "./widgets/**" -r --workspace-concurrency=1 run lint
       - run: pnpm --filter "./widgets/**" -r --workspace-concurrency=1 run test
       - run: pnpm --filter "./widgets/**" -r --workspace-concurrency=1 --if-present run build
+      - run: node scripts/widgets/check-widgets.mjs --sizes
+      - run: pnpm exec playwright install --with-deps chromium
+      - name: In a real Grist, with axe and both themes
+        run: |
+          dirs=$(find widgets -mindepth 1 -maxdepth 1 -type d ! -name '_*' | sort)
+          pnpm e2e:grist $dirs --axe --themes --out "$RUNNER_TEMP/screenshots"
+      - name: Keep the screenshots
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: widgets-screenshots
+          path: ${{ runner.temp }}/screenshots
+          if-no-files-found: ignore
+          retention-days: 14
 
   # The same build, typecheck and tests on React 18, the oldest React the
   # peer range (`>=18`) accepts; the workspace itself is on React 19.

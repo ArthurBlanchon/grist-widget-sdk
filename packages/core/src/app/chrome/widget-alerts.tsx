@@ -38,7 +38,8 @@ function WidgetAlert({ alert }: { alert: GristSdkAlertDescriptor }) {
       </span>
       <div style={{ minWidth: 0 }}>
         <p style={{ margin: 0, fontWeight: 500 }}>{alert.title}</p>
-        <p style={{ margin: "0.25rem 0 0", color: tokens.mutedForeground }}>{alert.message}</p>
+        {/* The alert's own colour, not the muted one: muted text on the warning's tint falls under WCAG AA's 4.5:1. */}
+        <p style={{ margin: "0.25rem 0 0" }}>{alert.message}</p>
       </div>
     </div>
   )

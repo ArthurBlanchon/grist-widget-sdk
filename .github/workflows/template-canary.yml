@@ -57,6 +57,9 @@ name: Template canary
 # a PAT, so a leak of this secret can't reach any other repo.
 
 on:
+  # zizmor: ignore[dangerous-triggers] -- fired only by this repository's
+  # own "release" runs on main (pushes, never pull requests); no code from
+  # a pull request is checked out or run here.
   workflow_run:
     workflows: ["release"]
     types: [completed]
@@ -191,15 +194,21 @@ jobs:
           exit 1
 
       - name: Determine the version to preview (next, falling back to latest)
+        id: next
         run: |
           NEXT_VERSION="$(npm view create-grist-widget dist-tags.next 2>/dev/null)"
           if [ -z "$NEXT_VERSION" ]; then
             NEXT_VERSION="$(npm view create-grist-widget version)"
           fi
-          echo "DEV_VERSION=$NEXT_VERSION" >> "$GITHUB_ENV"
+          # A step output, not GITHUB_ENV, and only a plain version: what npm
+          # returns never reaches later steps' environment unchecked.
+          [[ "$NEXT_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$ ]] || { echo "::error::unexpected version '$NEXT_VERSION'"; exit 1; }
+          echo "version=$NEXT_VERSION" >> "$GITHUB_OUTPUT"
           echo "== dev preview will scaffold create-grist-widget@$NEXT_VERSION"
 
       - name: Scaffold the dev preview (next, falling back to latest)
+        env:
+          DEV_VERSION: ${{ steps.next.outputs.version }}
         run: |
           # Scaffold's target directory name IS create-grist-widget's
           # rawName (they're the same positional arg) -- so use the
@@ -282,6 +291,8 @@ jobs:
           node .release-src/scripts/template-repo-extras.mjs reference-repo "${CANARY_OWNER}/${CANARY_REPO}" .release-src/LICENSE
 
       - name: Commit + push dev on top of its existing history
+        env:
+          DEV_VERSION: ${{ steps.next.outputs.version }}
         working-directory: reference-repo
         run: |
           git add -A
@@ -292,6 +303,8 @@ jobs:
           git push origin dev
 
       - name: Poll the live URLs and assert real content
+        env:
+          DEV_VERSION: ${{ steps.next.outputs.version }}
         run: |
           DEV_URL="https://${CANARY_OWNER}.github.io/${CANARY_REPO}/dev/"
           LATEST_URL="https://${CANARY_OWNER}.github.io/${CANARY_REPO}/latest/"
@@ -337,8 +350,10 @@ jobs:
           echo "== OK -- create-grist-widget@${DEV_VERSION} scaffolds a working, deployable widget"
 
       - name: Scaffold the latest release candidate
+        id: latest
         run: |
           LATEST_VERSION="$(npm view create-grist-widget version)"
+          [[ "$LATEST_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::error::unexpected version '$LATEST_VERSION'"; exit 1; }
           # Same rawName ("$CANARY_REPO") as the dev scaffold above, so the
           # CLI's rename step produces identical package.json/README.md/
           # index.html/App.tsx content in both -- rm'd first since the dev
@@ -352,7 +367,7 @@ jobs:
             pkg.version = process.argv[1];
             fs.writeFileSync(p, JSON.stringify(pkg, null, 2) + "\n");
           ' "$LATEST_VERSION" "$CANARY_REPO"
-          echo "LATEST_VERSION=$LATEST_VERSION" >> "$GITHUB_ENV"
+          echo "version=$LATEST_VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Clone the reference repo's main branch
         run: |
@@ -368,6 +383,8 @@ jobs:
           node .release-src/scripts/template-repo-extras.mjs reference-repo-latest "${CANARY_OWNER}/${CANARY_REPO}" .release-src/LICENSE
 
       - name: Commit + force-push main -- promotion is automatic, not a manual PR
+        env:
+          LATEST_VERSION: ${{ steps.latest.outputs.version }}
         working-directory: reference-repo-latest
         run: |
           git add -A
@@ -396,6 +413,8 @@ jobs:
             echo "== canary/latest already gone -- nothing to delete"
 
       - name: Wait for the promoted main to actually deploy, and assert gh-pages exists
+        env:
+          LATEST_VERSION: ${{ steps.latest.outputs.version }}
         run: |
           VERSION_URL="https://${CANARY_OWNER}.github.io/${CANARY_REPO}/v${LATEST_VERSION}/"
           LATEST_URL="https://${CANARY_OWNER}.github.io/${CANARY_REPO}/latest/"

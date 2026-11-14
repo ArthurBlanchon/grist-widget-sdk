@@ -23,9 +23,13 @@ name: Retry deploy-apps on transient Pages failure
 # workflow's own behavior before it's merged.
 
 on:
+  # zizmor: ignore[dangerous-triggers] -- fired only by this repository's
+  # own "Deploy apps to GitHub Pages" runs on main (pushes, never pull requests); no code from
+  # a pull request is checked out or run here.
   workflow_run:
     workflows: ["Deploy apps to GitHub Pages"]
     types: [completed]
+    branches: [main]
 
 permissions:
   actions: write

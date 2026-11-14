@@ -41,7 +41,10 @@ published nor shipped to a widget.
   run with least-privilege tokens, and install with a frozen lockfile;
   dependency install scripts run only for an explicit allowlist, and pnpm
   refuses dependency versions younger than seven days
-  (`minimumReleaseAge`). Scaffolded widgets keep a 24-hour minimum.
+  (`minimumReleaseAge`). Scaffolded widgets keep a 24-hour minimum. On every
+  pull request, zizmor audits this repository's and the template's
+  workflows, and a new dependency with a known vulnerability fails the
+  dependency review.
 - **Grist access tokens**: `useGrist().fetchWithAuth()` only ever sends the
   document's access token to the Grist instance that issued it; an absolute
   URL to another origin throws.

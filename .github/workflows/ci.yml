@@ -179,6 +179,34 @@ jobs:
       - run: node scripts/template-demo.mjs check
       - run: pnpm check:agents-md
 
+  # GitHub Actions security lint (zizmor): template injection, excessive
+  # permissions, persisted credentials, unpinned or impostor actions, in this
+  # repository's workflows and in the template's, which every widget runs.
+  workflows:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: zizmorcore/zizmor-action@45d7276c9ca790aabd705e31ca99c6185c3e76dd # v0.8.1
+        with:
+          version: "1.32.0"
+          inputs: |
+            .
+            templates/grist-widget-template-vite
+          # Findings go to the log and fail the job; nothing is uploaded.
+          advanced-security: false
+
+  # A pull request that adds a dependency with a known vulnerability (moderate
+  # or worse) fails here, before the lockfile reaches main.
+  dependency-review:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          fail-on-severity: moderate
+
   # Published-package source (SDK, CLI, template) changed without a
   # .changeset/*.md file: nothing would be released. scripts/check-changeset.sh
   # is also the local pre-push hook (.githooks/pre-push).
@@ -276,11 +304,11 @@ jobs:
   real-widgets:
     needs: changes
     if: needs.changes.outputs.real_widgets == 'true'
-    uses: ./.github/workflows/real-widgets.yml
+    uses: ./.github/workflows/real-widgets.yml # zizmor: ignore[self-repository]
 
   gate:
     if: always()
-    needs: [changes, core, core-react18, cli, lint, repo, changeset, external-install, create-widget, template-deploy, real-widgets, size]
+    needs: [changes, core, core-react18, cli, lint, repo, workflows, dependency-review, changeset, external-install, create-widget, template-deploy, real-widgets, size]
     runs-on: ubuntu-latest
     steps:
       - name: Every needed job passed

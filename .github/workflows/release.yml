@@ -80,30 +80,38 @@ jobs:
       # CI needed a manual re-run). Without the secret, both fall back to
       # GITHUB_TOKEN, i.e. the previous behavior.
     steps:
+      # No credentials left in .git/config: changesets/action pushes the
+      # Version Packages commit and the tags through the GitHub API with its
+      # `github-token` input (push-with-git-cli: false), not with git.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 22
+          node-version: 24
           registry-url: "https://registry.npmjs.org"
           cache: pnpm
 
-      # Trusted Publishing (OIDC) needs npm >= 11.5; Node 22 ships an older npm.
-      # Pinned to the 11.x line, NOT @latest: npm 12's `npm info --json` wraps
-      # its result in an array instead of a bare object, which crashes
-      # @changesets/cli@2.31.0's isAlreadyPublishedError check with
-      # "Cannot read properties of undefined (reading 'includes')" — verified
-      # by reproducing both npm 11.x's and 12's `npm info --json` output
-      # locally. @changesets/cli 3 (now in use) lists npm 12 fixes in its
-      # changelog, so this pin can likely be lifted -- deliberately left for
-      # its own change rather than riding along with the Changesets v3 +
-      # changesets/action v2 migration, so a broken release has one suspect.
-      - name: Upgrade npm
-        run: npm install -g 'npm@^11.5.0'
+      # Trusted Publishing (OIDC) needs npm >= 11.5, which Node 24 bundles
+      # (Node 22's is older). Taking it from Node rather than `npm install -g`
+      # keeps npm itself out of an ad-hoc, unlocked install; the check below
+      # fails the release before publishing if a Node 24 ever ships an older
+      # npm, or npm 12 (whose `npm info --json` output @changesets/cli once
+      # misread).
+      - name: npm supports Trusted Publishing
+        run: |
+          node -e '
+            const [major, minor] = process.argv[1].split(".").map(Number)
+            if (major !== 11 || minor < 5) {
+              console.error(`npm ${process.argv[1]}: Trusted Publishing needs npm 11.5 or later on the 11 line`)
+              process.exit(1)
+            }
+            console.log(`npm ${process.argv[1]}`)
+          ' "$(npm --version)"
 
       - name: Install deps
         run: pnpm install --frozen-lockfile

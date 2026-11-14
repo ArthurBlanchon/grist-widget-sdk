@@ -57,10 +57,10 @@ absorbed and archived, widgets served by the site that already exists
   (docs plan, M1: done).
 - [ ] **F3. Bring the widgets home:** the first list is agreed
   ([`catalog/roadmap.md`](./catalog/roadmap.md): 19 widgets in three
-  waves); build wave 1, then waves 2 and 3. Wave 1 so far: Kanban board,
-  Record selector, Record editor, File uploader, Grouped view, Attachment
-  viewer, Document template, Gantt chart, Map, Chart builder: wave 1 is
-  built. Done when `examples/` is gone.
+  waves). Wave 1 is built, all ten: Kanban board, Record selector, Record
+  editor, File uploader, Grouped view, Attachment viewer, Document
+  template, Gantt chart, Map, Chart builder. Next, waves 2 and 3. Done
+  when `examples/` is gone.
 - [ ] **F4–F8:** intake and triage, the build loop, upkeep, the catalog and
   registry, a size check at 30 and 60 widgets (plan §10).
 

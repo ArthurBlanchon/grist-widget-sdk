@@ -513,7 +513,7 @@ describe("runUpgrade", () => {
     expect(readFileSync(path.join(dir, "tsconfig.node.json"), "utf8")).toBe(nodeTsconfig)
   })
 
-  it("rewrites the deprecated names in the widget's code once the template is on grist-widget-sdk 0.6", () => {
+  it("rewrites the removed names in the widget's code once the template is on grist-widget-sdk 0.6", () => {
     const old = `import { useGristContext } from "grist-widget-sdk"\nexport const useW = () => useGristContext()\n`
     for (const [version, rewritten] of [
       ["0.6.0", true],

@@ -3,14 +3,13 @@
  * selected record and the section's records, column mapping, writes, widget
  * options, linking and the document's REST API.
  *
- * Inside `<GristWidgetProvider>` (what `mountGristWidget()` renders) it reads
- * the provider's connection; outside one, a page-wide connection made with
- * the first caller's options.
+ * It reads the connection of the `<GristWidgetProvider>` above it (what
+ * `mountGristWidget()` renders), and throws outside one: `useGristOptional()`
+ * returns `null` there instead.
  */
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useSyncExternalStore } from "react"
 
-import { warnDeprecated } from "./helpers/deprecate"
 import type { ValidateColumnMappingsResult } from "./helpers/grist-mappings"
 import { createGristApi, type GristApi } from "./runtime/api"
 import {
@@ -51,16 +50,9 @@ export type GristWidgetMode = "empty" | "row" | "new-row"
  * the widget's lifetime: safe in effect dependencies. The object itself is
  * new whenever a value changes; depend on the members you use, not on it.
  */
-export type UseGristResult<TRow = Record<string, unknown>, TMapped = Record<string, unknown>> = Omit<
-  GristApi,
-  "fetchTableRows"
-> & {
+export type UseGristResult<TRow = Record<string, unknown>, TMapped = Record<string, unknown>> = GristApi & {
   /** `"booting"` until Grist answers, then `"ready"`; `"unavailable"` outside Grist; `"error"` otherwise. */
   status: GristWidgetStatus
-  /** @deprecated Use `status`: `status !== "unavailable"` once it isn't `"booting"`. */
-  isAvailable: boolean | null
-  /** @deprecated Use `status === "ready"`. */
-  isReady: boolean
   /** Why the widget can't run (status `"error"` or `"unavailable"`), else null. */
   error: string | null
   /** Grist's light or dark theme, null until Grist sends it. */
@@ -106,12 +98,6 @@ export type UseGristResult<TRow = Record<string, unknown>, TMapped = Record<stri
   /** The section's table id. */
   currentTableId: string | null
 
-  /** @deprecated Use `fetchRows(tableId, options)`. */
-  fetchTableRows: <T extends Record<string, unknown> = Record<string, unknown>>(
-    tableId: string,
-    options?: Parameters<GristApi["fetchTableRows"]>[1]
-  ) => Promise<GristRowRecord<T>[]>
-
   /** The last write's state. */
   actionStatus: GristWidgetActionStatus
   actionError: string | null
@@ -135,11 +121,8 @@ function newConnection(options: UseGristOptions | undefined): GristContextValue 
   return { runtime, api: createGristApi(runtime) }
 }
 
-let pageConnection: GristContextValue | null = null
-
-/** @internal Tests: forget the page's connection and every Grist binding. */
+/** @internal Tests: forget every Grist binding. */
 export function resetGristForTests(): void {
-  pageConnection = null
   resetGristReady()
   for (const s of ALL_STREAMS) s.reset()
 }
@@ -238,22 +221,6 @@ function buildResult<TRow, TMapped>(
     actionError: state.actionError,
     widgetOptions: state.widgetOptions,
   } as UseGristResult<TRow, TMapped>
-  // Deprecated flags: getters that warn once, kept out of spreads and equality checks.
-  const isAvailable = state.connection === "connecting" ? null : state.connection !== "not-embedded" && state.connection !== "unavailable"
-  Object.defineProperties(result, {
-    isAvailable: {
-      get() {
-        warnDeprecated("useGrist().isAvailable", 'read status: "unavailable" outside Grist, "booting" while connecting')
-        return isAvailable
-      },
-    },
-    isReady: {
-      get() {
-        warnDeprecated("useGrist().isReady", 'use status === "ready"')
-        return status === "ready"
-      },
-    },
-  })
   return result
 }
 
@@ -289,34 +256,21 @@ function useGristResult<TRow, TMapped>(connection: GristContextValue): UseGristR
   )
 }
 
-/** Why a page-wide connection is deprecated, and what to use instead (0.7; removed in 1.0). */
-export const PAGE_CONNECTION_INSTEAD =
-  "mountGristWidget() renders the provider; in a test, pass the declaration: renderWithGrist(<App />, { widget }); " +
-  "a component that also runs outside Grist uses useGristOptional()"
-
 /**
- * The widget's Grist state and API, from the nearest `<GristWidgetProvider>`
- * (`mountGristWidget()` renders one, as does `renderWithGrist(ui, { widget })`).
- *
- * Outside a provider it still works, on a page-wide connection made with the
- * first caller's `options`: deprecated in 0.7, removed in 1.0.
+ * The widget's Grist state and API, from the nearest `<GristWidgetProvider>`:
+ * `mountGristWidget()` renders one inside Grist, and `renderWithGrist(<App />,
+ * { widget })` in a test. Throws outside one; a component that also runs
+ * outside Grist calls `useGristOptional()`.
  */
-export function useGrist<TRow = Record<string, unknown>, TMapped = Record<string, unknown>>(): UseGristResult<TRow, TMapped>
-/**
- * @deprecated `options` only configure the page-wide connection used outside a
- * provider, which goes in 1.0: declare them with `defineGristWidget()`, whose
- * `widget.useGrist()` reads the provider `mountGristWidget()` renders.
- */
-export function useGrist<TRow = Record<string, unknown>, TMapped = Record<string, unknown>>(
-  options: UseGristOptions | undefined
-): UseGristResult<TRow, TMapped>
-export function useGrist<TRow = Record<string, unknown>, TMapped = Record<string, unknown>>(
-  options?: UseGristOptions
-): UseGristResult<TRow, TMapped> {
+export function useGrist<TRow = Record<string, unknown>, TMapped = Record<string, unknown>>(): UseGristResult<TRow, TMapped> {
   const fromProvider = useContext(GristContext)
-  if (!fromProvider) warnDeprecated("useGrist() outside <GristWidgetProvider>", PAGE_CONNECTION_INSTEAD)
-  const connection = fromProvider ?? (pageConnection ??= newConnection(options))
-  return useGristResult<TRow, TMapped>(connection)
+  if (!fromProvider) {
+    throw new Error(
+      "useGrist() must be used inside <GristWidgetProvider>: mountGristWidget() renders one, and in a test " +
+        "renderWithGrist(<App />, { widget }) does. A component that also runs outside Grist calls useGristOptional()."
+    )
+  }
+  return useGristResult<TRow, TMapped>(fromProvider)
 }
 
 /** `useGrist()` inside a provider, or null outside one: for components that also work without Grist. */
@@ -328,21 +282,6 @@ export function useGristOptional<TRow = Record<string, unknown>, TMapped = Recor
   // The hooks below run in both branches; the provider only decides which connection they read.
   const result = useGristResult<TRow, TMapped>(fromProvider ?? DETACHED)
   return fromProvider ? result : null
-}
-
-/**
- * `useGrist()` inside `<GristWidgetProvider>`; throws outside one.
- * @deprecated Use `widget.useGrist()` (or `useGrist()`): `mountGristWidget()` always renders the provider.
- */
-export function useGristContext<TRow = Record<string, unknown>, TMapped = Record<string, unknown>>(): UseGristResult<
-  TRow,
-  TMapped
-> {
-  warnDeprecated("useGristContext()", "use widget.useGrist() (or useGrist()): mountGristWidget() always renders the provider")
-  if (!useContext(GristContext)) {
-    throw new Error("useGristContext() must be used inside <GristWidgetProvider> (mountGristWidget renders one).")
-  }
-  return useGrist<TRow, TMapped>()
 }
 
 /** A connection that never starts: what useGristOptional reads outside a provider. */

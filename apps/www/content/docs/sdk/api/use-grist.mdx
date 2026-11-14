@@ -4,21 +4,16 @@ description: "The widget's one object for Grist: connection, records, mapping, w
 ---
 
 ```ts
-function useGrist<TRow = Record<string, unknown>, TMapped = Record<string, unknown>>(
-  options?: UseGristOptions,
-): UseGristResult<TRow, TMapped>
+function useGrist<TRow = Record<string, unknown>, TMapped = Record<string, unknown>>(): UseGristResult<TRow, TMapped>
 ```
 
-Inside `<GristWidgetProvider>` (what `mountGristWidget()` renders, and
-`renderWithGrist(ui, { widget })` in a test), `useGrist()` reads the
-provider's connection. `options` are ignored there: a widget declares them
-with `defineGristWidget()`.
-
-Outside a provider, `useGrist()` still works on a page-wide connection made
-with the first caller's `options`. **Deprecated in 0.7, removed in 1.0**, as
-is passing `options` at all: it warns once in development
-([Deprecated names](/docs/sdk/api/deprecated)). A component that also runs
-outside Grist calls `useGristOptional()`, which returns `null` there.
+`useGrist()` reads the connection of the `<GristWidgetProvider>` above it:
+the one `mountGristWidget()` renders inside Grist, and
+`renderWithGrist(<App />, { widget })` in a test. The access level and
+columns are the widget's declaration, from `defineGristWidget()`, whose
+`widget.useGrist()` is the same hook typed from it. Outside a provider
+`useGrist()` throws; a component that also runs outside Grist calls
+`useGristOptional()`, which returns `null` there.
 
 Every call reads one store through `useSyncExternalStore`: a component
 re-renders when a value changes. Every method is referentially stable for the
@@ -119,25 +114,10 @@ widget says what to change in Grist.
 `options.readOnly` asks for a read-only token on the download and REST
 members.
 
-### Deprecated
-
-Still on the result in 0.6, warning once in development; removed in 1.0.
-See [Deprecated names](/docs/sdk/api/deprecated).
-
-| Member | Instead |
-| --- | --- |
-| `isReady` | `status === "ready"` |
-| `isAvailable` | `status`: `"unavailable"` outside Grist, `"booting"` while connecting |
-| `fetchSelectedTable(options?)` | `fetchRows({ columnar: true })`, or `fetchRows()` for rows |
-| `fetchTable(tableId)` | `fetchRows(tableId, { columnar: true })`, or `fetchRows(tableId)` for rows |
-| `fetchTableRows(tableId, options?)` | `fetchRows(tableId, options)` |
-
 ## Outside a provider
 
 `useGristOptional()` returns `null` outside `<GristWidgetProvider>`, for a
-component that also works without Grist. `useGristContext()`, which threw
-there, is deprecated: `mountGristWidget()` always renders the provider, so
-`widget.useGrist()` (or `useGrist()`) is enough.
+component that also works without Grist.
 
 ## Examples
 

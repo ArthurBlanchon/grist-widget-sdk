@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 
 import { buildReplicaDocumentFromDocApi } from "./helpers/build-replica-document"
-import { warnDeprecated } from "./helpers/deprecate"
 import { isGristNoiseColumn, type GristNoiseColumnsOptions } from "./helpers/grist-columns-filters"
 import {
   buildReplicaJsonPayload,
@@ -11,11 +10,9 @@ import { isAccessInsufficientError } from "./runtime/api"
 import { useGrist, useGristRuntime } from "./use-grist"
 import type {
   GristDocumentMode,
-  GristReadyOptions,
   GristReplicaColumn,
   GristReplicaDocument,
   GristReplicaTable,
-  GristRequiredAccess,
 } from "./types"
 
 /** What `extraExcludeColumn` is given for each column. */
@@ -25,24 +22,12 @@ export type GristColumnExcludeContext = {
   col: GristReplicaColumn
 }
 
-/** The connection options `useGristSchema` used to take (deprecated in 0.7). */
-const CONNECTION_OPTIONS = ["requiredAccess", "columns", "allowSelectBy", "hasCustomOptions", "onEditOptions"] as const
-
+/**
+ * What `useGristSchema` reads. The connection (access level, columns) is the
+ * widget's declaration, from `defineGristWidget()`: the hook reads it through
+ * the provider `mountGristWidget()` renders.
+ */
 export type UseGristSchemaOptions = {
-  /**
-   * @deprecated Declare it with `defineGristWidget()`. Inside the provider
-   * `mountGristWidget()` renders it is ignored; it only configures the
-   * page-wide connection, which goes in 1.0.
-   */
-  requiredAccess?: GristRequiredAccess
-  /** @deprecated Declare it with `defineGristWidget()` (see `requiredAccess`). */
-  columns?: GristReadyOptions["columns"]
-  /** @deprecated Declare it with `defineGristWidget()` (see `requiredAccess`). */
-  allowSelectBy?: GristReadyOptions["allowSelectBy"]
-  /** @deprecated Declare it with `defineGristWidget()` (see `requiredAccess`). */
-  hasCustomOptions?: GristReadyOptions["hasCustomOptions"]
-  /** @deprecated Declare it with `defineGristWidget()` (see `requiredAccess`). */
-  onEditOptions?: GristReadyOptions["onEditOptions"]
   tableId?: string
   excludeSystemTableData?: boolean
   /**
@@ -71,8 +56,6 @@ export type ReplicaDocumentJsonOptions = {
 }
 
 export type UseGristSchemaResult = {
-  /** @deprecated Use `useGrist().status`: `"unavailable"` outside Grist, `"booting"` while connecting. */
-  isAvailable: boolean | null
   /** Canonical replica document. */
   document: GristReplicaDocument | null
   /** Same reference as `document`. */
@@ -120,7 +103,6 @@ function filterReplicaDocumentColumns(
  * Grist replica-document hook: metadata + optional decoded `rows` per table.
  */
 export function useGristSchema(options?: UseGristSchemaOptions): UseGristSchemaResult {
-  const requiredAccess = options?.requiredAccess ?? "read table"
   const requestedTableId = options?.tableId
   const excludeSystemTableData = options?.excludeSystemTableData ?? true
   const replicaRowMode = options?.replicaRowMode ?? "schema+samples"
@@ -132,23 +114,8 @@ export function useGristSchema(options?: UseGristSchemaOptions): UseGristSchemaR
   const excludeManualSort = options?.excludeManualSort ?? false
   const extraExcludeColumn = options?.extraExcludeColumn
 
-  if (options && CONNECTION_OPTIONS.some((key) => options[key] !== undefined)) {
-    warnDeprecated(
-      `useGristSchema({ ${CONNECTION_OPTIONS.filter((key) => options[key] !== undefined).join(", ")} })`,
-      "declare them with defineGristWidget(): inside the provider mountGristWidget() renders they are ignored"
-    )
-  }
-
-  // Inside a provider, its connection; standalone, the page's (deprecated), with these options.
-  const w = useGrist({
-    requiredAccess,
-    columns: options?.columns,
-    allowSelectBy: options?.allowSelectBy,
-    hasCustomOptions: options?.hasCustomOptions,
-    onEditOptions: options?.onEditOptions,
-  })
+  const w = useGrist()
   const connection = useGristRuntime()
-  const isAvailable = w.status === "booting" ? null : w.status !== "unavailable"
   const readyError = w.status === "error" || w.status === "unavailable" ? w.error : null
   const docApi = w.status === "ready" && typeof grist !== "undefined" ? (grist.docApi ?? null) : null
 
@@ -280,7 +247,7 @@ export function useGristSchema(options?: UseGristSchemaOptions): UseGristSchemaR
     })
   }, [])
 
-  const result = {
+  return {
     document,
     replicaDocument: document,
     table,
@@ -295,13 +262,5 @@ export function useGristSchema(options?: UseGristSchemaOptions): UseGristSchemaR
     loading,
     error: readyError ?? error,
     reload: load,
-  } as UseGristSchemaResult
-  Object.defineProperty(result, "isAvailable", {
-    get() {
-      warnDeprecated("useGristSchema().isAvailable", 'read useGrist().status: "unavailable" outside Grist, "booting" while connecting')
-      return isAvailable
-    },
-  })
-  return result
-
+  }
 }

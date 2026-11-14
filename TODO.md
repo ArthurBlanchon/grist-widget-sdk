@@ -28,18 +28,17 @@ train (`RELEASING.md`).
   deprecation warning.
 - [ ] **C. 0.7.0:** released with the next weekly train. Done in the
   code: the API report and React 18/19 in CI, the versioning policy, the
-  page-wide connection and `useGristSchema()`'s connection options
-  deprecated with `upgrade` hints, the types public signatures use
-  exported. Left for 1.0 to decide: the `emulator` entry's report still
+  names 0.6 deprecated, the page-wide connection and `useGristSchema()`'s
+  connection options removed (codemods and `upgrade` hints for each), the
+  types public signatures use exported. Left for 1.0 to decide: the `emulator` entry's report still
   names unexported implementation types (`GristApiImpl`, `GristDocApiImpl`,
   …): export them as types or narrow the entry's signatures to interfaces.
 - [ ] **E. The six widgets on 0.7:** the Dependabot pull request moving both
   packages, then `pnpm exec create-grist-widget upgrade` as a follow-up on
   `dev`, the hints it lists fixed by hand, and a `pnpm release`. Done when
-  none of the six logs a deprecation warning.
-- [ ] **F. 1.0.0:** deprecated names removed, a codemod for each break, the
-  API report's baseline reset. Done when the six take it through the same
-  flow as E.
+  the six typecheck, test and build on 0.7.
+- [ ] **F. 1.0.0:** the API report's baseline reset and the deprecate-first
+  rule in force. Done when the six take it through the same flow as E.
 
 ## 2. Next project — the core widget library
 

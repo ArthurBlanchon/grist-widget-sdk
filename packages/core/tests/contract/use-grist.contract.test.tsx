@@ -16,7 +16,6 @@ import { presets } from "../../src/emulator"
 import { actionsOf, eventsOf } from "../../src/emulator/testing"
 import { renderProbe, settle, untilReady } from "./harness"
 import type { UseGristOptions } from "../../src/sdk"
-import { resetDeprecationWarnings } from "../../src/sdk/helpers/deprecate"
 
 /** todoList with a REST access token, for the attachment and REST members. */
 const withToken = () => ({
@@ -65,9 +64,6 @@ const MEMBERS = [
   "fetchWithAuth",
 ] as const
 
-/** Still on the result, warning once in development; removed in 1.0. */
-const DEPRECATED = ["isAvailable", "isReady", "fetchSelectedTable", "fetchTable", "fetchTableRows"] as const
-
 const MAPPED = {
   requiredAccess: "read table",
   columns: [
@@ -83,38 +79,9 @@ describe("the contract covers every member", () => {
     const keys = Object.keys(w())
     for (const m of MEMBERS) expect(keys, `useGrist().${m}`).toContain(m)
     const source = readFileSync(new URL(import.meta.url), "utf8")
-    for (const m of [...MEMBERS, ...DEPRECATED]) expect(source, `describe("${m}")`).toContain(`describe("${m}"`)
-    for (const m of DEPRECATED) expect(m in w(), `useGrist().${m}`).toBe(true)
-  })
-})
-
-describe("deprecated members", () => {
-  it("each works, and warns once in development with what replaces it", async () => {
-    const { w } = renderProbe({ requiredAccess: "full" })
-    await untilReady(w)
-    resetDeprecationWarnings()
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => {})
-    try {
-      for (let i = 0; i < 2; i++) {
-        void w().isAvailable
-        void w().isReady
-        await w().fetchSelectedTable()
-        await w().fetchTable("Tasks")
-        await w().fetchTableRows("Tasks")
-      }
-      const lines = warn.mock.calls.map((c) => String(c[0]))
-      expect(lines).toHaveLength(DEPRECATED.length)
-      for (const m of DEPRECATED) expect(lines.some((l) => l.includes(`useGrist().${m}`) && l.includes("deprecated"))).toBe(true)
-    } finally {
-      warn.mockRestore()
-    }
-  })
-
-  it("stay out of a spread of the result", async () => {
-    const { w } = renderProbe()
-    await untilReady(w)
-    const copy = { ...w() }
-    expect("isReady" in copy || "isAvailable" in copy).toBe(false)
+    for (const m of MEMBERS) expect(source, `describe("${m}")`).toContain(`describe("${m}"`)
+    // Nothing on the result that the contract doesn't list.
+    expect(keys.filter((k) => !(MEMBERS as readonly string[]).includes(k))).toEqual([])
   })
 })
 
@@ -130,22 +97,6 @@ describe("status", () => {
     await untilReady(w)
     await settle(() => emulator.setInteraction({ access_level: "read table" }))
     await waitFor(() => expect(w().status).toBe("error"))
-  })
-})
-
-describe("isAvailable", () => {
-  it("is true inside Grist once connected", async () => {
-    const { w } = renderProbe()
-    await untilReady(w)
-    expect(w().isAvailable).toBe(true)
-  })
-})
-
-describe("isReady", () => {
-  it("follows status === ready", async () => {
-    const { w } = renderProbe()
-    await untilReady(w)
-    expect(w().isReady).toBe(true)
   })
 })
 
@@ -432,33 +383,6 @@ describe("fetchRows", () => {
     await untilReady(w)
     expect((await w().fetchRows({ columnar: true })).title).toEqual(["Buy milk", "Write the SOTA emulator", "Ship it"])
     expect((await w().fetchRows("Tasks", { columnar: true })).id).toEqual([1, 2, 3])
-  })
-})
-
-describe("fetchSelectedTable", () => {
-  it("reads the section's rows, column-oriented", async () => {
-    const { w } = renderProbe()
-    await untilReady(w)
-    const data = await w().fetchSelectedTable()
-    expect(data.title).toEqual(["Buy milk", "Write the SOTA emulator", "Ship it"])
-  })
-})
-
-describe("fetchTable", () => {
-  it("reads any table with full access", async () => {
-    const { w } = renderProbe({ requiredAccess: "full" })
-    await untilReady(w)
-    const data = await w().fetchTable("Tasks")
-    expect(data.id).toEqual([1, 2, 3])
-  })
-})
-
-describe("fetchTableRows", () => {
-  it("reads any table as rows with full access", async () => {
-    const { w } = renderProbe({ requiredAccess: "full" })
-    await untilReady(w)
-    const rows = await w().fetchTableRows("Tasks")
-    expect(rows.map((r) => r.title)).toEqual(["Buy milk", "Write the SOTA emulator", "Ship it"])
   })
 })
 

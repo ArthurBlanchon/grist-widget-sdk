@@ -23,24 +23,25 @@ function useGristSchema(options?: UseGristSchemaOptions): UseGristSchemaResult
 
 ```ts
 type UseGristSchemaOptions = {
-  // Deprecated in 0.7, removed in 1.0: declare these with defineGristWidget().
-  // Inside the provider mountGristWidget() renders they are ignored.
-  requiredAccess?: "none" | "read table" | "full"
-  columns?: GristColumnDescriptor[]
-  allowSelectBy?: boolean
-  hasCustomOptions?: boolean
-  onEditOptions?: () => void
-
   // What to put in the replica
-  replicaRowMode?: "schema-only" | "schema+samples" | "schema+data"
-  sampleRowLimit?: number              // default 5
+  replicaRowMode?: "schema-only" | "schema+samples" | "schema+data" // default "schema+samples"
+  sampleRowLimit?: number              // default 10
   source?: string                      // recorded into document.source
   excludeSystemTableData?: boolean     // default true
+  tableId?: string                     // the table `table` and `tableJson` read
 
-  // JSON output
-  jsonSpace?: number                   // default 2
+  // Columns left out
+  excludeId?: boolean                  // default true
+  excludeGristHelpers?: boolean        // default true
+  excludeLoggingColumns?: boolean      // default true
+  excludeManualSort?: boolean          // default false
+  extraExcludeColumn?: (ctx: GristColumnExcludeContext) => boolean
 }
 ```
+
+The access level and columns are the widget's declaration
+(`defineGristWidget()`): the hook reads Grist through the provider
+`mountGristWidget()` renders, so it is called inside it.
 
 ## `UseGristSchemaResult`
 
@@ -54,7 +55,7 @@ type UseGristSchemaResult = {
 }
 ```
 
-The hook performs the read once at mount and on `refresh()`. It does **not** subscribe to row changes — call `refresh()` when you need a fresh snapshot.
+The hook performs the read once at mount and on `reload()`. It does **not** subscribe to row changes — call `reload()` when you need a fresh snapshot.
 
 ## Common patterns
 
@@ -98,5 +99,5 @@ if (loading) return <Skeleton />
 ## Pitfalls
 
 - Don't request `replicaRowMode: "schema+data"` on huge documents — you'll send the whole thing across the iframe boundary.
-- Set `requiredAccess: "full"` if you need to read tables the user hasn't explicitly granted read access to.
+- Declare `requiredAccess: "full"` in `defineGristWidget()` to read tables other than the one the widget is placed on.
 - The schema does not reflect access-controlled column hiding — it shows everything the widget can see.

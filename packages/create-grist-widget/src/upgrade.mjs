@@ -38,6 +38,9 @@ import { runCodemods } from "./codemods.mjs"
  */
 export const TEMPLATE_FILES = [
   ".github/dependabot.yml",
+  ".github/rulesets/dev.json",
+  ".github/rulesets/main.json",
+  ".github/rulesets/tags.json",
   ".github/workflows/ci.yml",
   ".github/workflows/deploy.yml",
   ".prettierignore",

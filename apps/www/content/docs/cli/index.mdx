@@ -317,15 +317,34 @@ fresh, non-template repo yourself needs two one-time steps instead:
 2. **Settings → Actions → General → Workflow permissions → Read and write
    permissions.**
 
-After the first release, whichever way you scaffolded, protect the branches
-with a ruleset (Settings → Rules → Rulesets). Not before: the first release
-itself commits to `main` and resets `dev`.
+After the first release, whichever way you scaffolded, protect the
+repository with one command. Not before: the first release itself commits to
+`main` and resets `dev`, which the rules would block.
 
-- **`main`:** require a pull request and the `check` status from `ci.yml`,
-  block force pushes and deletion. A change then reaches `main` only
-  through a green pull request.
-- **`dev`:** block force pushes and deletion. The version bump before a
-  release is pushed straight to `dev`, so no pull-request rule there.
+```bash
+pnpm exec create-grist-widget protect --dry-run   # what it would change
+pnpm exec create-grist-widget protect
+```
+
+It uses your [GitHub CLI](https://cli.github.com) (`gh auth login` first)
+and only adds what is missing:
+
+- **The rulesets in `.github/rulesets/`**, which "Use this template" doesn't
+  copy:
+  - **`main`:** a pull request and the `check` status from `ci.yml`, no
+    force push, no deletion. A change then reaches `main` only through a
+    green pull request.
+  - **`dev`:** no force push, no deletion. The version bump before a release
+    is pushed straight to `dev`, so no pull-request rule there.
+  - **`tags`:** no tag moved or deleted.
+
+  A ruleset that already exists under the same name is left as it is. Each
+  file can also be imported by hand: Settings → Rules → Rulesets → New
+  ruleset → Import a ruleset.
+- **Private vulnerability reporting**, turned on.
+- **GitHub Pages from `gh-pages`**: turned on if it is off (a copy with all
+  branches has it already); if Pages serves another branch, it says so and
+  leaves it.
 
 An AI agent working on the repo acts through your account, so the rules
 can't tell it from you: they guarantee nothing red reaches `main`, whoever

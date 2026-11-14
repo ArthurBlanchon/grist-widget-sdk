@@ -10,6 +10,7 @@
 //   demo [--save] [--port <n>]       the widget in a real Grist on this machine (Docker);
 //                                    --save writes its static demo into public/demo/
 //   release <patch|minor|major>      the release commit on dev (version, CHANGELOG.md)
+//   protect [--dry-run]              the repository settings a template copy lacks (rulesets, ...), via gh
 //   manifest --base <path>           write dist/grist-widget.json (the deploy workflow's build job)
 //   list [--json]                    print the available starting examples
 //
@@ -44,6 +45,7 @@ import { installPlan } from "../src/package-manager.mjs"
 import { DEPRECATED_URL } from "../src/codemods.mjs"
 import { runUpgrade, upgradeRefusal } from "../src/upgrade.mjs"
 import { BUMPS, runRelease } from "../src/release.mjs"
+import { runProtect } from "../src/protect.mjs"
 import { DEMO_DIR, demoArgs, demoRefusal, runDemo, saveDemo } from "../src/demo.mjs"
 import { MANIFEST_FILE, writeManifest } from "../src/manifest.mjs"
 
@@ -112,6 +114,9 @@ Usage:
                                                  On dev: bump the version, write CHANGELOG.md from
                                                  what dev has that main doesn't, and commit
                                                  (in a widget: pnpm release minor)
+  create-grist-widget protect [--dry-run]        After the first release: the repository's rulesets
+                                                 (main, dev, tags), private vulnerability reporting
+                                                 and GitHub Pages, with your gh CLI
   create-grist-widget manifest --base <path>     Write dist/grist-widget.json, the widget's Grist
                                                  manifest (run by the deploy workflow after vite build)
   create-grist-widget list [--json]              List available starting examples
@@ -130,7 +135,7 @@ Options (create / init):
   --help, -h       Show this help
   --version, -v    Show this CLI's version
 
-Note: "create", "init", "use", "upgrade", "demo", "release", "manifest", and "list" are themselves valid widget names.
+Note: "create", "init", "use", "upgrade", "demo", "release", "protect", "manifest", and "list" are themselves valid widget names.
 A bare "create-grist-widget list" runs the list command, not "scaffold a
 widget named list" — use "create-grist-widget create list" for that.`)
 }
@@ -640,6 +645,31 @@ function printList(title, items) {
   for (const item of items) console.log(`  ${item}`)
 }
 
+function cmdProtect(argv) {
+  const dryRun = argv.includes("--dry-run")
+  let result
+  try {
+    result = runProtect(process.cwd(), { templateDir: TEMPLATE_DIR, dryRun })
+  } catch (err) {
+    console.error(`protect: ${err.message}`)
+    process.exit(1)
+  }
+  const { repo, plan, done } = result
+  console.log(`${repo}${dryRun ? " (dry run: nothing changed)" : ""}:`)
+  for (const name of plan.keep) console.log(`  ruleset "${name}": already there, left as it is`)
+  if (dryRun) {
+    for (const r of plan.create) console.log(`  ruleset "${r.name}": would be created`)
+    if (plan.reporting === "enable") console.log("  private vulnerability reporting: would be turned on")
+    if (plan.pages === "enable") console.log("  GitHub Pages: would be turned on, from gh-pages")
+  } else {
+    for (const line of done) console.log(`  ${line}`)
+  }
+  if (plan.reporting === "ok") console.log("  private vulnerability reporting: already on")
+  if (plan.pages === "ok") console.log("  GitHub Pages: served from gh-pages")
+  if (plan.pages === "mismatch")
+    console.log("  GitHub Pages: on, but not from gh-pages at / — set it in Settings → Pages (left as it is)")
+}
+
 function cmdRelease(argv) {
   const bump = argv.find((a) => !a.startsWith("-"))
   if (!BUMPS.includes(bump)) {
@@ -780,6 +810,7 @@ async function main() {
   if (first === "upgrade") return cmdUpgrade(rest)
   if (first === "demo") return cmdDemo(rest)
   if (first === "release") return cmdRelease(rest)
+  if (first === "protect") return cmdProtect(rest)
   if (first === "manifest") return cmdManifest(rest)
   if (first === "init") return cmdInit(rest)
   if (first === "create") return cmdCreate(rest)

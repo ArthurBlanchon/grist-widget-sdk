@@ -138,11 +138,13 @@ creates a `gh-pages` branch — these settings can't be applied before that exis
 2. If that first workflow run fails with a permissions error pushing to `gh-pages`:
    Settings → Actions → General → Workflow permissions → **Read and write permissions**.
    Most repos don't need this; it depends on account/org defaults.
-3. After the first release (which commits to `main` and resets `dev`), a branch ruleset:
-   `main` requires a pull request and the `check` status, and blocks force pushes and
-   deletion; `dev` blocks force pushes and deletion. An agent acts through the owner's
-   account, so these rules don't tell it apart: they keep red changes off `main` whoever
-   merges. Ask the owner to set them; they need admin access.
+3. After the first release (which commits to `main` and resets `dev`), the owner runs
+   `pnpm exec create-grist-widget protect` (with their `gh` CLI): it creates the rulesets in
+   `.github/rulesets/` (`main` requires a pull request and the `check` status, and blocks
+   force pushes and deletion; `dev` blocks force pushes and deletion; no tag can be moved or
+   deleted), turns private vulnerability reporting on and checks Pages. An agent acts through
+   the owner's account, so these rules don't tell it apart: they keep red changes off `main`
+   whoever merges. Ask the owner to run it; it needs admin access.
 
 Full detail, including the two live URLs (`/latest/` and `/v<version>/`): `README.md`.
 

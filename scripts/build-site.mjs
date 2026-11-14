@@ -46,6 +46,8 @@ import { listExampleIds } from "./example-ids.mjs"
 import { copyGristStatic } from "./site/grist-static.mjs"
 import { siteHeaders } from "./site/headers.mjs"
 import { redirectFiles } from "./site/redirects.mjs"
+import { assess, measure } from "./site/budget.mjs"
+import { declaredVersions, latestVersion, RELEASE_BRANCH, releasedVersions, unreleased } from "./widgets/dist.mjs"
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..")
 
@@ -159,6 +161,85 @@ function writeExampleDemo(id, demoDir) {
   writeFileSync(join(demoDir, "index.html"), demoPageHtml({ title, widget: "../latest/", gristStatic: gristStaticBase }))
 }
 
+// The catalog widgets (widgets/<slug>/): their released versions, from the
+// widgets-dist branch (scripts/widgets/dist.mjs), at /widgets/<slug>/<version>/,
+// and the newest at /widgets/<slug>/latest/. A build of main (either origin's
+// production) serves only released versions: a version main declares and the
+// branch doesn't have yet is waited for, since the release job builds it on the
+// same push; it is never built here. Any other build (a pull request's preview,
+// a local run) builds such a version from source, so a preview shows it.
+const WIDGETS_DIST_REPO = process.env.WIDGETS_DIST_REPO?.trim() || "ArthurBlanchon/grist-widget-sdk"
+const isMainBuild = process.env.CF_PAGES_BRANCH
+  ? process.env.CF_PAGES_BRANCH === "main"
+  : process.env.GITHUB_REF === "refs/heads/main"
+
+/** A copy of the widgets-dist branch in `dest`, or null when there is none yet. */
+async function fetchReleasedWidgets(dest) {
+  if (process.env.WIDGETS_DIST_DIR) return resolve(process.env.WIDGETS_DIST_DIR)
+  if (process.env.WIDGETS_DIST === "none") return null
+  const url = `https://codeload.github.com/${WIDGETS_DIST_REPO}/tar.gz/refs/heads/${RELEASE_BRANCH}`
+  let res
+  try {
+    res = await fetch(url, { cache: "no-store" })
+  } catch (err) {
+    if (isMainBuild) throw err
+    console.warn(`::warning::${url}: ${err.message}; building without released widgets`)
+    return null
+  }
+  if (res.status === 404) return null
+  if (!res.ok) throw new Error(`${url}: HTTP ${res.status}`)
+  mkdirSync(dest, { recursive: true })
+  const archive = `${dest}.tgz`
+  writeFileSync(archive, Buffer.from(await res.arrayBuffer()))
+  execFileSync("tar", ["-xzf", archive, "--strip-components=1", "-C", dest])
+  return dest
+}
+
+async function buildCatalogWidgets() {
+  const scratch = mkdtempSync(join(tmpdir(), "grist-catalog-"))
+  const out = join(scratch, "out")
+  mkdirSync(out)
+  const declared = declaredVersions(join(repoRoot, "widgets"))
+
+  let attempt = 0
+  let distDir = await fetchReleasedWidgets(join(scratch, `dist-${attempt}`))
+  let missing = unreleased(declared, releasedVersions(distDir))
+  // Cloudflare builds main on the same push as the release job: wait for it.
+  const canWait = isMainBuild && !process.env.WIDGETS_DIST_DIR
+  while (missing.length && canWait && attempt < 20) {
+    console.log(`Waiting for the release of ${missing.map((m) => `${m.slug}@${m.version}`).join(", ")}`)
+    await new Promise((r) => setTimeout(r, 30_000))
+    attempt++
+    distDir = await fetchReleasedWidgets(join(scratch, `dist-${attempt}`))
+    missing = unreleased(declared, releasedVersions(distDir))
+  }
+  if (missing.length && isMainBuild) {
+    throw new Error(
+      `main declares widget versions ${RELEASE_BRANCH} doesn't have: ` +
+        `${missing.map((m) => `${m.slug}@${m.version}`).join(", ")} (the release job of deploy-apps.yml builds them)`,
+    )
+  }
+
+  const versions = {}
+  for (const [slug, list] of Object.entries(releasedVersions(distDir))) {
+    for (const v of list) cpSync(join(distDir, slug, v), join(out, slug, v), { recursive: true })
+    versions[slug] = [...list]
+  }
+  for (const { slug, version } of missing) {
+    console.log(`Building ${slug}@${version} from source (not released yet: a preview)`)
+    execFileSync(
+      "pnpm",
+      ["--filter", `@grist-widgets/${slug}`, "exec", "vite", "build", "--outDir", join(out, slug, version), "--emptyOutDir"],
+      { cwd: repoRoot, stdio: "inherit" },
+    )
+    versions[slug] = [...(versions[slug] ?? []), version]
+  }
+  for (const [slug, list] of Object.entries(versions)) {
+    cpSync(join(out, slug, latestVersion(list)), join(out, slug, "latest"), { recursive: true })
+  }
+  return out
+}
+
 /**
  * Builds the template's own pristine source (unmodified, no example
  * overlay) and returns the built dir. Unlike buildExamples(), no scratch
@@ -236,6 +317,9 @@ run(["--filter", "www", "build"], {
 console.log("\nBuilding examples")
 const examplesOut = buildExamples()
 
+console.log("\nCatalog widgets")
+const catalogOut = await buildCatalogWidgets()
+
 console.log("\nBuilding template preview")
 const templatePreviewOut = buildTemplatePreview()
 
@@ -263,6 +347,17 @@ for (const entry of readdirSync(join(repoRoot, "apps/www/out"))) {
     recursive: true,
   })
 }
+
+// Next's /widgets/ (the docs' widget directory) was copied just above: the
+// catalog's /widgets/<slug>/ folders go next to its files.
+for (const slug of readdirSync(catalogOut)) {
+  if (existsSync(join(outDir, "widgets", slug))) {
+    console.error(`::error::widgets/${slug} collides with a page of apps/www. Refusing to publish.`)
+    process.exit(1)
+  }
+  cpSync(join(catalogOut, slug), join(outDir, "widgets", slug), { recursive: true })
+}
+rmSync(dirname(catalogOut), { recursive: true, force: true })
 
 // GitHub Pages runs everything through Jekyll by default, which silently drops
 // any top-level directory starting with `_` — including Next's own `_next/`
@@ -292,5 +387,14 @@ for (const [path, html] of redirectFiles(siteBase)) {
 // GitHub 301 that site's github.io URL to the custom domain, which would
 // collapse the two origins back into one. gristwidgets.com is served by
 // Cloudflare Pages instead, which owns its own domain config.
+
+// Size and file count against the hosts' limits (scripts/site/budget.mjs).
+const budget = assess(measure(outDir))
+for (const line of budget.lines) console.log(budget.level === "ok" ? line : `::warning::${line}`)
+if (process.env.GITHUB_STEP_SUMMARY) {
+  const { appendFileSync } = await import("node:fs")
+  appendFileSync(process.env.GITHUB_STEP_SUMMARY, `### Site budget\n\n${budget.lines.join("\n\n")}\n`)
+}
+if (budget.level === "over") process.exit(1)
 
 console.log(`\n✅ site/ ready (base: ${siteBase || "/"})`)

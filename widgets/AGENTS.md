@@ -44,6 +44,21 @@ the first).
   needs goes in its own `package.json`, under a licence on the allow list
   (MIT, BSD, Apache-2.0, ISC).
 
+## Releasing
+
+Raise the widget's `version` in its `package.json` in the pull request that
+changes it, following semver from the person's side:
+- a fix is a patch;
+- a new option or behaviour is a minor;
+- a column, access or behaviour change that breaks a document already
+  using it is a major.
+
+On the merge, the release job builds that version once into the
+`widgets-dist` branch, and both origins serve it at
+`/widgets/<slug>/<version>/` and `/latest/`
+([site deploy](../docs/operations/site-deploy.md)). A change merged without a
+new version publishes nothing, and a released version is never rebuilt.
+
 ## Commands
 
 Run these from the repository root.

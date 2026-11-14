@@ -37,6 +37,7 @@ Both origins run `scripts/build-site.mjs`, which assembles `./site`:
 | `/examples/<id>/latest/` | the example widget |
 | `/examples/<id>/demo/` | the example in a real Grist, from static files: grist-static and the committed `examples/_demos/<id>.grist` |
 | `/grist-static/<version>/` | the pinned grist-static, used by the site's and every widget's demo pages |
+| `/widgets/<slug>/<version>/`, `/widgets/<slug>/latest/` | the catalog widgets' released versions, and the newest of each (below) |
 | `/template-preview/` | the template's own build |
 | old URLs | one-line pages that send to where a page moved (`scripts/site/redirects.mjs`) |
 
@@ -82,6 +83,36 @@ has no Docker to generate them:
   (Docker);
 - CI's `node scripts/example-demos.mjs check` fails when an example's
   columns, access or title changed since its document was made.
+
+## Catalog widgets: releases
+
+A catalog widget (`widgets/<slug>/`) is released by raising the `version` in
+its `package.json`, in the pull request that changes it. Then:
+
+1. **On the push to main,** the `release-widgets` job of `deploy-apps.yml`
+   builds each declared version that the `widgets-dist` branch doesn't have
+   (`scripts/widgets/release.mjs`) into `widgets-dist/<slug>/<version>/`,
+   with a `release.json`, and pushes the branch.
+2. **A version is never rebuilt or replaced.** A change merged without a
+   new version publishes nothing.
+3. **Both origins serve them.** `build-site.mjs` copies the branch to
+   `/widgets/<slug>/<version>/`, and the newest version of each widget to
+   `/widgets/<slug>/latest/`:
+   - the GitHub Pages build runs after the release job, on a copy of the
+     branch (`WIDGETS_DIST_DIR`);
+   - Cloudflare's build of main downloads the branch and waits, up to ten
+     minutes, for the versions main declares. It fails rather than serve
+     an unreleased version, so the previous deployment stays in place.
+   - **Any other build** (a pull request's preview, a local run) builds a
+     version that isn't released yet from source, as a preview.
+     `WIDGETS_DIST=none` skips the download offline.
+4. **The install URL** is `https://gristwidgets.com/widgets/<slug>/latest/`
+   ([ADR 0009](../decisions/0009-install-urls.md)), or a pinned
+   `/<version>/`.
+
+The size and file budget (`scripts/site/budget.mjs`) runs at the end of
+every build. It warns at 60 % of GitHub Pages' 1 GB or of Cloudflare's
+20,000 files, and fails past either.
 
 ## The GitHub Pages origin
 

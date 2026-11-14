@@ -55,10 +55,13 @@ absorbed and archived, widgets served by the site that already exists
 
 - [ ] **F0.** 0.7 released (#28). The maintainer docs are in the repository
   (docs plan, M1: done).
-- [ ] **F2. Versions in the site:** catalog widgets under `/widgets/<slug>/`
-  in `build-site.mjs`, released versions kept on a `widgets-dist` branch,
-  a size and file budget. Done when the pilot works in Grist from
-  `/widgets/<slug>/latest/` on both origins.
+- [ ] **F2. Versions in the site.** In place: the `widgets-dist` branch
+  written by the `release-widgets` job of `deploy-apps.yml`, versions at
+  `/widgets/<slug>/<version>/` and `/latest/` on both origins, previews of
+  unreleased versions, and the size and file budget. Left: the demo page
+  once per widget (`/widgets/<slug>/demo/`, a demo document generated in a
+  real Grist). Done when the Kanban board works in Grist from
+  `https://gristwidgets.com/widgets/kanban-board/latest/` and has its demo.
 - [ ] **F3. Bring the widgets home:** the first list is agreed
   ([`catalog/roadmap.md`](./catalog/roadmap.md): 19 widgets in three
   waves); build wave 1, then waves 2 and 3. Done when `examples/` is gone.

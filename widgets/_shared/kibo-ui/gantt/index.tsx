@@ -230,7 +230,12 @@ export type GanttContextProps = {
   scrollToFeature?: (feature: GanttFeature) => void;
   /** The language dates are written in (date-fns locale); English when absent. */
   locale?: Locale;
+  /** The accessible names of a bar's handles, before the task's name ("Move", "Start of", "End of"). */
+  labels?: GanttLabels;
 };
+
+export type GanttLabels = { move: string; start: string; end: string };
+const DEFAULT_LABELS: GanttLabels = { move: "Move", start: "Start of", end: "End of" };
 
 const getsDaysIn = (range: Range) => {
   if (range === "weekly") {
@@ -961,12 +966,15 @@ export type GanttFeatureDragHelperProps = {
   featureId: GanttFeature["id"];
   direction: "left" | "right";
   date: Date | null;
+  /** The handle's accessible name. */
+  label: string;
 };
 
 export const GanttFeatureDragHelper: FC<GanttFeatureDragHelperProps> = ({
   direction,
   featureId,
   date,
+  label,
 }) => {
   const gantt = useContext(GanttContext);
   const [, setDragging] = useGanttDragging();
@@ -986,6 +994,7 @@ export const GanttFeatureDragHelper: FC<GanttFeatureDragHelperProps> = ({
       )}
       ref={setNodeRef}
       {...attributes}
+      aria-label={label}
       {...listeners}
     >
       <div
@@ -1014,12 +1023,15 @@ export const GanttFeatureDragHelper: FC<GanttFeatureDragHelperProps> = ({
 
 export type GanttFeatureItemCardProps = Pick<GanttFeature, "id" | "status"> & {
   children?: ReactNode;
+  /** The bar's accessible name, as a draggable control. */
+  label?: string;
 };
 
 export const GanttFeatureItemCard: FC<GanttFeatureItemCardProps> = ({
   id,
   status,
   children,
+  label,
 }) => {
   const [, setDragging] = useGanttDragging();
   const { attributes, listeners, setNodeRef } = useDraggable({ id });
@@ -1041,6 +1053,7 @@ export const GanttFeatureItemCard: FC<GanttFeatureItemCardProps> = ({
           isPressed && "cursor-grabbing"
         )}
         {...attributes}
+        aria-label={label}
         {...listeners}
         ref={setNodeRef}
       >
@@ -1161,6 +1174,7 @@ export const GanttFeatureItem: FC<GanttFeatureItemProps> = ({
               date={startAt}
               direction="left"
               featureId={feature.id}
+              label={`${(gantt.labels ?? DEFAULT_LABELS).start} ${feature.name}`}
             />
           </DndContext>
         )}
@@ -1171,7 +1185,7 @@ export const GanttFeatureItem: FC<GanttFeatureItemProps> = ({
           onDragStart={handleItemDragStart}
           sensors={[mouseSensor]}
         >
-          <GanttFeatureItemCard id={feature.id} status={feature.status}>
+          <GanttFeatureItemCard id={feature.id} status={feature.status} label={`${(gantt.labels ?? DEFAULT_LABELS).move} ${feature.name}`}>
             {children ?? (
               <p className="flex-1 truncate text-xs">{feature.name}</p>
             )}
@@ -1188,6 +1202,7 @@ export const GanttFeatureItem: FC<GanttFeatureItemProps> = ({
               date={endAt ?? addRange(startAt, 2)}
               direction="right"
               featureId={feature.id}
+              label={`${(gantt.labels ?? DEFAULT_LABELS).end} ${feature.name}`}
             />
           </DndContext>
         )}
@@ -1378,6 +1393,7 @@ GanttMarker.displayName = "GanttMarker";
 export type GanttProviderProps = {
   range?: Range;
   locale?: Locale;
+  labels?: GanttLabels;
   zoom?: number;
   onAddItem?: (date: Date) => void;
   children: ReactNode;
@@ -1388,6 +1404,7 @@ export const GanttProvider: FC<GanttProviderProps> = ({
   zoom = 100,
   range = "monthly",
   locale,
+  labels,
   onAddItem,
   children,
   className,
@@ -1591,6 +1608,7 @@ export const GanttProvider: FC<GanttProviderProps> = ({
         ref: scrollRef,
         scrollToFeature,
         locale,
+        labels,
       }}
     >
       <div

@@ -73,6 +73,10 @@ describe("Gantt chart", () => {
     expect(screen.getByText("Team A")).toBeInTheDocument()
     expect(screen.getByText("Office")).toBeInTheDocument()
     for (const name of ["Survey", "Plans", "Sketches", "Permit"]) expect(bar(name)).toBeInTheDocument()
+    // Each bar and its two handles are named controls, for screen readers.
+    expect(screen.getByRole("button", { name: "Move Survey" })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Start of Survey" })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "End of Survey" })).toBeInTheDocument()
   })
 
   it("AC-2 gives each task a row of its own without a Sequence column", async () => {
@@ -150,6 +154,7 @@ describe("Gantt chart", () => {
     setup()
     expect(await screen.findByText("Diagramme de Gantt")).toBeInTheDocument()
     expect(screen.getByText("Durée")).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Déplacer Survey" })).toBeInTheDocument()
     const html = document.body.innerHTML
     expect(html).toMatch(/janvier|février|mars|avril|mai|juin|juillet|août|septembre|octobre|novembre|décembre/)
     expect(html).not.toMatch(/January|February|March|April|June|July|August|September|October|November|December/)

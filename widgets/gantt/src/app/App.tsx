@@ -166,7 +166,7 @@ export default function App() {
       ) : null}
 
       <div className="min-h-0 flex-1 p-2">
-        <GanttProvider key={scale} className="h-full" range={scale} locale={locale === "fr" ? fr : undefined}>
+        <GanttProvider key={scale} className="h-full" range={scale} locale={locale === "fr" ? fr : undefined} labels={{ move: t("moveBar"), start: t("startOf"), end: t("endOf") }}>
           <GanttSidebar label={t("tasks")} durationLabel={t("duration")}>
             {groups.map((group) => (
               <GanttSidebarGroup key={group.id} name={group.name}>

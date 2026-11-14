@@ -15,6 +15,9 @@ export const messages = defineMessages({
     noRow: "(no row)",
     empty: "No tasks to show. Add rows with a start and an end date.",
     saveFailed: "Grist did not save the new dates: {error}",
+    moveBar: "Move",
+    startOf: "Start of",
+    endOf: "End of",
   },
   fr: {
     title: "Diagramme de Gantt",
@@ -30,5 +33,8 @@ export const messages = defineMessages({
     noRow: "(sans ligne)",
     empty: "Aucune tâche à afficher. Ajoutez des lignes avec une date de début et de fin.",
     saveFailed: "Grist n'a pas enregistré les nouvelles dates : {error}",
+    moveBar: "Déplacer",
+    startOf: "Début de",
+    endOf: "Fin de",
   },
 })

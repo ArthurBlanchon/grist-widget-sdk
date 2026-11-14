@@ -45,9 +45,21 @@ test("the live check compares what the file promises with what is served", () =>
   assert.deepEqual(headerMismatches("/docs/", served), [
     `/docs/: content-security-policy is absent, expected "frame-ancestors 'self'"`,
   ])
+  // Cloudflare Pages adds this one to every response; the file doesn't set it for /docs/.
+  const withHostDefault = new Map(headersFor(file, "/docs/"))
+  withHostDefault.set("access-control-allow-origin", "*")
+  assert.deepEqual(headerMismatches("/docs/", withHostDefault), [])
   const widget = new Map(headersFor(file, "/examples/x/latest/"))
   widget.set("x-frame-options", "SAMEORIGIN")
   assert.deepEqual(headerMismatches("/examples/x/latest/", widget), [
     `/examples/x/latest/: x-frame-options is "SAMEORIGIN", expected absent`,
+  ])
+})
+
+test("grist-static's CORS header is still checked where the file sets it", () => {
+  const served = new Map(headersFor(file, "/grist-static/0.1.6/app.html"))
+  served.delete("access-control-allow-origin")
+  assert.deepEqual(headerMismatches("/grist-static/0.1.6/app.html", served), [
+    `/grist-static/0.1.6/app.html: access-control-allow-origin is absent, expected "*"`,
   ])
 })

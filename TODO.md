@@ -33,6 +33,9 @@ train (`RELEASING.md`).
   exported. Left for 1.0 to decide: the `emulator` entry's report still
   names unexported implementation types (`GristApiImpl`, `GristDocApiImpl`,
   …): export them as types or narrow the entry's signatures to interfaces.
+- [ ] **Docs rewrite** ([plan](./docs/planning/2026-11-14-docs-rewrite-plan.md)):
+  agree the structure (§3), then R1–R6. Done when the old-forms check
+  blocks in CI, about 25 user pages remain and every retired URL redirects.
 - [ ] **E. The six widgets on 0.7:** the Dependabot pull request moving both
   packages, then `pnpm exec create-grist-widget upgrade` as a follow-up on
   `dev`, the hints it lists fixed by hand, and a `pnpm release`. Done when
@@ -41,18 +44,30 @@ train (`RELEASING.md`).
   API report's baseline reset. Done when the six take it through the same
   flow as E.
 
-## 2. Next project — the core widget library
+## 2. Next project — the widget factory
 
-A library of widgets built with the SDK, developed with AI, each a real
-repo scaffolded by `create-grist-widget`, registered in awesome-grist-widgets
-and, where it earns it, a reference widget. Scope to be agreed: which
-widgets, the bar each must meet, and how agents build and verify them
-(`pnpm test`, `pnpm demo`, the real-Grist check).
+From the [widget factory plan](./docs/planning/2026-11-14-widget-factory-plan.md);
+its direction (W1–W5) was agreed 2026-11-14, for a catalog of 30 to 100
+widgets at most. This repository becomes the factory: catalog widgets in
+`widgets/`, `examples/` merged into the catalog, awesome-grist-widgets
+absorbed and archived, widgets served by the site that already exists
+(GitHub Pages and Cloudflare Pages). Simple and durable above all (plan §0.1).
 
-- [ ] Agree the scope (list, quality bar, process).
-- [ ] The 16 `examples/` become seeds for it; once the library exists,
-  `create --example` starts from a library widget and the CLI stops
-  embedding the examples.
+- [ ] **F0.** 0.7 released (#28) and the maintainer docs moved into the
+  repository (docs plan, M1).
+- [ ] **F1. Layout, with one pilot:** `widgets/`, `SPEC.md` and its check,
+  CI per affected widget, `pnpm new-widget`. Done when the pilot passes the
+  production-grade bar (plan §5) from this repository.
+- [ ] **F2. Versions in the site:** catalog widgets under `/widgets/<slug>/`
+  in `build-site.mjs`, released versions kept on a `widgets-dist` branch,
+  a size and file budget. Done when the pilot works in Grist from
+  `/widgets/<slug>/latest/` on both origins.
+- [ ] **F3. Bring the widgets home:** first, **pause and choose the first
+  catalog list** with the maintainer (`catalog/roadmap.md`), without
+  porting what exists by default; then port what is on it. Done when
+  `examples/` is gone.
+- [ ] **F4–F8:** intake and triage, the build loop, upkeep, the catalog and
+  registry, a size check at 30 and 60 widgets (plan §10).
 
 ## 3. Later, if they still matter
 

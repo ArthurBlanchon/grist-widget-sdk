@@ -5,7 +5,6 @@ import { defineGristWidget } from "grist-widget-sdk"
 import { detectLocale, useT } from "@shared/i18n"
 import { Badge } from "@shared/ui/badge"
 import { Button } from "@shared/ui/button"
-import { Tabs, TabsList, TabsTrigger } from "@shared/ui/tabs"
 
 import { AGGREGATES, BLANK, aggregate, groupItems, keysOf, numberOf, pivotItems, type Aggregate, type Item } from "./group"
 import { messages } from "./messages"
@@ -73,15 +72,13 @@ export default function App() {
       <header className="flex flex-wrap items-center gap-2">
         <p className="flex-1 text-xs text-muted-foreground">{t("count", { n: number.format(items.length) })}</p>
         {hasValue ? (
-          <Tabs value={fn} onValueChange={(v) => setFn(v as Aggregate)}>
-            <TabsList aria-label={t("total")}>
-              {AGGREGATES.map((a) => (
-                <TabsTrigger key={a} value={a}>
-                  {t(a)}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
+          <div role="group" aria-label={t("total")} className="flex gap-1">
+            {AGGREGATES.map((a) => (
+              <Button key={a} size="sm" variant={fn === a ? "secondary" : "ghost"} aria-pressed={fn === a} onClick={() => setFn(a)}>
+                {t(a)}
+              </Button>
+            ))}
+          </div>
         ) : null}
       </header>
 

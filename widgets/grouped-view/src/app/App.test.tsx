@@ -49,10 +49,10 @@ describe("Grouped view", () => {
     grouped()
     const travel = (await screen.findByText("Travel")).closest("li")!
     expect(within(travel).getByRole("button", { name: /^Travel: 420\./ })).toBeInTheDocument()
-    fireEvent.mouseDown(screen.getByRole("tab", { name: "Average" }), { button: 0 })
-    fireEvent.click(screen.getByRole("tab", { name: "Average" }))
+    fireEvent.click(screen.getByRole("button", { name: "Average" }))
     await waitFor(() => expect(within(travel).getByRole("button", { name: /^Travel: 210\./ })).toBeInTheDocument())
-    fireEvent.mouseDown(screen.getByRole("tab", { name: "Maximum" }), { button: 0 })
+    fireEvent.click(screen.getByRole("button", { name: "Maximum" }))
+    expect(screen.getByRole("button", { name: "Maximum" })).toHaveAttribute("aria-pressed", "true")
     await waitFor(() => expect(within(travel).getByRole("button", { name: /^Travel: 300\./ })).toBeInTheDocument())
   })
 

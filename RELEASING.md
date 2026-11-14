@@ -7,8 +7,10 @@ actions ~Aug 2026, direct publishing ~Jan 2027.)
 
 `packages/core` (`grist-widget-sdk`) and `packages/create-grist-widget`
 (`create-grist-widget`) are published; every other workspace package is
-`private`. Their versions are linked via changesets (`.changeset/config.json`
-`linked`), so a release touching either bumps and republishes both.
+`private`. Their versions are fixed together via changesets
+(`.changeset/config.json` `fixed`), so a release touching either bumps and
+republishes both to the same version number: `create-grist-widget` x.y.z
+always scaffolds with `grist-widget-sdk` x.y.z.
 
 ## One-time setup — **required for every new publishable package**, not just the SDK
 

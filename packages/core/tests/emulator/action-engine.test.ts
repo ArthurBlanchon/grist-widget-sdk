@@ -40,6 +40,21 @@ describe("action engine", () => {
     expect(bus.history()).toContainEqual({ type: "data-change", tableId: "Tasks" })
   })
 
+  it("refuses a write to a column the table doesn't have, as Grist does", () => {
+    const { bus, state } = makeFixture()
+    for (const action of [
+      ["UpdateRecord", "Tasks", 1, { title: "Ok", ghost: "boo" }],
+      ["AddRecord", "Tasks", null, { ghost: "boo" }],
+      ["BulkUpdateRecord", "Tasks", [1], { ghost: ["boo"] }],
+      ["BulkAddRecord", "Tasks", [null], { ghost: ["boo"] }],
+    ]) {
+      expect(() => applyUserActions(state, bus, [action])).toThrow('Invalid column "ghost" in table Tasks')
+    }
+    const tasks = state.tables.get("Tasks")!
+    expect(tasks.columns.ghost).toBeUndefined()
+    expect(tasks.rows.map((r) => r.title)).toEqual(["Buy milk", "Ship SDK"])
+  })
+
   it("UpdateRecord mutates an existing row", () => {
     const { bus, state } = makeFixture()
     applyUserActions(state, bus, [["UpdateRecord", "Tasks", 1, { title: "Buy oat" }]])

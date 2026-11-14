@@ -7,12 +7,12 @@
  * saved theme and `d` shortcut.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import { lazy } from "react"
+import { lazy, useEffect, useState } from "react"
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react"
 
 import { GristWidgetApp, mountGristWidget, useTheme, type DeployChannel } from "../../src/app"
 import { WidgetAlerts } from "../../src/app/chrome/widget-alerts"
-import { GristWidgetProvider } from "../../src/sdk"
+import { GristWidgetProvider, useGrist } from "../../src/sdk"
 import { renderWithGrist } from "../../src/emulator/testing"
 import { presets } from "../../src/emulator"
 
@@ -157,6 +157,27 @@ describe("default alerts", () => {
     expect(alert).toHaveTextContent("Column mapping")
     expect(alert).toHaveTextContent("Waiting for Grist to report column mappings.")
     expect(screen.getByText("widget body")).toBeInTheDocument()
+  })
+
+  it("keep the widget mounted, and its state, when an alert comes and goes", async () => {
+    let mounts = 0
+    function Draft() {
+      const w = useGrist()
+      const [text, setText] = useState("")
+      useEffect(() => void (mounts += 1), [])
+      return (
+        <>
+          <input aria-label="draft" value={text} onChange={(e) => setText(e.target.value)} />
+          <button onClick={() => void w.applyActions([["NoSuchAction"]]).catch(() => undefined)}>fail</button>
+        </>
+      )
+    }
+    renderWithGrist(<GristWidgetApp App={Draft} options={{ requiredAccess: "full" }} />, { emulator: { document: presets.blank() } })
+    fireEvent.change(await screen.findByLabelText("draft"), { target: { value: "half-typed" } })
+    fireEvent.click(screen.getByRole("button", { name: "fail" }))
+    expect(await screen.findByText("Action error")).toBeInTheDocument()
+    expect(screen.getByLabelText("draft")).toHaveValue("half-typed")
+    expect(mounts).toBe(1)
   })
 
   it("can be turned off with Alerts={null}", async () => {

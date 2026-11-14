@@ -179,6 +179,9 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      # check-protection: the first release opens one issue asking the owner
+      # to run `create-grist-widget protect`.
+      issues: write
     env:
       REPO_NAME: ${{ github.event.repository.name }}
       CONTEXT: ${{ needs.build.outputs.context }}
@@ -261,6 +264,20 @@ jobs:
       - name: Reset repo to a clean first-release state
         if: needs.build.outputs.context == 'release' && needs.build.outputs.firstRelease == 'true'
         run: node_modules/.bin/grist-widget-deploy reset-branches --repo "$REPO_NAME"
+
+      # The token can read the repository's rulesets, not create them (that
+      # takes an admin): a release without them warns in its summary, and the
+      # first one opens an issue asking the owner to run
+      # `create-grist-widget protect`. Never fails the deploy.
+      - name: Check the repository's protection
+        if: needs.build.outputs.context == 'release'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          FIRST_RELEASE: ${{ needs.build.outputs.firstRelease }}
+        run: |
+          ARGS=""
+          if [ "$FIRST_RELEASE" = "true" ]; then ARGS="--first-release"; fi
+          node_modules/.bin/grist-widget-deploy check-protection $ARGS
 
   cleanup:
     # When the `dev` branch is deleted, remove /dev/ so the dev URL retires

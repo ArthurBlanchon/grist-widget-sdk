@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // grist-widget-deploy — the GitHub Pages deploy steps a widget's
 // .github/workflows/deploy.yml runs (plan, place, remove, finalize,
-// reset-branches). See src/deploy.mjs for what each one does.
+// reset-branches, check-protection). See src/deploy.mjs and
+// src/protection-check.mjs for what each one does.
 //
 // The publish job runs this next to a `contents: write` token, after an
 // install with --ignore-scripts, so this file and src/deploy.mjs must import
@@ -15,6 +16,8 @@ import {
   removeDevDir,
   resetBranchesIfFirstRelease,
 } from "../src/deploy.mjs"
+import { checkProtection } from "../src/protection-check.mjs"
+import { appendFileSync } from "node:fs"
 
 function parseArgs(argv) {
   const out = { _: [] }
@@ -83,10 +86,30 @@ switch (cmd) {
     console.log("reset-branches:", JSON.stringify(res))
     break
   }
+  case "check-protection": {
+    const res = await checkProtection({
+      ownerRepo: args["owner-repo"] || process.env.GITHUB_REPOSITORY,
+      token: process.env.GITHUB_TOKEN,
+      firstRelease: !!args["first-release"],
+    })
+    if (res.note) {
+      console.log(res.note)
+    } else if (res.missing.length > 0) {
+      const text =
+        `This repository has no ${res.missing.join(", ")} ruleset: run \`pnpm exec create-grist-widget protect\` ` +
+        "(GitHub CLI, admin) to apply the template's .github/rulesets/."
+      console.log(`::warning title=Repository not protected::${text}`)
+      if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `### Repository not protected\n\n${text}\n`)
+      if (res.issue) console.log(`check-protection: opened ${res.issue}`)
+    } else {
+      console.log("check-protection: main, dev and tags rulesets are in place")
+    }
+    break
+  }
   default:
     console.error(
       `grist-widget-deploy: unknown subcommand "${cmd || "(none)"}". ` +
-        "Expected plan, place, remove, finalize or reset-branches."
+        "Expected plan, place, remove, finalize, reset-branches or check-protection."
     )
     process.exit(2)
 }

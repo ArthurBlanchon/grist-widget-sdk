@@ -187,7 +187,10 @@ async function checkWidget({ browser, gristUrl, api, wsId, widgetDir, outDir, ti
       const { violations } = await frame.evaluate(() =>
         globalThis.axe.run(document, { runOnly: { type: "tag", values: ["wcag2a", "wcag2aa"] } }),
       )
-      result.a11y = violations.map((v) => `${v.impact}: ${v.id} (${v.nodes.length})`)
+      result.a11y = violations.flatMap((v) => [
+        `${v.impact}: ${v.id} (${v.nodes.length}): ${v.help}`,
+        ...v.nodes.slice(0, 3).map((n) => `  at ${n.target.join(" ")}: ${(n.failureSummary ?? "").replace(/\s+/g, " ").slice(0, 240)}`),
+      ])
       const failing = failingViolations(violations)
       if (failing.length) a11y = `accessibility: ${failing.map((v) => v.id).join(", ")}`
     }

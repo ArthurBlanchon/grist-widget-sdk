@@ -47,23 +47,25 @@ train (`RELEASING.md`).
 ## 2. Next project — the widget factory
 
 From the [widget factory plan](./docs/planning/2026-11-14-widget-factory-plan.md);
-its direction (W1–W5) was agreed 2026-11-14. This repository becomes the
-factory: catalog widgets in `widgets/`, `examples/` merged into the catalog,
-awesome-grist-widgets absorbed and archived.
+its direction (W1–W5) was agreed 2026-11-14, for a catalog of 30 to 100
+widgets at most. This repository becomes the factory: catalog widgets in
+`widgets/`, `examples/` merged into the catalog, awesome-grist-widgets
+absorbed and archived, one GitHub Pages site behind our domain.
 
 - [ ] **F0.** 0.7 released (#28) and the maintainer docs moved into the
   repository (docs plan, M1).
 - [ ] **F1. Layout, with one pilot:** `widgets/`, `SPEC.md` and its check,
   CI per affected widget, `pnpm new-widget`. Done when the pilot passes the
   production-grade bar (plan §5) from this repository.
-- [ ] **F2. Hosting:** versioned deploys and a preview per pull request.
-  Done when the pilot works in Grist from `/<slug>/latest/`.
+- [ ] **F2. Hosting:** a portable `site/` folder deployed to GitHub Pages
+  behind our domain, versioned deploys, a preview per pull request, a size
+  budget. Done when the pilot works in Grist from `/<slug>/latest/`.
 - [ ] **F3. Bring the widgets home:** first, **pause and choose the first
   catalog list** with the maintainer (`catalog/roadmap.md`), without
   porting what exists by default; then port what is on it. Done when
   `examples/` is gone.
 - [ ] **F4–F8:** intake and triage, the build loop, upkeep, the catalog and
-  registry, a scale check at 50 widgets (plan §10).
+  registry, a size check at 30 and 60 widgets (plan §10).
 
 ## 3. Later, if they still matter
 

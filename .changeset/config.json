@@ -17,6 +17,7 @@
     "examples",
     "@grist-widgets/shared",
     "@grist-widgets/file-uploader",
+    "@grist-widgets/grouped-view",
     "@grist-widgets/kanban-board",
     "@grist-widgets/record-editor",
     "@grist-widgets/record-selector"

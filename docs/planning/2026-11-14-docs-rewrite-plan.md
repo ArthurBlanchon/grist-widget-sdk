@@ -1,6 +1,8 @@
 # Documentation rewrite plan — 2026-11-14
 
-> **Status: proposed.** Part of the [plan to 1.0](./2026-11-14-review-and-1.0-plan.md):
+> **Status: proposed.** Revised the same day: the maintainer is the only
+> user for now, so the docs describe the current API only, with no
+> deprecated forms, migration tables or "before and after" anywhere. Part of the [plan to 1.0](./2026-11-14-review-and-1.0-plan.md):
 > 1.0 promises a stable surface, and the docs are how people meet it. The
 > rewrite runs after 0.7.0 (step C) and before 1.0.0 (step F), alongside the
 > widgets' catch-up (steps A and E).
@@ -67,8 +69,9 @@ redirects (the site is a static export on two origins).
 
 1. **One way to write a widget, everywhere:** `defineGristWidget()`,
    `widget.useGrist()`, `mappedRecord`, `updateRecord`/`addRecord`,
-   `renderWithGrist(<App />, { widget, rows })`. Older forms appear only on
-   *Upgrading* and *Deprecated names*.
+   `renderWithGrist(<App />, { widget, rows })`. Older forms appear nowhere:
+   no deprecated names, migration tables or "before and after" (the
+   changelog keeps the history).
 2. **Four kinds of page, never mixed** (Diátaxis): a tutorial that teaches
    by doing, guides that answer one task each, a reference that is complete
    and dry, and a few explanations of how and why.
@@ -102,14 +105,13 @@ About 25 user pages, against 41 today.
 | | Keep it fast | Guide | `performance` |
 | | Deploy and embed | Guide | `cli/index` (deploy pipeline, embedding) |
 | | Release a widget | Guide | `cli/releasing` |
-| | Upgrade a widget | Guide | `cli/upgrading` |
+| | Upgrade a widget (the commands only: Dependabot, `upgrade`, checks) | Guide | `cli/upgrading`, without its migration tables |
 | | Protect the repository | Guide | `cli/index` (repository settings) |
 | | List a widget in the registry | Guide | `registry/index` |
 | | Troubleshooting | Guide | `troubleshooting` |
 | **Reference** | `grist-widget-sdk` (and `/app`, `/actions`) | Reference, generated | `sdk/api/index`, `use-grist`, `use-grist-schema`, `provider-boundary`, `app`, `helpers`, `types` |
 | | `grist-widget-sdk/emulator` and `/emulator/testing` | Reference, generated | `emulator/api` |
 | | `create-grist-widget` commands | Reference, generated | `cli/index` (commands) |
-| | Deprecated names | Reference | `sdk/api/deprecated` |
 | | Versioning policy | Reference | `sdk/api/versioning` |
 | **Concepts** | Grist for widget authors: sections, records, mapping, access | Explanation | `quickstart/concepts` |
 | | How the SDK works: the declaration, provider, boundary, runtime | Explanation | `sdk/design/principles` (user-facing part), `concepts` |
@@ -127,9 +129,9 @@ About 25 user pages, against 41 today.
 
 - **No old forms:** a check that fails on `GRIST_OPTIONS`, `WIDGET_METADATA`,
   `useGrist<`, `useGristContext`, `fetchSelectedTable`, `fetchTable(`,
-  `isReady`, `isAvailable` and a bare `renderWithGrist(<…/>)` in any page but
-  *Upgrade a widget* and *Deprecated names*. It starts in report mode, listing
-  today's uses, and blocks once the guides are rewritten.
+  `isReady`, `isAvailable` and a bare `renderWithGrist(<…/>)` in any page. It
+  starts in report mode, listing today's uses, and blocks once the guides are
+  rewritten.
 - **Links:** every internal link resolves, and every retired URL redirects
   (below).
 - **Snippets:** the existing type check stays.
@@ -155,7 +157,7 @@ One PR per step. Each keeps `/llms.txt` and the snippet check green.
 | **R2. Get started** | Overview, Your first widget, Examples (generated from `widgets.json`) | A newcomer, or an agent following the page verbatim, reaches a released widget; the old quickstart pages redirect |
 | **R3. Guides: data** | Declare and map columns, Read data, Write data, Errors and alerts | No old form left in them |
 | **R4. Guides: the rest** | Test, Attachments and REST, Options, Linking and theme, Fast, Deploy and embed, Release, Upgrade, Protect, Registry, Troubleshooting | The old-forms check blocks; `cli/index` is gone |
-| **R5. Reference** | Generated API reference per entry point (types and TSDoc, through `fumadocs-typescript` or the API report's doc model); CLI reference from its help text; Deprecated names and Versioning policy linked from each name | No hand-written list of exports or options is left |
+| **R5. Reference** | Generated API reference per entry point (types and TSDoc, through `fumadocs-typescript` or the API report's doc model); CLI reference from its help text; *Deprecated names* retired | No hand-written list of exports or options is left |
 | **R6. Concepts and maintainers** | The two concept pages; maintainer pages moved to `docs/`; `cheatsheet` and `cookbook` retired with redirects | About 25 user pages; every retired URL redirects |
 
 ## 7. What the maintainer decides

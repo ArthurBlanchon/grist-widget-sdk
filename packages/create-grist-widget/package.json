@@ -1,6 +1,6 @@
 {
   "name": "create-grist-widget",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Scaffold a new Grist custom widget from the grist-widget-sdk Vite template",
   "license": "MIT",
   "type": "module",

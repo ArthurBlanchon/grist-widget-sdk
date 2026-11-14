@@ -16,6 +16,7 @@
     "grist-widget-template-vite",
     "examples",
     "@grist-widgets/shared",
+    "@grist-widgets/attachment-viewer",
     "@grist-widgets/file-uploader",
     "@grist-widgets/grouped-view",
     "@grist-widgets/kanban-board",

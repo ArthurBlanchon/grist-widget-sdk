@@ -81,7 +81,7 @@ jobs:
       # Action majors track the monorepo's own workflows (Dependabot watches
       # this file via the template's directory in .github/dependabot.yml);
       # the v4s here ran on the deprecated Node 20 action runtime.
-      - name: Checkout # zizmor: ignore[artipacked] -- this job pushes with them
+      - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
@@ -187,7 +187,7 @@ jobs:
     steps:
       # Credentials stay persisted here: the first-release reset below pushes
       # with them. No dependency code runs in this job (see the install step).
-      - name: Checkout
+      - name: Checkout # zizmor: ignore[artipacked] -- this job pushes with them
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Setup pnpm

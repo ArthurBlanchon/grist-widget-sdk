@@ -16,6 +16,7 @@
     "grist-widget-template-vite",
     "examples",
     "@grist-widgets/shared",
+    "@grist-widgets/grouped-view",
     "@grist-widgets/kanban-board",
     "@grist-widgets/record-selector"
   ]

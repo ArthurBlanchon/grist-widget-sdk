@@ -98,7 +98,7 @@ size. It uses writes, mapped columns, options and linking, and the
 | 4 | Gantt chart | Plan tasks with dependencies and milestones; move and resize bars | full | timeline, resources | gantt-widget | Strong: 2,549 and 3,734 views |
 | 5 | Map | Points by coordinates or address, colour by category, clusters, linked selection | read table (full to geocode) | choropleth | world-map | Medium; standard everywhere |
 | 6 | Chart builder | Charts beyond Grist's own: combined, heat map, radar, colour scales | read table | — | — | Medium: 897 views on colour scales |
-| 7 | Grouped / Pivot view | Group by a value with collapsible groups; aggregate in a pivot | read table | grouped, pivot | — | Medium: 673 views; the official pivot is unmaintained since 2024 |
+| 7 | Grouped / Pivot view ([built](../widgets/grouped-view/SPEC.md)) | Group by a value with collapsible groups; aggregate in a pivot | read table | grouped, pivot | — | Medium: 673 views; the official pivot is unmaintained since 2024 |
 | 8 | Attachment viewer & gallery | Show the selected row's images and PDFs large; all of a table's attachments in a grid | read table | viewer, gallery | `examples/attachment-gallery` | Strong: 710 views; many hand-written viewers |
 | 9 | File uploader | Drop files into an attachments column, with type and size limits | full | — | — | Medium: forms take no attachments |
 | 10 | Document template | One document per row (quote, certificate, letter) from an editable HTML or Liquid template; print to PDF, optionally attach it | read table (full to attach) | list report | — | Strong: 1,082 views; 17,347 at Retool; Airtable's Page designer |
@@ -106,6 +106,9 @@ size. It uses writes, mapped columns, options and linking, and the
 Notes for their specs:
 - **Kanban:** a card's text is data the widget does not control, so it is
   rendered as text, never as HTML.
+- **Grouped / Pivot view:** read-only, so the total (sum, average,
+  minimum, maximum) is chosen for the session, not saved; mapping an Across
+  column turns the groups into a pivot table.
 - **Gantt:** it needs a drag-and-drop timeline under an allowed licence.
   Choosing that library is the first task of its spec.
 - **Map:** the tiles are its only network calls. Their host is fixed in

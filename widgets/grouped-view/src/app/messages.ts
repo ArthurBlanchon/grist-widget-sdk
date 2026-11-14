@@ -1,0 +1,36 @@
+import { defineMessages } from "@shared/i18n"
+
+export const messages = defineMessages({
+  en: {
+    empty: "No rows to group. Add rows to the table, or widen the section's filters.",
+    count: "{n} rows",
+    rows: "{n} rows",
+    blank: "(blank)",
+    total: "Total",
+    sum: "Sum",
+    average: "Average",
+    min: "Minimum",
+    max: "Maximum",
+    groups: "Groups",
+    all: "All",
+    filterGroup: "{name}: {total}. Show only these rows in linked widgets",
+    filterCell: "{row}, {column}. Show only these rows in linked widgets",
+    filterAll: "All rows. Show them in linked widgets",
+  },
+  fr: {
+    empty: "Aucune ligne à regrouper. Ajoutez des lignes à la table, ou élargissez les filtres de la section.",
+    count: "{n} lignes",
+    rows: "{n} lignes",
+    blank: "(vide)",
+    total: "Total",
+    sum: "Somme",
+    average: "Moyenne",
+    min: "Minimum",
+    max: "Maximum",
+    groups: "Groupes",
+    all: "Tout",
+    filterGroup: "{name} : {total}. N'afficher que ces lignes dans les widgets liés",
+    filterCell: "{row}, {column}. N'afficher que ces lignes dans les widgets liés",
+    filterAll: "Toutes les lignes. Les afficher dans les widgets liés",
+  },
+})

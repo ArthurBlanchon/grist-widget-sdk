@@ -1,0 +1,33 @@
+{
+  "name": "@grist-widgets/grouped-view",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Rows grouped by a column, with counts and totals; with a second column, a pivot table. Clicking a group filters the linked widgets.",
+  "license": "MIT",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "typecheck": "tsc -b",
+    "lint": "eslint .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@grist-widgets/shared": "workspace:*",
+    "grist-widget-sdk": "workspace:^",
+    "react": "catalog:",
+    "react-dom": "catalog:"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "catalog:",
+    "@testing-library/react": "catalog:",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "eslint": "catalog:",
+    "jsdom": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:"
+  }
+}

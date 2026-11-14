@@ -82,12 +82,13 @@ mapping, and rendering all live in `src/app/App.tsx`: that's the file to edit.
    needed. Run `pnpm test`.
 4. **Always develop on `dev`, release by merging to `main`.** Commit and push to `dev` for
    every change — it auto-deploys a live preview at `.../dev/` that self-reloads inside an
-   open Grist document a few seconds later. Bump `package.json`'s `version` *before*
-   opening the `dev` → `main` PR: merging without a version bump publishes nothing (the
-   release build silently no-ops whenever that version's directory already exists — the PR
-   merges cleanly and CI reports success either way).
-5. **Template updates arrive with `create-grist-widget`.** Dependabot opens a pull request of
-   its own for it. Once that is merged into `dev`, run `pnpm exec create-grist-widget upgrade`
+   open Grist document a few seconds later. To release, run `pnpm release <patch|minor|major>`
+   on `dev` (it bumps `package.json`'s `version`, writes the `CHANGELOG.md` entry and
+   commits), push, then open the `dev` → `main` PR: merging without a version bump
+   publishes nothing (the release build silently no-ops whenever that version's directory
+   already exists — the PR merges cleanly and CI reports success either way).
+5. **Template updates arrive with `create-grist-widget`.** Dependabot opens one pull request
+   moving it and `grist-widget-sdk` together. Once that is merged into `dev`, run `pnpm exec create-grist-widget upgrade`
    on `dev` in a follow-up pull request, then `pnpm install`, `pnpm typecheck`, `pnpm lint` and
    `pnpm test`. It rewrites the template's files (listed above) and, in the widget's code, the
    `grist-widget-sdk` names a release deprecated, and says what it changed and what is left
@@ -107,6 +108,7 @@ mapping, and rendering all live in `src/app/App.tsx`: that's the file to edit.
 | Format | `pnpm format` |
 | Type-check | `pnpm typecheck` |
 | Preview a production build | `pnpm preview` |
+| Prepare a release on `dev` (version, `CHANGELOG.md`, commit), then push and open `dev` → `main` | `pnpm release <patch\|minor\|major>` |
 | Bring the template's files up to date (on `dev`, after updating create-grist-widget) | `pnpm exec create-grist-widget upgrade` |
 
 ## Path map

@@ -272,7 +272,7 @@ read: the widget's version and license, and the SDK and CLI versions it was
 built with. The [widget registry](https://github.com/ArthurBlanchon/awesome-grist-widgets)
 reads it from a widget's install URL.
 
-> `create`, `init`, `use`, `upgrade`, `demo`, `manifest`, and `list` are themselves valid widget names —
+> `create`, `init`, `use`, `upgrade`, `demo`, `release`, `manifest`, and `list` are themselves valid widget names —
 > `create-grist-widget list` runs the list command, not "scaffold a widget
 > named list." Use the explicit form (`create-grist-widget create list`)
 > for a widget with one of these names.
@@ -285,7 +285,9 @@ channels from one workflow:
 - **Push to `main`** → the release channel: an immutable `/<repo>/v<version>/`
   plus a mutable `/<repo>/latest/` (and the same build at the repo's Pages
   root). Re-pushing `main` without bumping `package.json`'s version is a
-  no-op — it only rebuilds when a new `v<version>` doesn't exist yet.
+  no-op — it only rebuilds when a new `v<version>` doesn't exist yet:
+  `pnpm release <patch|minor|major>` on `dev` makes the bump and the
+  changelog entry ([Releasing a widget](/docs/cli/releasing)).
 - **Push to `dev`** → the dev channel: a mutable `/<repo>/dev/`, for live
   review inside Grist as you iterate.
 

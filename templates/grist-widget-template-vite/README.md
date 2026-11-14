@@ -89,8 +89,10 @@ self-hosted Grist's widget list uses.
    Every push auto-deploys a live preview at `/dev/` that self-reloads
    inside an open Grist document a few seconds later — paste that URL into
    a Grist doc once, then just keep pushing while you iterate.
-2. Ready to publish a release? **Bump `package.json`'s `version`** as part
-   of your `dev` branch changes, then open a PR from `dev` into `main`.
+2. Ready to publish a release? On `dev`, run **`pnpm release minor`** (or
+   `patch`, or `major`): it bumps `package.json`'s `version`, writes the
+   `CHANGELOG.md` entry from what `dev` has that `main` doesn't, and commits.
+   Push, then open a PR from `dev` into `main` (the command prints its link).
 3. **Merge the PR.** This is the step that actually publishes — merging to
    `main` builds immutable `/v<version>/` and updates mutable `/latest/`.
 

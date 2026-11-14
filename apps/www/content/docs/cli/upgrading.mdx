@@ -19,8 +19,9 @@ four groups:
 Every scaffold ships `.github/dependabot.yml`, which opens weekly pull requests
 against `dev`:
 
-- one grouping every minor and patch bump,
-- one per `grist-widget-sdk` update, so its release notes aren't buried,
+- one moving `grist-widget-sdk` and `create-grist-widget` together (they
+  always share a version number), so their release notes aren't buried,
+- one grouping every other minor and patch bump,
 - one per other major version (Vite and `@vitejs/*` majors together, since
   `@vitejs/plugin-react` only builds against its own Vite major),
 - one for the GitHub Actions your workflows use.
@@ -103,7 +104,8 @@ version your widget depends on, and leaves the widget's own files alone.
 <Steps>
 <Step>
 **Update `create-grist-widget`** on `dev`: merge Dependabot's pull request for
-it, or run `pnpm update create-grist-widget` and commit.
+it (it moves `grist-widget-sdk` too), or run
+`pnpm update grist-widget-sdk create-grist-widget` and commit.
 </Step>
 <Step>
 **Run the upgrade** on `dev`, with nothing uncommitted:

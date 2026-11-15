@@ -34,13 +34,14 @@ sets them; in short:
 | Build | `pnpm --filter www build` |
 | Lint | `pnpm --filter www lint` |
 | Type-check | `pnpm --filter www types:check` |
+| Old forms and page sizes in the docs (report mode; `--strict` fails) | `node ../../scripts/site/docs-check.mjs` |
 
 ## Path map
 
 | Concept | Path |
 | --- | --- |
 | Docs content | `content/docs/` |
-| Navigation | `content/docs/meta.json` |
+| Navigation: four sections (Get started, Guides, Reference, Concepts), every page listed | `content/docs/meta.json` |
 | Next configuration | `next.config.mjs` |
 | The site build (both origins) | `../../scripts/build-site.mjs` |
 | Redirects for retired pages | `../../scripts/site/redirects.mjs` |

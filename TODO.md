@@ -56,8 +56,8 @@ absorbed and archived, widgets served by the site that already exists
 - [ ] **Retire the six reference widgets**
   ([ADR 0011](./docs/decisions/0011-reference-widgets-retired.md)), last:
   the real-widgets job onto the catalog widgets, the registry without them,
-  the news feed added to the catalog or dropped, then the six repositories
-  deleted.
+  then the six repositories deleted. The news feed is dropped with them: it
+  gets no catalog entry (the maintainer, 2026-11-15).
 - [ ] **F4–F8:** intake and triage, the build loop, upkeep, the catalog and
   registry, a size check at 30 and 60 widgets (plan §10).
 

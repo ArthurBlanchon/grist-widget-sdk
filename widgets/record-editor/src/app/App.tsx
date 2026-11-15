@@ -91,15 +91,35 @@ export default function App() {
   }, [fetchRows, refKey])
 
   const record = w.record
+  // Grist sends a reference as the text its column shows, not the row id:
+  // the ids come from the table itself, read again when the record changes.
+  const hasRef = fields.some((f) => f.kind === "ref")
+  const [refIds, setRefIds] = useState<{ rowId: number; cells: Record<string, unknown> } | null>(null)
+  useEffect(() => {
+    if (!tableId || !hasRef || !record) return
+    let live = true
+    const rowId = record.id as number
+    fetchRows(tableId).then(
+      (rows) => live && setRefIds({ rowId, cells: rows.find((r) => r.id === rowId) ?? {} }),
+      () => undefined,
+    )
+    return () => {
+      live = false
+    }
+  }, [fetchRows, tableId, hasRef, record])
   const adding = newFrom !== undefined && newFrom === (record?.id ?? null)
   const setAdding = (on: boolean) => setNewFrom(on ? (record?.id ?? null) : undefined)
 
   const key = adding ? NEW : record ? String(record.id) : null
   const original = useMemo<Record<string, FormValue>>(() => {
     const out: Record<string, FormValue> = {}
-    for (const f of fields) out[f.colId] = toForm(f, adding ? null : (record as Record<string, unknown> | null)?.[f.colId])
+    const ids = refIds && refIds.rowId === record?.id ? refIds.cells : null
+    for (const f of fields) {
+      const cell = (record as Record<string, unknown> | null)?.[f.colId]
+      out[f.colId] = toForm(f, adding ? null : f.kind === "ref" ? (ids ? ids[f.colId] : null) : cell)
+    }
     return out
-  }, [fields, record, adding])
+  }, [fields, record, adding, refIds])
   const draft = key ? (drafts[key] ?? {}) : {}
   const value = (f: Field) => (f.colId in draft ? draft[f.colId]! : original[f.colId]!)
 

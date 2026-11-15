@@ -89,6 +89,8 @@ The SDK **pins decoding on**:
 - `w.fetchRows()` — the section's decoded rows.
 - `w.fetchRows(tableId, { columns })` — another table's rows, decoded with its column metadata.
 
+A reference arrives in `w.record` and `w.records` as the text its column shows (a person's name, not their row id), and a RefList as the list of those; it stays the row id only when the column shows the id. A widget that needs the ids reads the table: `w.fetchRows(tableId)` keeps them.
+
 `w.fetchRows(tableId)` without `columns` gives another table's cells as Grist sends them. Use `decodeGristValue(value, column)` to decode one, or pass `columns`. The mapped records go further: each cell is checked against its declared type ([Typed reads](/docs/sdk/guide/typing)).
 
 ## Reads vs writes

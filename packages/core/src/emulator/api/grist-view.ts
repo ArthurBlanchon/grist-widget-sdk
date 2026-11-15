@@ -1,8 +1,9 @@
 import { rowToRecord, rowsToColumnar } from "../core/columnar"
+import { inferDisplayHelpersByRef } from "../core/display-helpers"
 import { findRow, getSelectedTable } from "../core/document"
 import type { EventBus } from "../core/event-bus"
 import { resolveMappings } from "../core/mappings"
-import type { EmulatorDocumentState } from "../core/types"
+import type { EmulatorDocumentState, EmulatorTable } from "../core/types"
 import type { GristViewImpl } from "./types"
 
 /**
@@ -28,14 +29,19 @@ export function createGristViewImpl(state: EmulatorDocumentState, bus: EventBus)
   return {
     async fetchSelectedTable(options) {
       const table = getSelectedTable(state)
-      return onlyMapped(state, rowsToColumnar(table, table.rows, { keepEncoded: options?.keepEncoded }))
+      const data = rowsToColumnar(table, table.rows, { keepEncoded: options?.keepEncoded })
+      const shown = refsShown(state, table, options?.keepEncoded)
+      for (const [col, show] of shown) data[col] = table.rows.map((row) => show(row))
+      return onlyMapped(state, data)
     },
 
     async fetchSelectedRecord(rowId, options) {
       const table = getSelectedTable(state)
       const row = findRow(table, rowId)
       if (!row) throw new Error(`No row ${rowId} in ${table.tableId}`)
-      return onlyMapped(state, rowToRecord(table, row, { keepEncoded: options?.keepEncoded }))
+      const data = rowToRecord(table, row, { keepEncoded: options?.keepEncoded })
+      for (const [col, show] of refsShown(state, table, options?.keepEncoded)) data[col] = show(row)
+      return onlyMapped(state, data)
     },
 
     async allowSelectBy() {
@@ -83,4 +89,47 @@ function onlyMapped<T extends Record<string, unknown>>(state: EmulatorDocumentSt
   const names = declared.map((c) => (typeof c === "string" ? c : c.name))
   const mapped = new Set(names.flatMap((n) => [mappings[n]].flat()).filter((c): c is string => typeof c === "string"))
   return Object.fromEntries(Object.entries(data).filter(([col]) => col === "id" || mapped.has(col))) as T
+}
+
+type Row = Record<string, unknown> & { id: number }
+
+/**
+ * A reference as Grist sends it to a widget (`expandRefs`, its default): the
+ * text its column shows, from its display helper or its visible column,
+ * not the row id; a RefList, the list of those. A reference showing the row
+ * id (no visible column) stays the id. A widget that needs the ids reads the
+ * table (`fetchRows(tableId)`).
+ */
+function refsShown(
+  state: EmulatorDocumentState,
+  table: EmulatorTable,
+  keepEncoded: boolean | undefined
+): Map<string, (row: Row) => unknown> {
+  const out = new Map<string, (row: Row) => unknown>()
+  const helpers = inferDisplayHelpersByRef(table.columns)
+  for (const [colId, col] of Object.entries(table.columns)) {
+    const m = /^(Ref|RefList):(.+)$/.exec(col.type ?? "")
+    if (!m) continue
+    const helper = helpers[colId]
+    if (helper) {
+      out.set(colId, (row) => row[helper])
+      continue
+    }
+    const target = state.tables.get(m[2]!)
+    const visible = target && Object.entries(target.columns).find(([, c]) => c.colRef !== undefined && c.colRef === col.visibleColRef)?.[0]
+    if (!target || !visible) continue
+    const label = (id: unknown) => (typeof id === "number" && id > 0 ? (findRow(target, id)?.[visible] ?? null) : null)
+    out.set(
+      colId,
+      m[1] === "Ref"
+        ? (row) => label(row[colId])
+        : (row) => {
+            const raw = row[colId]
+            const ids = Array.isArray(raw) ? (raw[0] === "L" ? raw.slice(1) : raw) : []
+            const labels = ids.map(label)
+            return keepEncoded ? ["L", ...labels] : labels
+          }
+    )
+  }
+  return out
 }

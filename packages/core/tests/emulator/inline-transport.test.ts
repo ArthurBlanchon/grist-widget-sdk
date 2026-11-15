@@ -200,6 +200,38 @@ describe("inline transport", () => {
     emu.dispose()
   })
 
+  it("a reference arrives as the text its column shows, as from Grist; fetchTable keeps the row ids", async () => {
+    const emu = createGristEmulator({
+      document: {
+        generatedAt: "1970-01-01T00:00:00.000Z",
+        docName: "Jobs",
+        mode: "schema+data",
+        tables: {
+          Jobs: {
+            columns: {
+              Title: { type: "Text", colRef: 1 },
+              Tech: { type: "Ref:People", colRef: 2, visibleColRef: 20 },
+              Team: { type: "RefList:People", colRef: 3, visibleColRef: 20 },
+              Raw: { type: "Ref:People", colRef: 4 },
+            },
+            rows: [{ id: 1, Title: "Boiler", Tech: 2, Team: ["L", 1, 2], Raw: 1 }],
+          },
+          People: { columns: { Name: { type: "Text", colRef: 20 } }, rows: [{ id: 1, Name: "Léa" }, { id: 2, Name: "Marc" }] },
+        },
+        selection: { tableId: "Jobs", rowId: 1 },
+      },
+    })
+    const g = emu.grist!
+    const onRecord = vi.fn()
+    g.onRecord(onRecord)
+    await g.ready()
+    await flush()
+    // A Ref without a visible column shows, and so sends, its row id.
+    expect(onRecord.mock.calls.at(-1)![0]).toEqual({ id: 1, Title: "Boiler", Tech: "Marc", Team: ["Léa", "Marc"], Raw: 1 })
+    expect((await g.docApi.fetchTable("Jobs")).Tech).toEqual([2])
+    emu.dispose()
+  })
+
   it("dispose() removes the global", () => {
     const emu = createGristEmulator({ document: presets.todoList() })
     expect((globalThis as unknown as { grist?: unknown }).grist).toBeDefined()

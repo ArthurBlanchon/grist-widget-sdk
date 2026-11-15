@@ -22,8 +22,8 @@ test("a catalog widget's change runs the widgets job only, for that widget", () 
 
 test("what every widget builds on runs them all; widgets/ files outside a widget run none", () => {
   const slugs = listSlugs()
-  assert.ok(slugs.length >= 16 && slugs.every((s) => /^[a-z0-9-]+$/.test(s)) && !slugs.includes("_shared"))
-  for (const file of ["widgets/_shared/ui/button.tsx", "packages/core/src/sdk/index.ts", "pnpm-lock.yaml", "scripts/real-widgets/e2e-grist.mjs", ".github/workflows/ci.yml"]) {
+  assert.ok(slugs.length >= 16 && !slugs.includes("_shared"))
+  for (const file of ["widgets/_shared/ui/button.tsx", "packages/core/src/sdk/index.ts", "pnpm-lock.yaml", "package.json", "scripts/real-widgets/e2e-grist.mjs", ".github/workflows/ci.yml"]) {
     assert.deepEqual(touchedWidgets([file]), slugs, file)
   }
   assert.deepEqual(touchedWidgets(null), slugs)
@@ -72,4 +72,18 @@ test("ci.yml: gate needs every job, and changes outputs every rule", async () =>
     assert.match(yml, new RegExp(`^ {6}${rule}: \\$\\{\\{ steps\\.diff\\.outputs\\.${rule} \\}\\}$`, "m"))
     assert.match(yml, new RegExp(`needs\\.changes\\.outputs\\.${rule} == 'true'`))
   }
+})
+
+test("a widgets/ folder that isn't a valid widget is listed, so its batch fails on it", async () => {
+  const { mkdtempSync, mkdirSync, writeFileSync } = await import("node:fs")
+  const { tmpdir } = await import("node:os")
+  const { join } = await import("node:path")
+  const dir = mkdtempSync(join(tmpdir(), "widgets-"))
+  for (const name of ["ok", "My_Widget", "half-made", "_shared", ".cache"]) mkdirSync(join(dir, name))
+  writeFileSync(join(dir, "ok", "package.json"), "{}")
+  const slugs = listSlugs(dir)
+  assert.deepEqual(slugs, ["My_Widget", "half-made", "ok"])
+  assert.deepEqual(touchedWidgets(["widgets/half-made/SPEC.md"], slugs), ["half-made"])
+  // A deleted widget's folder is gone: nothing left to check.
+  assert.deepEqual(touchedWidgets(["widgets/removed/SPEC.md"], slugs), [])
 })

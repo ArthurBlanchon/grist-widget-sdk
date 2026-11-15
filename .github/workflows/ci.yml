@@ -105,6 +105,7 @@ jobs:
         batch: ${{ fromJSON(needs.changes.outputs.widget_batches) }}
     env:
       BATCH: ${{ matrix.batch }}
+      FIRST_BATCH: ${{ strategy.job-index == 0 }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -128,6 +129,9 @@ jobs:
             filters="$filters --filter @grist-widgets/$slug"
             dirs="$dirs widgets/$slug"
           done
+          # The first batch also checks what they share: _shared's own
+          # typecheck, lint and tests (its i18n), which no widget runs.
+          if [ "$FIRST_BATCH" = "true" ]; then filters="$filters --filter @grist-widgets/shared"; fi
           echo "FILTERS=$filters" >> "$GITHUB_ENV"
           echo "DIRS=$dirs" >> "$GITHUB_ENV"
       - run: pnpm install --frozen-lockfile

@@ -19,7 +19,6 @@ import { fileURLToPath } from "node:url"
 
 const LOCKFILE = "pnpm-lock.yaml"
 export const BATCH_SIZE = 8
-const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 const WIDGETS_DIR = fileURLToPath(new URL("../../widgets/", import.meta.url))
 
 /** @type {Record<string, (string|RegExp)[]>} */
@@ -56,6 +55,8 @@ export const RULES = {
     "scripts/widgets/",
     "scripts/real-widgets/e2e-grist.mjs",
     "pnpm-workspace.yaml",
+    // The root package.json defines e2e:grist, which every batch runs.
+    "package.json",
     LOCKFILE,
   ],
 }
@@ -66,16 +67,24 @@ const matches = (file, rule) => (rule.endsWith("/") ? file.startsWith(rule) : fi
 
 const runsAll = (files) => files === null || files.some((f) => EVERYTHING.some((r) => matches(f, r)))
 
-/** The catalog widgets' slugs: the folders of widgets/ with a package.json. */
+/**
+ * The catalog widgets: every folder of widgets/ not starting with _ or .,
+ * as check-widgets.mjs lists them. A folder that isn't a valid widget (no
+ * package.json, a name that isn't a slug) is kept, so that its batch fails
+ * on it rather than the change merging green.
+ */
 export function listSlugs(dir = WIDGETS_DIR) {
   if (!existsSync(dir)) return []
   return readdirSync(dir, { withFileTypes: true })
-    .filter((e) => e.isDirectory() && SLUG.test(e.name) && existsSync(join(dir, e.name, "package.json")))
+    .filter((e) => e.isDirectory() && !e.name.startsWith("_") && !e.name.startsWith("."))
     .map((e) => e.name)
     .sort()
 }
 
-/** The catalog widgets a change touches: all of them, or those whose folder changed. */
+/**
+ * The catalog widgets a change touches: all of them, or those whose folder
+ * changed and still exists (a deleted widget has nothing left to check).
+ */
 export function touchedWidgets(files, slugs = listSlugs()) {
   if (runsAll(files) || files.some((f) => RULES.widgets.some((r) => matches(f, r)))) return slugs
   return slugs.filter((slug) => files.some((f) => f.startsWith(`widgets/${slug}/`)))
@@ -103,7 +112,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   for await (const chunk of process.stdin) input += chunk
   const files = process.argv.includes("--all") ? null : input.split("\n").map((l) => l.trim()).filter(Boolean)
   for (const [job, run] of Object.entries(changedJobs(files))) console.log(`${job}=${run}`)
-  // Each batch is one matrix entry: its slugs, space-separated (each one a
-  // SLUG, checked again where ci.yml uses it).
+  // Each batch is one matrix entry: its folder names, space-separated. ci.yml
+  // checks each one (a slug, with a package.json) before using it.
   console.log(`widget_batches=${JSON.stringify(batches(touchedWidgets(files)).map((b) => b.join(" ")))}`)
 }

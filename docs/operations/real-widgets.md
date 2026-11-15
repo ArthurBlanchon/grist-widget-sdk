@@ -41,19 +41,22 @@ bundle sizes, and the real-Grist check below on the pinned image.
 **Each week** (Tuesday, and on demand: Actions → Widgets on Grist's latest),
 `widgets-latest-grist.yml` runs every catalog widget in
 `gristlabs/grist:latest` instead of the pin. It reports and never blocks:
-- a failure opens the issue "Catalog widgets fail on Grist's latest image",
-  or comments on it while it stays open;
+- a failure of the real-Grist step, on `main`, opens the issue "Catalog
+  widgets fail on Grist's latest image", or comments on it while it stays
+  open (an install or a build failing first reports nothing);
 - the next passing run closes it.
 
 When it fails:
 1. Open the run: its summary names the image's version and each widget's
    result, and the screenshots are in its artifacts.
-2. Reproduce with `GRIST_IMAGE=gristlabs/grist:latest pnpm e2e:grist
-   widgets/<slug>`.
+2. Reproduce with `docker pull gristlabs/grist:latest`, then
+   `GRIST_IMAGE=gristlabs/grist:latest pnpm e2e:grist widgets/<slug>`: the
+   check doesn't pull, so an older cached `latest` would run instead.
 3. Fix the widget or the SDK, before the pin
    (`packages/create-grist-widget/src/grist-local.mjs`) moves to that
    version.
 
+## In a real Grist
 
 `pnpm e2e:grist <widget dir>...` runs the real-Grist part on widgets you
 have checked out locally:

@@ -33,7 +33,7 @@ export function ReleasePage({ channel }: { channel: DeployChannel }) {
         was released.
       </p>
       <ChannelLinks current={channel} />
-      <InstallUrl />
+      {channel.kind === "dev" ? <DevNotice /> : <InstallUrl />}
     </main>
   )
 }
@@ -41,8 +41,10 @@ export function ReleasePage({ channel }: { channel: DeployChannel }) {
 function ChannelLinks({ current }: { current: DeployChannel }) {
   const { basePath } = parseDeployPath(window.location.pathname)
   const { versions } = useReleasedVersions()
-  const isCurrent = (channel: DeployChannel) =>
-    channel.kind === current.kind && (channel.kind !== "version" || (current.kind === "version" && channel.version === current.version))
+  const isCurrent = (channel: DeployChannel) => deployChannelLabel(channel) === deployChannelLabel(current)
+  // The widget catalog lists where each release is served, and has a channel per major.
+  const catalog = versions?.some((v) => v.path !== undefined) ?? false
+  const majors = catalog ? [...new Set((versions ?? []).map((v) => Number(v.version.split(".")[0])))].sort((a, b) => b - a) : []
 
   return (
     <nav aria-label="Versions" style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "0.5rem", marginBottom: "2rem" }}>
@@ -52,10 +54,15 @@ function ChannelLinks({ current }: { current: DeployChannel }) {
       <ChannelLink href={`${basePath}dev/`} active={isCurrent({ kind: "dev" })}>
         dev
       </ChannelLink>
+      {majors.map((major) => (
+        <ChannelLink key={`v${major}`} href={`${basePath}v${major}/`} active={isCurrent({ kind: "major", major })}>
+          {`v${major}`}
+        </ChannelLink>
+      ))}
       {versions?.map((v) => (
         <ChannelLink
           key={v.version}
-          href={`${basePath}v${v.version}/`}
+          href={`${basePath}${v.path ?? `v${v.version}/`}`}
           title={formatDate(v.publishedAt)}
           active={isCurrent({ kind: "version", version: v.version })}
         >
@@ -91,6 +98,20 @@ function ChannelLink({
     <a href={href} title={title} aria-current={active ? "page" : undefined} style={style}>
       {children}
     </a>
+  )
+}
+
+/** On `/dev/`: what is merged but not released changes under any document that uses it. */
+function DevNotice() {
+  return (
+    <section style={cardStyle} role="note">
+      <h2 style={cardTitleStyle}>Not for a Grist document</h2>
+      <p style={cardTextStyle}>
+        This build follows every change merged before its release, breaking ones included. Use it to check a change in a
+        real Grist, then paste a released channel into your documents: <code style={codeStyle}>latest</code>, a
+        version, or a major's channel such as <code style={codeStyle}>v1</code> where there is one.
+      </p>
+    </section>
   )
 }
 

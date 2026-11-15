@@ -14,6 +14,10 @@ describe("parseDeployPath()", () => {
     ["/my-widget/v0.0.1-rc.1/", { kind: "version", version: "0.0.1-rc.1" }, "/my-widget/"],
     ["/latest/", { kind: "latest" }, "/"],
     ["/v2.0.0/", { kind: "version", version: "2.0.0" }, "/"],
+    // The widget catalog: a release at /<version>/, the newest of a major at /v<major>/.
+    ["/widgets/map/0.1.1/", { kind: "version", version: "0.1.1" }, "/widgets/map/"],
+    ["/widgets/map/v0/", { kind: "major", major: 0 }, "/widgets/map/"],
+    ["/widgets/map/v12/", { kind: "major", major: 12 }, "/widgets/map/"],
   ])("reads the channel of %s", (pathname, channel, basePath) => {
     expect(parseDeployPath(pathname)).toEqual({ channel, basePath })
   })
@@ -25,8 +29,9 @@ describe("parseDeployPath()", () => {
   })
 
   it("doesn't take a segment that only looks like a version for one", () => {
-    expect(parseDeployPath("/my-widget/v1/").channel).toEqual({ kind: "latest" })
     expect(parseDeployPath("/my-widget/version/").channel).toEqual({ kind: "latest" })
+    expect(parseDeployPath("/my-widget/v1.2/").channel).toEqual({ kind: "latest" })
+    expect(parseDeployPath("/my-widget/1/").channel).toEqual({ kind: "latest" })
   })
 })
 
@@ -35,5 +40,6 @@ describe("deployChannelLabel()", () => {
     expect(deployChannelLabel({ kind: "latest" })).toBe("latest")
     expect(deployChannelLabel({ kind: "dev" })).toBe("dev")
     expect(deployChannelLabel({ kind: "version", version: "1.2.0" })).toBe("v1.2.0")
+    expect(deployChannelLabel({ kind: "major", major: 1 })).toBe("v1")
   })
 })

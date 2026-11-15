@@ -8,8 +8,10 @@
 //
 // A released version is never rebuilt or replaced, so what a Grist document
 // loads never changes under it. The site build (build-site.mjs) copies the
-// branch to /widgets/<slug>/<version>/, and the newest version of each widget
-// to /widgets/<slug>/latest/.
+// branch to /widgets/<slug>/<version>/, the newest version of each major to
+// /widgets/<slug>/v<major>/ (the install URL, ADR 0013), the newest of all to
+// /widgets/<slug>/latest/, and builds /widgets/<slug>/dev/ from the source
+// being built (on main: what is merged, not released yet).
 
 import { existsSync, readdirSync, readFileSync } from "node:fs"
 import { join } from "node:path"
@@ -31,6 +33,17 @@ export function compareVersions(a, b) {
 
 /** The highest of `versions`, or null. */
 export const latestVersion = (versions) => [...versions].sort(compareVersions).at(-1) ?? null
+
+/**
+ * `{ "v<major>": version }`: the newest version of each major, the channel a
+ * Grist document installs (ADR 0013). It gets every fix of its major and
+ * never a breaking change, which takes a new major.
+ */
+export function majorChannels(versions) {
+  const out = {}
+  for (const v of [...versions].sort(compareVersions)) out[`v${SEMVER.exec(v)[1]}`] = v
+  return out
+}
 
 /** `{ slug: [versions] }` released in a checkout of widgets-dist (or {} if none). */
 export function releasedVersions(distDir) {

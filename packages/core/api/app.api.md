@@ -14,6 +14,9 @@ export type DeployChannel = {
 } | {
     kind: "dev";
 } | {
+    kind: "major";
+    major: number;
+} | {
     kind: "version";
     version: string;
 };
@@ -91,6 +94,7 @@ export function parseDeployPath(pathname: string): DeployPath;
 export type ReleasedVersion = {
     version: string;
     publishedAt: string;
+    path?: string;
 };
 
 // @public (undocumented)

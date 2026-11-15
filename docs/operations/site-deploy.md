@@ -37,7 +37,7 @@ Both origins run `scripts/build-site.mjs`, which assembles `./site`:
 | `/examples/<id>/latest/` | the example widget |
 | `/examples/<id>/demo/` | the example in a real Grist, from static files: grist-static and the committed `examples/_demos/<id>.grist` |
 | `/grist-static/<version>/` | the pinned grist-static, used by the site's and every widget's demo pages |
-| `/widgets/<slug>/<version>/`, `/widgets/<slug>/latest/` | the catalog widgets' released versions, and the newest of each (below) |
+| `/widgets/<slug>/<version>/`, `/v<major>/`, `/latest/`, `/dev/` | the catalog widgets' released versions, the newest of each major (the install URL), the newest of all, and the source being built (below, ADR 0013) |
 | `/template-preview/` | the template's own build |
 | old URLs | one-line pages that send to where a page moved (`scripts/site/redirects.mjs`) |
 
@@ -96,24 +96,31 @@ its `package.json`, in the pull request that changes it. Then:
 2. **A version is never rebuilt or replaced.** A change merged without a
    new version publishes nothing.
 3. **Both origins serve them.** `build-site.mjs` copies the branch to
-   `/widgets/<slug>/<version>/`, and the newest version of each widget to
-   `/widgets/<slug>/latest/`:
-   - the GitHub Pages build runs after the release job, on a copy of the
-     branch (`WIDGETS_DIST_DIR`);
+   `/widgets/<slug>/<version>/`, the newest version of each major to
+   `/widgets/<slug>/v<major>/` and the newest of all to
+   `/widgets/<slug>/latest/`. It also builds each widget from the source it
+   has to `/widgets/<slug>/dev/`: on `main`, what is merged but not released,
+   to check in a real Grist before the release
+   ([ADR 0013](../decisions/0013-widget-channels.md)).
+   - The GitHub Pages build runs after the release job, on a copy of the
+     branch (`WIDGETS_DIST_DIR`).
    - Cloudflare's build of main downloads the branch and waits, up to ten
      minutes, for the versions main declares. It fails rather than serve
      an unreleased version, so the previous deployment stays in place.
-   - **Any other build** (a pull request's preview, a local run) builds a
-     version that isn't released yet from source, as a preview.
+   - **Any other build** (a pull request's preview, a local run) serves a
+     version that isn't released yet from its `/dev/` build, as a preview.
      `WIDGETS_DIST=none` skips the download offline.
 4. **A demo page per widget** at `/widgets/<slug>/demo/`: the release job
    also makes each widget's demo document in a real Grist (Docker,
    `scripts/widgets/demos.mjs`) into `widgets-dist/<slug>/demo/`, once,
    and again when its title, access or columns change. The page shows it in
    grist-static, on the `/latest/` version.
-5. **The install URL** is `https://gristwidgets.com/widgets/<slug>/latest/`
-   ([ADR 0009](../decisions/0009-install-urls.md)), or a pinned
-   `/<version>/`.
+5. **The install URL** is the major channel,
+   `https://gristwidgets.com/widgets/<slug>/v<major>/`
+   ([ADR 0009](../decisions/0009-install-urls.md),
+   [ADR 0013](../decisions/0013-widget-channels.md)). A pinned
+   `/<version>/` never changes; `/latest/` stays for the URLs already
+   pasted.
 
 The size and file budget (`scripts/site/budget.mjs`) runs at the end of
 every build. It warns at 60 % of GitHub Pages' 1 GB or of Cloudflare's

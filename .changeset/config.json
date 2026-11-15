@@ -28,6 +28,7 @@
     "@grist-widgets/mermaid-diagram",
     "@grist-widgets/record-editor",
     "@grist-widgets/record-selector",
-    "@grist-widgets/signature-pad"
+    "@grist-widgets/signature-pad",
+    "@grist-widgets/duplicate-finder"
   ]
 }

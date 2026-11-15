@@ -2,6 +2,10 @@
 
 What changed in each version, for the people using the widget. Newest first.
 
+## 0.1.2 (2026-11-15)
+
+- Placeholders for columns you haven't mapped (`{{Name}}`, say) are filled again. Grist sends a mapped widget only its mapped columns, so they came out empty; the widget now reads the table itself.
+
 ## 0.1.1 (2026-11-15)
 
 - The widget's page carries a Content Security Policy: only its own code and Grist's plugin API run in it, which keeps a document's content from running anything there.

@@ -352,7 +352,10 @@ export async function createDocument(api, wsId, name, options, widgetUrl, demo =
     mode: "url",
     url: widgetUrl,
     access: options.requiredAccess ?? "none",
-    columnsMapping,
+    // No mapping saved when nothing is mapped, as in Grist (it saves one only
+    // when a column is mapped): a saved one, even empty, makes Grist send the
+    // widget its mapped columns only, so none.
+    columnsMapping: Object.keys(columnsMapping).length ? columnsMapping : null,
     renderAfterReady: false,
     // An object in customView (grist-core's ViewSectionRec customDef).
     ...(spec.options ? { widgetOptions: spec.options } : {}),

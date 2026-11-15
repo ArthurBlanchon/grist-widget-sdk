@@ -66,17 +66,32 @@ export default function App() {
   const sentType = sentCol ? (types?.get(sentCol)?.split(":")[0] ?? null) : null
 
   const records = w.records
+  // Grist sends a mapped widget only its mapped columns: the others, which the
+  // placeholders name, come from the table itself (full access), again on each change.
+  const [cells, setCells] = useState<ReadonlyMap<number, Record<string, unknown>> | null>(null)
+  const { fetchRows } = w
+  useEffect(() => {
+    if (!tableId) return
+    let live = true
+    fetchRows(tableId).then(
+      (all) => live && setCells(new Map(all.map((r) => [r.id, r]))),
+      () => undefined,
+    )
+    return () => {
+      live = false
+    }
+  }, [fetchRows, tableId, records])
   const rows = useMemo(
     () =>
       (records ?? []).map((r) => {
         const out: Row = { id: r.id as number }
-        for (const [k, v] of Object.entries(r)) {
+        for (const [k, v] of Object.entries({ ...cells?.get(r.id as number), ...r })) {
           const check = checkGristCell(types?.get(k), v)
           out[k] = check.ok ? check.value : v
         }
         return out
       }),
-    [records, types],
+    [records, cells, types],
   )
   const columns = useMemo(() => new Set(types ? [...types.keys()] : rows.length ? Object.keys(rows[0]!).filter((k) => k !== "id") : []), [types, rows])
 

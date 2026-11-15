@@ -1,6 +1,7 @@
 import { rowToRecord, rowsToColumnar } from "../core/columnar"
 import { findRow, getSelectedTable } from "../core/document"
 import type { EventBus } from "../core/event-bus"
+import { resolveMappings } from "../core/mappings"
 import type { EmulatorDocumentState } from "../core/types"
 import type { GristViewImpl } from "./types"
 
@@ -27,14 +28,14 @@ export function createGristViewImpl(state: EmulatorDocumentState, bus: EventBus)
   return {
     async fetchSelectedTable(options) {
       const table = getSelectedTable(state)
-      return rowsToColumnar(table, table.rows, { keepEncoded: options?.keepEncoded })
+      return onlyMapped(state, rowsToColumnar(table, table.rows, { keepEncoded: options?.keepEncoded }))
     },
 
     async fetchSelectedRecord(rowId, options) {
       const table = getSelectedTable(state)
       const row = findRow(table, rowId)
       if (!row) throw new Error(`No row ${rowId} in ${table.tableId}`)
-      return rowToRecord(table, row, { keepEncoded: options?.keepEncoded })
+      return onlyMapped(state, rowToRecord(table, row, { keepEncoded: options?.keepEncoded }))
     },
 
     async allowSelectBy() {
@@ -66,4 +67,17 @@ export function createGristViewImpl(state: EmulatorDocumentState, bus: EventBus)
       })
     },
   }
+}
+
+/**
+ * What the section sends, as Grist's `GristViewImpl._visibleColumns` does:
+ * once the widget declares columns (even none) and the section has a saved
+ * mapping, only the mapped columns, and the row id. A widget that needs the
+ * others reads the table itself (`fetchRows(tableId)`, full access).
+ */
+function onlyMapped<T extends Record<string, unknown>>(state: EmulatorDocumentState, data: T): T {
+  const mappings = resolveMappings(state)
+  if (!state.configuration?.columns || !mappings) return data
+  const mapped = new Set(Object.values(mappings).flat().filter((c): c is string => typeof c === "string"))
+  return Object.fromEntries(Object.entries(data).filter(([col]) => col === "id" || mapped.has(col))) as T
 }

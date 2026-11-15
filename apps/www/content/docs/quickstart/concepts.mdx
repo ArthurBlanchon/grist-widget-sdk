@@ -75,6 +75,8 @@ The SDK exposes:
 - `w.columnMappingStatus` — `{ ok, pending?, missing, emptyMultiples }` to gate UI.
 - `w.mapBack(patch)` — reverse-map a logical patch to a real-column patch ready for writes.
 
+Once a widget declares columns and the user maps them, Grist sends it only the mapped columns: `w.record` and `w.records` hold those and the row id, nothing else. A widget that also reads other columns (a template naming any of them, say) declares no columns, or reads the table itself with `w.fetchRows(tableId)`, which needs full access. The emulator does the same.
+
 See [Column mapping](/docs/sdk/guide/column-mapping) for full patterns.
 
 ## Decoded vs encoded

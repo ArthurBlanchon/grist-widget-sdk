@@ -40,7 +40,12 @@ bundle sizes, and the real-Grist check below on the pinned image.
 
 **Each week** (Tuesday, and on demand: Actions → Widgets on Grist's latest),
 `widgets-latest-grist.yml` runs every catalog widget in
-`gristlabs/grist:latest` instead of the pin. It reports and never blocks:
+`gristlabs/grist:latest` instead of the pin. It also starts that Grist with the catalog's list added as a plugin, the way
+the docs tell an administrator to (`scripts/widgets/gallery-check.mjs`), and
+checks that its gallery serves every catalog id next to Grist Labs' own
+widgets ([ADR 0014](../decisions/0014-catalog-lists.md)). Run it alone with
+`node scripts/widgets/gallery-check.mjs` (Docker). It reports and never
+blocks:
 - a failure of the real-Grist step, on `main`, opens the issue "Catalog
   widgets fail on Grist's latest image", or comments on it while it stays
   open (an install or a build failing first reports nothing);

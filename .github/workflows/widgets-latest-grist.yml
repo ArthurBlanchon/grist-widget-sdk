@@ -3,7 +3,8 @@ name: Widgets on Grist's latest
 # Plan to 0.8.0, M3: every catalog widget embedded in Grist's newest image
 # (gristlabs/grist:latest), each week, where CI pins one (GRIST_IMAGE in
 # create-grist-widget's grist-local.mjs). A Grist release that breaks a widget
-# shows up here before the pin moves to it.
+# shows up here before the pin moves to it. The same Grist also checks that
+# its gallery lists the catalog (scripts/widgets/gallery-check.mjs, ADR 0014).
 #
 # It reports and never blocks: a failure opens an issue (or comments on the
 # open one), and the next passing run closes it. It runs this repository's own
@@ -30,6 +31,7 @@ jobs:
       # The real-Grist step's own outcome: an install or a build that fails
       # first is no news about Grist, and leaves it "skipped".
       e2e: ${{ steps.e2e.outcome }}
+      gallery: ${{ steps.gallery.outcome }}
     env:
       GRIST_IMAGE: gristlabs/grist:latest
     steps:
@@ -54,6 +56,13 @@ jobs:
         run: |
           dirs=$(find widgets -mindepth 1 -maxdepth 1 -type d ! -name '_*' | sort)
           pnpm e2e:grist $dirs --axe --themes --strict-console --out "$RUNNER_TEMP/screenshots"
+      # Grist's gallery lists the catalog (ADR 0014): this Grist, with the
+      # list gristwidgets.com serves added as a plugin, the way the docs say,
+      # serves every id, next to Grist Labs' own widgets.
+      - name: Grist's gallery lists the catalog
+        id: gallery
+        if: always() && steps.e2e.outcome != 'skipped'
+        run: node scripts/widgets/gallery-check.mjs
       - name: Keep the screenshots
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -75,7 +84,7 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
-      RESULT: ${{ needs.e2e.outputs.e2e }}
+      RESULT: ${{ (needs.e2e.outputs.e2e == 'failure' || needs.e2e.outputs.gallery == 'failure') && 'failure' || 'success' }}
       RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
       TITLE: "Catalog widgets fail on Grist's latest image"
     steps:

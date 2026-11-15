@@ -1,0 +1,8 @@
+{
+  "slug": "duplicate-finder",
+  "version": "0.1.2",
+  "commit": "e1c119d7a380115d499dea995c004ff37f5754df",
+  "released": "2026-11-15T23:22:22.801Z",
+  "changes": "- The row kept by default is the one with the most filled cells. Grist sends a mapped widget only its key columns, so the first row of a group always won; the widget now counts the whole row, read from the table.",
+  "changelog": "CHANGELOG.md"
+}

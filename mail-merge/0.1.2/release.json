@@ -1,0 +1,8 @@
+{
+  "slug": "mail-merge",
+  "version": "0.1.2",
+  "commit": "e1c119d7a380115d499dea995c004ff37f5754df",
+  "released": "2026-11-15T23:22:23.596Z",
+  "changes": "- Placeholders for columns you haven't mapped (`{{Name}}`, say) are filled. Grist sends a mapped widget only its mapped columns, so they came out empty; the widget now reads the table itself, a reference as the text its column shows. The e-mails can be opened once the table is read, and a failed read is shown.",
+  "changelog": "CHANGELOG.md"
+}

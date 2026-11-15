@@ -23,6 +23,7 @@ import type {
 } from "../types"
 import { parseAccess } from "./derive"
 import { messageStream, newRecordStream, optionsStream, recordsStream, recordStream } from "./host"
+import { migrateWidgetOptions, type OptionsVersioning } from "./options-version"
 import { ensureGristReady, resetGristReady } from "./ready"
 
 export type GristConnection = "connecting" | "ready" | "not-embedded" | "unavailable" | "error"
@@ -54,7 +55,7 @@ export type GristRuntimeState = {
 }
 
 /** What a widget asks Grist for (`UseGristOptions`). */
-export type GristRuntimeOptions = GristReadyOptions & {
+export type GristRuntimeOptions = GristReadyOptions & OptionsVersioning & {
   /** Alert kinds mountGristWidget() never shows for this widget, e.g. ["section-not-linked"]. */
   suppressAlerts?: GristSdkAlertKind[]
   /**
@@ -190,13 +191,22 @@ export function createGristRuntime(options: GristRuntimeOptions = {}): GristRunt
         update({ records: records.map((r) => ({ ...r }) as GristRowRecord), ...(mappings ? { mappings } : {}) })
         void refreshTable()
       }),
-      optionsStream.subscribe(({ options: widgetOptions, interaction }) =>
+      optionsStream.subscribe(({ options: saved, interaction }) => {
+        // Options saved under an older version reach the widget migrated,
+        // and are saved back: Grist then sends them again, current.
+        const { options: widgetOptions, save } = migrateWidgetOptions(saved, options)
         update({
           widgetOptions,
           interaction,
           grantedAccess: parseAccess(interaction?.access_level) ?? state.grantedAccess,
         })
-      ),
+        if (save && typeof grist !== "undefined") {
+          // A viewer may not save: the widget still sees the migrated options.
+          void Promise.resolve()
+            .then(() => grist.setOptions(save))
+            .catch(() => undefined)
+        }
+      }),
       newRecordStream.subscribe(({ mappings }) => update({ isNewRecord: true, ...(mappings ? { mappings } : {}) })),
       messageStream.subscribe((msg) => {
         const theme = parseGristThemePayload(msg)

@@ -24,6 +24,7 @@ import type {
   GristRowRecord,
   GristTableOperations,
 } from "../types"
+import { withOptionsVersion } from "./options-version"
 import type { GristRuntime } from "./runtime"
 
 export type ListTablesOptions = {
@@ -233,7 +234,7 @@ export function createGristApi(runtime: GristRuntime): GristApi {
     applyActions: (actions, options) => write(() => docApi().applyUserActions(actions, options)),
 
     setWidgetOptions: async (options) => {
-      await grist.setOptions(options)
+      await grist.setOptions(withOptionsVersion(options, runtime.options))
     },
     // One patch at a time: each reads the options the previous one wrote, so two patches
     // made together (a chart's kind, then its total) both land instead of the second
@@ -241,7 +242,7 @@ export function createGristApi(runtime: GristRuntime): GristApi {
     patchWidgetOptions: (patch) => {
       const run = patching.then(async () => {
         const current = ((await grist.getOptions()) as Record<string, unknown> | null) ?? {}
-        await grist.setOptions({ ...current, ...patch })
+        await grist.setOptions(withOptionsVersion({ ...current, ...patch }, runtime.options))
       })
       patching = run.catch(() => undefined)
       return run

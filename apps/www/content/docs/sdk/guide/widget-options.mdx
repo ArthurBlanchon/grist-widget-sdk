@@ -48,6 +48,45 @@ function readSettings(raw: Record<string, unknown> | null): Settings {
 }
 ```
 
+## Options that change shape
+
+A section keeps its options for years, while the widget changes. When a new
+version reads them differently, declare the version and how to bring older
+options to it:
+
+```tsx
+import { defineGristWidget, type MigrateWidgetOptions } from "grist-widget-sdk"
+
+// Version 1 kept the board's columns as one string, "To do,Doing,Done".
+const migrate: MigrateWidgetOptions = (options, fromVersion) =>
+  fromVersion < 2 && typeof options.columns === "string"
+    ? { ...options, columns: options.columns.split(",") }
+    : options
+
+export const widget = defineGristWidget({
+  title: "Board",
+  requiredAccess: "full",
+  optionsVersion: 2,
+  migrate,
+})
+```
+
+- The SDK keeps the version with the options, and the widget never sees it.
+- Options saved under an older version reach `widgetOptions` already
+  migrated, and the SDK saves them back when the person can edit the
+  document.
+- Options saved before the widget declared a version count as version 1.
+  A new section starts at the current version, with nothing to migrate.
+- Options saved by a newer version are left as they are.
+- `setWidgetOptions` and `patchWidgetOptions` write under the current
+  version.
+
+Test the migration with the previous version's options:
+
+```tsx no-check
+renderWithGrist(<App />, { widget, emulator: { widgetOptions: { columns: "To do,Done" } } })
+```
+
 ## Opening the configuration panel
 
 `hasCustomOptions: true` in `GRIST_OPTIONS` shows "Open configuration" in

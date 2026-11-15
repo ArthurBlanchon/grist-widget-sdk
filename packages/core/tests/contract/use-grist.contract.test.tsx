@@ -492,6 +492,16 @@ describe("widgetOptions", () => {
     await settle(() => emulator.setOptions({ color: "blue" }))
     await waitFor(() => expect(w().widgetOptions).toMatchObject({ color: "blue" }))
   })
+
+  it("with optionsVersion: migrates older options, hides the version, and saves them back", async () => {
+    const migrate = (o: Record<string, unknown>, from: number) => (from < 2 ? { colour: o.color } : o)
+    const { w, emulator } = renderProbe({ requiredAccess: "full", optionsVersion: 2, migrate }, {
+      emulator: { document: presets.todoList(), widgetOptions: { color: "red" } },
+    })
+    await untilReady(w)
+    await waitFor(() => expect(w().widgetOptions).toEqual({ colour: "red" }))
+    await waitFor(() => expect(emulator.state.widgetOptions).toEqual({ colour: "red", __version: 2 }))
+  })
 })
 
 describe("setWidgetOptions", () => {
@@ -502,6 +512,15 @@ describe("setWidgetOptions", () => {
     await untilReady(w)
     await settle(() => w().setWidgetOptions({ b: 2 }))
     expect(emulator.state.widgetOptions).toEqual({ b: 2 })
+  })
+
+  it("with optionsVersion: writes them under it", async () => {
+    const { w, emulator } = renderProbe({ requiredAccess: "full", optionsVersion: 3 }, {
+      emulator: { document: presets.todoList(), widgetOptions: { a: 1, __version: 3 } },
+    })
+    await untilReady(w)
+    await settle(() => w().setWidgetOptions({ b: 2 }))
+    expect(emulator.state.widgetOptions).toEqual({ b: 2, __version: 3 })
   })
 })
 

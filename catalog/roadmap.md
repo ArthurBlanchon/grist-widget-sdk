@@ -148,12 +148,15 @@ Notes for their specs:
 | 13 | Schema viewer ([built](../widgets/schema-viewer/SPEC.md)) | An entity-relationship diagram of the document's tables and references | full (metadata tables) | `examples/schema-preview` | Medium: 908 views; useful to people and to AI |
 | 14 | Mermaid diagram ([built](../widgets/mermaid-diagram/SPEC.md)) | Render a Mermaid diagram written in a cell or generated from rows | read table | — | Medium: 1,224 views; easy for an AI to write |
 | 15 | Bulk editor ([built](../widgets/bulk-editor/SPEC.md)) | Apply a value or a status to the filtered rows, with a confirmation and undo | full | `examples/mark-done`, `examples/bulk-mark-done` | Low; the two examples' job |
-| 16 | Mail merge | Personal e-mails for the filtered rows, as drafts or `mailto:` links: no provider, no key | read table (full to log) | create-email-draft | Medium: shown at a community webinar |
+| 16 | Mail merge ([built](../widgets/mail-merge/SPEC.md)) | Personal e-mails for the filtered rows, as drafts or `mailto:` links: no provider, no key | read table (full to log) | create-email-draft | Medium: shown at a community webinar |
 
 Notes:
 - **Duplicate finder:** a merge deletes rows, so it shows a preview first
   and stays one action in Grist's undo.
 - **Mermaid:** the SVG is rendered in Mermaid's strict security mode.
+- **Mail merge:** built with `full` access, not `read table`: the template
+  is kept in the widget's options, which need it, as for the Document
+  template.
 
 ## Wave 3: the widgets that depend on a key or an outside service
 

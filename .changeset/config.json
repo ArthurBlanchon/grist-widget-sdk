@@ -30,6 +30,7 @@
     "@grist-widgets/record-selector",
     "@grist-widgets/signature-pad",
     "@grist-widgets/duplicate-finder",
-    "@grist-widgets/schema-viewer"
+    "@grist-widgets/schema-viewer",
+    "@grist-widgets/mail-merge"
   ]
 }

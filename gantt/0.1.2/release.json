@@ -1,0 +1,8 @@
+{
+  "slug": "gantt",
+  "version": "0.1.2",
+  "commit": "940858be0ee2dee37f3f045520baf7619a72917c",
+  "released": "2026-11-15T23:55:26.866Z",
+  "changes": "- The chart opens on today, rather than in the middle of the year, months away from the work.",
+  "changelog": "CHANGELOG.md"
+}

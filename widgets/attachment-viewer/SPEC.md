@@ -4,6 +4,7 @@ title: Attachment viewer
 category: documents
 status: beta
 access: full
+csp: connect-src grist; object-src blob:
 ---
 
 # Attachment viewer

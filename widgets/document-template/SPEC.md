@@ -4,6 +4,7 @@ title: Document template
 category: documents
 status: beta
 access: full
+csp: img-src https:; style-src https:; font-src https:
 ---
 
 # Document template

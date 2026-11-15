@@ -162,6 +162,16 @@ async function checkWidget({ browser, gristUrl, api, wsId, widgetDir, outDir, ti
   result.doc = `${gristUrl}/doc/${docId}/p/${viewId}`
 
   const context = await browser.newContext({ viewport: { width: 1400, height: 900 } })
+  // Every Content Security Policy refusal in the widget's frames, the ones
+  // that inherit its policy (srcdoc, blob:) included, as a console error the
+  // check counts wherever it comes from.
+  await context.addInitScript((widgetOrigin) => {
+    const own = location.origin === widgetOrigin || location.protocol === "about:" || location.protocol === "blob:"
+    if (!own) return
+    document.addEventListener("securitypolicyviolation", (e) => {
+      console.error(`[csp-violation] ${e.effectiveDirective} refused ${e.blockedURI || "inline"} in ${location.href}`)
+    })
+  }, origin)
   // Widgets load the plugin API from docs.getgrist.com: serve this Grist's own copy, so nothing leaves the machine.
   await context.route("https://docs.getgrist.com/grist-plugin-api.js", async (route) => {
     const r = await fetch(`${gristUrl}/grist-plugin-api.js`)
@@ -173,7 +183,9 @@ async function checkWidget({ browser, gristUrl, api, wsId, widgetDir, outDir, ti
     const page = await context.newPage()
     page.on("pageerror", (e) => uncaught.push(String(e).slice(0, 300)))
     page.on("console", (m) => {
-      if (m.type() === "error" && (m.location().url ?? "").startsWith(origin)) result.console.push(m.text().slice(0, 300))
+      if (m.type() === "error" && ((m.location().url ?? "").startsWith(origin) || m.text().startsWith("[csp-violation]"))) {
+        result.console.push(m.text().slice(0, 300))
+      }
     })
     await page.goto(result.doc)
 
@@ -187,7 +199,10 @@ async function checkWidget({ browser, gristUrl, api, wsId, widgetDir, outDir, ti
     let a11y = null
     if (axe && state === "rendered" && frame) {
       const require = createRequire(import.meta.url)
-      await frame.addScriptTag({ path: require.resolve("axe-core/axe.min.js") })
+      // Evaluated through the DevTools protocol, not added as a <script>: a
+      // widget's Content Security Policy refuses inline scripts, as it should,
+      // and stays in force for the rest of the check.
+      await frame.evaluate(readFileSync(require.resolve("axe-core/axe.min.js"), "utf8"))
       const { violations } = await frame.evaluate(() =>
         globalThis.axe.run(document, { runOnly: { type: "tag", values: ["wcag2a", "wcag2aa"] } }),
       )

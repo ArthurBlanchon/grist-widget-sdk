@@ -49,6 +49,15 @@ the first).
   seen), and any `srcDoc`. A URL the widget makes itself (a `blob:` of an
   attachment it fetched, a `mailto:`) disables that line with its reason,
   for review.
+- **A Content Security Policy in every page** ([ADR 0016](../docs/decisions/0016-widget-csp.md)),
+  written by the build (`_shared/csp.mjs`): the widget's own scripts and
+  Grist's plugin API run, nothing else. A widget that loads from elsewhere
+  says so in its spec's front matter, `csp:` (`connect-src https://host`;
+  `img-src`, `font-src`, `style-src`, `frame-src`, `media-src`,
+  `object-src`), never scripts or eval. `grist` stands for the document's
+  own server and allows every http(s) origin: it is what a widget calling
+  Grist's REST API needs, and `check-widgets` requires it then. A new
+  `connect-src` host is a new outbound host.
 - **No API key in widget options** ([ADR 0010](../docs/decisions/0010-api-keys.md)).
 - **Dependencies are `catalog:` versions.** A dependency only one widget
   needs goes in its own `package.json`.

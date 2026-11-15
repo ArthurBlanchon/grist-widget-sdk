@@ -13,6 +13,8 @@ import tailwindcss from "@tailwindcss/vite"
 import react from "@vitejs/plugin-react"
 import type { Plugin, UserConfig } from "vite"
 
+import { parseCspExtra, specCsp, widgetCsp } from "./csp.mjs"
+
 const shared = import.meta.dirname
 
 /**
@@ -128,11 +130,36 @@ export function licencesPlugin(): Plugin {
   }
 }
 
+/**
+ * The widget's Content Security Policy, as a <meta> at the top of its built
+ * page (_shared/csp.mjs): the strict base, with what its SPEC.md's `csp:`
+ * front matter adds. Builds only: the dev server injects inline scripts.
+ */
+export function cspPlugin(widgetDir: string): Plugin {
+  return {
+    name: "grist-widgets:csp",
+    apply: "build",
+    transformIndexHtml: {
+      order: "pre",
+      handler(html) {
+        const spec = path.join(widgetDir, "SPEC.md")
+        const { extra, problems } = parseCspExtra(existsSync(spec) ? specCsp(readFileSync(spec, "utf8")) : "")
+        if (problems.length) throw new Error(`${spec}: ${problems.join("; ")}`)
+        const meta = `<meta http-equiv="Content-Security-Policy" content="${widgetCsp(extra).replace(/"/g, "&quot;")}" />`
+        // Right after <meta charset>, which must stay early; before every script.
+        const charset = /<meta charset="[^"]*"\s*\/?>/i
+        if (!charset.test(html)) throw new Error(`${widgetDir}/index.html: no <meta charset> to put the policy after`)
+        return html.replace(charset, (m) => `${m}\n    ${meta}`)
+      },
+    },
+  }
+}
+
 export function widgetViteConfig(widgetDir: string): UserConfig & { test: Record<string, unknown> } {
   return {
     // Relative URLs: a released version works at any path, on both origins.
     base: "./",
-    plugins: [react(), tailwindcss(), licencesPlugin()],
+    plugins: [react(), tailwindcss(), licencesPlugin(), cspPlugin(widgetDir)],
     resolve: {
       alias: {
         "@shared": shared,

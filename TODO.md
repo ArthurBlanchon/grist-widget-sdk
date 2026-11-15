@@ -9,8 +9,6 @@ The reasoning behind 0.4.0, and what it left for later, is the
 
 ## 0. Waiting on the maintainer
 
-- **Approve the [plan to 0.8.0](./docs/planning/2026-11-15-plan-0.8.md)**, or
-  amend its decisions (§5, P1–P7).
 - **This repository's settings:** private vulnerability reporting on; the
   deepmerge alert dismissed (dev-only, no fix).
 
@@ -24,8 +22,8 @@ one pull request; the plan says when each milestone is done.
   `publish`); who merges what (ADR 0012, `AGENTS.md`); the independent
   review and the PR template's bar checklist.
 - [ ] **M2. Versions people can rely on.** A channel per major version
-  (`/widgets/<slug>/v<major>/`, the install URL shown); a changelog per
-  widget; the catalog in `widgets.json`, `grist-widgets.json` and generated
+  (`/widgets/<slug>/v<major>/`, the install URL shown) and a `/dev/`
+  channel built from `main`; a changelog per widget; the catalog in `widgets.json`, `grist-widgets.json` and generated
   catalog pages.
 - [ ] **M3. CI at catalog scale.** A matrix of the widgets a change
   touches, in batches of 8 for an SDK change; a weekly run against the

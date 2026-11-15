@@ -13,7 +13,8 @@
 //   arbitrary Tailwind value, since the theme in widgets/_shared/ is the only
 //   place they live (ADR 0008).
 //
-// With --sizes, after the widgets are built, also each widget's JavaScript
+// With --sizes, after the widgets are built, also the licences of what each
+// widget ships (dist/licenses.json, against ALLOWED_LICENCES), and its JavaScript
 // (gzipped) against its budget: `bundle-kb` in its spec's front matter, or
 // DEFAULT_BUNDLE_KB. A heavier budget is a choice its spec states.
 //
@@ -56,6 +57,70 @@ export function checkSize(slug, spec, dir = join(WIDGETS_DIR, slug)) {
   const kb = jsGzipBytes(dist) / 1000
   console.log(`  ${slug}: ${kb.toFixed(1)} KB of JavaScript (gzip), budget ${budget} KB`)
   return kb > budget ? [`bundle: ${kb.toFixed(1)} KB gzipped, over its ${budget} KB budget`] : []
+}
+
+/**
+ * The licences a widget may ship code under (widgets/AGENTS.md): permissive
+ * ones, and the Open Font License for fonts. Copyleft, weak or strong (MPL,
+ * EPL, LGPL, GPL), is refused: a widget is copied into documents, sites and
+ * forks without its source alongside.
+ */
+export const ALLOWED_LICENCES = ["MIT", "ISC", "BSD-2-Clause", "BSD-3-Clause", "Apache-2.0", "0BSD", "Unlicense", "CC0-1.0", "BlueOak-1.0.0", "OFL-1.1"]
+
+/**
+ * Whether an SPDX expression allows shipping: parsed with its precedence
+ * (AND binds tighter than OR, parentheses group), an OR needing one allowed
+ * side and an AND both. Anything it can't parse (WITH, a stray word,
+ * "Unknown") is refused.
+ */
+export function licenceAllowed(expression, allowed = ALLOWED_LICENCES) {
+  const tokens = String(expression).match(/\(|\)|[^\s()]+/g) ?? []
+  let at = 0
+  const peek = () => tokens[at]
+  const fail = () => {
+    throw new Error("unparsable")
+  }
+  const primary = () => {
+    const t = tokens[at++]
+    if (t === "(") {
+      const value = or()
+      if (tokens[at++] !== ")") fail()
+      return value
+    }
+    if (!t || t === ")" || /^(AND|OR|WITH)$/i.test(t)) fail()
+    return allowed.includes(t)
+  }
+  const and = () => {
+    let value = primary()
+    while (peek() && /^AND$/i.test(peek())) {
+      at++
+      value = primary() && value
+    }
+    return value
+  }
+  const or = () => {
+    let value = and()
+    while (peek() && /^OR$/i.test(peek())) {
+      at++
+      value = and() || value
+    }
+    return value
+  }
+  try {
+    const value = or()
+    return at === tokens.length && tokens.length > 0 && value
+  } catch {
+    return false
+  }
+}
+
+/** Problems with the licences of what a built widget ships (dist/licenses.json, from _shared/vite.ts). */
+export function checkLicences(dir) {
+  const file = join(dir, "dist", "licenses.json")
+  if (!existsSync(file)) return ["dist/licenses.json is missing: build the widget before --sizes"]
+  return JSON.parse(readFileSync(file, "utf8"))
+    .filter((p) => !licenceAllowed(p.license))
+    .map((p) => `licence: ${p.name}@${p.version} is ${p.license}, not on the allow list (${ALLOWED_LICENCES.join(", ")})`)
 }
 
 /** The catalog widgets' slugs. */
@@ -317,7 +382,7 @@ async function main(argv) {
   for (const slug of slugs) {
     const { problems, spec } = checkStatic(slug)
     if (spec) problems.push(...(await checkDeclaration(slug, spec)))
-    if (spec && sizes) problems.push(...checkSize(slug, spec))
+    if (spec && sizes) problems.push(...checkSize(slug, spec), ...checkLicences(join(WIDGETS_DIR, slug)))
     if (problems.length) {
       failed++
       console.error(`✗ ${slug}`)

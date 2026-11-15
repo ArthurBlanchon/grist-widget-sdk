@@ -35,6 +35,8 @@ const ROOT = [
   "gristAttachmentCellValue",
   "gristAttachmentCellValues",
   "mergeGristAttachmentCellValue",
+  // Links and sources from data
+  "httpUrl",
   // Typed reads
   "checkGristCell",
   "encodeGristCell",

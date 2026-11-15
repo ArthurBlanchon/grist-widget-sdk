@@ -76,6 +76,14 @@ describe("Mermaid diagram", () => {
     expect(mermaid.initialize.mock.calls.at(-1)![0]).toMatchObject({ securityLevel: "strict", startOnLoad: false })
   })
 
+  it("AC-5 keeps the layout Dagre's: a diagram can't ask for ELK, which the widget doesn't ship", async () => {
+    cell("---\nconfig:\n  layout: elk\n---\nflowchart TD\n  A --> B")
+    await waitFor(() => expect(mermaid.initialize).toHaveBeenCalled())
+    const config = mermaid.initialize.mock.calls.at(-1)![0]
+    expect(config.layout).toBe("dagre")
+    expect(config.secure).toEqual(expect.arrayContaining(["layout", "securityLevel", "secure"]))
+  })
+
   it("AC-6 takes its colours from the theme, read again on a theme switch", async () => {
     cell("flowchart TD\n  A --> B")
     await waitFor(() => expect(mermaid.render).toHaveBeenCalledTimes(1))

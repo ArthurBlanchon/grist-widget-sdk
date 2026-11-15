@@ -174,5 +174,16 @@ function Signed({ id, fetchBlob, label }: { id: number; fetchBlob: (id: string) 
       if (made) URL.revokeObjectURL(made)
     }
   }, [fetchBlob, id])
-  return <div className="flex min-h-32 flex-1 items-center justify-center rounded-lg border bg-muted/40">{url ? <img src={url} alt={label} className="max-h-full max-w-full object-contain" /> : null}</div>
+  return (
+    <div className="flex min-h-32 flex-1 items-center justify-center rounded-lg border bg-muted/40">
+      {url ? (
+        <img
+          // eslint-disable-next-line no-restricted-syntax -- a blob: URL of the signature this widget fetched
+          src={url}
+          alt={label}
+          className="max-h-full max-w-full object-contain"
+        />
+      ) : null}
+    </div>
+  )
 }

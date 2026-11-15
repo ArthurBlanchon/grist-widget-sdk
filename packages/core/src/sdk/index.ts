@@ -77,6 +77,9 @@ export {
 export { normalizeGristChoiceListEntries, type GristChoiceListEntry } from "./helpers/grist-widget-options"
 export { resolveGristFormulaKind } from "./helpers/grist-schema-formula"
 
+// Links and sources from data: http(s) only
+export { httpUrl } from "./helpers/http-url"
+
 // Attachments
 export { extractGristAttachmentId, extractGristAttachmentIdsFromCell } from "./helpers/grist-attachment-download"
 export type { GristFetchedAttachmentBlob } from "./helpers/grist-attachment-download"

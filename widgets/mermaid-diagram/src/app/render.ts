@@ -49,6 +49,12 @@ export async function renderDiagram(source: string): Promise<string> {
   mermaid.initialize({
     startOnLoad: false,
     securityLevel: "strict",
+    // Dagre lays every diagram out. ELK (elkjs, Mermaid 12's default) is not
+    // shipped: its licence, EPL-2.0 or GPL-3.0, is off the catalog's allow
+    // list (ADR 0015). Locking `layout` keeps a diagram's own front matter or
+    // directive from asking for it.
+    layout: "dagre",
+    secure: ["secure", "securityLevel", "startOnLoad", "maxTextSize", "suppressErrorRendering", "maxEdges", "layout"],
     theme: "base",
     themeVariables: themeVariables(),
     flowchart: { htmlLabels: false },

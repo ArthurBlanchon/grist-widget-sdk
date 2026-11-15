@@ -423,6 +423,9 @@ export type GristWidgetRow<W> = W extends GristWidget<infer D> ? GristMappedRow<
 export type GristWidgetStatus = "booting" | "ready" | "unavailable" | "error";
 
 // @public
+export function httpUrl(value: unknown): string | undefined;
+
+// @public
 export function isGristCellError(value: unknown): value is GristEncodedError;
 
 // @public (undocumented)

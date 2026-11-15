@@ -5,6 +5,7 @@ export const demo: GristWidgetDemo = {
   tables: {
     Tasks: {
       columns: { Title: "Text", Status: "Choice", Notes: "Text" },
+      choices: { Status: ["To do", "Doing", "Review", "Done"] },
       rows: [
         { Title: "Write the launch brief", Status: "Done", Notes: "Shared with marketing on Monday." },
         { Title: "Pick the venue", Status: "Done", Notes: "" },

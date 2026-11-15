@@ -79,9 +79,10 @@ chromium`). For each widget it:
    per-widget configuration;
 2. starts Grist from a pinned Docker image (`GRIST_IMAGE` overrides it, to
    try a newer Grist before bumping the pin);
-3. creates a document with a typed column per declared column and a few
-   sample rows, the widget's section with the access it requests, every
-   column mapped and the section linked to the table;
+3. creates a document from the widget's demo data (`src/app/demo.ts`), or
+   without one a typed column per declared column and a few sample rows; the
+   widget's section with the access it requests, every column mapped and the
+   section linked to the table;
 4. passes when the widget renders past `GristBoundary`, with no uncaught
    exception. Console errors are listed but don't fail it: they include the
    services a widget calls itself, which the check doesn't reach.

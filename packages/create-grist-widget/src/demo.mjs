@@ -84,7 +84,7 @@ export function localPluginApi(gristUrl) {
 
 export async function runDemo({ cwd, gristPort = DEMO_GRIST_PORT, log = console.log }) {
   const pkg = JSON.parse(readFileSync(path.join(cwd, "package.json"), "utf8"))
-  const { options, from, demo } = await readWidgetExports(cwd)
+  const { options, from, demo } = await readWidgetExports(cwd, { demo: true })
   log(`Widget declaration from ${from}`)
 
   const gristUrl = `http://localhost:${gristPort}`
@@ -159,7 +159,7 @@ export async function withLocalGrist(fn, { gristPort = DEMO_GRIST_PORT, containe
  */
 export async function saveDemo({ cwd, gristPort = DEMO_GRIST_PORT, log = console.log }) {
   const pkg = JSON.parse(readFileSync(path.join(cwd, "package.json"), "utf8"))
-  const { options, metadata, demo } = await readWidgetExports(cwd)
+  const { options, metadata, demo } = await readWidgetExports(cwd, { demo: true })
   const title = metadata?.title || pkg.name
   const bytes = await withLocalGrist((grist) => createDemoDocument({ ...grist, options, name: title, demo }), { gristPort, log })
   const dir = path.join(cwd, DEMO_DIR)

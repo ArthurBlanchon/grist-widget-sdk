@@ -202,9 +202,10 @@ pnpm demo --port 9090  # Grist on another port than 8484
 
 Needs Docker, for this command only. It starts the widget's Vite dev server
 and a Grist from a pinned Docker image, without authentication, then creates
-a document from the widget's declaration: a table with a typed column per
-declared column and sample rows, and the widget's section with the access it
-requests, every column mapped and linked to the table. It prints the URL that
+a document: the widget's demo data (`src/app/demo.ts`, below) when it has
+some, otherwise a table with a typed column per declared column and sample
+rows; and the widget's section with the access it requests, every column
+mapped and linked to the table. It prints the URL that
 opens that page, signed in as the local default user. Edits reload in place;
 Ctrl-C stops Grist and the dev server, and the next run starts from a fresh
 document. The widget gets the plugin API from that Grist rather than

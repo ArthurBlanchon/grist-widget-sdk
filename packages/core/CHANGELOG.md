@@ -1,5 +1,30 @@
 # grist-widget-sdk
 
+## 0.7.0
+
+### Minor Changes
+
+- 5e8e135: `listColumns()` now gives each column's settings as `widgetOptions` (a Choice column's `choices`, a date's format…) and, for a Ref or RefList column, the referenced table's column its cells show as `visibleCol`. A widget can build a typed form from them: a choice list for a Choice column, a picker of the referenced rows for a Ref.
+- abe3003: 0.7 removes the names 0.6 deprecated, and the page-wide connection. Before 1.0 a minor can break a widget; from 1.0 a name is deprecated for at least one minor first (the new [versioning policy](https://gristwidgets.com/docs/sdk/api/versioning)).
+  
+  - `useGrist()` needs `<GristWidgetProvider>`, and throws outside one. Inside Grist, `mountGristWidget()` renders the provider; in a test, pass the declaration, `renderWithGrist(<App />, { widget })`; a component that also runs outside Grist calls `useGristOptional()`, which returns `null` there.
+  - `useGrist()` takes no options: declare them with `defineGristWidget()` and call `widget.useGrist()`.
+  - `useGristSchema()` takes its schema options only: `requiredAccess`, `columns`, `allowSelectBy`, `hasCustomOptions` and `onEditOptions` go in `defineGristWidget()`. Its `isAvailable` is gone: read `useGrist().status`.
+  - `useGristContext()` is gone: call `widget.useGrist()` or `useGrist()`.
+  - `useGrist().isReady`, `isAvailable`, `fetchSelectedTable`, `fetchTable` and `fetchTableRows` are gone: `status === "ready"`, `status`, and `fetchRows()` (`{ columnar: true }` for columns).
+  - The user-action builders (`gristAddRecordAction`, …) are only in `grist-widget-sdk/actions`.
+  
+  The types public signatures use are now exported from `grist-widget-sdk`: `GristApi`, `GristCellCheck` (what `checkGristCell` returns), `GristColumnExcludeContext`, `GristDecodedValue`, `GristEncodedError`, `GristEncodedAttachmentList`, `GristMinimalRecord`, `GristReplicaSelection`, `GristTableNewRecord`, `GristTableOpOptions`, `GristTableUpdateRecord`, `GristTableUpsertOptions`, `GristTableUpsertRecord`, `GristWidgetConfiguration` and `GristWidgetLinkingInfo`.
+  
+  Existing widgets run `pnpm exec create-grist-widget upgrade` after moving to this release: it rewrites the renamed names in `src/` and lists by file and line, test files included, what to change by hand (each `useGrist(options)`, each `useGristSchema()` given connection options, each `renderWithGrist(ui)` without `widget`). `pnpm typecheck` then shows anything left.
+
+### Patch Changes
+
+- 76643e1: The message of an alert above a widget (`mountGristWidget()`'s default alerts) now takes the alert's own colour instead of the muted one. On a warning's amber tint the muted text had a contrast of 4.38:1, under WCAG AA's 4.5:1, which an accessibility check in a real Grist caught on the first catalog widget.
+- 5e8e135: `mountGristWidget()`'s default alerts no longer remount the widget when an alert comes or goes. A failed write, or a column mapping being changed, used to reset the widget's state: a half-typed form, an open menu. The widget now keeps its place in the tree, alerts or not.
+- 5e8e135: The emulator refuses a write to a column the table doesn't have, with Grist's "Invalid column" error, instead of adding the column. A widget's test now sees the failure the widget would meet in Grist. A table declared with no columns still takes the columns of the rows written to it.
+- afc42b1: `patchWidgetOptions()` applies patches one at a time. Two patches made together (a widget saving two settings at once) used to read the same options, and the second overwrote the first; both now land.
+
 ## 0.6.2
 
 No changes in this release.

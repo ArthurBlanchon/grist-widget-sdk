@@ -21,11 +21,10 @@ From the [project review and plan to 1.0](./docs/planning/2026-11-14-review-and-
 its decisions D1–D5 were accepted as recommended. Releases follow the weekly
 train (`docs/operations/releasing.md`).
 
-- [ ] **A. Catch up:** the six reference widgets on 0.6.2 on `dev` (from the
-  unmerged 0.5.0 branches; scheduled 2026-11-15), released 0.3.0, the
-  registry refreshed (awesome-grist-widgets#10), their own Dependabot majors
-  triaged. Done when every reference widget runs 0.6.2 in production with no
-  deprecation warning.
+- [ ] **A. Catch up:** the six reference widgets released 0.3.0 (their
+  `dev` is on 0.6.2), the registry refreshed (awesome-grist-widgets#10),
+  their own Dependabot majors triaged. Done when every reference widget
+  runs 0.6.2 in production with no deprecation warning.
 - [ ] **C. 0.7.0:** released with the next weekly train. Done in the
   code: the API report and React 18/19 in CI, the versioning policy, the
   names 0.6 deprecated, the page-wide connection and `useGristSchema()`'s

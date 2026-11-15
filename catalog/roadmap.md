@@ -143,7 +143,7 @@ Notes for their specs:
 
 | # | Widget | Job | Access | Starts from | Demand |
 | --- | --- | --- | --- | --- | --- |
-| 11 | Signature pad | Sign on a tablet; the image is stored as an attachment | full | — | Medium: a forum thread; in Glide and Retool |
+| 11 | Signature pad ([built](../widgets/signature-pad/SPEC.md)) | Sign on a tablet; the image is stored as an attachment | full | — | Medium: a forum thread; in Glide and Retool |
 | 12 | Duplicate finder | Find duplicates, approximate ones included, and merge them; a data-quality report per column (blanks, mixed types, broken references) | full | — | Strong: 3,361 views |
 | 13 | Schema viewer | An entity-relationship diagram of the document's tables and references | full (metadata tables) | `examples/schema-preview` | Medium: 908 views; useful to people and to AI |
 | 14 | Mermaid diagram | Render a Mermaid diagram written in a cell or generated from rows | read table | — | Medium: 1,224 views; easy for an AI to write |

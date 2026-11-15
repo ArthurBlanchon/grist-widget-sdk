@@ -17,6 +17,8 @@ export const widget = defineGristWidget({
   title: "Mail merge",
   description: "A personal e-mail for each row the section shows, from a subject and a body with the row's columns in them, opened in the person's own mail app, Gmail or Outlook.",
   requiredAccess: "full",
+  // Options carry their version (ADR 0017): version 1, read as before.
+  optionsVersion: 1,
   columns: [
     { name: "Email", title: "Recipient's e-mail address" },
     { name: "Sent", type: "DateTime,Date,Bool", optional: true, title: "Set when the e-mail is opened (a log)" },

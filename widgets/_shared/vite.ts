@@ -13,7 +13,7 @@ import tailwindcss from "@tailwindcss/vite"
 import react from "@vitejs/plugin-react"
 import type { Plugin, UserConfig } from "vite"
 
-import { parseCspExtra, widgetCsp } from "./csp.mjs"
+import { parseCspExtra, specCsp, widgetCsp } from "./csp.mjs"
 
 const shared = import.meta.dirname
 
@@ -141,13 +141,15 @@ export function cspPlugin(widgetDir: string): Plugin {
     apply: "build",
     transformIndexHtml: {
       order: "pre",
-      handler() {
+      handler(html) {
         const spec = path.join(widgetDir, "SPEC.md")
-        const front = existsSync(spec) ? (/^---\n([\s\S]*?)\n---/.exec(readFileSync(spec, "utf8"))?.[1] ?? "") : ""
-        const value = /^csp:\s*(.*)$/m.exec(front)?.[1] ?? ""
-        const { extra, problems } = parseCspExtra(value)
+        const { extra, problems } = parseCspExtra(existsSync(spec) ? specCsp(readFileSync(spec, "utf8")) : "")
         if (problems.length) throw new Error(`${spec}: ${problems.join("; ")}`)
-        return [{ tag: "meta", attrs: { "http-equiv": "Content-Security-Policy", content: widgetCsp(extra) }, injectTo: "head-prepend" }]
+        const meta = `<meta http-equiv="Content-Security-Policy" content="${widgetCsp(extra).replace(/"/g, "&quot;")}" />`
+        // Right after <meta charset>, which must stay early; before every script.
+        const charset = /<meta charset="[^"]*"\s*\/?>/i
+        if (!charset.test(html)) throw new Error(`${widgetDir}/index.html: no <meta charset> to put the policy after`)
+        return html.replace(charset, (m) => `${m}\n    ${meta}`)
       },
     },
   }

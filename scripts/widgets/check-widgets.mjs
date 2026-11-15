@@ -26,7 +26,7 @@ import { dirname, join, relative, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 
 import { jsGzipBytes } from "../ci/size-budget.mjs"
-import { parseCspExtra, PLUGIN_API_ORIGIN } from "../../widgets/_shared/csp.mjs"
+import { parseCspExtra, PLUGIN_API_URL, specCsp } from "../../widgets/_shared/csp.mjs"
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..")
 export const WIDGETS_DIR = join(repoRoot, "widgets")
@@ -214,6 +214,11 @@ export function designViolations(text) {
   return found
 }
 
+/** A widget's source files (src/**, .ts, .tsx, .js, .jsx). */
+function srcFilesOf(dir) {
+  return existsSync(join(dir, "src")) ? walk(join(dir, "src"), (n) => /\.(tsx?|jsx?)$/.test(n)) : []
+}
+
 function walk(dir, keep, out = []) {
   for (const e of readdirSync(dir, { withFileTypes: true })) {
     const full = join(dir, e.name)
@@ -244,10 +249,20 @@ export function checkStatic(slug, dir = join(WIDGETS_DIR, slug)) {
   for (const s of SECTIONS) if (!have.includes(s)) problems.push(`SPEC.md: no "## ${s}" section`)
   // The Content Security Policy's additions (widgets/_shared/csp.mjs), and
   // the page's only outside script, which the policy allows: Grist's plugin API.
-  problems.push(...parseCspExtra(data.csp).problems.map((p) => `SPEC.md: ${p}`))
+  const csp = parseCspExtra(specCsp(readFileSync(specPath, "utf8")))
+  problems.push(...csp.problems.map((p) => `SPEC.md: ${p}`))
   const html = existsSync(join(dir, "index.html")) ? readFileSync(join(dir, "index.html"), "utf8") : ""
-  for (const m of html.matchAll(/<script[^>]*\bsrc="(https?:[^"]+)"/g)) {
-    if (!m[1].startsWith(`${PLUGIN_API_ORIGIN}/`)) problems.push(`index.html: a script from ${m[1]}, which the policy refuses`)
+  for (const m of html.matchAll(/<script[^>]*\bsrc=["']([^"']+)["']/g)) {
+    if (/^(https?:)?\/\//.test(m[1]) && m[1] !== PLUGIN_API_URL) problems.push(`index.html: a script from ${m[1]}, which the policy refuses`)
+  }
+  // What the widget's code calls needs its csp: (ADR 0016), or it fails only in production.
+  const code = srcFilesOf(dir).filter((f) => !/\.test\.[tj]sx?$/.test(f)).map((f) => readFileSync(f, "utf8")).join("\n")
+  const connect = csp.extra["connect-src"] ?? []
+  if (/\b(fetchAttachmentBlob|uploadAttachment|fetchWithAuth|getAttachmentUrl)\b/.test(code) && !connect.includes("grist")) {
+    problems.push("SPEC.md: the code calls Grist's REST API (attachments, fetchWithAuth): csp: needs connect-src grist")
+  }
+  if (/@shared\/ui\/map\b/.test(code) && !connect.includes("https://*.basemaps.cartocdn.com")) {
+    problems.push("SPEC.md: the code draws a map (@shared/ui/map): csp: needs connect-src https://basemaps.cartocdn.com https://*.basemaps.cartocdn.com")
   }
   const table = columnsSection(body)
   if (table.rows.length) {

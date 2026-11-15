@@ -10,15 +10,17 @@
 // A spec adds sources to some directives, e.g.
 //   csp: connect-src https://basemaps.cartocdn.com https://*.basemaps.cartocdn.com
 // with several directives separated by ";". `grist` stands for the
-// document's own Grist server, which no build can know (any http(s) origin).
-// Scripts, eval and inline scripts can't be added.
+// document's own Grist server, which no build can know: it allows every
+// http(s) origin, and is connect-src's only wildcard (bare https: and http:
+// are refused there). Scripts, eval and inline scripts can't be added.
+// ADR 0016.
 
-/** Where Grist's plugin API comes from, in every widget's index.html. */
-export const PLUGIN_API_ORIGIN = "https://docs.getgrist.com"
+/** Grist's plugin API: the one outside script a widget's page loads, by its exact URL. */
+export const PLUGIN_API_URL = "https://docs.getgrist.com/grist-plugin-api.js"
 
 export const BASE = {
   "default-src": ["'self'"],
-  "script-src": ["'self'", PLUGIN_API_ORIGIN],
+  "script-src": ["'self'", PLUGIN_API_URL],
   "style-src": ["'self'", "'unsafe-inline'"],
   "img-src": ["'self'", "data:", "blob:"],
   "font-src": ["'self'", "data:"],
@@ -48,6 +50,9 @@ export function parseCspExtra(value) {
     }
     for (const s of sources) {
       if (!SOURCE.test(s)) problems.push(`csp: ${directive} ${s} isn't an https host, a scheme or grist`)
+      else if (directive === "connect-src" && (s === "https:" || s === "http:")) {
+        problems.push(`csp: connect-src ${s} would let the widget send data anywhere: name the hosts, or grist`)
+      }
     }
     if (!sources.length) problems.push(`csp: ${directive} adds nothing`)
     extra[directive] = [...(extra[directive] ?? []), ...sources]
@@ -66,4 +71,14 @@ export function widgetCsp(extra = {}) {
   return Object.entries(policy)
     .map(([k, v]) => `${k} ${v.join(" ")}`)
     .join("; ")
+}
+
+/** A spec's `csp:` front matter value, or "" (the same reading check-widgets makes). */
+export function specCsp(specText) {
+  const front = /^---\n([\s\S]*?)\n---/.exec(String(specText))?.[1] ?? ""
+  for (const line of front.split("\n")) {
+    const kv = /^([\w-]+):[ \t]*(.*)$/.exec(line.trim())
+    if (kv && kv[1] === "csp") return kv[2].trim()
+  }
+  return ""
 }

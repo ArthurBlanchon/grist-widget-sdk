@@ -168,13 +168,19 @@ function Shown({ file, name, t }: { file: Loaded | undefined; name: string; t: T
   if (!file || file.state === "loading") return <p className="text-sm text-muted-foreground">{t("loading")}</p>
   if (file.state === "error") return <p className="text-sm text-destructive">{t("failed", { name })}</p>
   const kind = kindOf(file.type)
+  // eslint-disable-next-line no-restricted-syntax -- a blob: URL of the attachment this widget fetched
   if (kind === "image") return <img src={file.url} alt={name} className="max-h-full max-w-full object-contain" />
+  // eslint-disable-next-line no-restricted-syntax -- a blob: URL of the attachment this widget fetched
   if (kind === "pdf") return <iframe src={file.url} title={name} className="size-full rounded-lg" />
   return (
     <div className="flex flex-col items-center gap-2 p-4 text-center">
       <p className="text-sm">{t("noPreview", { name })}</p>
       <Button asChild size="sm">
-        <a href={file.url} download={name}>
+        <a
+          // eslint-disable-next-line no-restricted-syntax -- a blob: URL of the attachment this widget fetched
+          href={file.url}
+          download={name}
+        >
           {t("download", { name })}
         </a>
       </Button>
@@ -187,7 +193,12 @@ function Thumb({ file, name, t }: { file: Loaded | undefined; name: string; t: T
   if (file?.state === "ready" && kindOf(file.type) === "image") {
     return (
       <span className={box}>
-        <img src={file.url} alt="" className="size-full object-cover" />
+        <img
+          // eslint-disable-next-line no-restricted-syntax -- a blob: URL of the attachment this widget fetched
+          src={file.url}
+          alt=""
+          className="size-full object-cover"
+        />
       </span>
     )
   }

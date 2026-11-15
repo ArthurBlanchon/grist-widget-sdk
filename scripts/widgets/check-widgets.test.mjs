@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 
-import { changelogEntries, checkChangelog, checkStatic, columnsSection, criteria, declarationProblems, designViolations, listWidgets, parseFrontMatter, specColumns } from "./check-widgets.mjs"
+import { changelogEntries, checkChangelog, checkLicences, licenceAllowed, checkStatic, columnsSection, criteria, declarationProblems, designViolations, listWidgets, parseFrontMatter, specColumns } from "./check-widgets.mjs"
 
 test("front matter is key: value lines", () => {
   const { data, body } = parseFrontMatter("---\nslug: a\naccess: read table\n---\n# A\n")
@@ -103,4 +103,27 @@ test("a widget's changelog: an entry per version, newest first, the declared one
   assert.match(checkChangelog(dir, "0.3.0")[0], /says nothing/)
   assert.deepEqual(changelogEntries("## 0.4.0"), [["0.4.0", ""]])
   assert.deepEqual(changelogEntries("## 0.2.0\n\n```md\n## 9.9.9\n```\n- y\n").map(([v]) => v), ["0.2.0"])
+})
+
+test("licences: permissive ones and fonts' OFL; an OR needs one, an AND needs all", () => {
+  for (const ok of ["MIT", "ISC", "Apache-2.0", "(MIT OR Apache-2.0)", "(MPL-2.0 OR Apache-2.0)", "MIT AND ISC AND BSD-3-Clause", "OFL-1.1", "0BSD"]) {
+    assert.ok(licenceAllowed(ok), ok)
+  }
+  for (const no of ["GPL-3.0", "EPL-2.0 OR GPL-3.0-or-later", "MPL-2.0", "MIT AND GPL-2.0", "Unknown", "", "LGPL-2.1"]) {
+    assert.ok(!licenceAllowed(no), no)
+  }
+})
+
+test("a built widget's shipped licences are checked from dist/licenses.json", async () => {
+  const { mkdtempSync, mkdirSync, writeFileSync } = await import("node:fs")
+  const { tmpdir } = await import("node:os")
+  const { join } = await import("node:path")
+  const dir = mkdtempSync(join(tmpdir(), "lic-"))
+  assert.match(checkLicences(dir)[0], /missing/)
+  mkdirSync(join(dir, "dist"))
+  writeFileSync(join(dir, "dist", "licenses.json"), JSON.stringify([
+    { name: "react", version: "19.0.0", license: "MIT" },
+    { name: "elkjs", version: "0.12.0", license: "EPL-2.0 OR GPL-3.0-or-later" },
+  ]))
+  assert.deepEqual(checkLicences(dir).map((p) => p.split(" is ")[0]), ["licence: elkjs@0.12.0"])
 })

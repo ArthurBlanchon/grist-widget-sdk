@@ -55,6 +55,25 @@ A replica column's formula kind: `"computed"` (a formula column),
 `"trigger"` (a data column with a trigger formula), `"empty_slot"` or
 `"none"`.
 
+## Links
+
+### `httpUrl(value)`
+
+A link or a source from a document's data, as an absolute `http:` or
+`https:` URL, or `undefined`. Pass every URL that comes from a cell through
+it before it reaches an `href` or a `src`: it refuses `javascript:`, `data:`
+and other schemes, relative URLs, and credentials
+(`https://bank.example@evil.example`).
+
+```tsx no-check
+<a href={httpUrl(row.Website)}>{row.Name}</a>
+```
+
+```ts
+httpUrl(" https://example.com/a b ") // "https://example.com/a%20b"
+httpUrl("javascript:alert(1)")       // undefined
+```
+
 ## Attachments
 
 | Symbol | Purpose |

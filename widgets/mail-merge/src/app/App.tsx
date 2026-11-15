@@ -187,7 +187,13 @@ export default function App() {
           </h2>
           {next ? (
             <Button size="sm" asChild>
-              <a href={next.href} target="_blank" rel="noopener noreferrer" onClick={() => onOpen(next.row.id)}>
+              <a
+                // eslint-disable-next-line no-restricted-syntax -- mail.ts's link(): a mailto:, Gmail or Outlook URL, its parts encoded
+                href={next.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => onOpen(next.row.id)}
+              >
                 {t("openNext", { to: next.to.join(", ") })}
               </a>
             </Button>
@@ -204,7 +210,14 @@ export default function App() {
               {m.sent ? <Badge variant="secondary">{t("sent")}</Badge> : opened.has(m.row.id) ? <Badge variant="outline">{t("opened")}</Badge> : null}
               {m.to.length ? (
                 <Button size="xs" variant="outline" asChild>
-                  <a href={m.href} target="_blank" rel="noopener noreferrer" aria-label={t("openFor", { to: m.to.join(", ") })} onClick={() => onOpen(m.row.id)}>
+                  <a
+                    // eslint-disable-next-line no-restricted-syntax -- mail.ts's link(): a mailto:, Gmail or Outlook URL, its parts encoded
+                    href={m.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={t("openFor", { to: m.to.join(", ") })}
+                    onClick={() => onOpen(m.row.id)}
+                  >
                     {t("open")}
                   </a>
                 </Button>

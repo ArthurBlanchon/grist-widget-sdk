@@ -52,7 +52,8 @@ flowchart, the entry chunk (about 140 KB) and its own chunks.
 - **AC-4** Given Mermaid code with an error, the widget says what Mermaid
   reports.
 - **AC-5** Given any diagram, Mermaid runs in its strict security mode
-  (labels sanitised, no click handlers).
+  (labels sanitised, no click handlers), with the Dagre layout locked: a
+  diagram's front matter can't switch it to ELK.
 - **AC-6** Given the shared theme, the diagram's colours come from it, read
   again when Grist switches between light and dark.
 - **AC-7** Given a drawn diagram, Download saves it as an SVG file.
@@ -65,6 +66,9 @@ flowchart, the entry chunk (about 140 KB) and its own chunks.
 
 - Editing the code in the widget: the Grist cell is the editor.
 - Diagrams other than flowcharts generated from rows.
+- The ELK layout (`layout: elk`, `flowchart-elk`): elkjs's licence (EPL-2.0
+  or GPL-3.0) is off the catalog's allow list. Every diagram is laid out by
+  Dagre; one that asks for ELK in its front matter is drawn with Dagre.
 
 ## Demo data
 

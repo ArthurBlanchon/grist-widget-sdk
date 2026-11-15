@@ -24,11 +24,16 @@ its order: M4 and M5, with M6 (docs) alongside, then M7 (M1 to M3 are
 done). Each item is one pull request; the plan says when each milestone is
 done.
 
-- [ ] **M4. The bar, version 2** (plan §3). `httpUrl()` and its lint rule,
-  licences, a CSP per widget; the standard criteria (5,000 rows, keyboard,
-  320 px, read-only) in `new-widget`, the e2e check and the 16 widgets;
-  `optionsVersion` and `migrate`; a `demo.ts` per widget; visual comparison
-  and "Report a problem".
+- [ ] **M4. The bar, version 2** (plan §3). Left: the standard criteria
+  (5,000 rows, keyboard, 320 px, read-only) in `new-widget`, the e2e check
+  and the 16 widgets; visual comparison and "Report a problem". Done:
+  `httpUrl()` and its lint rule, licences, a CSP per widget,
+  `optionsVersion` and `migrate`, a `demo.ts` per widget.
+- [ ] **Attachments on the static demo pages.** grist-static serves no
+  attachment, so the demo pages of Attachment viewer, File uploader and
+  Signature pad open with their attachments cells empty (`pnpm demo` and
+  the real-Grist check have the files). Done when grist-static serves them,
+  or the demo page hands them to it.
 - [ ] **A declared Ref column in typed reads.** Grist sends a reference as
   the text its column shows (`expandRefs`, seen in Grist 1.7.22 and now in
   the emulator), so `mappedRecord` reports a column declared `Ref:<table>`

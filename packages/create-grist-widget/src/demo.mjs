@@ -112,8 +112,6 @@ export async function runDemo({ cwd, gristPort = DEMO_GRIST_PORT, log = console.
     await startGrist({ container: DEMO_CONTAINER, port: gristPort })
     const api = gristApi(gristUrl, await apiKey(gristUrl))
     const { docId, viewId } = await createDocument(api, await firstWorkspace(api), pkg.name, options, widgetUrl, demo)
-    // A new document starts with an empty Table1: only the widget's page is left.
-    await api("POST", `/api/docs/${docId}/apply`, [["RemoveTable", "Table1"]])
     return { url: openUrl(gristUrl, docId, viewId), stop }
   } catch (e) {
     await stop()
@@ -132,8 +130,8 @@ export const DEMO_DIR = path.join("public", "demo")
  */
 export async function createDemoDocument({ gristUrl, key, options, name, demo = null }) {
   const api = gristApi(gristUrl, key)
-  const { docId } = await createDocument(api, await firstWorkspace(api), name, options, DEMO_URL_PLACEHOLDER, demo)
-  await api("POST", `/api/docs/${docId}/apply`, [["RemoveTable", "Table1"]])
+  // grist-static, which runs the demo page, serves no attachment: the page's document has none.
+  const { docId } = await createDocument(api, await firstWorkspace(api), name, options, DEMO_URL_PLACEHOLDER, demo && { ...demo, files: undefined })
   const res = await fetch(`${gristUrl}/api/docs/${docId}/download?nohistory=true`, { headers: { Authorization: `Bearer ${key}` } })
   if (!res.ok) throw new Error(`demo: downloading the document failed (${res.status})`)
   return Buffer.from(await res.arrayBuffer())

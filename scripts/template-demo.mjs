@@ -55,10 +55,7 @@ async function build() {
       const { docId } = await createDocument(api, await firstWorkspace(api), title, found.options, DEMO_URL_PLACEHOLDER)
       const apply = (actions) => api("POST", `/api/docs/${docId}/apply`, actions)
       const { records } = await api("GET", `/api/docs/${docId}/tables/Data/records`)
-      await apply([
-        ["RemoveTable", "Table1"],
-        ["BulkRemoveRecord", "Data", records.map((r) => r.id)],
-      ])
+      await apply([["BulkRemoveRecord", "Data", records.map((r) => r.id)]])
       await api("POST", `/api/docs/${docId}/tables/Data/records`, { records: TASKS.map((fields) => ({ fields })) })
       await apply([["RenameTable", "Data", "Tasks"]])
       const res = await fetch(`${gristUrl}/api/docs/${docId}/download?nohistory=true`, { headers: { Authorization: `Bearer ${key}` } })

@@ -113,8 +113,11 @@ itself can start you from directly (see below).
 `demo` and `demo --save` open the widget on sample rows from its declared
 columns. Export `demo` from `src/app/demo.ts` (a `GristWidgetDemo` from
 `grist-widget-sdk`) and they open your data instead: its tables with typed
-columns, the rows, which column each declared one maps to, and the widget's
-options.
+columns (references, lists of references and attachments included), the
+rows, the choices and their colours, which column each declared one maps
+to, and the widget's options. An attachments cell names files of
+`src/app/demo/`, which `pnpm demo`'s document gets as attachments (the
+demo page's doesn't: grist-static has none).
 
 Common flags for `create`/`init`: `--yes` (skip interactive prompts),
 `--no-install` (skip the automatic dependency install, so the first commit

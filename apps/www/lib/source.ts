@@ -2,7 +2,6 @@ import { loader } from 'fumadocs-core/source';
 import { docsContentRoute, docsImageRoute, docsRoute } from './shared';
 import { defineDocs } from 'fumadocs-mdx/macro';
 import { metaSchema, pageSchema } from 'fumadocs-core/source/schema';
-import { lucideIconsPlugin } from 'fumadocs-core/source/plugins/lucide-icons';
 
 /**
  * Approximates the page's first prose paragraph from its raw .mdx source --
@@ -115,11 +114,6 @@ const docs = defineDocs({
 export const source = loader({
   baseUrl: docsRoute,
   source: docs.toFumadocsSource(),
-  // Resolves each space's meta.json `icon` string (a Lucide icon name) into
-  // a real icon element -- the docs sidebar's tab dropdown (six spaces,
-  // wired via getLayoutTabs in app/docs/layout.tsx) renders it next to the
-  // space's title and description.
-  plugins: [lucideIconsPlugin()],
 });
 
 export function getPageImageUrl(page: (typeof source)['$inferPage']) {

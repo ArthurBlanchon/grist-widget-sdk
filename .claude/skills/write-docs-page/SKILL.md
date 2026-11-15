@@ -26,7 +26,9 @@ The target structure is in the
    `pnpm --filter grist-widget-sdk test`. Mark a fragment that can't
    compile with `no-check`, and use that sparingly. To show an example's
    code, include it from `examples/` rather than pasting it.
-4. **Navigation.** Add the page to its folder's `meta.json`.
+4. **Navigation.** List the page under its section (Get started, Guides,
+   Reference, Concepts) in `content/docs/meta.json`, by its path without
+   `.mdx` (`sdk/guide/reading-data`). Folders have no `meta.json`.
 5. **A moved or retired page** gets a line in `scripts/site/redirects.mjs`
    in the same pull request. Update every link to it:
 
@@ -39,6 +41,7 @@ The target structure is in the
    ```bash
    pnpm --filter grist-widget-sdk test
    pnpm --filter www build
+   node scripts/site/docs-check.mjs   # no old form on the page, about 800 words at most
    ```
 
    If you touched `scripts/site/`, also run

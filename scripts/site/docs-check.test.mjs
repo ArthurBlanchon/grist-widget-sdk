@@ -8,8 +8,14 @@ test("the old forms are found, with their line", () => {
   assert.deepEqual(oldForms(text).map(([line]) => line), [3, 4, 5, 7])
 })
 
-test("the current API is no old form", () => {
+test("the current API, and Grist's own plugin API, are no old form", () => {
   assert.deepEqual(oldForms("const w = widget.useGrist()\nrenderWithGrist(<App />, { widget, rows })\nawait w.fetchRows()"), [])
+  assert.deepEqual(oldForms("await grist.docApi.fetchTable(\"T\")\nawait grist.fetchSelectedTable()"), [])
+})
+
+test("a renderWithGrist without its widget is found, over several lines or with > in props", () => {
+  const text = "a\nrenderWithGrist(\n  <App />\n)\nrenderWithGrist(<App onSave={() => 1} />)\nrenderWithGrist(<App />, { emulator })\nrenderWithGrist(\n  <App />,\n  { widget, rows },\n)"
+  assert.deepEqual(oldForms(text).map(([line]) => line), [2, 5, 6])
 })
 
 test("words count the prose, not the front matter, code or tags", () => {

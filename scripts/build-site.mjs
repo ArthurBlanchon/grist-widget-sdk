@@ -270,7 +270,15 @@ async function buildCatalogWidgets() {
     const channel = Object.keys(majorChannels(versions[slug])).at(-1)
     writeFileSync(join(out, slug, "demo", "index.html"), demoPageHtml({ title, widget: `../${channel}/`, gristStatic: gristStaticBase }))
   }
-  return out
+  // Each widget's major channels, oldest first: Grist's widget list keeps an
+  // id for each (scripts/widgets/catalog.mjs, ADR 0014).
+  const channels = Object.fromEntries(
+    Object.entries(versions).map(([slug, list]) => [
+      slug,
+      Object.keys(majorChannels(list)).sort((a, b) => Number(a.slice(1)) - Number(b.slice(1))),
+    ]),
+  )
+  return { out, channels }
 }
 
 /**
@@ -351,7 +359,7 @@ console.log("\nBuilding examples")
 const examplesOut = buildExamples()
 
 console.log("\nCatalog widgets")
-const catalogOut = await buildCatalogWidgets()
+const { out: catalogOut, channels: catalogChannels } = await buildCatalogWidgets()
 
 console.log("\nBuilding template preview")
 const templatePreviewOut = buildTemplatePreview()
@@ -396,14 +404,14 @@ for (const slug of readdirSync(catalogOut)) {
 rmSync(dirname(catalogOut), { recursive: true, force: true })
 // The catalog's lists, from the specs (scripts/widgets/catalog.mjs): for
 // agents, and for Grist's widget gallery (GRIST_WIDGET_LIST_URL), with this
-// origin's install URLs.
+// origin's install URLs and an id per released major (ADR 0014).
 for (const file of ["catalog.json", "grist-widgets.json"]) {
   if (existsSync(join(outDir, "widgets", file))) {
     console.error(`::error::widgets/${file} collides with a page of apps/www. Refusing to publish.`)
     process.exit(1)
   }
 }
-writeSiteCatalog(join(outDir, "widgets"), siteUrl)
+writeSiteCatalog(join(outDir, "widgets"), siteUrl, { channels: catalogChannels })
 
 // GitHub Pages runs everything through Jekyll by default, which silently drops
 // any top-level directory starting with `_` — including Next's own `_next/`

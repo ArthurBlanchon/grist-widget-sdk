@@ -13,6 +13,8 @@ export type CatalogColumn = {
   name: string;
   types: string[];
   required: boolean;
+  /** It maps several columns (allowMultiple). */
+  multiple: boolean;
   use: string;
 };
 

@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "Have the selected row signed on a tablet, a phone or with a mouse; the signature is saved as an image with the name and the time.",
+  "description": "Have the selected row signed on a tablet, a phone or with a mouse; the signature is saved as an image with the signer's name and the time.",
   "license": "MIT",
   "scripts": {
     "dev": "vite",

@@ -1,7 +1,7 @@
 import * as React from 'react';
 
 // The little Markdown the specs and changelogs use: paragraphs, `- ` lists,
-// `code` and [links](https://…). Anything else stays as written, as text:
+// simple | tables |, `code` and [links](https://…). Anything else stays as written, as text:
 // nothing here is ever HTML.
 
 function Inline({ text }: { text: string }) {
@@ -34,6 +34,36 @@ export function Prose({ text, className }: { text: string; className?: string })
     <div className={className}>
       {blocks.map((block, i) => {
         const lines = block.split('\n');
+        if (lines.every((l) => l.trim().startsWith('|'))) {
+          const cells = (l: string) => l.trim().replace(/^\||\|$/g, '').split('|').map((c) => c.trim());
+          const [head = [], ...rows] = lines.filter((l) => !/^\|\s*:?-/.test(l.trim())).map(cells);
+          return (
+            <div key={i} className="my-2 overflow-x-auto rounded-md border">
+              <table className="w-full">
+                <thead className="bg-muted/40">
+                  <tr>
+                    {head.map((h, j) => (
+                      <th key={j} className="p-2 text-start font-medium">
+                        <InlineText text={h} />
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((row, j) => (
+                    <tr key={j} className="border-t align-top">
+                      {row.map((cell, k) => (
+                        <td key={k} className="p-2">
+                          <InlineText text={cell} />
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          );
+        }
         if (lines.every((l, j) => /^\s*[-*] /.test(l) || (j > 0 && /^\s{2,}\S/.test(l)))) {
           const items: string[] = [];
           for (const l of lines) {

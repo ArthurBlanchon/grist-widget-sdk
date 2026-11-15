@@ -118,7 +118,10 @@ export default async function CatalogWidgetPage({ params }: Props) {
                         <code>{c.name}</code>
                         {!c.required && <span className="text-muted-foreground">, optional</span>}
                       </td>
-                      <td className="p-2 text-muted-foreground">{c.types.join(', ')}</td>
+                      <td className="p-2 text-muted-foreground">
+                        {c.types.join(', ')}
+                        {c.multiple && ', several columns'}
+                      </td>
                       <td className="p-2">
                         <InlineText text={c.use} />
                       </td>
@@ -127,9 +130,8 @@ export default async function CatalogWidgetPage({ params }: Props) {
                 </tbody>
               </table>
             </div>
-          ) : (
-            <Prose text={widget.columnsNote ?? ''} className="text-sm" />
-          )}
+          ) : null}
+          {widget.columnsNote && <Prose text={widget.columnsNote} className="text-sm" />}
         </Section>
 
         <Section title="Access">

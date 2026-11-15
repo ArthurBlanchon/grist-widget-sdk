@@ -10,7 +10,8 @@
 //   node scripts/widgets/catalog.mjs --site <dir> --origin <url>
 //        <dir>/catalog.json, the same list for agents and other tools; and
 //        <dir>/grist-widgets.json, the list Grist's widget gallery reads
-//        (GRIST_WIDGET_LIST_URL), with this origin's install URLs
+//        (GRIST_WIDGET_LIST_URL), with this origin's install URLs, one entry
+//        per major (ADR 0014). The site build passes the released majors.
 //
 // Drafts and retired widgets are left out. The install URL is the newest
 // major's channel (ADR 0013) on gristwidgets.com, with the github.io copy as
@@ -20,7 +21,7 @@ import { mkdirSync, readFileSync, existsSync, writeFileSync } from "node:fs"
 import { dirname, join, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 
-import { CATEGORIES, changelogEntries, listWidgets, parseFrontMatter, WIDGETS_DIR } from "./check-widgets.mjs"
+import { CATEGORIES, changelogEntries, columnSpec, columnsSection, listWidgets, parseFrontMatter, WIDGETS_DIR } from "./check-widgets.mjs"
 
 export const ORIGINS = {
   primary: "https://gristwidgets.com",
@@ -50,24 +51,9 @@ export function section(body, name) {
   return re.exec(`${body}\n`)?.[1].trim() ?? ""
 }
 
-/** The rows of a spec's Columns table: name, the types it takes, required, use. */
+/** The columns a spec's Columns table documents (check-widgets' reading of it). */
 export function columnRows(body) {
-  const cells = (line) => line.trim().replace(/^\||\|$/g, "").split("|").map((c) => c.trim())
-  const lines = section(body, "Columns")
-    .split("\n")
-    .filter((l) => l.trim().startsWith("|") && !/^\|\s*:?-/.test(l.trim()))
-  if (!lines.length) return []
-  const header = cells(lines[0]).map((h) => h.toLowerCase())
-  const at = (row, name) => row[header.indexOf(name)] ?? ""
-  return lines.slice(1).map((line) => {
-    const row = cells(line)
-    return {
-      name: row[0],
-      types: at(row, "type").split(/,|\bor\b/).map((t) => t.trim()).filter(Boolean),
-      required: /^yes\b/i.test(at(row, "required")),
-      use: at(row, "use"),
-    }
-  }).filter((c) => c.name)
+  return columnsSection(body).rows.map(columnSpec).map(({ unknown: _, ...c }) => c)
 }
 
 /** The newest entries of a CHANGELOG.md: version, date (when its heading has one), text. */
@@ -86,6 +72,7 @@ export function catalogEntry(slug, dir = join(WIDGETS_DIR, slug)) {
   const pkg = JSON.parse(readFileSync(join(dir, "package.json"), "utf8"))
   const changelog = join(dir, "CHANGELOG.md")
   const columns = columnRows(body)
+  const columnsProse = columnsSection(body).prose
   const channel = `v${pkg.version.split(".")[0]}`
   const path = `/widgets/${slug}/`
   return {
@@ -99,8 +86,9 @@ export function catalogEntry(slug, dir = join(WIDGETS_DIR, slug)) {
     license: pkg.license ?? null,
     job: section(body, "Job"),
     columns,
-    // A widget that maps no columns says why, in prose.
-    columnsNote: columns.length ? null : section(body, "Columns"),
+    // What the section says besides its table: how the columns work together,
+    // or why a widget maps none.
+    columnsNote: columnsProse || null,
     accessNote: section(body, "Access"),
     network: section(body, "Network") || null,
     version: pkg.version,
@@ -113,51 +101,73 @@ export function catalogEntry(slug, dir = join(WIDGETS_DIR, slug)) {
   }
 }
 
-/** The listed widgets (beta and stable), by title. */
-export function readCatalog(widgetsDir = WIDGETS_DIR) {
+/** Every widget's entry, drafts and retired ones included, by title. */
+export function readWidgets(widgetsDir = WIDGETS_DIR) {
   return listWidgets(widgetsDir)
     .map((slug) => catalogEntry(slug, join(widgetsDir, slug)))
-    .filter((w) => LISTED.has(w.status))
     .sort((a, b) => a.title.localeCompare(b.title))
 }
 
+/** The listed widgets (beta and stable): the catalog. */
+export function readCatalog(widgetsDir = WIDGETS_DIR) {
+  return readWidgets(widgetsDir).filter((w) => LISTED.has(w.status))
+}
+
+/** The id of a widget's major channel in Grist's widget list (ADR 0014). */
+export const gristWidgetId = (slug, channel) => `@grist-widgets/${slug}/${channel}`
+
 /**
  * The list Grist's widget gallery reads (a self-hosted Grist's
- * GRIST_WIDGET_LIST_URL), each widget at its install URL on `origin`: the
- * origin serving the list, so a copy keeps working if the other is down.
+ * GRIST_WIDGET_LIST_URL), at the install URLs of `origin`: the origin serving
+ * the list, so each copy works if the other is down.
+ *
+ * Grist keeps a gallery widget's `widgetId` in the document and looks its URL
+ * up in this list each time it loads (grist-core's WidgetFrame), so an id is
+ * a major channel, never a widget: `@grist-widgets/<slug>/v<major>`
+ * (ADR 0014). Every released major stays in the list for the documents that
+ * use it; only the newest major of a listed widget is `published` (offered
+ * in the gallery). `channels` is each widget's released majors, oldest first
+ * (from the release branch); a widget missing from it is listed on its
+ * declared major.
  */
-export function gristWidgetList(catalog, origin) {
+export function gristWidgetList(widgets, origin, channels = {}) {
   const base = origin.replace(/\/$/, "")
-  return catalog.map((w) => ({
-    name: w.title,
-    url: `${base}${w.path}${w.channel}/`,
-    widgetId: `@grist-widgets/${w.slug}`,
-    published: true,
-    accessLevel: w.access,
-    // The SDK shows its own connecting screen until Grist is ready
-    // (create-grist-widget's manifest says the same).
-    renderAfterReady: false,
-    description: w.description,
-    authors: [{ name: "grist-widget-sdk", url: `${ORIGINS.primary}/widgets/` }],
-    lastUpdatedAt: w.changes[0]?.date ? `${w.changes[0].date}T00:00:00.000Z` : undefined,
-    gristWidgetSdk: {
-      schema: 1,
-      channel: w.channel,
-      version: w.version,
-      repository: w.source,
-      license: w.license ?? undefined,
-    },
-  }))
+  return widgets.flatMap((w) => {
+    const majors = channels[w.slug] ?? (LISTED.has(w.status) ? [w.channel] : [])
+    return majors.map((channel) => ({
+      name: w.title,
+      url: `${base}${w.path}${channel}/`,
+      widgetId: gristWidgetId(w.slug, channel),
+      published: LISTED.has(w.status) && channel === majors.at(-1),
+      accessLevel: w.access,
+      // The SDK shows its own connecting screen until Grist is ready
+      // (create-grist-widget's manifest says the same).
+      renderAfterReady: false,
+      description: w.description,
+      authors: [{ name: "grist-widget-sdk", url: `${ORIGINS.primary}/widgets/` }],
+      lastUpdatedAt: w.changes[0]?.date ? `${w.changes[0].date}T00:00:00.000Z` : undefined,
+      gristWidgetSdk: {
+        schema: 1,
+        channel,
+        version: channel === w.channel ? w.version : undefined,
+        repository: w.source,
+        license: w.license ?? undefined,
+      },
+    }))
+  })
 }
 
 const json = (value) => `${JSON.stringify(value, null, 2)}\n`
 
-/** Writes catalog.json and grist-widgets.json into `dir`, for `origin`. */
-export function writeSiteCatalog(dir, origin, catalog = readCatalog()) {
+/**
+ * Writes catalog.json (the listed widgets) and grist-widgets.json (every
+ * released major of every widget, see gristWidgetList) into `dir`, for
+ * `origin`.
+ */
+export function writeSiteCatalog(dir, origin, { widgets = readWidgets(), channels = {} } = {}) {
   mkdirSync(dir, { recursive: true })
-  writeFileSync(join(dir, "catalog.json"), json(catalog))
-  writeFileSync(join(dir, "grist-widgets.json"), json(gristWidgetList(catalog, origin)))
-  return catalog
+  writeFileSync(join(dir, "catalog.json"), json(widgets.filter((w) => LISTED.has(w.status))))
+  writeFileSync(join(dir, "grist-widgets.json"), json(gristWidgetList(widgets, origin, channels)))
 }
 
 function main(argv) {
@@ -171,12 +181,13 @@ function main(argv) {
     console.error("Usage: catalog.mjs --www <file> | --site <dir> [--origin <url>]")
     process.exit(2)
   }
-  const catalog = readCatalog()
+  const widgets = readWidgets()
+  const catalog = widgets.filter((w) => LISTED.has(w.status))
   if (www) {
     mkdirSync(dirname(resolve(www)), { recursive: true })
     writeFileSync(www, json(catalog))
   }
-  if (site) writeSiteCatalog(site, arg("--origin") ?? ORIGINS.primary, catalog)
+  if (site) writeSiteCatalog(site, arg("--origin") ?? ORIGINS.primary, { widgets })
   console.log(`catalog: ${catalog.length} widgets`)
 }
 

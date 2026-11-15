@@ -39,7 +39,7 @@ Both origins run `scripts/build-site.mjs`, which assembles `./site`:
 | `/grist-static/<version>/` | the pinned grist-static, used by the site's and every widget's demo pages |
 | `/widgets/<slug>/<version>/`, `/v<major>/`, `/latest/`, `/dev/` | the catalog widgets' released versions, the newest of each major (the install URL), the newest of all, and the source being built (below, ADR 0013) |
 | `/widgets/<slug>/` | the widget's page, by `apps/www` from its `SPEC.md`, `package.json` and `CHANGELOG.md`: what it does, its columns, access, install URL and demo. Its channels and versions are the folders beside it, which keep Grist's framing headers; the page itself keeps the docs' (`scripts/site/headers.mjs`) |
-| `/widgets/catalog.json`, `/widgets/grist-widgets.json` | the catalog's beta and stable widgets (`scripts/widgets/catalog.mjs`): for agents and tools, and in Grist's own format for `GRIST_WIDGET_LIST_URL`, with this origin's install URLs |
+| `/widgets/catalog.json`, `/widgets/grist-widgets.json` | from the specs (`scripts/widgets/catalog.mjs`): the beta and stable widgets for agents and tools; and, in Grist's own format for `GRIST_WIDGET_LIST_URL`, with this origin's install URLs and an id per released major ([ADR 0014](../decisions/0014-catalog-lists.md)) |
 | `/template-preview/` | the template's own build |
 | old URLs | one-line pages that send to where a page moved (`scripts/site/redirects.mjs`) |
 

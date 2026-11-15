@@ -4,7 +4,7 @@ import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { test } from "node:test"
 
-import { catalogEntry, columnRows, gristWidgetList, readCatalog, recentChanges, section, writeSiteCatalog } from "./catalog.mjs"
+import { catalogEntry, columnRows, gristWidgetId, gristWidgetList, readCatalog, readWidgets, recentChanges, section, writeSiteCatalog } from "./catalog.mjs"
 import { listWidgets } from "./check-widgets.mjs"
 
 const SPEC = (status) => `---
@@ -27,7 +27,13 @@ Rows as cards, with \`Status\` as the column.
 | --- | --- | --- | --- |
 | Title | Text | yes | the card's title |
 | Status | Choice, Text | yes | the card's column |
-| Value | Numeric or Int | no | summed |
+| Value | Numeric or Int, several columns | no | summed, a series each |
+
+The columns work together: Status picks the card's column.
+
+| Grist type | Shown as |
+| --- | --- |
+| Text | a line |
 
 ## Access
 
@@ -49,15 +55,19 @@ function widgetsDir(widgets) {
   return dir
 }
 
-test("a spec's sections and Columns table", () => {
+test("a spec's sections and Columns table: its first table, the rest as prose", () => {
   const body = SPEC("beta").split("---\n")[2]
   assert.equal(section(body, "Job"), "Rows as cards, with `Status` as the column.")
   assert.equal(section(body, "Network"), "")
   assert.deepEqual(columnRows(body), [
-    { name: "Title", types: ["Text"], required: true, use: "the card's title" },
-    { name: "Status", types: ["Choice", "Text"], required: true, use: "the card's column" },
-    { name: "Value", types: ["Numeric", "Int"], required: false, use: "summed" },
+    { name: "Title", types: ["Text"], required: true, multiple: false, use: "the card's title" },
+    { name: "Status", types: ["Choice", "Text"], required: true, multiple: false, use: "the card's column" },
+    { name: "Value", types: ["Numeric", "Int"], required: false, multiple: true, use: "summed, a series each" },
   ])
+  const dir = widgetsDir({ board: { status: "beta" } })
+  const note = catalogEntry("board", join(dir, "board")).columnsNote
+  assert.match(note, /^The columns work together/)
+  assert.match(note, /\| Grist type \| Shown as \|/)
 })
 
 test("the newest changelog entries, with their dates when headings have them", () => {
@@ -89,14 +99,37 @@ test("Grist's list points at the origin serving it", () => {
   assert.equal(entry.url, "https://arthurblanchon.github.io/grist-widget-sdk/widgets/board/v1/")
   assert.equal(entry.accessLevel, "full")
   assert.equal(entry.published, true)
-  assert.equal(entry.widgetId, "@grist-widgets/board")
+  assert.equal(entry.widgetId, "@grist-widgets/board/v1")
   assert.equal(entry.lastUpdatedAt, "2026-11-15T00:00:00.000Z")
   assert.equal(entry.gristWidgetSdk.channel, "v1")
 
   const out = mkdtempSync(join(tmpdir(), "site-"))
-  writeSiteCatalog(out, "https://gristwidgets.com", readCatalog(dir))
+  writeSiteCatalog(out, "https://gristwidgets.com", { widgets: readWidgets(dir) })
   assert.equal(JSON.parse(readFileSync(join(out, "grist-widgets.json"), "utf8"))[0].url, "https://gristwidgets.com/widgets/board/v1/")
   assert.equal(JSON.parse(readFileSync(join(out, "catalog.json"), "utf8"))[0].slug, "board")
+})
+
+// Grist looks a gallery widget's URL up by its widgetId each time a document
+// loads it: an id that moved to a new major would carry the document onto it.
+test("a new major leaves the documents on the previous one where they are", () => {
+  const dir = widgetsDir({ board: { status: "stable", version: "1.0.0" } })
+  const before = gristWidgetList(readWidgets(dir), "https://gristwidgets.com", { board: ["v0"] })
+  const after = gristWidgetList(readWidgets(dir), "https://gristwidgets.com", { board: ["v0", "v1"] })
+  const v0 = gristWidgetId("board", "v0")
+  assert.equal(before.find((w) => w.widgetId === v0).url, "https://gristwidgets.com/widgets/board/v0/")
+  assert.equal(after.find((w) => w.widgetId === v0).url, "https://gristwidgets.com/widgets/board/v0/")
+  // Still found by its id, but no longer offered in the gallery.
+  assert.equal(after.find((w) => w.widgetId === v0).published, false)
+  assert.deepEqual(after.filter((w) => w.published).map((w) => w.widgetId), ["@grist-widgets/board/v1"])
+})
+
+test("a retired widget's majors stay in Grist's list, unpublished; a draft never released isn't in it", () => {
+  const dir = widgetsDir({ old: { status: "retired" }, wip: { status: "draft" } })
+  const list = gristWidgetList(readWidgets(dir), "https://gristwidgets.com", { old: ["v0", "v1"] })
+  assert.deepEqual(list.map((w) => [w.widgetId, w.published]), [
+    ["@grist-widgets/old/v0", false],
+    ["@grist-widgets/old/v1", false],
+  ])
 })
 
 test("every listed catalog widget has a job, columns, an access note and a changelog", () => {

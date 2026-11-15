@@ -84,15 +84,51 @@ export const sections = (body) => [...body.matchAll(/^## (.+)$/gm)].map((m) => m
 /** The acceptance criteria ids (`**AC-1**`) a spec lists, in order. */
 export const criteria = (body) => [...new Set([...body.matchAll(/\*\*(AC-\d+)\*\*/g)].map((m) => m[1]))]
 
-/** The first cells of the Columns table: the column names the spec documents. */
+/** Grist's column types, as a spec's Columns table names them. */
+export const GRIST_TYPES = ["Any", "Text", "Numeric", "Int", "Bool", "Date", "DateTime", "Choice", "ChoiceList", "Ref", "RefList", "Attachments"]
+
+/**
+ * A spec's Columns section: its first table, the columns the widget maps
+ * (one object per row, keyed by the lower-cased header), and the rest of the
+ * section as prose. A later table (record-editor's field types) is prose.
+ */
+export function columnsSection(body) {
+  const text = /^## Columns\n([\s\S]*?)(?=^## |(?![\s\S]))/m.exec(body)?.[1] ?? ""
+  const lines = text.split("\n")
+  const start = lines.findIndex((l) => l.trim().startsWith("|"))
+  if (start === -1) return { header: [], rows: [], prose: text.trim() }
+  let end = start
+  while (end < lines.length && lines[end].trim().startsWith("|")) end++
+  const cells = (l) => l.trim().replace(/^\||\|$/g, "").split("|").map((c) => c.trim())
+  const [header = [], ...rest] = lines
+    .slice(start, end)
+    .filter((l) => !/^\|\s*:?-/.test(l.trim()))
+    .map(cells)
+  const keys = header.map((h) => h.toLowerCase())
+  const rows = rest.filter((r) => r[0]).map((r) => Object.fromEntries(keys.map((k, i) => [k, r[i] ?? ""])))
+  return { header: keys, rows, prose: [...lines.slice(0, start), ...lines.slice(end)].join("\n").trim() }
+}
+
+/**
+ * One row of the Columns table: its name, the Grist types it takes ("Any"
+ * when any), whether it is required, whether it maps several columns
+ * ("several columns" in its Type cell), and its use.
+ */
+export function columnSpec(row) {
+  const words = (row.type ?? "").split(/,|\bor\b/).map((t) => t.trim()).filter(Boolean)
+  return {
+    name: row.column,
+    types: words.filter((w) => GRIST_TYPES.includes(w)),
+    required: /^yes\b/i.test(row.required ?? ""),
+    multiple: words.some((w) => /^several columns$/i.test(w)),
+    use: row.use ?? "",
+    unknown: words.filter((w) => !GRIST_TYPES.includes(w) && !/^several columns$/i.test(w)),
+  }
+}
+
+/** The column names the spec's Columns table documents. */
 export function specColumns(body) {
-  const section = /^## Columns\n([\s\S]*?)(?=^## |(?![\s\S]))/m.exec(body)?.[1] ?? ""
-  return section
-    .split("\n")
-    .filter((l) => l.trim().startsWith("|") && !/^\|\s*-/.test(l.trim()))
-    .slice(1)
-    .map((l) => l.split("|")[1].trim())
-    .filter(Boolean)
+  return columnsSection(body).rows.map((r) => r.column)
 }
 
 const DESIGN_RULES = [
@@ -140,6 +176,16 @@ export function checkStatic(slug, dir = join(WIDGETS_DIR, slug)) {
   if (!ACCESS.includes(data.access)) problems.push(`SPEC.md: access must be one of ${ACCESS.join(", ")}`)
   const have = sections(body)
   for (const s of SECTIONS) if (!have.includes(s)) problems.push(`SPEC.md: no "## ${s}" section`)
+  const table = columnsSection(body)
+  if (table.rows.length) {
+    for (const h of ["column", "type", "required", "use"]) {
+      if (!table.header.includes(h)) problems.push(`SPEC.md: the Columns table has no "${h}" column`)
+    }
+    for (const col of table.rows.map(columnSpec)) {
+      if (!col.types.length) problems.push(`SPEC.md: column ${col.name} names no Grist type (${GRIST_TYPES.join(", ")})`)
+      for (const w of col.unknown) problems.push(`SPEC.md: column ${col.name}: "${w}" isn't a Grist type or "several columns"`)
+    }
+  }
   // pnpm new-widget's placeholders, which the catalog would publish as written.
   if (data.status !== "draft") {
     const changelog = join(dir, "CHANGELOG.md")
@@ -166,7 +212,7 @@ export function checkStatic(slug, dir = join(WIDGETS_DIR, slug)) {
     }
   }
   problems.push(...checkChangelog(dir, pkg.version))
-  return { problems, spec: { data, columns: specColumns(body) } }
+  return { problems, spec: { data, body, columns: specColumns(body) } }
 }
 
 /**
@@ -211,20 +257,55 @@ export async function checkDeclaration(slug, spec, dir = join(WIDGETS_DIR, slug)
     const mod = await server.ssrLoadModule("/src/app/App.tsx")
     const options = mod.widget?.options
     if (!options) return ["src/app/App.tsx: no `widget` declaration (defineGristWidget)"]
-    const problems = []
-    const access = options.requiredAccess ?? "read table"
-    if (access !== spec.data.access) problems.push(`access: the spec says "${spec.data.access}", the declaration "${access}"`)
-    if (options.title && options.title !== spec.data.title) {
-      problems.push(`title: the spec says "${spec.data.title}", the declaration "${options.title}"`)
-    }
-    for (const col of options.columns ?? []) {
-      const name = typeof col === "string" ? col : col.name
-      if (!spec.columns.includes(name)) problems.push(`column ${name}: declared but not in the spec's Columns table`)
-    }
-    return problems
+    // defineGristWidget keeps the title and description apart from the options.
+    const metadata = mod.widget.metadata ?? {}
+    const pkg = JSON.parse(readFileSync(join(dir, "package.json"), "utf8"))
+    return declarationProblems({ options, metadata, pkg, spec })
   } finally {
     await server.close()
   }
+}
+
+/**
+ * What differs between a widget's declaration and what the catalog publishes
+ * of it: the spec's access, title and Columns table, and package.json's
+ * description (the catalog page's and Grist's widget list's).
+ */
+export function declarationProblems({ options, metadata, pkg, spec }) {
+    const problems = []
+    const access = options.requiredAccess ?? "read table"
+    if (access !== spec.data.access) problems.push(`access: the spec says "${spec.data.access}", the declaration "${access}"`)
+    if (metadata.title !== spec.data.title) {
+      problems.push(`title: the spec says "${spec.data.title}", the declaration "${metadata.title}"`)
+    }
+    if (metadata.description !== pkg.description) {
+      problems.push(`description: package.json says "${pkg.description}", the declaration "${metadata.description}"`)
+    }
+    const documented = new Map(columnsSection(spec.body).rows.map(columnSpec).map((c) => [c.name, c]))
+    const declared = new Set()
+    for (const col of options.columns ?? []) {
+      const c = typeof col === "string" ? { name: col } : col
+      declared.add(c.name)
+      const doc = documented.get(c.name)
+      if (!doc) {
+        problems.push(`column ${c.name}: declared but not in the spec's Columns table`)
+        continue
+      }
+      const types = c.type ? c.type.split(",").map((t) => t.trim()) : ["Any"]
+      if ([...types].sort().join() !== [...doc.types].sort().join()) {
+        problems.push(`column ${c.name}: the spec says ${doc.types.join(", ")}, the declaration ${types.join(", ")}`)
+      }
+      if (doc.required === Boolean(c.optional)) {
+        problems.push(`column ${c.name}: the spec says ${doc.required ? "required" : "optional"}, the declaration ${c.optional ? "optional" : "required"}`)
+      }
+      if (doc.multiple !== Boolean(c.allowMultiple)) {
+        problems.push(`column ${c.name}: the spec says ${doc.multiple ? "several columns" : "one column"}, the declaration ${c.allowMultiple ? "several (allowMultiple)" : "one"}`)
+      }
+    }
+    for (const name of documented.keys()) {
+      if (!declared.has(name)) problems.push(`column ${name}: in the spec's Columns table but not declared`)
+    }
+    return problems
 }
 
 async function main(argv) {

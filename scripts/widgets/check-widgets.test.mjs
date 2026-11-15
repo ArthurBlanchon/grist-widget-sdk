@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 
-import { changelogEntries, checkChangelog, checkStatic, criteria, designViolations, listWidgets, parseFrontMatter, specColumns } from "./check-widgets.mjs"
+import { changelogEntries, checkChangelog, checkStatic, columnsSection, criteria, declarationProblems, designViolations, listWidgets, parseFrontMatter, specColumns } from "./check-widgets.mjs"
 
 test("front matter is key: value lines", () => {
   const { data, body } = parseFrontMatter("---\nslug: a\naccess: read table\n---\n# A\n")
@@ -14,6 +14,37 @@ test("criteria and columns come from the spec's body", () => {
   const body = "## Columns\n\n| Column | Type |\n| --- | --- |\n| Title | Text |\n| Status | Choice |\n\n## Acceptance criteria\n\n- **AC-1** x\n- **AC-2** y\n"
   assert.deepEqual(specColumns(body), ["Title", "Status"])
   assert.deepEqual(criteria(body), ["AC-1", "AC-2"])
+})
+
+test("only the Columns section's first table is columns; a second one is prose", () => {
+  const body = "## Columns\n\n| Column | Type | Required | Use |\n| --- | --- | --- | --- |\n| Fields | Any, several columns | yes | the form |\n\nEach field takes its type.\n\n| Grist type | Field |\n| --- | --- |\n| Text, Any | a text box |\n\n## Access\n"
+  assert.deepEqual(specColumns(body), ["Fields"])
+  assert.match(columnsSection(body).prose, /Each field[\s\S]*\| Text, Any \| a text box \|/)
+})
+
+test("the declaration matches what the catalog publishes: title, description, columns both ways", () => {
+  const spec = {
+    data: { title: "Board", access: "full" },
+    body: "## Columns\n\n| Column | Type | Required | Use |\n| --- | --- | --- | --- |\n| Title | Text | yes | x |\n| Keys | Any, several columns | no | y |\n| Notes | Text | no | z |\n",
+  }
+  const options = {
+    requiredAccess: "full",
+    columns: [{ name: "Title", type: "Text" }, { name: "Keys", optional: true, allowMultiple: true }, { name: "Notes", type: "Text", optional: true }],
+  }
+  const ok = { options, metadata: { title: "Board", description: "Cards." }, pkg: { description: "Cards." }, spec }
+  assert.deepEqual(declarationProblems(ok), [])
+  const problems = declarationProblems({
+    ...ok,
+    metadata: { title: "Board", description: "Other." },
+    options: { requiredAccess: "full", columns: [{ name: "Title", type: "Text,Choice", optional: true }, { name: "Keys", optional: true }] },
+  })
+  assert.deepEqual(problems.map((p) => p.split(":")[0]), [
+    "description",
+    "column Title",
+    "column Title",
+    "column Keys",
+    "column Notes",
+  ])
 })
 
 test("design rules: colours, pixels and arbitrary values, comments aside", () => {

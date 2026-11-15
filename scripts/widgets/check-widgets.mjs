@@ -158,11 +158,16 @@ export function checkStatic(slug, dir = join(WIDGETS_DIR, slug)) {
   return { problems, spec: { data, columns: specColumns(body) } }
 }
 
-/** `[version, text]` for each `## <version>` entry of a widget's CHANGELOG.md, newest first as written. */
+/**
+ * `[version, text]` for each `## <version>` entry of a widget's CHANGELOG.md,
+ * in the order written. Code blocks and HTML comments are left out first, so
+ * neither a `## 9.9.9` in a code sample nor a `<!-- todo -->` counts.
+ */
 export function changelogEntries(text) {
+  const plain = `${text.replace(/```[\s\S]*?```/g, "").replace(/<!--[\s\S]*?-->/g, "")}\n`
   const out = []
   const re = /^## (\d+\.\d+\.\d+)\b[^\n]*\n([\s\S]*?)(?=^## |(?![\s\S]))/gm
-  for (const m of text.matchAll(re)) out.push([m[1], m[2].trim()])
+  for (const m of plain.matchAll(re)) out.push([m[1], m[2].trim()])
   return out
 }
 

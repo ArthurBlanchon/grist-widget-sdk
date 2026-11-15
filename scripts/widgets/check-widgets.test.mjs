@@ -57,4 +57,8 @@ test("a widget's changelog: an entry per version, newest first, the declared one
   assert.match(checkChangelog(dir, "0.3.0")[0], /first entry is 0.2.0, not 0.3.0/)
   writeFileSync(join(dir, "CHANGELOG.md"), "# Changelog\n\n## 0.3.0\n\n## 0.2.0\n\n- x\n")
   assert.match(checkChangelog(dir, "0.3.0")[0], /says nothing/)
+  writeFileSync(join(dir, "CHANGELOG.md"), "# Changelog\n\n## 0.3.0\n\n<!-- todo -->\n\n## 0.2.0\n\n- x\n")
+  assert.match(checkChangelog(dir, "0.3.0")[0], /says nothing/)
+  assert.deepEqual(changelogEntries("## 0.4.0"), [["0.4.0", ""]])
+  assert.deepEqual(changelogEntries("## 0.2.0\n\n```md\n## 9.9.9\n```\n- y\n").map(([v]) => v), ["0.2.0"])
 })

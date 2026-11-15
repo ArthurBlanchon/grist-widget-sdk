@@ -134,3 +134,37 @@ describe("a widget's demo data (src/app/demo.ts)", () => {
     expect(spec.tables[0].columns.find((c) => c.id === "Owner").ref).toBe("People")
   })
 })
+
+describe("the demo document (createDocument)", () => {
+  // A fake Grist REST API: it answers what createDocument asks and keeps the section it saves.
+  function fakeGrist() {
+    const saved = []
+    const api = async (method, url, body) => {
+      if (url.endsWith("/docs")) return "doc1"
+      if (url.includes("/sql?q=")) {
+        const q = decodeURIComponent(url.split("q=")[1])
+        if (q.includes("from _grist_Tables where")) return { records: [{ fields: { id: 1, primaryViewId: 1 } }] }
+        if (q.includes("from _grist_Tables_column where")) return { records: [{ fields: { id: 10, colId: "Name" } }, { fields: { id: 11, colId: "Email" } }] }
+        if (q.includes("_grist_Views_section")) return { records: [{ fields: { id: 2 } }] }
+        return { records: [] }
+      }
+      if (url.endsWith("/apply")) {
+        if (body[0][0] === "CreateViewSection") return { retValues: [{ sectionRef: 5 }] }
+        if (body[0][0] === "UpdateRecord") saved.push(JSON.parse(JSON.parse(body[0][3].options).customView))
+        return { retValues: [] }
+      }
+      return null
+    }
+    return { api, saved }
+  }
+
+  it("saves no mapping when nothing is mapped, as Grist does, and the mapping otherwise", async () => {
+    const { createDocument } = await import("../src/grist-local.mjs")
+    const none = fakeGrist()
+    await createDocument(none.api, 1, "Template", { requiredAccess: "full" }, "http://w/")
+    expect(none.saved[0].columnsMapping).toBeNull()
+    const mapped = fakeGrist()
+    await createDocument(mapped.api, 1, "Mail", { requiredAccess: "full", columns: [{ name: "Email" }] }, "http://w/")
+    expect(mapped.saved[0].columnsMapping).toEqual({ Email: 11 })
+  })
+})

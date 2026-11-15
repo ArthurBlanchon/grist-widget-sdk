@@ -16,9 +16,9 @@ afterEach(() => {
 
 const day = (y: number, m: number, d: number) => Date.UTC(y, m - 1, d) / 1000
 const MEMBERS: GristReplicaRow[] = [
-  { id: 1, Name: "Zoé", Email: "zoe@example.org", Ends: day(2027, 3, 1), Fee: 1200.5, SentAt: null, SentDay: null, Done: false },
-  { id: 2, Name: "Ana", Email: "ana@example.org; bo@example.org", Ends: day(2027, 6, 9), Fee: 40, SentAt: null, SentDay: null, Done: false },
-  { id: 3, Name: "Nobody", Email: "not an address", Ends: null, Fee: 0, SentAt: null, SentDay: null, Done: false },
+  { id: 1, Name: "Zoé", Email: "zoe@example.org", Ends: day(2027, 3, 1), Fee: 1200.5, SentAt: null, SentDay: null, Done: false, Club: 2 },
+  { id: 2, Name: "Ana", Email: "ana@example.org; bo@example.org", Ends: day(2027, 6, 9), Fee: 40, SentAt: null, SentDay: null, Done: false, Club: 1 },
+  { id: 3, Name: "Nobody", Email: "not an address", Ends: null, Fee: 0, SentAt: null, SentDay: null, Done: false, Club: 0 },
 ]
 
 const doc = (rows = MEMBERS, widgetOptions?: Record<string, unknown>): GristReplicaDocument => ({
@@ -36,9 +36,11 @@ const doc = (rows = MEMBERS, widgetOptions?: Record<string, unknown>): GristRepl
         SentAt: { type: "DateTime:UTC", label: "SentAt", parentPos: 5 },
         SentDay: { type: "Date", label: "SentDay", parentPos: 6 },
         Done: { type: "Bool", label: "Done", parentPos: 7 },
+        Club: { type: "Ref:Clubs", label: "Club", parentPos: 8, visibleColRef: 30 },
       },
       rows,
     },
+    Clubs: { columns: { Name: { type: "Text", label: "Name", colRef: 30 } }, rows: [{ id: 1, Name: "Rowing" }, { id: 2, Name: "Chess" }] },
   },
 })
 
@@ -62,6 +64,12 @@ describe("Mail merge", () => {
     expect(params(href).get("subject")).toBe("Renewal for Zoé")
     expect(params(href).get("body")).toBe("Dear Zoé,\r\nyour membership ends on 3/1/2027; the fee is 1,200.5.")
     expect(screen.getByTestId("preview-subject")).toHaveTextContent("Renewal for Zoé")
+  })
+
+  it("AC-1 fills columns that aren't mapped, a reference as the text its column shows", async () => {
+    // Grist sends a mapped widget only Email: Name and Club come from the table.
+    setup({ ...TEMPLATE, subject: "{{Name}}, {{Club}} club" })
+    await waitFor(async () => expect(params((await openLink("zoe@example.org")).getAttribute("href")!).get("subject")).toBe("Zoé, Chess club"))
   })
 
   it("AC-2 says when a placeholder names no column, and keeps it as written", async () => {

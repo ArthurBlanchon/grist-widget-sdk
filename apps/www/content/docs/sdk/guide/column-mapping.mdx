@@ -57,6 +57,10 @@ w.columnMappingStatus
 
 `mappedRecord` is `null` when **any required column is unmapped**. Never silently fall back to the raw record.
 
+### The other columns
+
+Once the user maps a column, Grist sends the widget **only the mapped columns** and the row id: in `w.record`, `w.records` and `w.fetchRows()` (the section's rows). The emulator does the same. A widget that also reads other columns, a template naming any of them say, reads the table itself with `w.fetchRows(tableId)`, which needs full access and applies the document's access rules. A reference read that way is the row id, where the section's cells show the text of its column.
+
 ### Typing
 
 Type the SDK with two generics — your raw row shape (real column ids) and the mapped logical shape:

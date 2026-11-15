@@ -154,7 +154,7 @@ export function documentSpec(options, rowCount = 3) {
 }
 
 /** The demo data's format, part of the catalog demos' hash: a change regenerates them. */
-export const DEMO_FORMAT = 2
+export const DEMO_FORMAT = 3
 
 const DEMO_TYPES = ["Text", "Numeric", "Int", "Bool", "Date", "DateTime", "Choice", "ChoiceList", "Any"]
 // Ids Grist would rename (a new document's Table1, its own columns, Python's keywords).
@@ -352,7 +352,10 @@ export async function createDocument(api, wsId, name, options, widgetUrl, demo =
     mode: "url",
     url: widgetUrl,
     access: options.requiredAccess ?? "none",
-    columnsMapping,
+    // No mapping saved when nothing is mapped, as in Grist (it saves one only
+    // when a column is mapped): a saved one, even empty, makes Grist send the
+    // widget its mapped columns only, so none.
+    columnsMapping: Object.keys(columnsMapping).length ? columnsMapping : null,
     renderAfterReady: false,
     // An object in customView (grist-core's ViewSectionRec customDef).
     ...(spec.options ? { widgetOptions: spec.options } : {}),

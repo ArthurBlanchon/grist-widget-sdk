@@ -56,10 +56,26 @@ export default function App() {
     }
   }, [tab, tableId, reader, records])
 
+  // Grist sends the section only its mapped columns (the keys): the other
+  // cells, which decide the row to keep, come from the table, again on each change.
+  const [full, setFull] = useState<{ tableId: string; rows: ReadonlyMap<number, Row> } | null>(null)
+  useEffect(() => {
+    if (!tableId) return
+    let live = true
+    fetchRows(tableId).then(
+      (all) => live && setFull({ tableId, rows: new Map(all.map((r) => [r.id, r as Row])) }),
+      (err: unknown) => live && setError(String(err instanceof Error ? err.message : err)),
+    )
+    return () => {
+      live = false
+    }
+  }, [fetchRows, tableId, records])
+  const cells = full && full.tableId === tableId ? full.rows : null
+
   const idOf = (g: Row[]) => g.map((r) => r.id).join(",")
   const keepOf = (g: Row[]) => {
     const c = chosen[idOf(g)]
-    return c !== undefined && g.some((r) => r.id === c) ? c : defaultKeep(g)
+    return c !== undefined && g.some((r) => r.id === c) ? c : defaultKeep(g.map((r) => cells?.get(r.id) ?? r))
   }
 
   async function prepare(g: Row[]) {

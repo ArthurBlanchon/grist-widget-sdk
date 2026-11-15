@@ -180,6 +180,26 @@ describe("inline transport", () => {
     emu.dispose()
   })
 
+  it("a mapped widget gets only its mapped columns, as from Grist; fetchTable still has them all", async () => {
+    const emu = createGristEmulator({ document: presets.todoList() })
+    const g = emu.grist!
+    const onRecord = vi.fn()
+    const onRecords = vi.fn()
+    g.onRecord(onRecord)
+    g.onRecords(onRecords)
+    await g.ready({ columns: [{ name: "Title" }] })
+    await flush()
+    // Declared but not mapped yet: every column, as Grist sends before a mapping is saved.
+    expect(Object.keys(onRecord.mock.calls.at(-1)![0] as object).sort()).toEqual(["done", "id", "priority", "title"])
+    emu.setColumnMappings({ Title: "title" })
+    await flush()
+    expect(onRecord.mock.calls.at(-1)![0]).toEqual({ id: 1, title: "Buy milk" })
+    expect(Object.keys((onRecords.mock.calls.at(-1)![0] as object[])[0]!).sort()).toEqual(["id", "title"])
+    expect(Object.keys(await g.fetchSelectedTable()).sort()).toEqual(["id", "title"])
+    expect(Object.keys(await g.docApi.fetchTable("Tasks")).sort()).toEqual(["done", "id", "priority", "title"])
+    emu.dispose()
+  })
+
   it("dispose() removes the global", () => {
     const emu = createGristEmulator({ document: presets.todoList() })
     expect((globalThis as unknown as { grist?: unknown }).grist).toBeDefined()

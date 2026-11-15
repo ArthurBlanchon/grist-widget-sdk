@@ -113,23 +113,38 @@ test("Grist's list points at the origin serving it", () => {
 // loads it: an id that moved to a new major would carry the document onto it.
 test("a new major leaves the documents on the previous one where they are", () => {
   const dir = widgetsDir({ board: { status: "stable", version: "1.0.0" } })
-  const before = gristWidgetList(readWidgets(dir), "https://gristwidgets.com", { board: ["v0"] })
-  const after = gristWidgetList(readWidgets(dir), "https://gristwidgets.com", { board: ["v0", "v1"] })
+  const before = gristWidgetList(readWidgets(dir), "https://gristwidgets.com", { board: { v0: "0.9.0" } })
+  const after = gristWidgetList(readWidgets(dir), "https://gristwidgets.com", { board: { v0: "0.9.0", v1: "1.0.0" } })
   const v0 = gristWidgetId("board", "v0")
   assert.equal(before.find((w) => w.widgetId === v0).url, "https://gristwidgets.com/widgets/board/v0/")
   assert.equal(after.find((w) => w.widgetId === v0).url, "https://gristwidgets.com/widgets/board/v0/")
-  // Still found by its id, but no longer offered in the gallery.
-  assert.equal(after.find((w) => w.widgetId === v0).published, false)
+  // Still found by its id, but no longer offered in the gallery, and named
+  // by its major in the creator panel.
+  const old = after.find((w) => w.widgetId === v0)
+  assert.equal(old.published, false)
+  assert.equal(old.name, "board (v0)")
+  assert.equal(old.gristWidgetSdk.version, "0.9.0")
   assert.deepEqual(after.filter((w) => w.published).map((w) => w.widgetId), ["@grist-widgets/board/v1"])
 })
 
 test("a retired widget's majors stay in Grist's list, unpublished; a draft never released isn't in it", () => {
   const dir = widgetsDir({ old: { status: "retired" }, wip: { status: "draft" } })
-  const list = gristWidgetList(readWidgets(dir), "https://gristwidgets.com", { old: ["v0", "v1"] })
+  const list = gristWidgetList(readWidgets(dir), "https://gristwidgets.com", { old: { v0: "0.3.0", v1: "1.2.0" } })
   assert.deepEqual(list.map((w) => [w.widgetId, w.published]), [
     ["@grist-widgets/old/v0", false],
     ["@grist-widgets/old/v1", false],
   ])
+})
+
+test("a released widget whose folder is gone fails the list, rather than orphan its documents", () => {
+  const dir = widgetsDir({ board: { status: "beta" } })
+  assert.throws(() => gristWidgetList(readWidgets(dir), "https://gristwidgets.com", { gone: { v0: "0.1.0" } }), /gone/)
+})
+
+test("a folder without a spec isn't a widget", () => {
+  const dir = widgetsDir({ board: { status: "beta" } })
+  mkdirSync(join(dir, "leftover", "node_modules"), { recursive: true })
+  assert.deepEqual(readWidgets(dir).map((w) => w.slug), ["board"])
 })
 
 test("every listed catalog widget has a job, columns, an access note and a changelog", () => {

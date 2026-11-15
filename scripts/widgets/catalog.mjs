@@ -7,13 +7,15 @@
 //   node scripts/widgets/catalog.mjs --www <file>
 //        the JSON the docs site's /widgets/ pages are built from (apps/www's
 //        prebuild and predev)
-//   node scripts/widgets/catalog.mjs --site <dir> --origin <url>
-//        <dir>/catalog.json, the same list for agents and other tools; and
-//        <dir>/grist-widgets.json, the list Grist's widget gallery reads
-//        (GRIST_WIDGET_LIST_URL), with this origin's install URLs, one entry
-//        per major (ADR 0014). The site build passes the released majors.
 //
-// Drafts and retired widgets are left out. The install URL is the newest
+// and scripts/build-site.mjs, through writeSiteCatalog, writes
+// /widgets/catalog.json, the same list for agents and other tools, and
+// /widgets/grist-widgets.json, Grist's widget list, with each origin's install
+// URLs and an id per released major (ADR 0014). Only the site build knows the
+// released majors (from the release branch), so only it writes that list.
+//
+// Drafts and retired widgets are left out of the catalog (they stay in Grist's
+// list, unpublished, once released). The install URL is the newest
 // major's channel (ADR 0013) on gristwidgets.com, with the github.io copy as
 // the alternative (ADR 0009).
 
@@ -104,6 +106,8 @@ export function catalogEntry(slug, dir = join(WIDGETS_DIR, slug)) {
 /** Every widget's entry, drafts and retired ones included, by title. */
 export function readWidgets(widgetsDir = WIDGETS_DIR) {
   return listWidgets(widgetsDir)
+    // A folder without a spec (one left behind with only node_modules) isn't a widget.
+    .filter((slug) => existsSync(join(widgetsDir, slug, "SPEC.md")))
     .map((slug) => catalogEntry(slug, join(widgetsDir, slug)))
     .sort((a, b) => a.title.localeCompare(b.title))
 }
@@ -117,43 +121,59 @@ export function readCatalog(widgetsDir = WIDGETS_DIR) {
 export const gristWidgetId = (slug, channel) => `@grist-widgets/${slug}/${channel}`
 
 /**
- * The list Grist's widget gallery reads (a self-hosted Grist's
- * GRIST_WIDGET_LIST_URL), at the install URLs of `origin`: the origin serving
- * the list, so each copy works if the other is down.
+ * The list Grist's widget gallery reads, at the install URLs of `origin`: the
+ * origin serving the list, so each copy works if the other is down.
  *
- * Grist keeps a gallery widget's `widgetId` in the document and looks its URL
- * up in this list each time it loads (grist-core's WidgetFrame), so an id is
- * a major channel, never a widget: `@grist-widgets/<slug>/v<major>`
- * (ADR 0014). Every released major stays in the list for the documents that
- * use it; only the newest major of a listed widget is `published` (offered
- * in the gallery). `channels` is each widget's released majors, oldest first
- * (from the release branch); a widget missing from it is listed on its
- * declared major.
+ * Grist keeps a gallery widget's `widgetId` in the document, without its URL,
+ * and looks the URL up in this list each time the document loads it
+ * (grist-core's CustomWidgetGallery and WidgetFrame). So an id is a major
+ * channel, never a widget: `@grist-widgets/<slug>/v<major>` (ADR 0014). Every
+ * released major stays in the list for the documents that use it; only the
+ * newest major of a listed widget is `published` (offered in the gallery).
+ *
+ * `channels` is each widget's released majors, `{ v0: "0.4.2", v1: … }`
+ * (majorChannels of the release branch). A widget with no released major is
+ * listed on its declared one when it is beta or stable. A released widget
+ * whose folder is gone fails: its ids would vanish, and every document using
+ * them would go blank. A retired widget keeps its folder.
  */
 export function gristWidgetList(widgets, origin, channels = {}) {
   const base = origin.replace(/\/$/, "")
+  const known = new Set(widgets.map((w) => w.slug))
+  const orphans = Object.keys(channels).filter((slug) => !known.has(slug))
+  if (orphans.length) {
+    throw new Error(
+      `released widgets without a widgets/<slug>/ folder: ${orphans.join(", ")}. ` +
+        "Their ids must stay in Grist's list (ADR 0014): keep the folder, with status: retired.",
+    )
+  }
   return widgets.flatMap((w) => {
-    const majors = channels[w.slug] ?? (LISTED.has(w.status) ? [w.channel] : [])
-    return majors.map((channel) => ({
-      name: w.title,
-      url: `${base}${w.path}${channel}/`,
-      widgetId: gristWidgetId(w.slug, channel),
-      published: LISTED.has(w.status) && channel === majors.at(-1),
-      accessLevel: w.access,
-      // The SDK shows its own connecting screen until Grist is ready
-      // (create-grist-widget's manifest says the same).
-      renderAfterReady: false,
-      description: w.description,
-      authors: [{ name: "grist-widget-sdk", url: `${ORIGINS.primary}/widgets/` }],
-      lastUpdatedAt: w.changes[0]?.date ? `${w.changes[0].date}T00:00:00.000Z` : undefined,
-      gristWidgetSdk: {
-        schema: 1,
-        channel,
-        version: channel === w.channel ? w.version : undefined,
-        repository: w.source,
-        license: w.license ?? undefined,
-      },
-    }))
+    const released = channels[w.slug] ?? (LISTED.has(w.status) ? { [w.channel]: w.version } : {})
+    const majors = Object.keys(released).sort((a, b) => Number(a.slice(1)) - Number(b.slice(1)))
+    return majors.map((channel) => {
+      const published = LISTED.has(w.status) && channel === majors.at(-1)
+      return {
+        // An older major says so: Grist names the widget a section uses by it.
+        name: published ? w.title : `${w.title} (${channel})`,
+        url: `${base}${w.path}${channel}/`,
+        widgetId: gristWidgetId(w.slug, channel),
+        published,
+        accessLevel: w.access,
+        // The SDK shows its own connecting screen until Grist is ready
+        // (create-grist-widget's manifest says the same).
+        renderAfterReady: false,
+        description: w.description,
+        authors: [{ name: "grist-widget-sdk", url: `${ORIGINS.primary}/widgets/` }],
+        lastUpdatedAt: published && w.changes[0]?.date ? `${w.changes[0].date}T00:00:00.000Z` : undefined,
+        gristWidgetSdk: {
+          schema: 1,
+          channel,
+          version: released[channel],
+          repository: w.source,
+          license: w.license ?? undefined,
+        },
+      }
+    })
   })
 }
 
@@ -171,23 +191,15 @@ export function writeSiteCatalog(dir, origin, { widgets = readWidgets(), channel
 }
 
 function main(argv) {
-  const arg = (name) => {
-    const i = argv.indexOf(name)
-    return i === -1 ? null : argv[i + 1]
-  }
-  const www = arg("--www")
-  const site = arg("--site")
-  if (!www && !site) {
-    console.error("Usage: catalog.mjs --www <file> | --site <dir> [--origin <url>]")
+  const i = argv.indexOf("--www")
+  const www = i === -1 ? null : argv[i + 1]
+  if (!www) {
+    console.error("Usage: catalog.mjs --www <file>")
     process.exit(2)
   }
-  const widgets = readWidgets()
-  const catalog = widgets.filter((w) => LISTED.has(w.status))
-  if (www) {
-    mkdirSync(dirname(resolve(www)), { recursive: true })
-    writeFileSync(www, json(catalog))
-  }
-  if (site) writeSiteCatalog(site, arg("--origin") ?? ORIGINS.primary, { widgets })
+  const catalog = readCatalog()
+  mkdirSync(dirname(resolve(www)), { recursive: true })
+  writeFileSync(www, json(catalog))
   console.log(`catalog: ${catalog.length} widgets`)
 }
 

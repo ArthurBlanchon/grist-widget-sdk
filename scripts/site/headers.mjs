@@ -31,7 +31,8 @@ export const DOCS_ONLY_HEADERS = {
 /** Paths other origins embed or load: the docs-only headers are removed there. */
 // A catalog widget's folders (/widgets/:slug/<version, channel or demo>/), and not
 // /widgets/* or /widgets/:slug/*: /widgets/ and each widget's page, /widgets/:slug/, are
-// docs pages, framed by the site only. The folder itself is listed beside its `*`, so a
+// docs pages, framed by the site only. So is /widgets/:slug/versions.json, fetched and never
+// framed: the docs' headers do it no harm. The folder itself is listed beside its `*`, so a
 // channel's URL is matched whether or not Cloudflare's `*` matches nothing.
 export const EMBEDDABLE_PATHS = [
   "/examples/*",

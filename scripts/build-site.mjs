@@ -270,14 +270,9 @@ async function buildCatalogWidgets() {
     const channel = Object.keys(majorChannels(versions[slug])).at(-1)
     writeFileSync(join(out, slug, "demo", "index.html"), demoPageHtml({ title, widget: `../${channel}/`, gristStatic: gristStaticBase }))
   }
-  // Each widget's major channels, oldest first: Grist's widget list keeps an
-  // id for each (scripts/widgets/catalog.mjs, ADR 0014).
-  const channels = Object.fromEntries(
-    Object.entries(versions).map(([slug, list]) => [
-      slug,
-      Object.keys(majorChannels(list)).sort((a, b) => Number(a.slice(1)) - Number(b.slice(1))),
-    ]),
-  )
+  // Each widget's major channels and the version each serves: Grist's widget
+  // list keeps an id for each (scripts/widgets/catalog.mjs, ADR 0014).
+  const channels = Object.fromEntries(Object.entries(versions).map(([slug, list]) => [slug, majorChannels(list)]))
   return { out, channels }
 }
 

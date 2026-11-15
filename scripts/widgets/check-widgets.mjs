@@ -194,7 +194,8 @@ export function checkStatic(slug, dir = join(WIDGETS_DIR, slug)) {
       ["package.json's description", pkg.description ?? ""],
       ["CHANGELOG.md", existsSync(changelog) ? readFileSync(changelog, "utf8") : ""],
     ]) {
-      if (/\bTODO\b/.test(text)) problems.push(`${file}: a TODO is left (new-widget's placeholder), and the widget isn't a draft`)
+      // new-widget's placeholders: "TODO:", a "| TODO |" cell, a "- TODO" item.
+      if (/\bTODO(?::|\s*\||\s*$)/m.test(text)) problems.push(`${file}: a TODO is left (new-widget's placeholder), and the widget isn't a draft`)
     }
   }
 

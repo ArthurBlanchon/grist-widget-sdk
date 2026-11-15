@@ -46,3 +46,91 @@ describe("demo", () => {
     if (!process.env.GRIST_IMAGE) expect(GRIST_IMAGE).toMatch(/^gristlabs\/grist:\d+\.\d+\.\d+$/)
   })
 })
+
+describe("a widget's demo data (src/app/demo.ts)", () => {
+  const options = {
+    requiredAccess: "full",
+    columns: [{ name: "Title", type: "Text" }, { name: "Status", type: "Choice" }, { name: "Values", type: "Numeric", allowMultiple: true }],
+  }
+  const demo = {
+    tables: {
+      Tasks: {
+        columns: { Title: "Text", Status: "Choice", Due: "Date", Tags: "ChoiceList", Revenue: "Numeric", Costs: "Numeric", Owner: "Ref:People", At: "DateTime" },
+        rows: [
+          { Title: "Brief", Status: "To do", Due: "2026-12-01", Tags: ["a", "b"], Revenue: 10, Costs: 4, Owner: 1, At: "2026-12-01T09:30:00Z" },
+          { Title: "Draft", Status: "Done", Due: null, Tags: [], Revenue: 5, Costs: 2, Owner: 2 },
+        ],
+      },
+      People: { columns: { Name: "Text" }, rows: [{ Name: "Ada" }, { Name: "Linus" }] },
+    },
+    mapping: { Values: ["Revenue", "Costs"] },
+    options: { columns: ["To do", "Done"] },
+  }
+
+  it("builds every table, its choices from its rows, and Grist's cell encodings", async () => {
+    const { demoSpec } = await import("../src/grist-local.mjs")
+    const spec = demoSpec(options, demo)
+    expect(spec.tables.map((t) => t.id)).toEqual(["Tasks", "People"])
+    expect(spec.table).toBe("Tasks")
+    const status = spec.tables[0].columns.find((c) => c.id === "Status")
+    expect(JSON.parse(status.fields.widgetOptions).choices).toEqual(["To do", "Done"])
+    expect(spec.tables[0].rows[0]).toMatchObject({ Due: Date.UTC(2026, 11, 1) / 1000, Tags: ["L", "a", "b"], Owner: 1 })
+    expect(spec.tables[0].rows[1].Due).toBeNull()
+    expect(spec.tables[0].rows[0].At).toBe(Date.UTC(2026, 11, 1, 9, 30) / 1000)
+    expect(spec.tables[0].columns.find((c) => c.id === "At").fields.type).toBe("DateTime:UTC")
+  })
+
+  it("maps declared columns by name, or as the demo says, several for allowMultiple; carries the options", async () => {
+    const { demoSpec } = await import("../src/grist-local.mjs")
+    const spec = demoSpec(options, demo)
+    expect(spec.mapping).toEqual({ Title: "Title", Status: "Status", Values: ["Revenue", "Costs"] })
+    expect(spec.options).toEqual({ columns: ["To do", "Done"] })
+  })
+
+  it("refuses demo data Grist couldn't take, with a message", async () => {
+    const { checkDemo } = await import("../src/grist-local.mjs")
+    expect(checkDemo(demo)).toBe(demo)
+    const t = (columns, rows = []) => ({ tables: { T: { columns, rows } } })
+    for (const [bad, message] of [
+      [null, /GristWidgetDemo/],
+      [{ tables: { tasks: { columns: {}, rows: [] } } }, /table id/],
+      [{ tables: { Table1: { columns: {}, rows: [] } } }, /table id/],
+      [t({ manualSort: "Int" }), /column id/],
+      [t({ in: "Text" }), /column id/],
+      [t({ A: "Ref:Nope" }), /isn't one a demo takes/],
+      [t({ A: "Choise" }), /isn't one a demo takes/],
+      [t({ A: "Attachments" }), /isn't one a demo takes/],
+      [{ ...t({ A: "Text" }), table: "U" }, /isn't one of its tables/],
+      [t({ A: "Text" }, [{ Typo: "x" }]), /isn't one of its columns/],
+      [t({ D: "Date" }, [{ D: "2026-12-1" }]), /YYYY-MM-DD/],
+      [t({ D: "Date" }, [{ D: new Date() }]), /YYYY-MM-DD/],
+      [t({ D: "DateTime" }, [{ D: "2026-12-01T10:00" }]), /offset/],
+      [t({ N: "Numeric" }, [{ N: "1" }]), /a number/],
+      [t({ C: "Text" }, [{ C: ["a"] }]), /a string/],
+      [{ tables: { T: { columns: { R: "Ref:U" }, rows: [{ R: 3 }] }, U: { columns: { Name: "Text" }, rows: [{ Name: "a" }] } } }, /1 to 1/],
+    ]) {
+      expect(() => checkDemo(bad), JSON.stringify(bad)).toThrow(message)
+    }
+    expect(() => checkDemo(t({ D: "DateTime:Europe/Paris" }, [{ D: "2026-12-01T10:00:00+01:00" }]))).not.toThrow()
+  })
+
+  it("checks the mapping against the declaration: declared names, existing columns, one or several", async () => {
+    const { demoSpec } = await import("../src/grist-local.mjs")
+    const one = { tables: { T: { columns: { Title: "Text", Status: "Choice", A: "Numeric", B: "Numeric" }, rows: [] } } }
+    expect(() => demoSpec(options, { ...one, mapping: { Nope: "A" } })).toThrow(/isn't a column the widget declares/)
+    expect(() => demoSpec(options, { ...one, mapping: { Values: ["A", "Whne"] } })).toThrow(/isn't a column of T/)
+    expect(() => demoSpec(options, { ...one, mapping: { Title: ["A"], Values: ["A"] } })).toThrow(/is one column/)
+    expect(() => demoSpec(options, { tables: { T: { columns: { Status: "Choice" }, rows: [] } }, mapping: { Values: ["A"] } })).toThrow(/Title, which the widget requires/)
+    expect(demoSpec(options, { ...one, mapping: { Values: "A" } }).mapping.Values).toEqual(["A"])
+  })
+
+  it("puts the widget's table first, keeps declared choices first, and versions the options", async () => {
+    const { demoSpec } = await import("../src/grist-local.mjs")
+    const spec = demoSpec({ ...options, optionsVersion: 2 }, { ...demo, table: "Tasks", tables: { People: demo.tables.People, Tasks: { ...demo.tables.Tasks, choices: { Status: ["Done", "Later"] } } } })
+    expect(spec.tables.map((t) => t.id)).toEqual(["Tasks", "People"])
+    const status = spec.tables[0].columns.find((c) => c.id === "Status")
+    expect(JSON.parse(status.fields.widgetOptions).choices).toEqual(["Done", "Later", "To do"])
+    expect(spec.options).toEqual({ columns: ["To do", "Done"], __version: 2 })
+    expect(spec.tables[0].columns.find((c) => c.id === "Owner").ref).toBe("People")
+  })
+})

@@ -28,7 +28,6 @@ import {
   GRIST_IMAGE,
   gristApi,
   openUrl,
-  readGristOptions,
   readWidgetExports,
   startGrist,
   stopGrist,
@@ -85,7 +84,7 @@ export function localPluginApi(gristUrl) {
 
 export async function runDemo({ cwd, gristPort = DEMO_GRIST_PORT, log = console.log }) {
   const pkg = JSON.parse(readFileSync(path.join(cwd, "package.json"), "utf8"))
-  const { options, from } = await readGristOptions(cwd)
+  const { options, from, demo } = await readWidgetExports(cwd, { demo: true })
   log(`Widget declaration from ${from}`)
 
   const gristUrl = `http://localhost:${gristPort}`
@@ -112,7 +111,7 @@ export async function runDemo({ cwd, gristPort = DEMO_GRIST_PORT, log = console.
     log(`Starting Grist (${GRIST_IMAGE}) on port ${gristPort}; the first run downloads the image...`)
     await startGrist({ container: DEMO_CONTAINER, port: gristPort })
     const api = gristApi(gristUrl, await apiKey(gristUrl))
-    const { docId, viewId } = await createDocument(api, await firstWorkspace(api), pkg.name, options, widgetUrl)
+    const { docId, viewId } = await createDocument(api, await firstWorkspace(api), pkg.name, options, widgetUrl, demo)
     // A new document starts with an empty Table1: only the widget's page is left.
     await api("POST", `/api/docs/${docId}/apply`, [["RemoveTable", "Table1"]])
     return { url: openUrl(gristUrl, docId, viewId), stop }
@@ -131,9 +130,9 @@ export const DEMO_DIR = path.join("public", "demo")
  * widget at the placeholder URL the demo page replaces. Returns the .grist
  * bytes.
  */
-export async function createDemoDocument({ gristUrl, key, options, name }) {
+export async function createDemoDocument({ gristUrl, key, options, name, demo = null }) {
   const api = gristApi(gristUrl, key)
-  const { docId } = await createDocument(api, await firstWorkspace(api), name, options, DEMO_URL_PLACEHOLDER)
+  const { docId } = await createDocument(api, await firstWorkspace(api), name, options, DEMO_URL_PLACEHOLDER, demo)
   await api("POST", `/api/docs/${docId}/apply`, [["RemoveTable", "Table1"]])
   const res = await fetch(`${gristUrl}/api/docs/${docId}/download?nohistory=true`, { headers: { Authorization: `Bearer ${key}` } })
   if (!res.ok) throw new Error(`demo: downloading the document failed (${res.status})`)
@@ -160,9 +159,9 @@ export async function withLocalGrist(fn, { gristPort = DEMO_GRIST_PORT, containe
  */
 export async function saveDemo({ cwd, gristPort = DEMO_GRIST_PORT, log = console.log }) {
   const pkg = JSON.parse(readFileSync(path.join(cwd, "package.json"), "utf8"))
-  const { options, metadata } = await readWidgetExports(cwd)
+  const { options, metadata, demo } = await readWidgetExports(cwd, { demo: true })
   const title = metadata?.title || pkg.name
-  const bytes = await withLocalGrist((grist) => createDemoDocument({ ...grist, options, name: title }), { gristPort, log })
+  const bytes = await withLocalGrist((grist) => createDemoDocument({ ...grist, options, name: title, demo }), { gristPort, log })
   const dir = path.join(cwd, DEMO_DIR)
   mkdirSync(dir, { recursive: true })
   writeFileSync(path.join(dir, "demo.grist"), bytes)

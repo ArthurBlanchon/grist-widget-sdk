@@ -281,9 +281,15 @@ export function checkStatic(slug, dir = join(WIDGETS_DIR, slug)) {
       ["SPEC.md", body],
       ["package.json's description", pkg.description ?? ""],
       ["CHANGELOG.md", existsSync(changelog) ? readFileSync(changelog, "utf8") : ""],
+
     ]) {
       // new-widget's placeholders: "TODO:", a "| TODO |" cell, a "- TODO" item.
       if (/\bTODO(?::|\s*\||\s*$)/m.test(text)) problems.push(`${file}: a TODO is left (new-widget's placeholder), and the widget isn't a draft`)
+    }
+    // demo.ts: new-widget's own placeholder only (demo rows may say TODO).
+    const demoFile = join(dir, "src", "app", "demo.ts")
+    if (existsSync(demoFile) && readFileSync(demoFile, "utf8").includes("TODO: realistic rows")) {
+      problems.push("src/app/demo.ts: a TODO is left (new-widget's placeholder), and the widget isn't a draft")
     }
   }
 

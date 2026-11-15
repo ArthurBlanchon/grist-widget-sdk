@@ -7,8 +7,9 @@
 //      the widget's own Vite config in Node (as build-widgets-manifest.mjs
 //      does for the examples): no source parsing, no per-widget config;
 //   2. a document is generated from them in a local Grist (a pinned Docker
-//      image, started here unless --grist-url points at one): a table with
-//      a typed column per declared column and sample rows, the widget's
+//      image, started here unless --grist-url points at one): the widget's
+//      demo data (src/app/demo.ts) when it has some, otherwise a table with
+//      a typed column per declared column and sample rows; the widget's
 //      section with the access it requests, every column mapped, and linked
 //      to the table so it has a selected row;
 //   3. its `dist/` is served at /<name>/dev/ and opened in Chromium;
@@ -52,7 +53,7 @@ import {
   createDocument,
   GRIST_IMAGE,
   gristApi,
-  readGristOptions,
+  readWidgetExports,
   startGrist,
   stopGrist,
 } from "../../packages/create-grist-widget/src/grist-local.mjs"
@@ -154,11 +155,12 @@ async function checkWidget({ browser, gristUrl, api, wsId, widgetDir, outDir, ti
   const dist = path.join(widgetDir, "dist")
   if (!existsSync(path.join(dist, "index.html"))) throw new Error(`${widgetDir}/dist is missing: build it, or pass --build`)
 
-  const { options, from } = await readGristOptions(widgetDir)
+  const { options, from, demo } = await readWidgetExports(widgetDir, { demo: true })
   result.optionsFrom = from
   const server = await serve(dist)
   const origin = `http://127.0.0.1:${server.address().port}`
-  const { docId, viewId } = await createDocument(api, wsId, name, options, `${origin}/${name}/dev/`)
+  // The widget's demo data (src/app/demo.ts) when it has some, sample rows otherwise.
+  const { docId, viewId } = await createDocument(api, wsId, name, options, `${origin}/${name}/dev/`, demo)
   result.doc = `${gristUrl}/doc/${docId}/p/${viewId}`
 
   const context = await browser.newContext({ viewport: { width: 1400, height: 900 } })

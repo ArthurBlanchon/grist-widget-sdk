@@ -392,6 +392,21 @@ export type GristWidgetDefinition = UseGristOptions & {
 };
 
 // @public
+export type GristWidgetDemo = {
+    tables: Record<string, {
+        columns: Record<string, GristWidgetDemoColumnType>;
+        rows: Array<Record<string, unknown>>;
+        choices?: Record<string, string[]>;
+    }>;
+    table?: string;
+    mapping?: Record<string, string | string[]>;
+    options?: Record<string, unknown>;
+};
+
+// @public
+export type GristWidgetDemoColumnType = "Text" | "Numeric" | "Int" | "Bool" | "Date" | "DateTime" | `DateTime:${string}` | "Choice" | "ChoiceList" | "Any" | `Ref:${string}`;
+
+// @public
 export type GristWidgetInteraction = {
     access_level?: string;
     linking?: GristWidgetLinkingInfo;

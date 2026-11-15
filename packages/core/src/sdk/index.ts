@@ -79,6 +79,8 @@ export { resolveGristFormulaKind } from "./helpers/grist-schema-formula"
 
 // Options that evolve: defineGristWidget({ optionsVersion, migrate })
 export type { MigrateWidgetOptions } from "./runtime/options-version"
+// A widget's demo data (src/app/demo.ts), for its demo page and real-Grist check
+export type { GristWidgetDemo, GristWidgetDemoColumnType } from "./demo"
 
 // Links and sources from data: http(s) only
 export { httpUrl } from "./helpers/http-url"

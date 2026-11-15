@@ -17,11 +17,11 @@ export type GristViewImpl = {
    * `api/grist-view.ts` and `transports/inline.ts` for the consumer side.
    */
   fetchSelectedTable: (
-    options?: { keepEncoded?: boolean; format?: "rows" | "columns" }
+    options?: { keepEncoded?: boolean; format?: "rows" | "columns"; expandRefs?: boolean; cellFormat?: string }
   ) => Promise<Record<string, unknown[]>>
   fetchSelectedRecord: (
     rowId: number,
-    options?: { keepEncoded?: boolean }
+    options?: { keepEncoded?: boolean; expandRefs?: boolean; cellFormat?: string }
   ) => Promise<Record<string, unknown>>
   allowSelectBy: () => Promise<boolean>
   setSelectedRows: (rowIds: number[] | null) => Promise<void>

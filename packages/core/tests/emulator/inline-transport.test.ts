@@ -229,6 +229,38 @@ describe("inline transport", () => {
     // A Ref without a visible column shows, and so sends, its row id.
     expect(onRecord.mock.calls.at(-1)![0]).toEqual({ id: 1, Title: "Boiler", Tech: "Marc", Team: ["Léa", "Marc"], Raw: 1 })
     expect((await g.docApi.fetchTable("Jobs")).Tech).toEqual([2])
+    // Grist sends the ids when asked (expandRefs: false), and for cellFormat "typed".
+    expect((await g.fetchSelectedRecord(1, { expandRefs: false } as never)).Tech).toBe(2)
+    expect((await g.fetchSelectedRecord(1, { cellFormat: "typed" } as never)).Tech).toBe(2)
+    // A write shows its new target's text at once.
+    await g.selectedTable.update({ id: 1, fields: { Tech: 1 } })
+    await flush()
+    expect((onRecord.mock.calls.at(-1)![0] as Record<string, unknown>).Tech).toBe("Léa")
+    emu.dispose()
+  })
+
+  it("a reference showing its row id keeps it, whatever helper columns follow", async () => {
+    const emu = createGristEmulator({
+      document: {
+        generatedAt: "1970-01-01T00:00:00.000Z",
+        docName: "Jobs",
+        mode: "schema+data",
+        tables: {
+          Jobs: {
+            columns: {
+              Raw: { type: "Ref:People", colRef: 4, parentPos: 1 },
+              gristHelper_RowConditionalRule: { type: "Any", colRef: 5, parentPos: 2, isFormula: true, formula: "True" },
+            },
+            rows: [{ id: 1, Raw: 2, gristHelper_RowConditionalRule: true }],
+          },
+          People: { columns: { Name: { type: "Text", colRef: 20 } }, rows: [{ id: 1, Name: "Léa" }, { id: 2, Name: "Marc" }] },
+        },
+        selection: { tableId: "Jobs", rowId: 1 },
+      },
+    })
+    const g = emu.grist!
+    await g.ready()
+    expect((await g.fetchSelectedRecord(1)).Raw).toBe(2)
     emu.dispose()
   })
 

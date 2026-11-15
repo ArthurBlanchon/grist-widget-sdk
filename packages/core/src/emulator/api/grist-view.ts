@@ -1,5 +1,4 @@
-import { rowToRecord, rowsToColumnar } from "../core/columnar"
-import { inferDisplayHelpersByRef } from "../core/display-helpers"
+import { encodeForWire, rowToRecord, rowsToColumnar } from "../core/columnar"
 import { findRow, getSelectedTable } from "../core/document"
 import type { EventBus } from "../core/event-bus"
 import { resolveMappings } from "../core/mappings"
@@ -30,7 +29,7 @@ export function createGristViewImpl(state: EmulatorDocumentState, bus: EventBus)
     async fetchSelectedTable(options) {
       const table = getSelectedTable(state)
       const data = rowsToColumnar(table, table.rows, { keepEncoded: options?.keepEncoded })
-      const shown = refsShown(state, table, options?.keepEncoded)
+      const shown = refsShown(state, table, options)
       for (const [col, show] of shown) data[col] = table.rows.map((row) => show(row))
       return onlyMapped(state, data)
     },
@@ -40,7 +39,7 @@ export function createGristViewImpl(state: EmulatorDocumentState, bus: EventBus)
       const row = findRow(table, rowId)
       if (!row) throw new Error(`No row ${rowId} in ${table.tableId}`)
       const data = rowToRecord(table, row, { keepEncoded: options?.keepEncoded })
-      for (const [col, show] of refsShown(state, table, options?.keepEncoded)) data[col] = show(row)
+      for (const [col, show] of refsShown(state, table, options)) data[col] = show(row)
       return onlyMapped(state, data)
     },
 
@@ -94,39 +93,48 @@ function onlyMapped<T extends Record<string, unknown>>(state: EmulatorDocumentSt
 type Row = Record<string, unknown> & { id: number }
 
 /**
- * A reference as Grist sends it to a widget (`expandRefs`, its default): the
- * text its column shows, from its display helper or its visible column,
- * not the row id; a RefList, the list of those. A reference showing the row
- * id (no visible column) stays the id. A widget that needs the ids reads the
- * table (`fetchRows(tableId)`).
+ * A reference as Grist sends it to a widget (`expandRefs`, its default
+ * unless `cellFormat` is "typed"): the value its column shows, looked up
+ * now in its visible column (or, without one, in the display helper it
+ * names), not the row id; a RefList, the list of those. A reference showing
+ * the row id stays the id. A widget that needs the ids reads the table
+ * (`fetchRows(tableId)`, full access).
  */
 function refsShown(
   state: EmulatorDocumentState,
   table: EmulatorTable,
-  keepEncoded: boolean | undefined
+  options: { keepEncoded?: boolean; expandRefs?: boolean; cellFormat?: string } | undefined
 ): Map<string, (row: Row) => unknown> {
   const out = new Map<string, (row: Row) => unknown>()
-  const helpers = inferDisplayHelpersByRef(table.columns)
+  if (!(options?.expandRefs ?? options?.cellFormat !== "typed")) return out
+  const keepEncoded = options?.keepEncoded
   for (const [colId, col] of Object.entries(table.columns)) {
     const m = /^(Ref|RefList):(.+)$/.exec(col.type ?? "")
     if (!m) continue
-    const helper = helpers[colId]
-    if (helper) {
-      out.set(colId, (row) => row[helper])
+    const target = state.tables.get(m[2]!)
+    const visible = target && Object.entries(target.columns).find(([, c]) => c.colRef !== undefined && c.colRef === col.visibleColRef)
+    if (!target || !visible) {
+      // Without a visible column, only the helper the column names exactly (displayColRef).
+      const helper = Object.entries(table.columns).find(([, c]) => c.colRef !== undefined && c.colRef === col.displayColRef && c.colRef !== col.colRef)?.[0]
+      if (helper) out.set(colId, (row) => row[helper])
       continue
     }
-    const target = state.tables.get(m[2]!)
-    const visible = target && Object.entries(target.columns).find(([, c]) => c.colRef !== undefined && c.colRef === col.visibleColRef)?.[0]
-    if (!target || !visible) continue
-    const label = (id: unknown) => (typeof id === "number" && id > 0 ? (findRow(target, id)?.[visible] ?? null) : null)
+    const [visibleId, visibleCol] = visible
+    const byId = new Map(target.rows.map((r) => [r.id, r]))
+    // An empty or dangling reference shows its visible column's empty value.
+    const empty = /^(Text|Choice)$/.test(visibleCol.type ?? "") ? "" : null
+    const one = (id: unknown) => {
+      const hit = typeof id === "number" && id > 0 ? byId.get(id) : undefined
+      return hit ? encodeForWire(hit[visibleId], visibleCol.type, keepEncoded) : empty
+    }
     out.set(
       colId,
       m[1] === "Ref"
-        ? (row) => label(row[colId])
+        ? (row) => one(row[colId])
         : (row) => {
             const raw = row[colId]
             const ids = Array.isArray(raw) ? (raw[0] === "L" ? raw.slice(1) : raw) : []
-            const labels = ids.map(label)
+            const labels = ids.map(one)
             return keepEncoded ? ["L", ...labels] : labels
           }
     )

@@ -34,8 +34,11 @@ done.
   the emulator), so `mappedRecord` reports a column declared `Ref:<table>`
   as "not a reference". Give typed reads the row id (a fetch of the
   section's ids, or `expandRefs: false` where the plugin API takes it), or
-  document the text. Done when a declared Ref column reads as its row id in
-  real Grist and in the emulator.
+  document the text. A reference showing a Numeric or Int column arrives
+  as a `Reference` whose id is the shown number: typed reads would take it
+  for the row id, silently. Done when a declared Ref column reads as its
+  row id in real Grist and in the emulator, whatever column it shows. The
+  emulator should also refuse `fetchTable` below full access, as Grist does.
 - [ ] **M5. The loop, from issue to release.** Issue forms and labels; the
   skills `triage-issue`, `new-widget`, `fix-issue`, `catalog-upgrade`,
   `release-widgets`, `sota-review`; upkeep on a schedule.

@@ -69,6 +69,10 @@ export type GristFormulaKind = "computed" | "trigger" | "none" | "empty_slot"
 export type GristFetchSelectedOptions = {
   keepEncoded?: boolean
   format?: "rows" | "columns" | string
+  /** A reference as the text its column shows (Grist's default), or as its row id (`false`). */
+  expandRefs?: boolean
+  /** `"typed"` sends references as row ids, unless `expandRefs` says otherwise. */
+  cellFormat?: "normal" | "typed" | string
 }
 
 /** Argument to `grist.setCursorPos` (subset of Grist `CursorPos`). */

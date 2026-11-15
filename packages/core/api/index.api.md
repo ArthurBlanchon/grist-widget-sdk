@@ -201,6 +201,8 @@ export type GristFetchedAttachmentBlob = {
 export type GristFetchSelectedOptions = {
     keepEncoded?: boolean;
     format?: "rows" | "columns" | string;
+    expandRefs?: boolean;
+    cellFormat?: "normal" | "typed" | string;
 };
 
 // @public

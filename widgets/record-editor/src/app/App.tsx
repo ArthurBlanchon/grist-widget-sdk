@@ -92,34 +92,37 @@ export default function App() {
 
   const record = w.record
   // Grist sends a reference as the text its column shows, not the row id:
-  // the ids come from the table itself, read again when the record changes.
+  // the ids come from the table itself, read once and again when its rows
+  // change (not on each move of the cursor).
   const hasRef = fields.some((f) => f.kind === "ref")
-  const [refIds, setRefIds] = useState<{ rowId: number; cells: Record<string, unknown> } | null>(null)
+  const records = w.records
+  const [refIds, setRefIds] = useState<{ tableId: string; rows: ReadonlyMap<number, Record<string, unknown>> } | null>(null)
   useEffect(() => {
-    if (!tableId || !hasRef || !record) return
+    if (!tableId || !hasRef) return
     let live = true
-    const rowId = record.id as number
     fetchRows(tableId).then(
-      (rows) => live && setRefIds({ rowId, cells: rows.find((r) => r.id === rowId) ?? {} }),
-      () => undefined,
+      (rows) => live && setRefIds({ tableId, rows: new Map(rows.map((r) => [r.id, r])) }),
+      (err: unknown) => live && setError(t("readFailed", { error: err instanceof Error ? err.message : String(err) })),
     )
     return () => {
       live = false
     }
-  }, [fetchRows, tableId, hasRef, record])
+    // t is stable for a locale.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetchRows, tableId, hasRef, records])
   const adding = newFrom !== undefined && newFrom === (record?.id ?? null)
   const setAdding = (on: boolean) => setNewFrom(on ? (record?.id ?? null) : undefined)
 
   const key = adding ? NEW : record ? String(record.id) : null
   const original = useMemo<Record<string, FormValue>>(() => {
     const out: Record<string, FormValue> = {}
-    const ids = refIds && refIds.rowId === record?.id ? refIds.cells : null
+    const ids = refIds && refIds.tableId === tableId && record ? (refIds.rows.get(record.id as number) ?? null) : null
     for (const f of fields) {
       const cell = (record as Record<string, unknown> | null)?.[f.colId]
       out[f.colId] = toForm(f, adding ? null : f.kind === "ref" ? (ids ? ids[f.colId] : null) : cell)
     }
     return out
-  }, [fields, record, adding, refIds])
+  }, [fields, record, adding, refIds, tableId])
   const draft = key ? (drafts[key] ?? {}) : {}
   const value = (f: Field) => (f.colId in draft ? draft[f.colId]! : original[f.colId]!)
 
@@ -160,6 +163,13 @@ export default function App() {
         if (id) await w.setCursorPosition({ rowId: id })
       } else {
         await w.table.update({ id: record!.id, fields: cells })
+        // The saved references, until the table is read again.
+        setRefIds((r) => {
+          if (!r) return r
+          const rows = new Map(r.rows)
+          rows.set(record!.id as number, { ...rows.get(record!.id as number), ...cells })
+          return { ...r, rows }
+        })
         discard()
         setSavedKey(key)
       }

@@ -48,6 +48,8 @@ same two steps:
    - GitHub → Settings → Environments → `npm` (created by `release.yml`'s
      first run; create it by hand otherwise) → **Deployment branches and
      tags: Selected branches → `main`**.
+   - Same page: **Required reviewers → the maintainer**. The `publish`
+     job then waits for their approval: one per release.
    - On each package's npm **Trusted Publishing** settings, set
      **Environment** to `npm`.
 
@@ -106,14 +108,22 @@ most one of the two others runs:
    version's entries into `packages/core/CHANGELOG.md`, consuming the
    changeset files. It has no environment, so it never waits for anyone.
 2. **Merge the Version PR** → a published package's version is no longer
-   on npm, so `publish` runs: it **publishes to npm over OIDC** and creates
+   on npm and no changeset is pending, so `publish` runs: it **publishes to npm over OIDC** and creates
    the git tag and GitHub Release. It is the only job in the `npm`
    environment, whose required reviewer is the maintainer: **one approval
    per release**, at
    Actions → the run → *Review deployments*.
 
 A push with nothing to version or publish (most of them) runs `plan` alone
-and leaves nothing waiting. Before 2026-11-15 one job did both, in the `npm`
+and leaves nothing waiting.
+
+**A publish left behind.** If the `publish` run of the Version Packages
+merge is rejected or fails, and a changeset is merged before it is redone,
+later pushes only version: their checkout has changesets, from which
+changesets/action never publishes. `plan` warns ("not on npm, but
+changesets are pending"). Re-run the failed `publish` job of the merge
+commit's run (Actions → that run → Re-run failed jobs): its checkout has no
+changeset, so it publishes the version npm doesn't have. Before 2026-11-15 one job did both, in the `npm`
 environment: every push to `main` asked for an approval, and an unapproved
 run held up every later one, the Version Packages PR included.
 

@@ -4,8 +4,13 @@
 // - `version-pr`: changesets are pending, so the Version Packages pull
 //   request is opened or brought up to date. No environment, no approval.
 // - `publish`: a published package's version in its package.json is not on
-//   npm yet, which happens when the Version Packages pull request has just
-//   merged. Only then does the `npm` environment (and its approval) come in.
+//   npm yet, and no changeset is pending: the Version Packages pull request
+//   has just merged. Only then does the `npm` environment (and its approval)
+//   come in. With changesets pending, changesets/action would version instead
+//   of publishing, so a version left unpublished behind a newer changeset is
+//   only reported: re-run the failed `publish` job of the Version Packages
+//   merge commit's run, whose checkout has no changeset
+//   (docs/operations/releasing.md).
 //
 // Neither: nothing to do. Most pushes to main are like this, and they no
 // longer leave a run waiting for an approval that publishes nothing (plan to
@@ -31,8 +36,13 @@ export function pendingChangesets(files) {
  * each published package, whether its version is on npm.
  */
 export function releasePlan({ changesets, packages }) {
-  const unpublished = packages.filter((p) => !p.onNpm).map((p) => `${p.name}@${p.version}`)
-  return { versionPr: changesets.length > 0, publish: unpublished.length > 0, unpublished }
+  const unpublished = packages.filter((p) => !p.private && !p.onNpm).map((p) => `${p.name}@${p.version}`)
+  return { versionPr: changesets.length > 0, publish: unpublished.length > 0 && changesets.length === 0, unpublished }
+}
+
+/** Whether a failed `npm view` means "not on npm" (a 404); anything else is an error. */
+export function isNotFound(stderr) {
+  return /\bE404\b|404 Not Found/.test(String(stderr))
 }
 
 /** Whether `name@version` is on the npm registry. */
@@ -43,7 +53,7 @@ function onNpm(name, version) {
   } catch (err) {
     // E404: the package or the version doesn't exist. Anything else (the
     // registry down) must not look like "unpublished" and start a publish.
-    if (/E404|404 Not Found/.test(String(err.stderr ?? err.message))) return false
+    if (isNotFound(err.stderr ?? err.message)) return false
     throw err
   }
 }
@@ -52,12 +62,19 @@ function main() {
   const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..")
   const changesets = pendingChangesets(readdirSync(path.join(root, ".changeset")))
   const packages = PUBLISHED.map((dir) => {
-    const { name, version } = JSON.parse(readFileSync(path.join(root, dir, "package.json"), "utf8"))
-    return { name, version, onNpm: onNpm(name, version) }
+    const manifest = JSON.parse(readFileSync(path.join(root, dir, "package.json"), "utf8"))
+    const { name, version } = manifest
+    // A package made private is never on npm: it must not ask for a publish on every push.
+    return manifest.private ? { name, version, private: true, onNpm: false } : { name, version, onNpm: onNpm(name, version) }
   })
   const plan = releasePlan({ changesets, packages })
   console.log(`changesets pending: ${changesets.length}`)
-  console.log(plan.publish ? `not on npm yet: ${plan.unpublished.join(", ")}` : "every published version is on npm")
+  console.log(plan.unpublished.length ? `not on npm yet: ${plan.unpublished.join(", ")}` : "every published version is on npm")
+  if (plan.unpublished.length && !plan.publish) {
+    console.log(
+      `::warning::${plan.unpublished.join(", ")} not on npm, but changesets are pending: not publishing from this push. Re-run the failed publish job of the Version Packages merge commit's run (docs/operations/releasing.md).`,
+    )
+  }
   console.log(`version-pr=${plan.versionPr} publish=${plan.publish}`)
   if (process.env.GITHUB_OUTPUT) {
     appendFileSync(process.env.GITHUB_OUTPUT, `version_pr=${plan.versionPr}\npublish=${plan.publish}\n`)

@@ -24,6 +24,7 @@ link it from where the decision is applied.
 | [0012](./0012-merge-authority.md) | Who merges what |
 | [0013](./0013-widget-channels.md) | A catalog widget's channels: one per major, and dev |
 | [0014](./0014-catalog-lists.md) | The catalog's lists, and an id per major in Grist's |
+| [0015](./0015-widget-licences.md) | The licences a catalog widget may ship |
 
 The plans in [`docs/planning/`](../planning/) and
 [`docs/history/`](../history/) hold the reasoning in full. The design

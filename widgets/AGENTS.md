@@ -45,18 +45,20 @@ the first).
 - **Data is never rendered as HTML.** No `dangerouslySetInnerHTML` or
   `eval`. Links and sources from data go through `httpUrl()` from
   `grist-widget-sdk` (http(s) only): lint refuses any other computed `href`
-  or `src` on an HTML element. A URL the widget makes itself (a `blob:` of
-  an attachment it fetched, a `mailto:`) disables that line with its
-  reason, for review.
+  or `src` on an HTML element (a lowercase tag; a component's props aren't
+  seen), and any `srcDoc`. A URL the widget makes itself (a `blob:` of an
+  attachment it fetched, a `mailto:`) disables that line with its reason,
+  for review.
 - **No API key in widget options** ([ADR 0010](../docs/decisions/0010-api-keys.md)).
 - **Dependencies are `catalog:` versions.** A dependency only one widget
   needs goes in its own `package.json`.
-- **Licences on the allow list,** for every package the build ships
-  (`dist/licenses.json`, the widget's third-party notice): MIT, ISC, BSD,
-  Apache-2.0, 0BSD, Unlicense, CC0-1.0, BlueOak-1.0.0, and OFL-1.1 for
-  fonts. No copyleft (MPL, EPL, LGPL, GPL), even optional: a widget is
-  copied into documents and forks without its source. `check-widgets
-  --sizes` refuses the rest.
+- **Licences on the allow list** ([ADR 0015](../docs/decisions/0015-widget-licences.md)),
+  for every package the build ships: MIT, ISC, BSD, Apache-2.0, 0BSD,
+  Unlicense, CC0-1.0, BlueOak-1.0.0, and OFL-1.1 for fonts. Copyleft (MPL,
+  EPL, LGPL, GPL) only as the other side of an OR. The build writes
+  `dist/licenses.json`, which `check-widgets --sizes` checks, and
+  `dist/THIRD-PARTY-NOTICES.txt`, each package's licence and notice
+  files, shipped with the widget.
 
 ## Releasing
 

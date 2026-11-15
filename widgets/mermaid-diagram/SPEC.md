@@ -66,9 +66,10 @@ flowchart, the entry chunk (about 140 KB) and its own chunks.
 
 - Editing the code in the widget: the Grist cell is the editor.
 - Diagrams other than flowcharts generated from rows.
-- The ELK layout (`layout: elk`, `flowchart-elk`): elkjs's licence (EPL-2.0
-  or GPL-3.0) is off the catalog's allow list. Every diagram is laid out by
-  Dagre; one that asks for ELK in its front matter is drawn with Dagre.
+- The ELK layout (Mermaid 12's default, `layout: elk`, `flowchart-elk`):
+  elkjs's licence (EPL-2.0 or GPL-3.0) is off the catalog's allow list
+  (ADR 0015). Every diagram is laid out by Dagre, even one whose front
+  matter asks for ELK.
 
 ## Demo data
 

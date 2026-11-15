@@ -1,7 +1,7 @@
 {
   "name": "@grist-widgets/mermaid-diagram",
   "private": true,
-  "version": "0.1.1",
+  "version": "0.2.0",
   "type": "module",
   "description": "A Mermaid diagram written in the selected row's cell, or a flowchart drawn from the rows' From and To columns.",
   "license": "MIT",

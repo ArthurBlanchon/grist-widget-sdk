@@ -1,6 +1,6 @@
 ---
 title: "Helpers"
-description: "The SDK's pure functions: cells, attachments, user actions, typed reads, page metadata."
+description: "The SDK's pure functions: cells, links, attachments, user actions, typed reads, page metadata."
 ---
 
 Pure functions, exported from `grist-widget-sdk` (the user actions from
@@ -63,7 +63,8 @@ A link or a source from a document's data, as an absolute `http:` or
 `https:` URL, or `undefined`. Pass every URL that comes from a cell through
 it before it reaches an `href` or a `src`: it refuses `javascript:`, `data:`
 and other schemes, relative URLs, and credentials
-(`https://bank.example@evil.example`).
+(`https://bank.example@evil.example`). It doesn't judge the host: an http(s)
+`src` from a cell can still load from any server the browser reaches.
 
 ```tsx no-check
 <a href={httpUrl(row.Website)}>{row.Name}</a>

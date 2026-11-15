@@ -126,6 +126,7 @@ export default function App() {
           title={t("document")}
           // No allow-scripts: a script in the template never runs. Same origin, so Print can reach the frame.
           sandbox="allow-same-origin allow-modals"
+          // eslint-disable-next-line no-restricted-syntax -- the owner's template is the page, sandboxed without scripts; cell values in it are escaped (template.ts)
           srcDoc={page(html)}
           className="min-h-0 w-full flex-1 rounded-lg border bg-background"
         />

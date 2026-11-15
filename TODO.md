@@ -11,6 +11,11 @@ The reasoning behind 0.4.0, and what it left for later, is the
 
 - **This repository's settings:** private vulnerability reporting on; the
   deepmerge alert dismissed (dev-only, no fix).
+- **Mermaid diagram 0.1.0 shipped elkjs (EPL-2.0 or GPL-3.0) without its
+  notice** ([ADR 0015](./docs/decisions/0015-widget-licences.md)). 0.2.0
+  replaces it on `/v0/`; `/widgets/mermaid-diagram/0.1.0/` still serves it.
+  Either withdraw that version from `widgets-dist`, or add elkjs's licence
+  next to it: both are direct pushes to `widgets-dist`, the maintainer's.
 
 ## 1. The plan to 0.8.0: the production-grade AI widget factory
 

@@ -106,10 +106,24 @@ test("a widget's changelog: an entry per version, newest first, the declared one
 })
 
 test("licences: permissive ones and fonts' OFL; an OR needs one, an AND needs all", () => {
-  for (const ok of ["MIT", "ISC", "Apache-2.0", "(MIT OR Apache-2.0)", "(MPL-2.0 OR Apache-2.0)", "MIT AND ISC AND BSD-3-Clause", "OFL-1.1", "0BSD"]) {
+  for (const ok of ["MIT", "ISC", "Apache-2.0", "(MIT OR Apache-2.0)", "(MPL-2.0 OR Apache-2.0)", "MIT AND ISC AND BSD-3-Clause", "OFL-1.1", "0BSD", "(GPL-3.0 AND MPL-2.0) OR MIT", "MIT AND (GPL-3.0 OR ISC)"]) {
     assert.ok(licenceAllowed(ok), ok)
   }
-  for (const no of ["GPL-3.0", "EPL-2.0 OR GPL-3.0-or-later", "MPL-2.0", "MIT AND GPL-2.0", "Unknown", "", "LGPL-2.1"]) {
+  for (const no of [
+    "GPL-3.0",
+    "EPL-2.0 OR GPL-3.0-or-later",
+    "MPL-2.0",
+    "MIT AND GPL-2.0",
+    "Unknown",
+    "",
+    "LGPL-2.1",
+    // Parentheses group: both of these require GPL.
+    "(MIT OR GPL-3.0) AND GPL-2.0",
+    "GPL-3.0 AND (MIT OR ISC)",
+    "Apache-2.0 WITH LLVM-exception",
+    "(MIT",
+    "MIT OR",
+  ]) {
     assert.ok(!licenceAllowed(no), no)
   }
 })

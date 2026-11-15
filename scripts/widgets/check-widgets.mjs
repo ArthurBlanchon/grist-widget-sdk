@@ -67,13 +67,51 @@ export function checkSize(slug, spec, dir = join(WIDGETS_DIR, slug)) {
  */
 export const ALLOWED_LICENCES = ["MIT", "ISC", "BSD-2-Clause", "BSD-3-Clause", "Apache-2.0", "0BSD", "Unlicense", "CC0-1.0", "BlueOak-1.0.0", "OFL-1.1"]
 
-/** Whether an SPDX expression allows shipping: any alternative of an OR, every part of an AND. */
+/**
+ * Whether an SPDX expression allows shipping: parsed with its precedence
+ * (AND binds tighter than OR, parentheses group), an OR needing one allowed
+ * side and an AND both. Anything it can't parse (WITH, a stray word,
+ * "Unknown") is refused.
+ */
 export function licenceAllowed(expression, allowed = ALLOWED_LICENCES) {
-  const text = String(expression).replace(/[()]/g, " ").trim()
-  if (!text) return false
-  return text
-    .split(/\s+OR\s+/i)
-    .some((alternative) => alternative.split(/\s+AND\s+/i).every((id) => allowed.includes(id.trim())))
+  const tokens = String(expression).match(/\(|\)|[^\s()]+/g) ?? []
+  let at = 0
+  const peek = () => tokens[at]
+  const fail = () => {
+    throw new Error("unparsable")
+  }
+  const primary = () => {
+    const t = tokens[at++]
+    if (t === "(") {
+      const value = or()
+      if (tokens[at++] !== ")") fail()
+      return value
+    }
+    if (!t || t === ")" || /^(AND|OR|WITH)$/i.test(t)) fail()
+    return allowed.includes(t)
+  }
+  const and = () => {
+    let value = primary()
+    while (peek() && /^AND$/i.test(peek())) {
+      at++
+      value = primary() && value
+    }
+    return value
+  }
+  const or = () => {
+    let value = and()
+    while (peek() && /^OR$/i.test(peek())) {
+      at++
+      value = and() || value
+    }
+    return value
+  }
+  try {
+    const value = or()
+    return at === tokens.length && tokens.length > 0 && value
+  } catch {
+    return false
+  }
 }
 
 /** Problems with the licences of what a built widget ships (dist/licenses.json, from _shared/vite.ts). */

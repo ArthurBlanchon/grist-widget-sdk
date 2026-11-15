@@ -40,9 +40,19 @@ export default defineConfig([
           selector:
             // On HTML elements only (a lowercase tag): a component's `data` or
             // `src` prop (Recharts' data) is no URL.
-            "JSXOpeningElement[name.name=/^[a-z]/] > JSXAttribute[name.name=/^(href|src|srcSet|action|formAction|poster|data)$/] > JSXExpressionContainer > :not(CallExpression[callee.name='httpUrl'], Literal, JSXEmptyExpression)",
+            "JSXOpeningElement[name.name=/^[a-z]/] > JSXAttribute[name.name=/^(href|src|srcSet|action|formAction|poster|data|xlinkHref)$/] > JSXExpressionContainer > :not(CallExpression[callee.name='httpUrl'], Literal, JSXEmptyExpression)",
           message:
             "A computed href or src goes through httpUrl() from grist-widget-sdk. A URL the widget made itself: disable this line, with the reason.",
+        },
+        // srcDoc renders its value as a page: data as HTML.
+        {
+          selector: "JSXAttribute[name.name='srcDoc']",
+          message: "Catalog widgets never render data as HTML: no srcDoc (plan §5).",
+        },
+        // The rule above trusts the name: only the SDK's httpUrl may carry it.
+        {
+          selector: "VariableDeclarator[id.name='httpUrl'], FunctionDeclaration[id.name='httpUrl']",
+          message: "httpUrl is grist-widget-sdk's: import it, don't declare one.",
         },
       ],
     },

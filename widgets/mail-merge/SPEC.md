@@ -28,7 +28,10 @@ Grist sends no e-mail; its webhooks need a service and a key.
 | Sent | DateTime, Date or Bool | no | set when the row's e-mail is opened: the time, the day, or true |
 
 The rows are the ones the section shows: its filters choose them. The
-placeholders can name any column Grist sends the widget.
+placeholders can name any column of the table the person can read (the
+document's access rules apply), hidden from the section or not: Grist sends
+a mapped widget only its mapped columns, so the widget reads the others from
+the table. A reference shows the text of its column, as in the table.
 
 ## Template
 

@@ -27,6 +27,13 @@ export const widget = defineGristWidget({
 
 const CLIENTS: Client[] = ["mailto", "gmail", "outlook"]
 
+/** A reference cell read from the table (a row id, or a list of them) as the text its column shows. */
+function shown(raw: unknown, label: ReadonlyMap<number, unknown>): unknown {
+  const one = (id: unknown) => (typeof id === "number" && id > 0 ? (label.get(id) ?? null) : null)
+  if (Array.isArray(raw)) return (raw[0] === "L" ? raw.slice(1) : raw).map(one)
+  return one(raw)
+}
+
 export default function App() {
   const w = widget.useGrist()
   const t = useT(messages)
@@ -50,13 +57,24 @@ export default function App() {
   const sentCol = typeof w.mappings.Sent === "string" ? w.mappings.Sent : null
   // The table's columns and their types: a Date cell arrives as seconds, and only its type says so.
   const [types, setTypes] = useState<ReadonlyMap<string, string | undefined> | null>(null)
+  // Each reference column's table and the column it shows, for the cells read from the table.
+  const [refCols, setRefCols] = useState<ReadonlyMap<string, { table: string; shows: string }>>(new Map())
   const { listColumns } = w
   const tableId = w.currentTableId
   useEffect(() => {
     if (!tableId) return
     let live = true
     listColumns(tableId).then(
-      (cols) => live && setTypes(new Map(cols.map((x) => [x.colId, x.type]))),
+      (cols) => {
+        if (!live) return
+        setTypes(new Map(cols.map((x) => [x.colId, x.type])))
+        const refs = new Map<string, { table: string; shows: string }>()
+        for (const x of cols) {
+          const target = /^(?:Ref|RefList):(.+)$/.exec(x.type ?? "")?.[1]
+          if (target && x.visibleCol) refs.set(x.colId, { table: target, shows: x.visibleCol })
+        }
+        setRefCols(refs)
+      },
       () => undefined,
     )
     return () => {
@@ -67,31 +85,58 @@ export default function App() {
 
   const records = w.records
   // Grist sends a mapped widget only its mapped columns: the others, which the
-  // placeholders name, come from the table itself (full access), again on each change.
-  const [cells, setCells] = useState<ReadonlyMap<number, Record<string, unknown>> | null>(null)
+  // placeholders name, come from the table itself (full access, its access
+  // rules applied), again on each change. A reference read there is a row id:
+  // it shows the text of its column, as Grist sends a mapped one.
+  const [read, setRead] = useState<{ tableId: string; cells: ReadonlyMap<number, Record<string, unknown>> } | null>(null)
+  const [labels, setLabels] = useState<ReadonlyMap<string, ReadonlyMap<number, unknown>>>(new Map())
   const { fetchRows } = w
   useEffect(() => {
     if (!tableId) return
     let live = true
     fetchRows(tableId).then(
-      (all) => live && setCells(new Map(all.map((r) => [r.id, r]))),
+      (all) => live && setRead({ tableId, cells: new Map(all.map((r) => [r.id, r])) }),
+      (err: unknown) => live && setError(t("failed", { error: err instanceof Error ? err.message : String(err) })),
+    )
+    return () => {
+      live = false
+    }
+    // t is stable for a locale; the table is read again when its records change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetchRows, tableId, records])
+  useEffect(() => {
+    let live = true
+    const tables = new Map([...refCols.values()].map((r) => [r.table, r]))
+    Promise.all([...tables.keys()].map(async (table) => [table, await fetchRows(table)] as const)).then(
+      (fetched) => {
+        if (!live) return
+        const byTable = new Map(fetched)
+        setLabels(new Map([...refCols].map(([col, r]) => [col, new Map((byTable.get(r.table) ?? []).map((row) => [row.id, row[r.shows]]))])))
+      },
       () => undefined,
     )
     return () => {
       live = false
     }
-  }, [fetchRows, tableId, records])
+  }, [fetchRows, refCols, records])
+  const cells = read && read.tableId === tableId ? read.cells : null
   const rows = useMemo(
     () =>
-      (records ?? []).map((r) => {
-        const out: Row = { id: r.id as number }
-        for (const [k, v] of Object.entries({ ...cells?.get(r.id as number), ...r })) {
-          const check = checkGristCell(types?.get(k), v)
-          out[k] = check.ok ? check.value : v
-        }
-        return out
-      }),
-    [records, cells, types],
+      // Nothing to open before the table is read: the e-mails would miss its cells.
+      cells === null
+        ? []
+        : (records ?? []).map((r) => {
+            const out: Row = { id: r.id as number }
+            const fromTable = cells.get(r.id as number) ?? {}
+            for (const [k, raw] of Object.entries({ ...fromTable, ...r })) {
+              const label = k in r ? undefined : labels.get(k)
+              const v = label ? shown(raw, label) : raw
+              const check = checkGristCell(label ? undefined : types?.get(k), v)
+              out[k] = check.ok ? check.value : v
+            }
+            return out
+          }),
+    [records, cells, labels, types],
   )
   const columns = useMemo(() => new Set(types ? [...types.keys()] : rows.length ? Object.keys(rows[0]!).filter((k) => k !== "id") : []), [types, rows])
 

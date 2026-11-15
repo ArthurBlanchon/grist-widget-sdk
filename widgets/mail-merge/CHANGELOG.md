@@ -4,7 +4,7 @@ What changed in each version, for the people using the widget. Newest first.
 
 ## 0.1.2 (2026-11-15)
 
-- Placeholders for columns you haven't mapped (`{{Name}}`, say) are filled again. Grist sends a mapped widget only its mapped columns, so they came out empty; the widget now reads the table itself.
+- Placeholders for columns you haven't mapped (`{{Name}}`, say) are filled. Grist sends a mapped widget only its mapped columns, so they came out empty; the widget now reads the table itself, a reference as the text its column shows. The e-mails can be opened once the table is read, and a failed read is shown.
 
 ## 0.1.1 (2026-11-15)
 

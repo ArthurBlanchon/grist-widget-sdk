@@ -77,7 +77,10 @@ export function createGristViewImpl(state: EmulatorDocumentState, bus: EventBus)
  */
 function onlyMapped<T extends Record<string, unknown>>(state: EmulatorDocumentState, data: T): T {
   const mappings = resolveMappings(state)
-  if (!state.configuration?.columns || !mappings) return data
-  const mapped = new Set(Object.values(mappings).flat().filter((c): c is string => typeof c === "string"))
+  const declared = state.configuration?.columns
+  if (!declared || !mappings) return data
+  // Only the declared names count, as in Grist's mappedColumns.
+  const names = declared.map((c) => (typeof c === "string" ? c : c.name))
+  const mapped = new Set(names.flatMap((n) => [mappings[n]].flat()).filter((c): c is string => typeof c === "string"))
   return Object.fromEntries(Object.entries(data).filter(([col]) => col === "id" || mapped.has(col))) as T
 }

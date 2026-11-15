@@ -154,7 +154,7 @@ export function documentSpec(options, rowCount = 3) {
 }
 
 /** The demo data's format, part of the catalog demos' hash: a change regenerates them. */
-export const DEMO_FORMAT = 2
+export const DEMO_FORMAT = 3
 
 const DEMO_TYPES = ["Text", "Numeric", "Int", "Bool", "Date", "DateTime", "Choice", "ChoiceList", "Any"]
 // Ids Grist would rename (a new document's Table1, its own columns, Python's keywords).

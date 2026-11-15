@@ -96,6 +96,15 @@ describe("Duplicate finder", () => {
     expect(within(groupOf(2)).getByRole("radio", { name: "Keep Row 3" })).toBeChecked()
     fireEvent.click(within(groupOf(2)).getByRole("radio", { name: "Keep Row 6" }))
     expect(within(groupOf(2)).getByRole("radio", { name: "Keep Row 6" })).toBeChecked()
+    cleanup()
+
+    // The cells that count are the whole row's, not only the keys Grist sends a mapped widget.
+    setup(["Name"], [
+      { id: 1, Name: "Ana", Email: "", City: "", Manager: 0, Score: null, Initial: "A" },
+      { id: 2, Name: "Ana", Email: "ana@example.org", City: "Lyon", Manager: 0, Score: 2, Initial: "A" },
+    ])
+    await screen.findByText(/1 groups/)
+    await waitFor(() => expect(within(groupOf(1)).getByRole("radio", { name: "Keep Row 2" })).toBeChecked())
   })
 
   it("AC-4 says what a merge does before making it; Cancel changes nothing", async () => {

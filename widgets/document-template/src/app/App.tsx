@@ -13,6 +13,8 @@ export const widget = defineGristWidget({
   title: "Document template",
   description: "One document per row (a quote, a certificate, a letter) from an HTML template with the columns as placeholders; or one for all rows. Print it, or save it as PDF.",
   requiredAccess: "full",
+  // Options carry their version (ADR 0017): version 1, read as before.
+  optionsVersion: 1,
   columns: [],
 })
 

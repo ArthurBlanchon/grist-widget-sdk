@@ -14,6 +14,8 @@ export const widget = defineGristWidget({
   title: "Chart builder",
   description: "Bar, line, area, pie, radar or combined charts of a table, grouped by a column, in the theme's colours.",
   requiredAccess: "full",
+  // Options carry their version (ADR 0017): version 1, read as before.
+  optionsVersion: 1,
   columns: [
     { name: "Label", title: "Group by (the chart's categories)" },
     { name: "Values", type: "Numeric,Int", allowMultiple: true, title: "Numbers to chart (a series each)" },

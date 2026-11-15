@@ -15,6 +15,8 @@ export const widget = defineGristWidget({
   title: "Kanban board",
   description: "Move cards between status columns by dragging, or with the arrow keys.",
   requiredAccess: "full",
+  // Options carry their version (ADR 0017): version 1, read as before.
+  optionsVersion: 1,
   allowSelectBy: true,
   columns: [
     { name: "Title", type: "Text", title: "Card title" },

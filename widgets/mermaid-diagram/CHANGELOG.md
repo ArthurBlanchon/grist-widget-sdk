@@ -2,6 +2,10 @@
 
 What changed in each version, for the people using the widget. Newest first.
 
+## 0.2.1 (2026-11-15)
+
+- The widget's page carries a Content Security Policy: only its own code and Grist's plugin API run in it, which keeps a document's content from running anything there.
+
 ## 0.2.0 (2026-11-15)
 
 - Diagrams are now laid out by Dagre, Mermaid's classic layout. 0.1.0 used ELK, Mermaid 12's default, so a diagram's nodes may sit differently: the diagram itself, its text and its links don't change. A diagram can no longer ask for ELK in its front matter.

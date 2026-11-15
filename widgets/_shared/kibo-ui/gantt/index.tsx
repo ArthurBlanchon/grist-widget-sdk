@@ -1441,8 +1441,8 @@ export const GanttProvider: FC<GanttProviderProps> = ({
     [zoom, columnWidth, sidebarWidth]
   );
 
-  // Opens on today, a quarter of the view from the left (upstream opened
-  // mid-way through the three years, months away from the work).
+  // Opens on today, a quarter of the timeline's view from its left (upstream
+  // opened mid-way through the three years, months away from the work).
   useEffect(() => {
     const element = scrollRef.current;
     if (!element) {
@@ -1460,11 +1460,14 @@ export const GanttProvider: FC<GanttProviderProps> = ({
       timelineData,
       ref: scrollRef,
     });
-    element.scrollLeft = Math.max(0, today - element.clientWidth / 4);
+    // The sticky sidebar takes part of the view: today goes a quarter into
+    // what is left.
+    element.scrollLeft = Math.max(0, today - (element.clientWidth - sidebarWidth) / 4);
     setScrollX(element.scrollLeft);
-    // Once, on mount: a later zoom or a scroll by the person keeps their place.
+    // On mount, and again once the sidebar is measured (an effect below, right
+    // after mount); a later zoom or a scroll by the person keeps their place.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [setScrollX]);
+  }, [setScrollX, sidebarWidth]);
 
   // Update sidebar width when DOM is ready
   useEffect(() => {

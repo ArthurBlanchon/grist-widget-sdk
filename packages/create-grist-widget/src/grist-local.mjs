@@ -8,7 +8,7 @@
 // default user, and the API key comes from signing in over HTTP.
 
 import { execFileSync } from "node:child_process"
-import { existsSync, readFileSync } from "node:fs"
+import { existsSync, lstatSync, readFileSync, realpathSync } from "node:fs"
 import { createRequire } from "node:module"
 import path from "node:path"
 import { pathToFileURL } from "node:url"
@@ -74,7 +74,10 @@ export async function readWidgetExports(widgetDir, { demo: withDemo = false } = 
     // the manifest a deploy writes doesn't depend on it.
     if (withDemo && existsSync(path.join(widgetDir, DEMO_FILE))) {
       try {
-        found.demo = withDemoFiles(checkDemo((await server.ssrLoadModule("/" + DEMO_FILE)).demo), widgetDir)
+        // `files` is this loader's own (the bytes it reads), never the module's.
+        const loaded = (await server.ssrLoadModule("/" + DEMO_FILE)).demo
+        if (loaded && typeof loaded === "object") delete loaded.files
+        found.demo = withDemoFiles(checkDemo(loaded), widgetDir)
       } catch (e) {
         throw new Error(`${DEMO_FILE}: ${String(e?.message ?? e).split("\n")[0]}`, { cause: e })
       }
@@ -92,13 +95,14 @@ export async function readWidgetExports(widgetDir, { demo: withDemo = false } = 
 
 /** Where a widget's demo attachments are: `src/app/demo/`, next to `demo.ts`. */
 export const DEMO_FILES_DIR = "src/app/demo"
+const DEMO_FILE_MAX = 2e6
 
 /**
  * The demo with the files its Attachments cells name, read from
  * `src/app/demo/` (`files`, by name, base64): createDocument uploads them,
  * and a change to one changes the catalog demo's hash.
  */
-function withDemoFiles(demo, widgetDir) {
+export function withDemoFiles(demo, widgetDir) {
   const names = new Set()
   for (const t of Object.values(demo.tables)) {
     for (const [col, type] of Object.entries(t.columns)) {
@@ -108,9 +112,17 @@ function withDemoFiles(demo, widgetDir) {
   }
   if (!names.size) return demo
   const files = {}
+  const dir = path.join(widgetDir, DEMO_FILES_DIR)
   for (const n of [...names].sort()) {
-    const file = path.join(widgetDir, DEMO_FILES_DIR, n)
+    const file = path.join(dir, n)
     if (!existsSync(file)) throw new Error(`demo: ${n} isn't in ${DEMO_FILES_DIR}/`)
+    // A plain file of the folder only: a link could publish a file of the machine
+    // that builds the demo (a CI runner's .git/config) in the public demo page.
+    const stat = lstatSync(file)
+    if (!stat.isFile() || path.dirname(realpathSync(file)) !== realpathSync(dir)) {
+      throw new Error(`demo: ${DEMO_FILES_DIR}/${n} isn't a plain file of that folder (no link)`)
+    }
+    if (stat.size > DEMO_FILE_MAX) throw new Error(`demo: ${DEMO_FILES_DIR}/${n} is over ${DEMO_FILE_MAX / 1e6} MB`)
     files[n] = readFileSync(file).toString("base64")
   }
   return { ...demo, files }
@@ -369,9 +381,12 @@ export async function createDocument(api, wsId, name, options, widgetUrl, demo =
       columns: t.columns.map(({ id, fields, ref }) => ({ id, fields: ref ? { ...fields, type: fields.type.startsWith("RefList:") ? "Any" : "Int" } : fields })),
     })),
   })
-  // A new document's empty Table1 would be a page of its own, next to the widget's.
-  await api("POST", `/api/docs/${docId}/apply`, [["RemoveTable", "Table1"]])
   const sql = async (q) => (await api("GET", `/api/docs/${docId}/sql?q=${encodeURIComponent(q)}`)).records.map((r) => r.fields)
+  // A new document's empty Table1 would be a page of its own, next to the
+  // widget's: removed here, once, when the Grist image made one.
+  if ((await sql("select id from _grist_Tables where tableId = 'Table1'")).length) {
+    await api("POST", `/api/docs/${docId}/apply`, [["RemoveTable", "Table1"]])
+  }
   // Then a Ref, showing its target's first column rather than a row id.
   const refs = tables.flatMap((t) => t.columns.filter((c) => c.ref).map((c) => ({ table: t.id, col: c.id, target: c.ref })))
   if (refs.length) {
@@ -387,7 +402,14 @@ export async function createDocument(api, wsId, name, options, widgetUrl, demo =
       ])
     )
   }
-  // The demo's files become the document's attachments, and each cell naming them their ids.
+  // The demo's files become the document's attachments, and each cell naming
+  // them their ids; without the files (a static demo page, where grist-static
+  // serves no attachment), the cells stay empty.
+  if (demo && !demo.files) {
+    for (const t of tables) {
+      for (const c of t.columns.filter((c) => c.fields.type === "Attachments")) for (const row of t.rows) row[c.id] = null
+    }
+  }
   if (demo?.files) {
     const names = Object.keys(demo.files)
     const form = new FormData()

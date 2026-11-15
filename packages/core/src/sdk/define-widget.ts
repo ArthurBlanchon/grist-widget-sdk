@@ -18,6 +18,7 @@
 
 import type { GristMappedRow } from "./runtime/cells"
 import type { GristRowRecord } from "./types"
+import { checkOptionsVersioning } from "./runtime/options-version"
 import { useGrist, type UseGristOptions, type UseGristResult } from "./use-grist"
 
 /** What a widget declares: `UseGristOptions`, plus its title and description. */
@@ -53,12 +54,7 @@ export type GristWidget<D extends GristWidgetDefinition = GristWidgetDefinition>
  */
 export function defineGristWidget<const D extends GristWidgetDefinition>(definition: D): GristWidget<D> {
   const { title, description, ...options } = definition
-  const { optionsVersion, migrate } = options
-  if (optionsVersion !== undefined && !(Number.isInteger(optionsVersion) && optionsVersion >= 1)) {
-    throw new Error(`defineGristWidget: optionsVersion must be an integer from 1, not ${String(optionsVersion)}`)
-  }
-  if (migrate !== undefined && typeof migrate !== "function") throw new Error("defineGristWidget: migrate must be a function")
-  if (migrate && optionsVersion === undefined) throw new Error("defineGristWidget: migrate needs the optionsVersion it migrates to")
+  checkOptionsVersioning(options)
   return {
     definition,
     options,

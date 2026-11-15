@@ -24,7 +24,7 @@ import type {
   GristRowRecord,
   GristTableOperations,
 } from "../types"
-import { withOptionsVersion } from "./options-version"
+import { readWidgetOptions, writeWidgetOptions } from "./options-version"
 import type { GristRuntime } from "./runtime"
 
 export type ListTablesOptions = {
@@ -234,15 +234,19 @@ export function createGristApi(runtime: GristRuntime): GristApi {
     applyActions: (actions, options) => write(() => docApi().applyUserActions(actions, options)),
 
     setWidgetOptions: async (options) => {
-      await grist.setOptions(withOptionsVersion(options, runtime.options))
+      const current = (await grist.getOptions()) as Record<string, unknown> | null
+      await grist.setOptions(writeWidgetOptions(options, current, runtime.options))
     },
     // One patch at a time: each reads the options the previous one wrote, so two patches
     // made together (a chart's kind, then its total) both land instead of the second
     // overwriting the first with options read before it.
     patchWidgetOptions: (patch) => {
       const run = patching.then(async () => {
-        const current = ((await grist.getOptions()) as Record<string, unknown> | null) ?? {}
-        await grist.setOptions(withOptionsVersion({ ...current, ...patch }, runtime.options))
+        // The patch merges into the options as the widget reads them:
+        // migrated, under the current version.
+        const current = (await grist.getOptions()) as Record<string, unknown> | null
+        const read = readWidgetOptions(current, runtime.options)
+        await grist.setOptions(writeWidgetOptions({ ...read.options, ...patch }, current, runtime.options))
       })
       patching = run.catch(() => undefined)
       return run

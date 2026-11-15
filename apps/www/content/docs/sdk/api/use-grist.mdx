@@ -26,6 +26,8 @@ itself is new on every change, so depend on its members, not on it.
 type UseGristOptions = GristReadyOptions & {
   suppressAlerts?: GristSdkAlertKind[] // alert kinds mountGristWidget() never shows, e.g. ["section-not-linked"]
   schema?: StandardSchema              // extra rules for the mapped records (zod 4, valibot, arktype…)
+  optionsVersion?: number              // the version of the widget options it reads and writes
+  migrate?: MigrateWidgetOptions       // brings older options to optionsVersion, on read
 }
 ```
 

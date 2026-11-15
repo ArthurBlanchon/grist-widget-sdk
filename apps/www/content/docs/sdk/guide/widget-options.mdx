@@ -19,6 +19,8 @@ await w.setWidgetOptions({ compact: true })   // replace it (setWidgetOptions({}
 
 `widgetOptions` follows Grist: after a write, Grist sends the options back
 and the widget re-renders, with no re-fetch. Writing needs `"full"` access.
+In Grist, a widget's write is a draft of the section: its menu offers Save
+and Revert, and the options are kept once someone saves.
 
 ```tsx
 function CompactToggle() {
@@ -71,15 +73,16 @@ export const widget = defineGristWidget({
 })
 ```
 
-- The SDK keeps the version with the options, and the widget never sees it.
-- Options saved under an older version reach `widgetOptions` already
-  migrated, and the SDK saves them back when the person can edit the
-  document.
-- Options saved before the widget declared a version count as version 1.
-  A new section starts at the current version, with nothing to migrate.
-- Options saved by a newer version are left as they are.
-- `setWidgetOptions` and `patchWidgetOptions` write under the current
-  version.
+- The SDK keeps the version with the options; the widget never sees it.
+- Options written under an older version reach `widgetOptions` migrated,
+  each time they are read. Nothing is written on load.
+- The widget's own writes (`setWidgetOptions`, `patchWidgetOptions`) carry
+  the current version; a patch merges into the migrated options.
+- Options without a version count as version 1. A new section starts at
+  the current version, with nothing to migrate.
+- Options written by a newer version of the widget are shown as they are,
+  and the SDK refuses to write over them; so it does when `migrate` throws
+  or returns no object.
 
 Test the migration with the previous version's options:
 

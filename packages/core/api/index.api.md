@@ -441,7 +441,7 @@ export type ListTablesOptions = {
 // @public
 export function mergeGristAttachmentCellValue(existingCell: unknown, newIds: (string | number)[]): GristEncodedAttachmentList;
 
-// @public (undocumented)
+// @public
 export type MigrateWidgetOptions = (options: Record<string, unknown>, fromVersion: number) => Record<string, unknown>;
 
 // @public

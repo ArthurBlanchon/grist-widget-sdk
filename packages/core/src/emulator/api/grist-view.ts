@@ -1,8 +1,8 @@
-import { rowToRecord, rowsToColumnar } from "../core/columnar"
+import { encodeForWire, rowToRecord, rowsToColumnar } from "../core/columnar"
 import { findRow, getSelectedTable } from "../core/document"
 import type { EventBus } from "../core/event-bus"
 import { resolveMappings } from "../core/mappings"
-import type { EmulatorDocumentState } from "../core/types"
+import type { EmulatorDocumentState, EmulatorTable } from "../core/types"
 import type { GristViewImpl } from "./types"
 
 /**
@@ -28,14 +28,19 @@ export function createGristViewImpl(state: EmulatorDocumentState, bus: EventBus)
   return {
     async fetchSelectedTable(options) {
       const table = getSelectedTable(state)
-      return onlyMapped(state, rowsToColumnar(table, table.rows, { keepEncoded: options?.keepEncoded }))
+      const data = rowsToColumnar(table, table.rows, { keepEncoded: options?.keepEncoded })
+      const shown = refsShown(state, table, options)
+      for (const [col, show] of shown) data[col] = table.rows.map((row) => show(row))
+      return onlyMapped(state, data)
     },
 
     async fetchSelectedRecord(rowId, options) {
       const table = getSelectedTable(state)
       const row = findRow(table, rowId)
       if (!row) throw new Error(`No row ${rowId} in ${table.tableId}`)
-      return onlyMapped(state, rowToRecord(table, row, { keepEncoded: options?.keepEncoded }))
+      const data = rowToRecord(table, row, { keepEncoded: options?.keepEncoded })
+      for (const [col, show] of refsShown(state, table, options)) data[col] = show(row)
+      return onlyMapped(state, data)
     },
 
     async allowSelectBy() {
@@ -83,4 +88,56 @@ function onlyMapped<T extends Record<string, unknown>>(state: EmulatorDocumentSt
   const names = declared.map((c) => (typeof c === "string" ? c : c.name))
   const mapped = new Set(names.flatMap((n) => [mappings[n]].flat()).filter((c): c is string => typeof c === "string"))
   return Object.fromEntries(Object.entries(data).filter(([col]) => col === "id" || mapped.has(col))) as T
+}
+
+type Row = Record<string, unknown> & { id: number }
+
+/**
+ * A reference as Grist sends it to a widget (`expandRefs`, its default
+ * unless `cellFormat` is "typed"): the value its column shows, looked up
+ * now in its visible column (or, without one, in the display helper it
+ * names), not the row id; a RefList, the list of those. A reference showing
+ * the row id stays the id. A widget that needs the ids reads the table
+ * (`fetchRows(tableId)`, full access).
+ */
+function refsShown(
+  state: EmulatorDocumentState,
+  table: EmulatorTable,
+  options: { keepEncoded?: boolean; expandRefs?: boolean; cellFormat?: string } | undefined
+): Map<string, (row: Row) => unknown> {
+  const out = new Map<string, (row: Row) => unknown>()
+  if (!(options?.expandRefs ?? options?.cellFormat !== "typed")) return out
+  const keepEncoded = options?.keepEncoded
+  for (const [colId, col] of Object.entries(table.columns)) {
+    const m = /^(Ref|RefList):(.+)$/.exec(col.type ?? "")
+    if (!m) continue
+    const target = state.tables.get(m[2]!)
+    const visible = target && Object.entries(target.columns).find(([, c]) => c.colRef !== undefined && c.colRef === col.visibleColRef)
+    if (!target || !visible) {
+      // Without a visible column, only the helper the column names exactly (displayColRef).
+      const helper = Object.entries(table.columns).find(([, c]) => c.colRef !== undefined && c.colRef === col.displayColRef && c.colRef !== col.colRef)?.[0]
+      if (helper) out.set(colId, (row) => row[helper])
+      continue
+    }
+    const [visibleId, visibleCol] = visible
+    const byId = new Map(target.rows.map((r) => [r.id, r]))
+    // An empty or dangling reference shows its visible column's empty value.
+    const empty = /^(Text|Choice)$/.test(visibleCol.type ?? "") ? "" : null
+    const one = (id: unknown) => {
+      const hit = typeof id === "number" && id > 0 ? byId.get(id) : undefined
+      return hit ? encodeForWire(hit[visibleId], visibleCol.type, keepEncoded) : empty
+    }
+    out.set(
+      colId,
+      m[1] === "Ref"
+        ? (row) => one(row[colId])
+        : (row) => {
+            const raw = row[colId]
+            const ids = Array.isArray(raw) ? (raw[0] === "L" ? raw.slice(1) : raw) : []
+            const labels = ids.map(one)
+            return keepEncoded ? ["L", ...labels] : labels
+          }
+    )
+  }
+  return out
 }

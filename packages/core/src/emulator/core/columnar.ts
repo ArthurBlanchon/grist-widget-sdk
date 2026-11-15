@@ -45,7 +45,7 @@ export function rowToRecord(
   return out
 }
 
-function encodeForWire(value: unknown, type: string | undefined, keepEncoded: boolean | undefined): unknown {
+export function encodeForWire(value: unknown, type: string | undefined, keepEncoded: boolean | undefined): unknown {
   if (value instanceof Date) {
     const epoch = Math.floor(value.getTime() / 1000)
     if (keepEncoded) {

@@ -219,7 +219,7 @@ export function createInlineTransport(
   ): Promise<Record<string, unknown[]> | Record<string, unknown>[]> {
     const fetchOptions = coerceFetchOptions(opts)
     const columnar = (await api.GristView.fetchSelectedTable(
-      fetchOptions ? { keepEncoded: fetchOptions.keepEncoded } : {}
+      fetchOptions ? { keepEncoded: fetchOptions.keepEncoded, expandRefs: fetchOptions.expandRefs, cellFormat: fetchOptions.cellFormat } : {}
     )) as Record<string, unknown[]>
     if (fetchOptions?.format === "rows") return columnsToRows(columnar)
     return columnar
@@ -488,10 +488,10 @@ function parseFields(fields: Record<string, unknown>, _options?: GristTableOpOpt
 
 function coerceFetchOptions(
   opts: GristFetchSelectedOptions | undefined
-): { keepEncoded?: boolean; format?: "rows" | "columns" } | undefined {
+): { keepEncoded?: boolean; format?: "rows" | "columns"; expandRefs?: boolean; cellFormat?: string } | undefined {
   if (!opts) return undefined
   const format = opts.format === "rows" || opts.format === "columns" ? opts.format : undefined
-  return { keepEncoded: opts.keepEncoded, format }
+  return { keepEncoded: opts.keepEncoded, format, expandRefs: opts.expandRefs, cellFormat: opts.cellFormat }
 }
 
 function logErr(err: unknown) {

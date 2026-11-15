@@ -64,6 +64,13 @@ into the value its type promises:
 | `RefList`, `Attachments` | row ids, `number[]` | `[]` |
 | `Any`, or no type | as Grist sends it | — |
 
+A `Ref` or `RefList` column gives row ids only where its column shows the
+row id. Grist sends a reference as the text its column shows (a person's
+name), so a declared `Ref` column that shows a name reads as `null`, with a
+"not a reference" issue. Until typed reads fetch the ids, declare such a
+column `"Text,Ref"` to read the name, or read the ids from the table with
+`w.fetchRows(tableId)` (full access).
+
 A column that accepts several types (`"Text,Ref"`) takes the first that
 matches. An `allowMultiple` column is a list, one value per mapped column.
 

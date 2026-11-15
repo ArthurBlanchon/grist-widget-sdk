@@ -29,6 +29,16 @@ done.
   320 px, read-only) in `new-widget`, the e2e check and the 16 widgets;
   `optionsVersion` and `migrate`; a `demo.ts` per widget; visual comparison
   and "Report a problem".
+- [ ] **A declared Ref column in typed reads.** Grist sends a reference as
+  the text its column shows (`expandRefs`, seen in Grist 1.7.22 and now in
+  the emulator), so `mappedRecord` reports a column declared `Ref:<table>`
+  as "not a reference". Give typed reads the row id (a fetch of the
+  section's ids, or `expandRefs: false` where the plugin API takes it), or
+  document the text. A reference showing a Numeric or Int column arrives
+  as a `Reference` whose id is the shown number: typed reads would take it
+  for the row id, silently. Done when a declared Ref column reads as its
+  row id in real Grist and in the emulator, whatever column it shows. The
+  emulator should also refuse `fetchTable` below full access, as Grist does.
 - [ ] **M5. The loop, from issue to release.** Issue forms and labels; the
   skills `triage-issue`, `new-widget`, `fix-issue`, `catalog-upgrade`,
   `release-widgets`, `sota-review`; upkeep on a schedule.

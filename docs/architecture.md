@@ -109,7 +109,7 @@ The catalog of widgets is
 widgets job checks every SDK pull request against them
 ([real widgets](./operations/real-widgets.md)).
 
-The [widget factory plan](./planning/2026-11-14-widget-factory-plan.md)
+The [widget factory plan](./history/2026-11-14-widget-factory-plan.md)
 brings the catalog into this repository (`widgets/<slug>/`, one `SPEC.md`
 each, the shared shadcn UI in `widgets/_shared/`).
 

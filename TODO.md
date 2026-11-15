@@ -9,57 +9,51 @@ The reasoning behind 0.4.0, and what it left for later, is the
 
 ## 0. Waiting on the maintainer
 
-- **Rulesets on the six widget repos** (U5): `main` requires a pull request
-  and the `check` status, and blocks force pushes and deletion; `dev`
-  blocks force pushes and deletion.
 - **This repository's settings:** private vulnerability reporting on; the
   deepmerge alert dismissed (dev-only, no fix).
 
-## 1. The plan to 1.0
+## 1. The plan to 0.8.0: the production-grade AI widget factory
 
-From the [project review and plan to 1.0](./docs/planning/2026-11-14-review-and-1.0-plan.md) §5;
-its decisions D1–D5 were accepted as recommended. Releases follow the weekly
-train (`docs/operations/releasing.md`).
+From the [plan to 0.8.0](./docs/planning/2026-11-15-plan-0.8.md) §4, in
+its order: M1, then M2 to M5, with M6 (docs) alongside, then M7. Each item is
+one pull request; the plan says when each milestone is done.
 
-- [ ] **C. 0.7.0:** released with the next weekly train. Done in the
-  code: the API report and React 18/19 in CI, the versioning policy, the
-  names 0.6 deprecated, the page-wide connection and `useGristSchema()`'s
-  connection options removed (codemods and `upgrade` hints for each), the
-  types public signatures use exported. Left for 1.0 to decide: the `emulator` entry's report still
-  names unexported implementation types (`GristApiImpl`, `GristDocApiImpl`,
-  …): export them as types or narrow the entry's signatures to interfaces.
-- [ ] **Docs rewrite** ([plan](./docs/planning/2026-11-14-docs-rewrite-plan.md)):
-  agree the structure (§3), then R1–R6. Done when the old-forms check
-  blocks in CI, about 25 user pages remain and every retired URL redirects.
-- [ ] **F. 1.0.0:** the API report's baseline reset and the deprecate-first
-  rule in force. Done when the catalog widgets take it in the pull request
-  that makes it ([ADR 0007](./docs/decisions/0007-widget-factory.md)).
+- [ ] **M1. Foundations.** The release train in two jobs (`version-pr`,
+  `publish`); who merges what (ADR 0012, `AGENTS.md`); the independent
+  review and the PR template's bar checklist.
+- [ ] **M2. Versions people can rely on.** A channel per major version
+  (`/widgets/<slug>/v<major>/`, the install URL shown) and a `/dev/`
+  channel built from `main`; a changelog per widget; the catalog in `widgets.json`, `grist-widgets.json` and generated
+  catalog pages.
+- [ ] **M3. CI at catalog scale.** A matrix of the widgets a change
+  touches, in batches of 8 for an SDK change; a weekly run against the
+  latest Grist.
+- [ ] **M4. The bar, version 2** (plan §3). `httpUrl()` and its lint rule,
+  licences, a CSP per widget; the standard criteria (5,000 rows, keyboard,
+  320 px, read-only) in `new-widget`, the e2e check and the 16 widgets;
+  `optionsVersion` and `migrate`; a `demo.ts` per widget; visual comparison
+  and "Report a problem".
+- [ ] **M5. The loop, from issue to release.** Issue forms and labels; the
+  skills `triage-issue`, `new-widget`, `fix-issue`, `catalog-upgrade`,
+  `release-widgets`, `sota-review`; upkeep on a schedule.
+- [ ] **M6. Documentation, alongside.** R1 to R6 to the 2026-11-14 target
+  structure, with *Replica document* as a Concepts page and *Examples* as
+  the catalog.
+- [ ] **M7. Bring the widgets home, then retire.** Wave 3 (REST
+  enrichment, Ask AI, Scan with AI) after M1–M4; `examples/` removed with
+  an API coverage check; awesome-grist-widgets absorbed and archived; the
+  six reference repositories retired, the news feed with them
+  ([ADR 0011](./docs/decisions/0011-reference-widgets-retired.md)).
+- [ ] **Release 0.8.0** when M1–M7 are done.
 
-## 2. Next project — the widget factory
+## 2. After 0.8.0
 
-From the [widget factory plan](./docs/planning/2026-11-14-widget-factory-plan.md);
-its direction (W1–W5) was agreed 2026-11-14, for a catalog of 30 to 100
-widgets at most. This repository becomes the factory: catalog widgets in
-`widgets/`, `examples/` merged into the catalog, awesome-grist-widgets
-absorbed and archived, widgets served by the site that already exists
-(GitHub Pages and Cloudflare Pages). Simple and durable above all (plan §0.1).
-
-- [ ] **F0.** 0.7 released (#28). The maintainer docs are in the repository
-  (docs plan, M1: done).
-- [ ] **F3. Bring the widgets home:** the first list is agreed
-  ([`catalog/roadmap.md`](./catalog/roadmap.md): 19 widgets in three
-  waves). Wave 1 is built, all ten: Kanban board, Record selector, Record
-  editor, File uploader, Grouped view, Attachment viewer, Document
-  template, Gantt chart, Map, Chart builder. Wave 2 is built, all six:
-  Signature pad, Bulk editor, Mermaid diagram, Duplicate finder, Schema
-  viewer, Mail merge. Then wave 3. Done when `examples/` is gone.
-- [ ] **Retire the six reference widgets**
-  ([ADR 0011](./docs/decisions/0011-reference-widgets-retired.md)), last:
-  the real-widgets job onto the catalog widgets, the registry without them,
-  then the six repositories deleted. The news feed is dropped with them: it
-  gets no catalog entry (the maintainer, 2026-11-15).
-- [ ] **F4–F8:** intake and triage, the build loop, upkeep, the catalog and
-  registry, a size check at 30 and 60 widgets (plan §10).
+- **1.0.0:** the API report's baseline reset, the deprecate-first rule in
+  force, the `emulator` entry's unexported implementation types settled.
+  The catalog takes it in the pull request that makes it.
+- **The size check** at 30 widgets, then at 60 (CI time, the site's size,
+  the maintainer's time; the shared runtime past 40 % of the budget).
+- **More catalog widgets,** from issues and `catalog/roadmap.md`'s "Later".
 
 ## 3. Later, if they still matter
 

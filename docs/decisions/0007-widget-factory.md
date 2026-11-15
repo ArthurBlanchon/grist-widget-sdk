@@ -19,5 +19,5 @@ The project serves people who build with AI first. Its goal is a curated catalog
 
 ## Consequences
 
-- Plan and steps: [widget factory plan](../planning/2026-11-14-widget-factory-plan.md) (W1–W12).
+- Plan and steps: [widget factory plan](../history/2026-11-14-widget-factory-plan.md) (W1–W12).
 - An SDK change and the migration of every widget go in the same pull request.

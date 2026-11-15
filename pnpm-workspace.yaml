@@ -3,6 +3,53 @@ packages:
   - 'apps/*'
   - 'templates/*'
   - 'examples'
+  - 'widgets/*'
+
+# One version of each dependency for every catalog widget (widgets/*): a
+# widget's package.json says "catalog:" instead of a range, so one update
+# here moves the whole catalog (widget factory plan, W1).
+catalog:
+  '@fontsource-variable/geist': ^5.3.0
+  '@tailwindcss/vite': ^4.3.5
+  'class-variance-authority': ^0.7.1
+  'clsx': ^2.1.1
+  'lucide-react': ^1.70.0
+  'radix-ui': ^1.8.1
+  'react': ^19.3.1
+  'react-dom': ^19.3.1
+  'tailwind-merge': ^3.7.0
+  'tailwindcss': ^4.3.5
+  'tw-animate-css': ^1.4.0
+  # The Gantt (kibo-ui, in widgets/_shared/kibo-ui/gantt), at the gantt-widget's versions.
+  '@dnd-kit/core': ^6.3.1
+  '@dnd-kit/modifiers': ^9.0.0
+  '@uidotdev/usehooks': ^2.4.1
+  'date-fns': ^4.4.0
+  'jotai': ^2.20.0
+  'lodash.throttle': ^4.1.1
+  '@types/lodash.throttle': ^4.1.9
+  # The Map (mapcn's ui/map.tsx, in widgets/_shared/ui). 6.4.1+ fixes GHSA-jrc7-96c5-q579 (critical XSS in 5.x).
+  'maplibre-gl': ^6.17.0
+  '@types/geojson': ^7946.0.16
+  # The charts (shadcn's ui/chart.tsx, in widgets/_shared/ui).
+  'recharts': ^3.8.0
+  '@eslint/js': ^10.0.1
+  '@testing-library/jest-dom': ^7.0.1
+  '@testing-library/react': ^16.3.3
+  '@types/node': ^26.6.6
+  '@types/react': ^19.3.0
+  '@types/react-dom': ^19.3.0
+  '@vitejs/plugin-react': ^6.2.1
+  'eslint': ^10.13.0
+  'eslint-plugin-react-hooks': ^7.0.1
+  'eslint-plugin-react-refresh': ^0.5.7
+  'globals': ^17.14.0
+  'jsdom': ^31.0.0
+  'shadcn': ^4.23.0
+  'typescript': ~6.0.3
+  'typescript-eslint': ^8.72.1
+  'vite': ^8.3.6
+  'vitest': ^5.1.0
 
 engineStrict: true
 minimumReleaseAge: 10080

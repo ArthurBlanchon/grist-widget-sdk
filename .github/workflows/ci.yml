@@ -38,6 +38,7 @@ jobs:
       template_deploy: ${{ steps.diff.outputs.template_deploy }}
       real_widgets: ${{ steps.diff.outputs.real_widgets }}
       size: ${{ steps.diff.outputs.size }}
+      widgets: ${{ steps.diff.outputs.widgets }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -83,6 +84,48 @@ jobs:
       # change to a public name or type fails here until the report is
       # regenerated and committed, so reviewers see it as an API change.
       - run: pnpm --filter grist-widget-sdk api:report --check
+
+  # The catalog widgets (widgets/*): the widget factory plan's
+  # production-grade bar (§5). The spec, its acceptance criteria and the
+  # design rules (scripts/widgets/check-widgets.mjs); each widget's
+  # typecheck, lint, tests and build; its bundle against its budget; then
+  # each one embedded in a real Grist (Docker), with axe and a light and a
+  # dark screenshot.
+  widgets:
+    needs: changes
+    if: needs.changes.outputs.widgets == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter grist-widget-sdk build
+      - run: node --test scripts/widgets/*.test.mjs
+      - run: node scripts/widgets/check-widgets.mjs
+      - run: pnpm --filter "./widgets/**" -r --workspace-concurrency=1 run typecheck
+      - run: pnpm --filter "./widgets/**" -r --workspace-concurrency=1 run lint
+      - run: pnpm --filter "./widgets/**" -r --workspace-concurrency=1 run test
+      - run: pnpm --filter "./widgets/**" -r --workspace-concurrency=1 --if-present run build
+      - run: node scripts/widgets/check-widgets.mjs --sizes
+      - run: pnpm exec playwright install --with-deps chromium
+      - name: In a real Grist, with axe, both themes and no console error
+        run: |
+          dirs=$(find widgets -mindepth 1 -maxdepth 1 -type d ! -name '_*' | sort)
+          pnpm e2e:grist $dirs --axe --themes --strict-console --out "$RUNNER_TEMP/screenshots"
+      - name: Keep the screenshots
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: widgets-screenshots
+          path: ${{ runner.temp }}/screenshots
+          if-no-files-found: ignore
+          retention-days: 14
 
   # The same build, typecheck and tests on React 18, the oldest React the
   # peer range (`>=18`) accepts; the workspace itself is on React 19.
@@ -308,7 +351,7 @@ jobs:
 
   gate:
     if: always()
-    needs: [changes, core, core-react18, cli, lint, repo, workflows, dependency-review, changeset, external-install, create-widget, template-deploy, real-widgets, size]
+    needs: [changes, core, core-react18, cli, lint, repo, workflows, dependency-review, changeset, external-install, create-widget, template-deploy, real-widgets, size, widgets]
     runs-on: ubuntu-latest
     steps:
       - name: Every needed job passed

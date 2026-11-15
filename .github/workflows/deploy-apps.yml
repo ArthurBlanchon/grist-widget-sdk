@@ -17,7 +17,7 @@ name: Deploy apps to GitHub Pages
 # That is also why NO CNAME is written here. Setting a custom domain on a
 # GitHub Pages site makes GitHub 301 this github.io URL to that domain,
 # which would collapse the two origins back into one -- see
-# apps/www/content/docs/contributing/deploy.mdx.
+# docs/operations/site-deploy.md.
 #
 # Uses the modern Actions-native Pages flow
 # (actions/upload-pages-artifact + actions/deploy-pages) rather than
@@ -50,7 +50,7 @@ name: Deploy apps to GitHub Pages
 #
 # scripts/build-site.mjs builds apps/www, the example widgets and their
 # demos (grist-static) into one tree, shipped together on both origins --
-# see apps/www/content/docs/contributing/deploy.mdx.
+# see docs/operations/site-deploy.md.
 
 on:
   push:
@@ -59,6 +59,7 @@ on:
       - "apps/www/**"
       - "packages/core/**"
       - "examples/**"
+      - "widgets/**"
       - "templates/grist-widget-template-vite/**"
       - "scripts/**"
       - "pnpm-lock.yaml"
@@ -77,13 +78,81 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # A catalog widget is released by raising the version in its package.json:
+  # on the push to main, each version the widgets-dist branch doesn't have is
+  # built once into it (scripts/widgets/release.mjs) and never rebuilt, so
+  # what a Grist document loads never changes under it. The build below, and
+  # Cloudflare's build of the same push, serve every released version
+  # (scripts/build-site.mjs, docs/operations/site-deploy.md).
+  release-widgets:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout # zizmor: ignore[artipacked] -- this job pushes widgets-dist, and uploads no artefact
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+
+      - name: Setup Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter grist-widget-sdk build
+
+      - name: Release the widget versions widgets-dist doesn't have, and their demos
+        run: |
+          set -euo pipefail
+          dist="$RUNNER_TEMP/widgets-dist"
+          if git ls-remote --exit-code --heads origin widgets-dist >/dev/null; then
+            git fetch --depth=1 origin widgets-dist
+            git worktree add "$dist" FETCH_HEAD
+            git -C "$dist" switch -c widgets-dist
+          else
+            git worktree add --orphan -b widgets-dist "$dist"
+          fi
+          added=$(node scripts/widgets/release.mjs "$dist")
+          # Each widget's demo document, made in a real Grist (Docker) when
+          # missing or when its title, access or columns changed.
+          demos=$(node scripts/widgets/demos.mjs "$dist")
+          if [ -z "$added$demos" ]; then
+            echo "Every declared widget version and demo is released."
+            exit 0
+          fi
+          echo "Released: ${added:-none}. Demos: ${demos:-none}."
+          git -C "$dist" add -A
+          git -C "$dist" -c user.name="github-actions[bot]" \
+            -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -m "Release $(echo "$added $demos" | tr '\n' ' ')" -m "From $GITHUB_SHA."
+          git -C "$dist" push origin HEAD:widgets-dist
+
   build:
+    needs: release-widgets
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+
+      - name: The released widgets
+        # A read-only copy of widgets-dist for build-site.mjs (WIDGETS_DIST_DIR).
+        run: |
+          set -euo pipefail
+          dist="$RUNNER_TEMP/widgets-dist"
+          if git ls-remote --exit-code --heads origin widgets-dist >/dev/null; then
+            git fetch --depth=1 origin widgets-dist
+            git worktree add "$dist" FETCH_HEAD
+            echo "WIDGETS_DIST_DIR=$dist" >> "$GITHUB_ENV"
+          else
+            echo "WIDGETS_DIST=none" >> "$GITHUB_ENV"
+          fi
 
       - name: Setup pnpm
         uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1

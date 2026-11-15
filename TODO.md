@@ -19,7 +19,7 @@ The reasoning behind 0.4.0, and what it left for later, is the
 
 From the [project review and plan to 1.0](./docs/planning/2026-11-14-review-and-1.0-plan.md) §5;
 its decisions D1–D5 were accepted as recommended. Releases follow the weekly
-train (`RELEASING.md`).
+train (`docs/operations/releasing.md`).
 
 - [ ] **A. Catch up:** the six reference widgets on 0.6.2 on `dev` (from the
   unmerged 0.5.0 branches; scheduled 2026-11-15), released 0.3.0, the
@@ -33,6 +33,9 @@ train (`RELEASING.md`).
   types public signatures use exported. Left for 1.0 to decide: the `emulator` entry's report still
   names unexported implementation types (`GristApiImpl`, `GristDocApiImpl`,
   …): export them as types or narrow the entry's signatures to interfaces.
+- [ ] **Docs rewrite** ([plan](./docs/planning/2026-11-14-docs-rewrite-plan.md)):
+  agree the structure (§3), then R1–R6. Done when the old-forms check
+  blocks in CI, about 25 user pages remain and every retired URL redirects.
 - [ ] **E. The six widgets on 0.7:** the Dependabot pull request moving both
   packages, then `pnpm exec create-grist-widget upgrade` as a follow-up on
   `dev`, the hints it lists fixed by hand, and a `pnpm release`. Done when
@@ -40,18 +43,25 @@ train (`RELEASING.md`).
 - [ ] **F. 1.0.0:** the API report's baseline reset and the deprecate-first
   rule in force. Done when the six take it through the same flow as E.
 
-## 2. Next project — the core widget library
+## 2. Next project — the widget factory
 
-A library of widgets built with the SDK, developed with AI, each a real
-repo scaffolded by `create-grist-widget`, registered in awesome-grist-widgets
-and, where it earns it, a reference widget. Scope to be agreed: which
-widgets, the bar each must meet, and how agents build and verify them
-(`pnpm test`, `pnpm demo`, the real-Grist check).
+From the [widget factory plan](./docs/planning/2026-11-14-widget-factory-plan.md);
+its direction (W1–W5) was agreed 2026-11-14, for a catalog of 30 to 100
+widgets at most. This repository becomes the factory: catalog widgets in
+`widgets/`, `examples/` merged into the catalog, awesome-grist-widgets
+absorbed and archived, widgets served by the site that already exists
+(GitHub Pages and Cloudflare Pages). Simple and durable above all (plan §0.1).
 
-- [ ] Agree the scope (list, quality bar, process).
-- [ ] The 16 `examples/` become seeds for it; once the library exists,
-  `create --example` starts from a library widget and the CLI stops
-  embedding the examples.
+- [ ] **F0.** 0.7 released (#28). The maintainer docs are in the repository
+  (docs plan, M1: done).
+- [ ] **F3. Bring the widgets home:** the first list is agreed
+  ([`catalog/roadmap.md`](./catalog/roadmap.md): 19 widgets in three
+  waves). Wave 1 is built, all ten: Kanban board, Record selector, Record
+  editor, File uploader, Grouped view, Attachment viewer, Document
+  template, Gantt chart, Map, Chart builder. Next, waves 2 and 3. Done
+  when `examples/` is gone.
+- [ ] **F4–F8:** intake and triage, the build loop, upkeep, the catalog and
+  registry, a size check at 30 and 60 widgets (plan §10).
 
 ## 3. Later, if they still matter
 

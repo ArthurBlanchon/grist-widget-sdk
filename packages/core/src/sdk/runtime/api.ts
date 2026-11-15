@@ -38,11 +38,16 @@ export type ListColumnsOptions = GristNoiseColumnsOptions & {
 
 export type GristColumnInfo = {
   colId: string
+  /** Grist's type: `Text`, `Choice`, `Ref:People`, `RefList:Tags`, `Date`, `DateTime:Europe/Paris`… */
   type?: string
   label?: string
   isFormula?: boolean
   formula?: string
   description?: string
+  /** The column's settings in Grist, parsed: `choices` for a Choice or ChoiceList column, `dateFormat`, `currency`… */
+  widgetOptions?: Record<string, unknown>
+  /** For a Ref or RefList column, the id of the referenced table's column its cells show. */
+  visibleCol?: string
 }
 
 /** `fetchRows()` options: rows (the default) or Grist's columns. */
@@ -126,6 +131,7 @@ export function createGristApi(runtime: GristRuntime): GristApi {
    */
   let running = 0
   let failure: string | null = null
+  let patching: Promise<unknown> = Promise.resolve()
   const write = <T>(fn: () => Promise<T>): Promise<T> => {
     if (running++ === 0) failure = null
     runtime.update({ actionStatus: "running", actionError: null })
@@ -184,8 +190,12 @@ export function createGristApi(runtime: GristRuntime): GristApi {
       }),
     listColumns: (tableId, options) =>
       read(async () => {
-        const meta = (await loadColumnMetadataByTable(docApi())).get(tableId)
+        const all = await loadColumnMetadataByTable(docApi())
+        const meta = all.get(tableId)
         if (!meta) return []
+        // A Ref's visible column is a column of the referenced table: colRefs are document-wide.
+        const colIdByRef = new Map<number, string>()
+        for (const cols of all.values()) for (const [colId, m] of cols) if (m.colRef !== undefined) colIdByRef.set(m.colRef, colId)
         const noise: GristNoiseColumnsOptions = {
           excludeId: options?.excludeId ?? true,
           excludeGristHelpers: options?.excludeGristHelpers ?? true,
@@ -194,7 +204,13 @@ export function createGristApi(runtime: GristRuntime): GristApi {
         }
         return [...meta]
           .filter(([colId, m]) => options?.includeSystem || !isGristNoiseColumn(colId, m, noise))
-          .map(([colId, m]) => ({ colId, type: m.type, label: m.label, isFormula: m.isFormula, formula: m.formula, description: m.description }))
+          .map(([colId, m]) => {
+            const info: GristColumnInfo = { colId, type: m.type, label: m.label, isFormula: m.isFormula, formula: m.formula, description: m.description }
+            if (m.widgetOptions) info.widgetOptions = m.widgetOptions
+            const visibleCol = m.visibleColRef ? colIdByRef.get(m.visibleColRef) : undefined
+            if (visibleCol) info.visibleCol = visibleCol
+            return info
+          })
       }),
 
     table: tableOps(() => {
@@ -219,9 +235,16 @@ export function createGristApi(runtime: GristRuntime): GristApi {
     setWidgetOptions: async (options) => {
       await grist.setOptions(options)
     },
-    patchWidgetOptions: async (patch) => {
-      const current = ((await grist.getOptions()) as Record<string, unknown> | null) ?? {}
-      await grist.setOptions({ ...current, ...patch })
+    // One patch at a time: each reads the options the previous one wrote, so two patches
+    // made together (a chart's kind, then its total) both land instead of the second
+    // overwriting the first with options read before it.
+    patchWidgetOptions: (patch) => {
+      const run = patching.then(async () => {
+        const current = ((await grist.getOptions()) as Record<string, unknown> | null) ?? {}
+        await grist.setOptions({ ...current, ...patch })
+      })
+      patching = run.catch(() => undefined)
+      return run
     },
 
     setCursorPosition: async (pos) => {

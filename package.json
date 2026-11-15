@@ -21,13 +21,16 @@
     "changeset": "changeset",
     "version-packages": "changeset version",
     "release": "changeset publish",
-    "e2e:grist": "node scripts/real-widgets/e2e-grist.mjs"
+    "e2e:grist": "node scripts/real-widgets/e2e-grist.mjs",
+    "check:widgets": "node scripts/widgets/check-widgets.mjs",
+    "new-widget": "node scripts/widgets/new-widget.mjs"
   },
   "keywords": [],
   "author": "",
   "license": "MIT",
   "devDependencies": {
     "@changesets/cli": "^3.0.3",
+    "axe-core": "4.14.0",
     "playwright": "1.65.0",
     "turbo": "^2.11.10"
   }

@@ -14,7 +14,7 @@ name: release
 #      runs `changeset publish` -- publishes to npm over OIDC (tag: latest)
 #      and creates the git tags + GitHub Releases.
 #
-#   One-time npm setup (see RELEASING.md): after 0.2.0 was claimed manually,
+#   One-time npm setup (see docs/operations/releasing.md): after 0.2.0 was claimed manually,
 #   add a Trusted Publisher for the package pointing at repo + this file.
 #
 # Runs on pushes to `main` only, and grants permissions to the release job
@@ -22,7 +22,7 @@ name: release
 # `-rc.N` SDK, tagged `next`, from any other branch; it was the only path
 # that could publish from a branch other than `main`, and was retired on
 # 2026-11-01 (docs/history/2026-11-01-widget-lifecycle-plan.md, U2 / D1).
-# RELEASING.md describes how to test an unreleased SDK without publishing.
+# docs/operations/releasing.md describes how to test an unreleased SDK without publishing.
 
 on:
   push:
@@ -41,7 +41,7 @@ jobs:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     # npm's trusted publishers for both packages name this environment, and
-    # the environment only accepts `main` (RELEASING.md, one-time setup). A
+    # the environment only accepts `main` (docs/operations/releasing.md, one-time setup). A
     # branch carrying a modified copy of this workflow, pushed by anyone with
     # write access (an agent included), can then never mint a token npm
     # accepts. Until the maintainer restricts it, GitHub creates it on first
@@ -74,7 +74,7 @@ jobs:
       # input, which this job's "Version PR or publish" step sets to CHANGESET_PUSH_TOKEN when
       # that secret exists -- a fine-grained PAT with
       # Contents, Pull requests and Workflows read/write on this repo only (see
-      # RELEASING.md). It also makes the Version Packages PR's own CI start on
+      # docs/operations/releasing.md). It also makes the Version Packages PR's own CI start on
       # its own: anything pushed with GITHUB_TOKEN gets its runs parked as
       # "action_required" (found live on 0.3.16's Version Packages PR, whose
       # CI needed a manual re-run). Without the secret, both fall back to

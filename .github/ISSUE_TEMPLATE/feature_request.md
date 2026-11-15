@@ -13,7 +13,7 @@ labels: enhancement
 ## Proposed change
 
 <!-- What you'd add or change. If it's an SDK API change, check it against
-     /docs/sdk/design/principles first -- the standing rules for evaluating
+     docs/architecture.md#design-rules first -- the standing rules for evaluating
      any proposed change to the public surface. -->
 
 ## Alternatives considered

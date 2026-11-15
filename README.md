@@ -55,7 +55,7 @@ pnpm --filter grist-widget-sdk build
 - Keep documentation aligned in `apps/www/content/docs/`.
 - Build out the site in `apps/www` (GitHub Pages only; deliberately has no `grist-widget-sdk` dependency).
 - Use the template in `templates/grist-widget-template-vite` for external scaffolding scenarios.
-- For deploy details (GitHub Pages, Cloudflare Pages), see [Deploy notes](https://gristwidgets.com/docs/contributing/deploy).
+- For deploy details (GitHub Pages, Cloudflare Pages), see [site deploy](./docs/operations/site-deploy.md).
 
 ## Working in this repo
 

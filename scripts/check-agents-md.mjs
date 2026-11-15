@@ -11,7 +11,7 @@
 // claim of what exists, and checking it would produce false failures.
 //
 // Usage: node scripts/check-agents-md.mjs [agentsMdPath...]
-// Defaults to every AGENTS.md this batch ships.
+// Defaults to every AGENTS.md in the repository.
 
 import { existsSync, readdirSync, readFileSync } from "node:fs"
 import { dirname, join, relative, resolve } from "node:path"
@@ -19,10 +19,26 @@ import { fileURLToPath } from "node:url"
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..")
 
-const defaultTargets = [
-  join(repoRoot, "AGENTS.md"),
-  join(repoRoot, "templates/grist-widget-template-vite/AGENTS.md"),
-]
+/** Every AGENTS.md in the repository, outside dependencies, builds and the CLI's embedded template copy. */
+function findAgentsFiles(root) {
+  const skip = new Set(["node_modules", "dist", ".git", ".next", "out", "site", ".turbo"])
+  const found = []
+  function walk(dir) {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      if (skip.has(entry.name)) continue
+      const full = join(dir, entry.name)
+      if (entry.isDirectory()) {
+        // The CLI's template/ is a build output: the source is templates/.
+        if (relative(root, full) === join("packages", "create-grist-widget", "template")) continue
+        walk(full)
+      } else if (entry.name === "AGENTS.md") found.push(full)
+    }
+  }
+  walk(root)
+  return found.sort()
+}
+
+const defaultTargets = findAgentsFiles(repoRoot)
 
 const targets = process.argv.slice(2).length
   ? process.argv.slice(2).map((p) => resolve(p))

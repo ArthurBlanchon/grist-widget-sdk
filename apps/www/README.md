@@ -2,7 +2,7 @@
 
 The `gristwidgets.com` landing page and docs site — Next.js (`output: export`,
 static) + [Fumadocs](https://fumadocs.dev). Deploys to two independent
-origins; see [Deploy notes](/docs/contributing/deploy) for why.
+origins; see [site deploy](../../docs/operations/site-deploy.md) for why.
 
 From the repo root: `pnpm --filter www dev` (or `pnpm dev` here). Static
 export builds with `pnpm --filter www build`, but the deployable tree is

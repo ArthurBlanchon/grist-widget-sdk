@@ -35,6 +35,7 @@ export const RULES = {
   ],
   real_widgets: ["packages/core/", "packages/create-grist-widget/", "scripts/real-widgets/"],
   size: ["packages/core/", "templates/grist-widget-template-vite/", LOCKFILE],
+  widgets: ["widgets/", "packages/core/", "scripts/widgets/", "pnpm-workspace.yaml", LOCKFILE],
 }
 
 const EVERYTHING = [".github/workflows/", "scripts/ci/"]

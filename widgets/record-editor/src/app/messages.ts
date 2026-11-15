@@ -1,0 +1,38 @@
+import { defineMessages } from "@shared/i18n"
+
+export const messages = defineMessages({
+  en: {
+    title: "Row {id}",
+    newTitle: "New row",
+    save: "Save",
+    saving: "Saving…",
+    cancel: "Cancel",
+    new: "New",
+    unsaved: "Not saved",
+    saved: "Saved",
+    saveFailed: "Grist did not save the row: {error}",
+    noRow: "No row is selected. Select one in the table, or add a new one.",
+    loading: "Reading the table's columns…",
+    none: "—",
+    notNumber: "Enter a number.",
+    notInteger: "Enter a whole number.",
+    readOnly: "Calculated by a formula, or edited in Grist itself.",
+  },
+  fr: {
+    title: "Ligne {id}",
+    newTitle: "Nouvelle ligne",
+    save: "Enregistrer",
+    saving: "Enregistrement…",
+    cancel: "Annuler",
+    new: "Nouvelle",
+    unsaved: "Non enregistré",
+    saved: "Enregistré",
+    saveFailed: "Grist n'a pas enregistré la ligne : {error}",
+    noRow: "Aucune ligne n'est sélectionnée. Choisissez-en une dans la table, ou ajoutez-en une.",
+    loading: "Lecture des colonnes de la table…",
+    none: "—",
+    notNumber: "Saisissez un nombre.",
+    notInteger: "Saisissez un nombre entier.",
+    readOnly: "Calculé par une formule, ou modifié dans Grist même.",
+  },
+})

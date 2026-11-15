@@ -1,0 +1,33 @@
+{
+  "name": "@grist-widgets/document-template",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "One document per row from an HTML template with the columns as placeholders, or one for all rows; print it or save it as PDF.",
+  "license": "MIT",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "typecheck": "tsc -b",
+    "lint": "eslint .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@grist-widgets/shared": "workspace:*",
+    "grist-widget-sdk": "workspace:^",
+    "react": "catalog:",
+    "react-dom": "catalog:"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "catalog:",
+    "@testing-library/react": "catalog:",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "eslint": "catalog:",
+    "jsdom": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:"
+  }
+}

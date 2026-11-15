@@ -7,10 +7,11 @@
 // touches a version already there. The SDK must be built first.
 
 import { execFileSync } from "node:child_process"
-import { mkdirSync, writeFileSync } from "node:fs"
+import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs"
 import { dirname, join, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 
+import { changelogEntries } from "./check-widgets.mjs"
 import { declaredVersions, releasedVersions, unreleased } from "./dist.mjs"
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..")
@@ -31,9 +32,14 @@ for (const { slug, version } of todo) {
     cwd: repoRoot,
     stdio: ["ignore", "inherit", "inherit"],
   })
+  // The widget's changelog travels with each version: /widgets/<slug>/<version>/CHANGELOG.md,
+  // and this version's entry in release.json.
+  const changelog = join(repoRoot, "widgets", slug, "CHANGELOG.md")
+  const changes = existsSync(changelog) ? (changelogEntries(readFileSync(changelog, "utf8")).find(([v]) => v === version)?.[1] ?? null) : null
+  if (existsSync(changelog)) copyFileSync(changelog, join(out, "CHANGELOG.md"))
   writeFileSync(
     join(out, "release.json"),
-    `${JSON.stringify({ slug, version, commit, released: new Date().toISOString() }, null, 2)}\n`,
+    `${JSON.stringify({ slug, version, commit, released: new Date().toISOString(), changes, changelog: "CHANGELOG.md" }, null, 2)}\n`,
   )
   console.log(`${slug}@${version}`)
 }

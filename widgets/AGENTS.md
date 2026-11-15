@@ -9,6 +9,7 @@ a private workspace package; `widgets/_shared/` is what they all share.
 
 | Path | What |
 | --- | --- |
+| `CHANGELOG.md` | What changed in each version, for the people using it; newest first, the declared version on top. Each release carries it |
 | `SPEC.md` | The source of truth: front matter (`slug`, `title`, `category`, `status`, `access`), then Job, Columns, Access, Acceptance criteria (`**AC-n**`), Out of scope, Demo data |
 | `src/app/App.tsx` | The `widget` declaration (`defineGristWidget`) and the default export `App` |
 | `src/app/messages.ts` | Its English and French text (`defineMessages`) |
@@ -47,7 +48,9 @@ the first).
 ## Releasing
 
 Raise the widget's `version` in its `package.json` in the pull request that
-changes it, following semver from the person's side:
+changes it, and add its entry on top of the widget's `CHANGELOG.md`
+(`## x.y.z (date)`, then what changed for the people using it; the check
+fails without it). Follow semver from the person's side:
 - a fix is a patch;
 - a new option or behaviour is a minor;
 - a column, access or behaviour change that breaks a document already

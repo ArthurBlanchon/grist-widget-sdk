@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 
-import { checkStatic, criteria, designViolations, listWidgets, parseFrontMatter, specColumns } from "./check-widgets.mjs"
+import { changelogEntries, checkChangelog, checkStatic, criteria, designViolations, listWidgets, parseFrontMatter, specColumns } from "./check-widgets.mjs"
 
 test("front matter is key: value lines", () => {
   const { data, body } = parseFrontMatter("---\nslug: a\naccess: read table\n---\n# A\n")
@@ -42,4 +42,19 @@ test("a generated widget passes the static checks it can before its code is writ
     writeFileSync(join(dir, rel), content)
   }
   assert.deepEqual(checkStatic("gantt-chart", dir).problems, [])
+})
+
+test("a widget's changelog: an entry per version, newest first, the declared one on top", async () => {
+  const { mkdtempSync, writeFileSync } = await import("node:fs")
+  const { tmpdir } = await import("node:os")
+  const { join } = await import("node:path")
+  const text = "# Changelog\n\n## 0.2.0 (2026-11-20)\n\n- New option.\n\n## 0.1.0 (2026-11-14)\n\nFirst release.\n"
+  assert.deepEqual(changelogEntries(text), [["0.2.0", "- New option."], ["0.1.0", "First release."]])
+  const dir = mkdtempSync(join(tmpdir(), "c-"))
+  assert.match(checkChangelog(dir, "0.1.0")[0], /CHANGELOG.md is missing/)
+  writeFileSync(join(dir, "CHANGELOG.md"), text)
+  assert.deepEqual(checkChangelog(dir, "0.2.0"), [])
+  assert.match(checkChangelog(dir, "0.3.0")[0], /first entry is 0.2.0, not 0.3.0/)
+  writeFileSync(join(dir, "CHANGELOG.md"), "# Changelog\n\n## 0.3.0\n\n## 0.2.0\n\n- x\n")
+  assert.match(checkChangelog(dir, "0.3.0")[0], /says nothing/)
 })

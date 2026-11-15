@@ -13,12 +13,12 @@ see Deploy notes for the difference.
 
 | Path | What's there |
 | --- | --- |
-| `content/docs/**` | All doc pages (`.mdx`) and per-space `meta.json`. Six sidebar spaces (Quickstart, CLI, SDK, Emulator, Registry, Contributing), each `root: true` and switchable via the sidebar's tab dropdown — see `app/docs/layout.tsx`. |
+| `content/docs/**` | All doc pages (`.mdx`). One sidebar in four sections (Get started, Guides, Reference, Concepts), from `content/docs/meta.json`, which lists every page by its path. |
 | `app/(home)` | The landing page. |
 | `app/docs` | The docs layout and `[[...slug]]` catch-all route. |
 | `app/widgets` | The community widget registry browser. |
 | `app/api/search` | The docs search route handler. |
-| `lib/source.ts` | The Fumadocs content-source loader — frontmatter schema (length/uniqueness refinement), the Lucide icon plugin for space tabs, `<include>`/`AutoTypeTable` wiring. |
+| `lib/source.ts` | The Fumadocs content-source loader — frontmatter schema (length/uniqueness refinement), `<include>`/`AutoTypeTable` wiring. |
 | `lib/layout.shared.tsx` | Shared top-nav options. |
 | `components/mdx.tsx` | MDX component registration (`getMDXComponents`) — see it before adding a per-page `import` for a Fumadocs component; it may already be registered globally. |
 

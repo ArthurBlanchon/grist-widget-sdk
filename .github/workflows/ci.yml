@@ -237,6 +237,9 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: node --test scripts/ci/*.test.mjs scripts/site/*.test.mjs scripts/release/*.test.mjs scripts/example-demos.test.mjs
+      # The docs' old forms and page sizes (scripts/site/docs-check.mjs):
+      # report mode until the guides are rewritten (plan to 0.8.0, M6 R4).
+      - run: node scripts/site/docs-check.mjs
       - run: pnpm install --frozen-lockfile
       # A dependency Dependabot can't see (an npm alias) falling behind its
       # peers fails here, in the pull request that causes it.

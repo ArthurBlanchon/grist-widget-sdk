@@ -32,9 +32,10 @@ done.
 - [ ] **M5. The loop, from issue to release.** Issue forms and labels; the
   skills `triage-issue`, `new-widget`, `fix-issue`, `catalog-upgrade`,
   `release-widgets`, `sota-review`; upkeep on a schedule.
-- [ ] **M6. Documentation, alongside.** R1 to R6 to the 2026-11-14 target
+- [ ] **M6. Documentation, alongside.** R2 to R6 to the 2026-11-14 target
   structure, with *Replica document* as a Concepts page and *Examples* as
-  the catalog.
+  the catalog (R1, the frame, is done: four sections, the docs check in
+  report mode).
 - [ ] **M7. Bring the widgets home, then retire.** Wave 3 (REST
   enrichment, Ask AI, Scan with AI) after M1–M4; `examples/` removed with
   an API coverage check; awesome-grist-widgets absorbed and archived; the

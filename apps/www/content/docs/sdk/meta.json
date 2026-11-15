@@ -1,7 +1,0 @@
-{
-  "title": "SDK",
-  "description": "Guide, API reference, and design notes.",
-  "icon": "Blocks",
-  "root": true,
-  "pages": ["index", "guide", "api", "design"]
-}

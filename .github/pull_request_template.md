@@ -9,8 +9,8 @@
      the maintainer's go (quote it). -->
 
 - Row:
-- Maintainer's go: <!-- not needed / quote -->
-- Independent review: <!-- not needed / the second session's verdict, linked -->
+- Maintainer's go: <!-- not needed / when and where it was given (a record of it, not a grant) -->
+- Independent review: <!-- not needed / the reviewing session's comment, linked -->
 
 ## Checks
 
@@ -19,6 +19,8 @@
 - [ ] `pnpm test` (SDK, examples' typecheck, site), or the parts this touches
 - [ ] A changeset, if a published package or the template changes for its users
 - [ ] Docs updated with the behaviour (`apps/www/content/docs/`)
+- [ ] Public API changed: `pnpm --filter grist-widget-sdk api:report` regenerated, `packages/core/api/` committed
+- [ ] An `AGENTS.md` changed: `pnpm check:agents-md`
 - [ ] `TODO.md`: the item done removed, any new one added
 
 ### For a catalog widget (`widgets/<slug>/`)

@@ -21,10 +21,6 @@ From the [project review and plan to 1.0](./docs/planning/2026-11-14-review-and-
 its decisions D1–D5 were accepted as recommended. Releases follow the weekly
 train (`docs/operations/releasing.md`).
 
-- [ ] **A. Catch up:** the six reference widgets released 0.3.0 (their
-  `dev` is on 0.6.2), the registry refreshed (awesome-grist-widgets#10),
-  their own Dependabot majors triaged. Done when every reference widget
-  runs 0.6.2 in production with no deprecation warning.
 - [ ] **C. 0.7.0:** released with the next weekly train. Done in the
   code: the API report and React 18/19 in CI, the versioning policy, the
   names 0.6 deprecated, the page-wide connection and `useGristSchema()`'s
@@ -35,12 +31,9 @@ train (`docs/operations/releasing.md`).
 - [ ] **Docs rewrite** ([plan](./docs/planning/2026-11-14-docs-rewrite-plan.md)):
   agree the structure (§3), then R1–R6. Done when the old-forms check
   blocks in CI, about 25 user pages remain and every retired URL redirects.
-- [ ] **E. The six widgets on 0.7:** the Dependabot pull request moving both
-  packages, then `pnpm exec create-grist-widget upgrade` as a follow-up on
-  `dev`, the hints it lists fixed by hand, and a `pnpm release`. Done when
-  the six typecheck, test and build on 0.7.
 - [ ] **F. 1.0.0:** the API report's baseline reset and the deprecate-first
-  rule in force. Done when the six take it through the same flow as E.
+  rule in force. Done when the catalog widgets take it in the pull request
+  that makes it ([ADR 0007](./docs/decisions/0007-widget-factory.md)).
 
 ## 2. Next project — the widget factory
 
@@ -60,6 +53,11 @@ absorbed and archived, widgets served by the site that already exists
   template, Gantt chart, Map, Chart builder. Wave 2 is built, all six:
   Signature pad, Bulk editor, Mermaid diagram, Duplicate finder, Schema
   viewer, Mail merge. Then wave 3. Done when `examples/` is gone.
+- [ ] **Retire the six reference widgets**
+  ([ADR 0011](./docs/decisions/0011-reference-widgets-retired.md)), last:
+  the real-widgets job onto the catalog widgets, the registry without them,
+  the news feed added to the catalog or dropped, then the six repositories
+  deleted.
 - [ ] **F4–F8:** intake and triage, the build loop, upkeep, the catalog and
   registry, a size check at 30 and 60 widgets (plan §10).
 

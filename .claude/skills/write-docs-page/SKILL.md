@@ -7,7 +7,7 @@ description: Write, rewrite, move or retire a page of the grist-widget-sdk docs 
 
 The site's rules are in [`apps/www/AGENTS.md`](../../../apps/www/AGENTS.md).
 The target structure is in the
-[documentation rewrite plan](../../../docs/planning/2026-11-14-docs-rewrite-plan.md).
+[documentation rewrite plan](../../../docs/history/2026-11-14-docs-rewrite-plan.md).
 
 1. **Pick the kind of page:**
    - a tutorial, which teaches by doing;

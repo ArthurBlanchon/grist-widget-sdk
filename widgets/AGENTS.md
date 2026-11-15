@@ -1,7 +1,7 @@
 # Agent guide: the catalog widgets (`widgets/`)
 
 The widget factory's catalog ([ADR 0007](../docs/decisions/0007-widget-factory.md),
-[plan](../docs/planning/2026-11-14-widget-factory-plan.md),
+[plan](../docs/history/2026-11-14-widget-factory-plan.md),
 [first list](../catalog/roadmap.md)). Each `widgets/<slug>/` is one widget,
 a private workspace package; `widgets/_shared/` is what they all share.
 

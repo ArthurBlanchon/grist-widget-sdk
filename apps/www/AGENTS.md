@@ -8,7 +8,7 @@ its deploy.
 
 ## Rules for a docs page
 
-The [documentation rewrite plan](../../docs/planning/2026-11-14-docs-rewrite-plan.md)
+The [documentation rewrite plan](../../docs/history/2026-11-14-docs-rewrite-plan.md)
 sets them; in short:
 - **The current API only.** `defineGristWidget()`, `widget.useGrist()`,
   `mappedRecord`, `updateRecord`/`addRecord`,

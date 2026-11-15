@@ -9,7 +9,7 @@ title: Developer experience review — 2026-11-12
 > dev` on grist-static) and 0.6.0 (`fetchRows`, `grist-widget-sdk/actions`,
 > the deprecations and `upgrade`'s codemods). Its 1.0 part (§3.7, §5's last
 > row) continues in the
-> [plan of 2026-11-14](../planning/2026-11-14-review-and-1.0-plan.md).
+> [plan of 2026-11-14](./2026-11-14-review-and-1.0-plan.md).
 >
 > Scope: the SDK's public surface, the template a
 > widget starts from, and how a widget takes in later versions, judged by

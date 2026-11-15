@@ -1,5 +1,7 @@
 # Documentation rewrite plan — 2026-11-14
 
+> **Superseded on 2026-11-15** by the [plan to 0.8.0](../planning/2026-11-15-plan-0.8.md), the one open plan, which carries on what is left of this one.
+
 > **Status: proposed.** Revised the same day: the maintainer is the only
 > user for now, so the docs describe the current API only, with no
 > deprecated forms, migration tables or "before and after" anywhere. Part of the [plan to 1.0](./2026-11-14-review-and-1.0-plan.md):

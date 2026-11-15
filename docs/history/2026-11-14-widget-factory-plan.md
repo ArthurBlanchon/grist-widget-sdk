@@ -1,5 +1,7 @@
 # Widget factory plan — 2026-11-14
 
+> **Superseded on 2026-11-15** by the [plan to 0.8.0](../planning/2026-11-15-plan-0.8.md), the one open plan, which carries on what is left of this one.
+
 > **Status: proposed.** The direction (§1) was agreed with the maintainer
 > on 2026-11-14, then sized the same day for a catalog of **30 to 100
 > widgets** at most. Every choice below is made for that size; the steps

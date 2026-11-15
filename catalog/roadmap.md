@@ -1,7 +1,7 @@
 # Catalog roadmap: the first list
 
 > **Status: agreed with the maintainer on 2026-11-14.** This is step F3's
-> list in the [widget factory plan](../docs/planning/2026-11-14-widget-factory-plan.md):
+> list in the [widget factory plan](../docs/history/2026-11-14-widget-factory-plan.md):
 > what the factory builds first, in which order, and why.
 >
 > Each entry below seeds that widget's `SPEC.md`. When a widget is built,

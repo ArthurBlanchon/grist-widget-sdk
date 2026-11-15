@@ -11,7 +11,7 @@ import { NativeSelect, NativeSelectOption } from "@shared/ui/native-select"
 import { Switch } from "@shared/ui/switch"
 import { Textarea } from "@shared/ui/textarea"
 
-import { display, fieldOf, fromForm, sameValue, toForm, type Field, type FormValue } from "./fields"
+import { display, fieldOf, fromForm, sameValue, toForm, type Field, type FormValue } from "@shared/grist-fields"
 import { messages } from "./messages"
 
 export const widget = defineGristWidget({

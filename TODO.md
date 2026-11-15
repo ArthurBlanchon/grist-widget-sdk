@@ -60,7 +60,7 @@ absorbed and archived, widgets served by the site that already exists
   waves). Wave 1 is built, all ten: Kanban board, Record selector, Record
   editor, File uploader, Grouped view, Attachment viewer, Document
   template, Gantt chart, Map, Chart builder. Wave 2 so far: Signature
-  pad. Then wave 3. Done when `examples/` is gone.
+  pad, Bulk editor. Then wave 3. Done when `examples/` is gone.
 - [ ] **F4–F8:** intake and triage, the build loop, upkeep, the catalog and
   registry, a size check at 30 and 60 widgets (plan §10).
 

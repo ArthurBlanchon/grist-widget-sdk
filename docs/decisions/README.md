@@ -22,6 +22,7 @@ link it from where the decision is applied.
 | [0010](./0010-api-keys.md) | API keys never go in widget options |
 | [0011](./0011-reference-widgets-retired.md) | The six reference widgets are retired, not released again |
 | [0012](./0012-merge-authority.md) | Who merges what |
+| [0013](./0013-widget-channels.md) | A catalog widget's channels: one per major, and dev |
 
 The plans in [`docs/planning/`](../planning/) and
 [`docs/history/`](../history/) hold the reasoning in full. The design

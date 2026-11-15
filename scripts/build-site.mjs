@@ -47,7 +47,7 @@ import { copyGristStatic } from "./site/grist-static.mjs"
 import { siteHeaders } from "./site/headers.mjs"
 import { redirectFiles } from "./site/redirects.mjs"
 import { assess, measure } from "./site/budget.mjs"
-import { declaredVersions, latestVersion, RELEASE_BRANCH, releasedVersions, unreleased } from "./widgets/dist.mjs"
+import { declaredVersions, latestVersion, majorChannels, RELEASE_BRANCH, releasedVersions, unreleased } from "./widgets/dist.mjs"
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..")
 
@@ -162,8 +162,11 @@ function writeExampleDemo(id, demoDir) {
 }
 
 // The catalog widgets (widgets/<slug>/): their released versions, from the
-// widgets-dist branch (scripts/widgets/dist.mjs), at /widgets/<slug>/<version>/,
-// and the newest at /widgets/<slug>/latest/. A build of main (either origin's
+// widgets-dist branch (scripts/widgets/dist.mjs), at /widgets/<slug>/<version>/;
+// the newest of each major at /widgets/<slug>/v<major>/, the install URL
+// (ADR 0013); the newest of all at /widgets/<slug>/latest/; and the source
+// being built at /widgets/<slug>/dev/: on main, what is merged and not
+// released yet, to check in a real Grist before a release. A build of main (either origin's
 // production) serves only released versions: a version main declares and the
 // branch doesn't have yet is waited for, since the release job builds it on the
 // same push; it is never built here. Any other build (a pull request's preview,
@@ -225,17 +228,26 @@ async function buildCatalogWidgets() {
     for (const v of list) cpSync(join(distDir, slug, v), join(out, slug, v), { recursive: true })
     versions[slug] = [...list]
   }
-  for (const { slug, version } of missing) {
-    console.log(`Building ${slug}@${version} from source (not released yet: a preview)`)
+  // /dev/: every widget built from the source this build has. A version that
+  // isn't released yet (a pull request's preview, a local run) is that build.
+  for (const slug of Object.keys(declared)) {
+    console.log(`Building ${slug} from source at /widgets/${slug}/dev/`)
     execFileSync(
       "pnpm",
-      ["--filter", `@grist-widgets/${slug}`, "exec", "vite", "build", "--outDir", join(out, slug, version), "--emptyOutDir"],
+      ["--filter", `@grist-widgets/${slug}`, "exec", "vite", "build", "--outDir", join(out, slug, "dev"), "--emptyOutDir"],
       { cwd: repoRoot, stdio: "inherit" },
     )
+  }
+  for (const { slug, version } of missing) {
+    console.log(`${slug}@${version} is not released yet: the preview serves its source build there`)
+    cpSync(join(out, slug, "dev"), join(out, slug, version), { recursive: true })
     versions[slug] = [...(versions[slug] ?? []), version]
   }
   for (const [slug, list] of Object.entries(versions)) {
     cpSync(join(out, slug, latestVersion(list)), join(out, slug, "latest"), { recursive: true })
+    for (const [channel, version] of Object.entries(majorChannels(list))) {
+      cpSync(join(out, slug, version), join(out, slug, channel), { recursive: true })
+    }
   }
   // Each widget's demo page: the demo document the release job made
   // (scripts/widgets/demos.mjs), in grist-static, pointed at /latest/.

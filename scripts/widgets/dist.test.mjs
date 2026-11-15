@@ -4,7 +4,7 @@ import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { test } from "node:test"
 
-import { compareVersions, declaredVersions, latestVersion, releasedVersions, unreleased } from "./dist.mjs"
+import { compareVersions, declaredVersions, latestVersion, majorChannels, releasedVersions, unreleased } from "./dist.mjs"
 
 test("versions compare as numbers, not text", () => {
   assert.equal(compareVersions("0.10.0", "0.9.9"), 1)
@@ -32,4 +32,10 @@ test("unreleased lists the declared versions missing from the release branch", (
 test("every catalog widget declares an x.y.z version", () => {
   const versions = declaredVersions(new URL("../../widgets", import.meta.url).pathname)
   assert.ok(Object.keys(versions).length > 0)
+})
+
+test("each major's channel is its newest version, so a new major never reaches it", () => {
+  assert.deepEqual(majorChannels(["0.1.0", "0.2.1", "1.0.0", "0.10.0", "1.2.0", "2.0.0"]), { v0: "0.10.0", v1: "1.2.0", v2: "2.0.0" })
+  assert.deepEqual(majorChannels(["0.1.0"]), { v0: "0.1.0" })
+  assert.deepEqual(majorChannels([]), {})
 })

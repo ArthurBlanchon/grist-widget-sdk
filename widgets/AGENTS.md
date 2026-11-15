@@ -54,10 +54,15 @@ changes it, following semver from the person's side:
   using it is a major.
 
 On the merge, the release job builds that version once into the
-`widgets-dist` branch, and both origins serve it at
-`/widgets/<slug>/<version>/` and `/latest/`
-([site deploy](../docs/operations/site-deploy.md)). A change merged without a
+`widgets-dist` branch. Both origins then serve it at
+`/widgets/<slug>/<version>/`, on its major's channel `/v<major>/` (the
+install URL) and at `/latest/`
+([ADR 0013](../docs/decisions/0013-widget-channels.md),
+[site deploy](../docs/operations/site-deploy.md)). A change merged without a
 new version publishes nothing, and a released version is never rebuilt.
+Before releasing, check what `main` holds in a real Grist document at
+`/widgets/<slug>/dev/`; a pull request's preview serves its branch the same
+way.
 
 ## Commands
 

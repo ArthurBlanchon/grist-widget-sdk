@@ -1,0 +1,8 @@
+{
+  "slug": "mermaid-diagram",
+  "version": "0.2.0",
+  "commit": "f8478a20081a9c5348b3a8934507fedd863439ab",
+  "released": "2026-11-15T13:29:56.168Z",
+  "changes": "- Diagrams are now laid out by Dagre, Mermaid's classic layout. 0.1.0 used ELK, Mermaid 12's default, so a diagram's nodes may sit differently: the diagram itself, its text and its links don't change. A diagram can no longer ask for ELK in its front matter.\n- ELK is no longer shipped with the widget: its licence (EPL-2.0 or GPL-3.0) is off the catalog's allow list.",
+  "changelog": "CHANGELOG.md"
+}

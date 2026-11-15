@@ -18,6 +18,7 @@
 
 import type { GristMappedRow } from "./runtime/cells"
 import type { GristRowRecord } from "./types"
+import { checkOptionsVersioning } from "./runtime/options-version"
 import { useGrist, type UseGristOptions, type UseGristResult } from "./use-grist"
 
 /** What a widget declares: `UseGristOptions`, plus its title and description. */
@@ -53,6 +54,7 @@ export type GristWidget<D extends GristWidgetDefinition = GristWidgetDefinition>
  */
 export function defineGristWidget<const D extends GristWidgetDefinition>(definition: D): GristWidget<D> {
   const { title, description, ...options } = definition
+  checkOptionsVersioning(options)
   return {
     definition,
     options,

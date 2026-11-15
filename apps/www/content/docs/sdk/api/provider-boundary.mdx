@@ -44,6 +44,8 @@ type UseGristOptions = {
   hasCustomOptions?: boolean                      // Grist shows "Open configuration"
   onEditOptions?: () => void | Promise<void>      // ...which calls this
   suppressAlerts?: GristSdkAlertKind[]            // alerts mountGristWidget() never shows
+  optionsVersion?: number                         // the version of the widget options
+  migrate?: MigrateWidgetOptions                  // brings older options to it, on read
 }
 
 type GristColumnToMap = {

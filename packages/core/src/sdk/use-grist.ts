@@ -102,8 +102,13 @@ export type UseGristResult<TRow = Record<string, unknown>, TMapped = Record<stri
   actionStatus: GristWidgetActionStatus
   actionError: string | null
 
-  /** The options Grist stores for this widget, null until it sends them. */
+  /** The options Grist stores for this widget, migrated (optionsVersion), null until it sends them. */
   widgetOptions: Record<string, unknown> | null
+  /**
+   * Why the widget may not write over its options, or null: written by a
+   * newer version of it, or not migrated. `setWidgetOptions({})` resets them.
+   */
+  optionsIssue: string | null
 }
 
 type GristContextValue = { runtime: GristRuntime; api: GristApi }
@@ -220,6 +225,7 @@ function buildResult<TRow, TMapped>(
     actionStatus: state.actionStatus,
     actionError: state.actionError,
     widgetOptions: state.widgetOptions,
+    optionsIssue: state.optionsIssue,
   } as UseGristResult<TRow, TMapped>
   return result
 }

@@ -77,6 +77,9 @@ export {
 export { normalizeGristChoiceListEntries, type GristChoiceListEntry } from "./helpers/grist-widget-options"
 export { resolveGristFormulaKind } from "./helpers/grist-schema-formula"
 
+// Options that evolve: defineGristWidget({ optionsVersion, migrate })
+export type { MigrateWidgetOptions } from "./runtime/options-version"
+
 // Links and sources from data: http(s) only
 export { httpUrl } from "./helpers/http-url"
 

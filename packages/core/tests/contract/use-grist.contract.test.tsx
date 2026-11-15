@@ -54,6 +54,7 @@ const MEMBERS = [
   "actionError",
   "applyActions",
   "widgetOptions",
+  "optionsIssue",
   "setWidgetOptions",
   "patchWidgetOptions",
   "setCursorPosition",
@@ -492,6 +493,32 @@ describe("widgetOptions", () => {
     await settle(() => emulator.setOptions({ color: "blue" }))
     await waitFor(() => expect(w().widgetOptions).toMatchObject({ color: "blue" }))
   })
+
+  it("with optionsVersion: migrates older options on read, hides the version, writes nothing", async () => {
+    const migrate = (o: Record<string, unknown>, from: number) => (from < 2 ? { colour: o.color } : o)
+    const { w, emulator } = renderProbe({ requiredAccess: "full", optionsVersion: 2, migrate }, {
+      emulator: { document: presets.todoList(), widgetOptions: { color: "red" } },
+    })
+    await untilReady(w)
+    await waitFor(() => expect(w().widgetOptions).toEqual({ colour: "red" }))
+    expect(emulator.state.widgetOptions).toEqual({ color: "red" })
+  })
+})
+
+describe("optionsIssue", () => {
+  it("is null for options the widget may write, and says why it may not otherwise; an empty write resets them", async () => {
+    const { w, emulator } = renderProbe({ requiredAccess: "full", optionsVersion: 2, migrate: (o) => o }, {
+      emulator: { document: presets.todoList(), widgetOptions: { a: 1, __version: 2 } },
+    })
+    await untilReady(w)
+    await waitFor(() => expect(w().widgetOptions).toEqual({ a: 1 }))
+    expect(w().optionsIssue).toBeNull()
+    await settle(() => emulator.setOptions({ b: 2, __version: 5 }))
+    await waitFor(() => expect(w().optionsIssue).toMatch(/newer version/))
+    await settle(() => w().setWidgetOptions({}))
+    await waitFor(() => expect(w().optionsIssue).toBeNull())
+    expect(emulator.state.widgetOptions).toEqual({ __version: 2 })
+  })
 })
 
 describe("setWidgetOptions", () => {
@@ -502,6 +529,18 @@ describe("setWidgetOptions", () => {
     await untilReady(w)
     await settle(() => w().setWidgetOptions({ b: 2 }))
     expect(emulator.state.widgetOptions).toEqual({ b: 2 })
+  })
+
+  it("with optionsVersion: writes them under it, never over a newer version's", async () => {
+    const { w, emulator } = renderProbe({ requiredAccess: "full", optionsVersion: 3, migrate: (o) => o }, {
+      emulator: { document: presets.todoList(), widgetOptions: { a: 1, __version: 3 } },
+    })
+    await untilReady(w)
+    await settle(() => w().setWidgetOptions({ b: 2 }))
+    expect(emulator.state.widgetOptions).toEqual({ b: 2, __version: 3 })
+    await settle(() => emulator.setOptions({ c: 3, __version: 4 }))
+    await expect(w().setWidgetOptions({ d: 4 })).rejects.toThrow(/newer version/)
+    expect(emulator.state.widgetOptions).toEqual({ c: 3, __version: 4 })
   })
 })
 

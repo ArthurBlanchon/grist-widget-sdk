@@ -23,6 +23,7 @@ import type {
 } from "../types"
 import { parseAccess } from "./derive"
 import { messageStream, newRecordStream, optionsStream, recordsStream, recordStream } from "./host"
+import { checkOptionsVersioning, readWidgetOptions, type OptionsVersioning } from "./options-version"
 import { ensureGristReady, resetGristReady } from "./ready"
 
 export type GristConnection = "connecting" | "ready" | "not-embedded" | "unavailable" | "error"
@@ -42,6 +43,8 @@ export type GristRuntimeState = {
   /** Logical → real column ids; null until Grist reports them. */
   mappings: GristWidgetColumnMap | null
   widgetOptions: Record<string, unknown> | null
+  /** Why the widget may not write over its options (optionsVersion), or null. */
+  optionsIssue: string | null
   interaction: GristWidgetInteraction | null
   currentTableId: string | null
   theme: GristTheme | null
@@ -54,7 +57,7 @@ export type GristRuntimeState = {
 }
 
 /** What a widget asks Grist for (`UseGristOptions`). */
-export type GristRuntimeOptions = GristReadyOptions & {
+export type GristRuntimeOptions = GristReadyOptions & OptionsVersioning & {
   /** Alert kinds mountGristWidget() never shows for this widget, e.g. ["section-not-linked"]. */
   suppressAlerts?: GristSdkAlertKind[]
   /**
@@ -89,6 +92,7 @@ export function initialRuntimeState(options: GristReadyOptions = {}): GristRunti
     isNewRecord: false,
     mappings: null,
     widgetOptions: null,
+    optionsIssue: null,
     interaction: null,
     currentTableId: null,
     theme: null,
@@ -110,6 +114,7 @@ function isEmbedded(): boolean {
 const hasGrist = () => typeof grist !== "undefined" && grist !== null
 
 export function createGristRuntime(options: GristRuntimeOptions = {}): GristRuntime {
+  checkOptionsVersioning(options)
   let state = initialRuntimeState(options)
   const listeners = new Set<() => void>()
   let starts = 0
@@ -190,13 +195,17 @@ export function createGristRuntime(options: GristRuntimeOptions = {}): GristRunt
         update({ records: records.map((r) => ({ ...r }) as GristRowRecord), ...(mappings ? { mappings } : {}) })
         void refreshTable()
       }),
-      optionsStream.subscribe(({ options: widgetOptions, interaction }) =>
+      // Options written under an older version reach the widget migrated, in
+      // memory (options-version.ts): nothing is written on load.
+      optionsStream.subscribe(({ options: saved, interaction }) => {
+        const read = readWidgetOptions(saved, options)
         update({
-          widgetOptions,
+          widgetOptions: read.options,
+          optionsIssue: read.issue,
           interaction,
           grantedAccess: parseAccess(interaction?.access_level) ?? state.grantedAccess,
         })
-      ),
+      }),
       newRecordStream.subscribe(({ mappings }) => update({ isNewRecord: true, ...(mappings ? { mappings } : {}) })),
       messageStream.subscribe((msg) => {
         const theme = parseGristThemePayload(msg)

@@ -442,6 +442,9 @@ export type ListTablesOptions = {
 export function mergeGristAttachmentCellValue(existingCell: unknown, newIds: (string | number)[]): GristEncodedAttachmentList;
 
 // @public
+export type MigrateWidgetOptions = (options: Record<string, unknown>, fromVersion: number) => Record<string, unknown>;
+
+// @public
 export function normalizeGristChoiceListEntries(widgetOptions: Record<string, unknown> | undefined): GristChoiceListEntry[];
 
 // @public
@@ -509,6 +512,7 @@ export type UseGristResult<TRow = Record<string, unknown>, TMapped = Record<stri
     actionStatus: GristWidgetActionStatus;
     actionError: string | null;
     widgetOptions: Record<string, unknown> | null;
+    optionsIssue: string | null;
 };
 
 // @public

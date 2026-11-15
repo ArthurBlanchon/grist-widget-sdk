@@ -25,6 +25,7 @@
     "@grist-widgets/kanban-board",
     "@grist-widgets/map",
     "@grist-widgets/record-editor",
-    "@grist-widgets/record-selector"
+    "@grist-widgets/record-selector",
+    "@grist-widgets/signature-pad"
   ]
 }

@@ -40,7 +40,7 @@ export const demo: GristWidgetDemo = {
         Status: {
           Planned: { fillColor: "#E0E7FF", textColor: "#1E1B4B" },
           "In progress": { fillColor: "#2563EB", textColor: "#FFFFFF" },
-          Done: { fillColor: "#16A34A", textColor: "#FFFFFF" },
+          Done: { fillColor: "#15803D", textColor: "#FFFFFF" },
           Late: { fillColor: "#FDE68A", textColor: "#422006" },
         },
       },

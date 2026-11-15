@@ -46,3 +46,51 @@ describe("demo", () => {
     if (!process.env.GRIST_IMAGE) expect(GRIST_IMAGE).toMatch(/^gristlabs\/grist:\d+\.\d+\.\d+$/)
   })
 })
+
+describe("a widget's demo data (src/app/demo.ts)", () => {
+  const options = {
+    requiredAccess: "full",
+    columns: [{ name: "Title", type: "Text" }, { name: "Status", type: "Choice" }, { name: "Values", type: "Numeric", allowMultiple: true }],
+  }
+  const demo = {
+    tables: {
+      Tasks: {
+        columns: { Title: "Text", Status: "Choice", Due: "Date", Tags: "ChoiceList", Revenue: "Numeric", Costs: "Numeric", Owner: "Ref:People" },
+        rows: [
+          { Title: "Brief", Status: "To do", Due: "2026-12-01", Tags: ["a", "b"], Revenue: 10, Costs: 4, Owner: 1 },
+          { Title: "Draft", Status: "Done", Due: null, Tags: [], Revenue: 5, Costs: 2, Owner: 2 },
+        ],
+      },
+      People: { columns: { Name: "Text" }, rows: [{ Name: "Ada" }, { Name: "Linus" }] },
+    },
+    mapping: { Values: ["Revenue", "Costs"] },
+    options: { columns: ["To do", "Done"] },
+  }
+
+  it("builds every table, its choices from its rows, and Grist's cell encodings", async () => {
+    const { demoSpec } = await import("../src/grist-local.mjs")
+    const spec = demoSpec(options, demo)
+    expect(spec.tables.map((t) => t.id)).toEqual(["Tasks", "People"])
+    expect(spec.table).toBe("Tasks")
+    const status = spec.tables[0].columns.find((c) => c.id === "Status")
+    expect(JSON.parse(status.fields.widgetOptions).choices).toEqual(["To do", "Done"])
+    expect(spec.tables[0].rows[0]).toMatchObject({ Due: Date.UTC(2026, 11, 1) / 1000, Tags: ["L", "a", "b"], Owner: 1 })
+    expect(spec.tables[0].rows[1].Due).toBeNull()
+  })
+
+  it("maps declared columns by name, or as the demo says, several for allowMultiple; carries the options", async () => {
+    const { demoSpec } = await import("../src/grist-local.mjs")
+    const spec = demoSpec(options, demo)
+    expect(spec.mapping).toEqual({ Title: "Title", Status: "Status", Values: ["Revenue", "Costs"] })
+    expect(spec.options).toEqual({ columns: ["To do", "Done"] })
+  })
+
+  it("refuses demo data Grist couldn't take, with a message", async () => {
+    const { checkDemo } = await import("../src/grist-local.mjs")
+    expect(checkDemo(demo)).toBe(demo)
+    expect(() => checkDemo(null)).toThrow(/GristWidgetDemo/)
+    expect(() => checkDemo({ tables: { tasks: { columns: {}, rows: [] } } })).toThrow(/table id/)
+    expect(() => checkDemo({ tables: { T: { columns: { A: "Ref:Nope" }, rows: [] } } })).toThrow(/Grist type/)
+    expect(() => checkDemo({ tables: { T: { columns: { A: "Text" }, rows: [] } }, table: "U" })).toThrow(/isn't one of its tables/)
+  })
+})

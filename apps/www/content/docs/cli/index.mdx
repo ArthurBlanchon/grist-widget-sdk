@@ -110,6 +110,12 @@ itself can start you from directly (see below).
 | `manifest --base <path>` | Write `dist/grist-widget.json`, the widget's Grist manifest; the deploy workflow runs it |
 | `list [--json]` | Print the available starting examples |
 
+`demo` and `demo --save` open the widget on sample rows from its declared
+columns. Export `demo` from `src/app/demo.ts` (a `GristWidgetDemo` from
+`grist-widget-sdk`) and they open your data instead: its tables with typed
+columns, the rows, which column each declared one maps to, and the widget's
+options.
+
 Common flags for `create`/`init`: `--yes` (skip interactive prompts),
 `--no-install` (skip the automatic dependency install, so the first commit
 has no lockfile), `--pm <name>`

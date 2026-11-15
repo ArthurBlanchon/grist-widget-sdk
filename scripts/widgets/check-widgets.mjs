@@ -281,6 +281,7 @@ export function checkStatic(slug, dir = join(WIDGETS_DIR, slug)) {
       ["SPEC.md", body],
       ["package.json's description", pkg.description ?? ""],
       ["CHANGELOG.md", existsSync(changelog) ? readFileSync(changelog, "utf8") : ""],
+      ["src/app/demo.ts", existsSync(join(dir, "src", "app", "demo.ts")) ? readFileSync(join(dir, "src", "app", "demo.ts"), "utf8") : ""],
     ]) {
       // new-widget's placeholders: "TODO:", a "| TODO |" cell, a "- TODO" item.
       if (/\bTODO(?::|\s*\||\s*$)/m.test(text)) problems.push(`${file}: a TODO is left (new-widget's placeholder), and the widget isn't a draft`)

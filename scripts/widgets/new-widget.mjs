@@ -79,6 +79,18 @@ TODO: who uses it, for what, and what Grist does without it.
 
 TODO: a few realistic rows.
 `,
+    "src/app/demo.ts": `import type { GristWidgetDemo } from "grist-widget-sdk"
+
+/** The demo document: the spec's Demo data, as tables and rows. */
+export const demo: GristWidgetDemo = {
+  tables: {
+    Data: {
+      columns: { Title: "Text" },
+      rows: [{ Title: "TODO: realistic rows, from the spec's Demo data" }],
+    },
+  },
+}
+`,
     "src/app/messages.ts": `import { defineMessages } from "@shared/i18n"
 
 export const messages = defineMessages({

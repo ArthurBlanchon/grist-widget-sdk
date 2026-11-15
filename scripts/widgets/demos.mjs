@@ -18,9 +18,9 @@ import { join, resolve } from "node:path"
 import { DEMO_URL_PLACEHOLDER } from "../../packages/create-grist-widget/src/demo-page.mjs"
 import { listWidgets, WIDGETS_DIR } from "./check-widgets.mjs"
 
-/** What a demo document is generated from: the declaration's title, access and columns. */
-export function demoHash({ title, options }) {
-  const input = { title, requiredAccess: options.requiredAccess ?? "read table", columns: options.columns ?? [], placeholder: DEMO_URL_PLACEHOLDER }
+/** What a demo document is generated from: the declaration's title, access and columns, and its demo data. */
+export function demoHash({ title, options, demo = null }) {
+  const input = { title, requiredAccess: options.requiredAccess ?? "read table", columns: options.columns ?? [], placeholder: DEMO_URL_PLACEHOLDER, ...(demo ? { demo } : {}) }
   return createHash("sha256").update(JSON.stringify(input)).digest("hex").slice(0, 16)
 }
 
@@ -43,8 +43,8 @@ async function main() {
   const { readWidgetExports } = await import("../../packages/create-grist-widget/src/grist-local.mjs")
   const declared = []
   for (const slug of listWidgets()) {
-    const { options, metadata } = await readWidgetExports(join(WIDGETS_DIR, slug))
-    declared.push({ slug, title: metadata?.title || options.title || slug, options })
+    const { options, metadata, demo } = await readWidgetExports(join(WIDGETS_DIR, slug))
+    declared.push({ slug, title: metadata?.title || options.title || slug, options, demo })
   }
   const todo = demosToMake(declared, distDir)
   if (todo.length === 0) return
@@ -54,7 +54,7 @@ async function main() {
       for (const w of todo) {
         const dir = join(distDir, w.slug, "demo")
         mkdirSync(dir, { recursive: true })
-        writeFileSync(join(dir, "demo.grist"), await createDemoDocument({ ...grist, options: w.options, name: w.title }))
+        writeFileSync(join(dir, "demo.grist"), await createDemoDocument({ ...grist, options: w.options, name: w.title, demo: w.demo }))
         writeFileSync(join(dir, "demo.json"), `${JSON.stringify({ hash: demoHash(w), title: w.title }, null, 2)}\n`)
         console.log(w.slug)
       }

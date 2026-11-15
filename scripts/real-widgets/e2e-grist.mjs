@@ -52,7 +52,7 @@ import {
   createDocument,
   GRIST_IMAGE,
   gristApi,
-  readGristOptions,
+  readWidgetExports,
   startGrist,
   stopGrist,
 } from "../../packages/create-grist-widget/src/grist-local.mjs"
@@ -154,11 +154,12 @@ async function checkWidget({ browser, gristUrl, api, wsId, widgetDir, outDir, ti
   const dist = path.join(widgetDir, "dist")
   if (!existsSync(path.join(dist, "index.html"))) throw new Error(`${widgetDir}/dist is missing: build it, or pass --build`)
 
-  const { options, from } = await readGristOptions(widgetDir)
+  const { options, from, demo } = await readWidgetExports(widgetDir)
   result.optionsFrom = from
   const server = await serve(dist)
   const origin = `http://127.0.0.1:${server.address().port}`
-  const { docId, viewId } = await createDocument(api, wsId, name, options, `${origin}/${name}/dev/`)
+  // The widget's demo data (src/app/demo.ts) when it has some, sample rows otherwise.
+  const { docId, viewId } = await createDocument(api, wsId, name, options, `${origin}/${name}/dev/`, demo)
   result.doc = `${gristUrl}/doc/${docId}/p/${viewId}`
 
   const context = await browser.newContext({ viewport: { width: 1400, height: 900 } })

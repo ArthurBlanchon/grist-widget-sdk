@@ -13,6 +13,7 @@ a private workspace package; `widgets/_shared/` is what they all share.
 | `SPEC.md` | The source of truth: front matter (`slug`, `title`, `category`, `status`, `access`), then Job, Columns, Access, Acceptance criteria (`**AC-n**`), Out of scope, Demo data. The catalog page publishes Job, Columns, Access and Network as written, for the people using it: notes for maintainers (components, paths, advisories) go in an Implementation section |
 | `src/app/App.tsx` | The `widget` declaration (`defineGristWidget`) and the default export `App` |
 | `src/app/messages.ts` | Its English and French text (`defineMessages`) |
+| `src/app/demo.ts` | Its demo data (`GristWidgetDemo`), from the spec's Demo data: its demo page and the real-Grist check open it |
 | `src/app/*.test.tsx` | One test per criterion, named `it("AC-n …")`; `App.smoke.test.tsx` mounts it as Grist does |
 | `src/main.tsx` | `mountGristWidget(entry)` and the shared theme, the same in every widget |
 | `package.json` | `@grist-widgets/<slug>`, private, MIT; versions are `catalog:` (`pnpm-workspace.yaml`) |

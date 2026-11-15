@@ -31,6 +31,7 @@ export async function widgetVite(widgetDir) {
   return import(pathToFileURL(require.resolve("vite")).href)
 }
 
+const DEMO_FILE = "src/app/demo.ts"
 const EXPORT_FILES = ["src/app/widget.ts", "src/app/grist-options.ts", "src/grist-options.ts", "src/app/App.tsx", "src/App.tsx"]
 
 /**
@@ -50,7 +51,7 @@ export async function readWidgetExports(widgetDir) {
     appType: "custom",
     logLevel: "error",
   })
-  const found = { options: null, from: null, metadata: null, metadataFrom: null }
+  const found = { options: null, from: null, metadata: null, metadataFrom: null, demo: null }
   const errors = []
   try {
     for (const rel of EXPORT_FILES) {
@@ -67,6 +68,14 @@ export async function readWidgetExports(widgetDir) {
         if (!found.metadata && metadata) Object.assign(found, { metadata, metadataFrom: rel })
       } catch (e) {
         errors.push(`${rel}: ${String(e?.message ?? e).split("\n")[0]}`)
+      }
+    }
+    // Its demo data (GristWidgetDemo), when it has some.
+    if (existsSync(path.join(widgetDir, DEMO_FILE))) {
+      try {
+        found.demo = checkDemo((await server.ssrLoadModule("/" + DEMO_FILE)).demo)
+      } catch (e) {
+        throw new Error(`${DEMO_FILE}: ${String(e?.message ?? e).split("\n")[0]}`, { cause: e })
       }
     }
   } finally {
@@ -143,6 +152,63 @@ export function documentSpec(options, rowCount = 3) {
   return { columns, rows }
 }
 
+/** A widget's demo data (GristWidgetDemo), checked enough to fail with a clear message. */
+export function checkDemo(demo) {
+  if (!demo || typeof demo !== "object" || !demo.tables || typeof demo.tables !== "object") {
+    throw new Error("export const demo: GristWidgetDemo, with its tables")
+  }
+  const names = Object.keys(demo.tables)
+  if (!names.length) throw new Error("demo: no table")
+  for (const [name, t] of Object.entries(demo.tables)) {
+    if (!/^[A-Z][A-Za-z0-9_]*$/.test(name)) throw new Error(`demo: table ${name} isn't a Grist table id (a capital, then letters, digits or _)`)
+    if (!t || typeof t.columns !== "object" || !Array.isArray(t.rows)) throw new Error(`demo: table ${name} needs columns and rows`)
+    for (const [col, type] of Object.entries(t.columns)) {
+      if (!/^[A-Za-z][A-Za-z0-9_]*$/.test(col)) throw new Error(`demo: ${name}.${col} isn't a Grist column id`)
+      const ref = /^Ref:(.+)$/.exec(type)
+      if (ref ? !names.includes(ref[1]) : !SIMPLE_TYPES.includes(type)) throw new Error(`demo: ${name}.${col}'s type ${type} isn't a Grist type of this document`)
+    }
+  }
+  if (demo.table && !names.includes(demo.table)) throw new Error(`demo: table ${demo.table} isn't one of its tables`)
+  return demo
+}
+
+/** A demo cell as Grist's REST API takes it. */
+function demoValue(type, value) {
+  if (value === null || value === undefined) return null
+  if (type === "Date" && typeof value === "string") return Date.parse(`${value}T00:00:00Z`) / 1000
+  if (type === "DateTime" && typeof value === "string") return Math.floor(Date.parse(value) / 1000)
+  if (type === "ChoiceList" && Array.isArray(value)) return ["L", ...value]
+  return value
+}
+
+/** The tables, rows, mapping and options of a widget's demo data. */
+export function demoSpec(options, demo) {
+  const tables = Object.entries(demo.tables).map(([id, t]) => ({
+    id,
+    columns: Object.entries(t.columns).map(([col, type]) => {
+      const fields = { type, label: col }
+      if (type === "Choice" || type === "ChoiceList") {
+        const choices = [...new Set(t.rows.flatMap((r) => (Array.isArray(r[col]) ? r[col] : r[col] == null ? [] : [r[col]])).map(String))]
+        fields.widgetOptions = JSON.stringify({ choices })
+      }
+      return { id: col, fields }
+    }),
+    rows: t.rows.map((r) => Object.fromEntries(Object.entries(r).map(([col, v]) => [col, demoValue(t.columns[col], v)]))),
+  }))
+  const table = demo.table ?? tables[0].id
+  const declared = (options.columns ?? []).map((c) => (typeof c === "string" ? c : c.name))
+  const present = new Set(tables.find((t) => t.id === table).columns.map((c) => c.id))
+  const mapping = Object.fromEntries(
+    declared.flatMap((name) => {
+      const cols = demo.mapping?.[name] ?? (present.has(name) ? name : null)
+      if (cols === null) return []
+      const multiple = (options.columns ?? []).some((c) => typeof c === "object" && c.name === name && c.allowMultiple)
+      return [[name, multiple && !Array.isArray(cols) ? [cols] : cols]]
+    })
+  )
+  return { tables, table, columns: tables.find((t) => t.id === table).columns, mapping, options: demo.options ?? null }
+}
+
 export function gristApi(baseUrl, key) {
   return async (method, url, body) => {
     const r = await fetch(baseUrl + url, {
@@ -156,15 +222,19 @@ export function gristApi(baseUrl, key) {
   }
 }
 
-export async function createDocument(api, wsId, name, options, widgetUrl) {
-  const spec = documentSpec(options)
+export async function createDocument(api, wsId, name, options, widgetUrl, demo = null) {
+  const spec = demo ? demoSpec(options, demo) : documentSpec(options)
+  const tables = spec.tables ?? [{ id: "Data", columns: spec.columns, rows: spec.rows }]
+  const tableId = spec.table ?? "Data"
   const docId = await api("POST", `/api/workspaces/${wsId}/docs`, { name })
   await api("POST", `/api/docs/${docId}/tables`, {
-    tables: [{ id: "Data", columns: spec.columns.map(({ id, fields }) => ({ id, fields })) }],
+    tables: tables.map((t) => ({ id: t.id, columns: t.columns.map(({ id, fields }) => ({ id, fields })) })),
   })
-  await api("POST", `/api/docs/${docId}/tables/Data/records`, { records: spec.rows.map((fields) => ({ fields })) })
+  for (const t of tables) {
+    if (t.rows.length) await api("POST", `/api/docs/${docId}/tables/${t.id}/records`, { records: t.rows.map((fields) => ({ fields })) })
+  }
   const sql = async (q) => (await api("GET", `/api/docs/${docId}/sql?q=${encodeURIComponent(q)}`)).records.map((r) => r.fields)
-  const [table] = await sql("select id, primaryViewId from _grist_Tables where tableId = 'Data'")
+  const [table] = await sql(`select id, primaryViewId from _grist_Tables where tableId = '${tableId}'`)
   const cols = await sql(`select id, colId from _grist_Tables_column where parentId = ${table.id}`)
   const colRef = Object.fromEntries(cols.map((c) => [c.colId, c.id]))
   const [recordSection] = await sql(
@@ -174,15 +244,19 @@ export async function createDocument(api, wsId, name, options, widgetUrl) {
     ["CreateViewSection", table.id, table.primaryViewId, "custom", null, null],
   ])
   const sectionRef = res.retValues[0].sectionRef
-  const columnsMapping = Object.fromEntries(
-    spec.columns.filter((c) => c.mapped).map((c) => [c.id, c.allowMultiple ? [colRef[c.id]] : colRef[c.id]])
-  )
+  const columnsMapping = spec.mapping
+    ? Object.fromEntries(
+        Object.entries(spec.mapping).map(([declared, cols]) => [declared, Array.isArray(cols) ? cols.map((c) => colRef[c]) : colRef[cols]])
+      )
+    : Object.fromEntries(spec.columns.filter((c) => c.mapped).map((c) => [c.id, c.allowMultiple ? [colRef[c.id]] : colRef[c.id]]))
   const customView = {
     mode: "url",
     url: widgetUrl,
     access: options.requiredAccess ?? "none",
     columnsMapping,
     renderAfterReady: false,
+    // An object in customView (grist-core's ViewSectionRec customDef).
+    ...(spec.options ? { widgetOptions: spec.options } : {}),
   }
   await api("POST", `/api/docs/${docId}/apply`, [
     [

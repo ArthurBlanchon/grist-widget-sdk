@@ -392,6 +392,17 @@ export type GristWidgetDefinition = UseGristOptions & {
 };
 
 // @public
+export type GristWidgetDemo = {
+    tables: Record<string, {
+        columns: Record<string, string>;
+        rows: Array<Record<string, unknown>>;
+    }>;
+    table?: string;
+    mapping?: Record<string, string | string[]>;
+    options?: Record<string, unknown>;
+};
+
+// @public
 export type GristWidgetInteraction = {
     access_level?: string;
     linking?: GristWidgetLinkingInfo;

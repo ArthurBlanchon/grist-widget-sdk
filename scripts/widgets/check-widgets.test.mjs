@@ -79,7 +79,7 @@ test("a generated widget passes the static checks it can before its code is writ
   const spec = join(dir, "SPEC.md")
   writeFileSync(spec, readFileSync(spec, "utf8").replace("status: draft", "status: beta"))
   const todos = checkStatic("gantt-chart", dir).problems.filter((p) => p.includes("TODO"))
-  assert.deepEqual(todos.map((p) => p.split(":")[0]), ["SPEC.md", "package.json's description"])
+  assert.deepEqual(todos.map((p) => p.split(":")[0]), ["SPEC.md", "package.json's description", "src/app/demo.ts"])
 
   // A widget may talk about to-dos: only new-widget's placeholders count.
   writeFileSync(spec, "---\nslug: gantt-chart\ntitle: T\ncategory: planning\nstatus: beta\naccess: none\n---\n## Job\n\nA TODO list, for TODO items.\n")

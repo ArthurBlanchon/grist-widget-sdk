@@ -19,6 +19,7 @@
     "class-variance-authority": "catalog:",
     "clsx": "catalog:",
     "date-fns": "catalog:",
+    "grist-widget-sdk": "workspace:^",
     "jotai": "catalog:",
     "lodash.throttle": "catalog:",
     "lucide-react": "catalog:",

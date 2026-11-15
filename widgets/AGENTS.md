@@ -87,6 +87,7 @@ default). In a real Grist (Docker), with axe and a dark screenshot:
 | The pilot widget | `kanban-board/` |
 | Shared shadcn components | `_shared/ui/` |
 | Shared components from other shadcn registries (kibo-ui's Gantt) | `_shared/kibo-ui/` |
+| Typed fields from a column's Grist type (Record editor, Bulk editor) | `_shared/grist-fields.ts` |
 | The theme | `_shared/theme.css` |
 | Translations | `_shared/i18n.ts` |
 | Vite and Vitest configuration | `_shared/vite.ts` |

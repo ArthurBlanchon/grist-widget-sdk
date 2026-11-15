@@ -6,7 +6,7 @@ import { headerMismatches, headersFor, siteHeaders } from "./headers.mjs"
 const file = siteHeaders()
 
 test("the docs can only be framed by the site itself", () => {
-  for (const url of ["/", "/docs/sdk/api/use-grist/", "/widgets/"]) {
+  for (const url of ["/", "/docs/sdk/api/use-grist/", "/widgets/", "/widgets/kanban-board/", "/widgets/kanban-board/index.html", "/widgets/grist-widgets.json"]) {
     const h = headersFor(file, url)
     assert.equal(h.get("content-security-policy"), "frame-ancestors 'self'", url)
     assert.equal(h.get("x-frame-options"), "SAMEORIGIN", url)
@@ -15,7 +15,7 @@ test("the docs can only be framed by the site itself", () => {
 })
 
 test("widgets and the template preview stay embeddable by any Grist", () => {
-  for (const url of ["/examples/kanban/latest/", "/examples/kanban/demo/", "/widgets/kanban-board/0.1.0/", "/widgets/kanban-board/latest/", "/template-preview/"]) {
+  for (const url of ["/examples/kanban/latest/", "/examples/kanban/demo/", "/widgets/kanban-board/0.1.0/", "/widgets/kanban-board/latest/", "/widgets/kanban-board/v0/", "/widgets/kanban-board/v0/assets/index.js", "/widgets/kanban-board/dev/", "/widgets/kanban-board/demo/", "/template-preview/"]) {
     const h = headersFor(file, url)
     assert.equal(h.has("content-security-policy"), false, url)
     assert.equal(h.has("x-frame-options"), false, url)

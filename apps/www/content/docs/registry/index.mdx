@@ -1,13 +1,57 @@
 ---
 title: Widget registry
-description: "How the widget list is sourced from each widget's own manifest, and how to add a widget you built with the SDK."
+description: "Where the widgets on /widgets come from, how to list them in a self-hosted Grist, and how to add a widget you built with the SDK."
 ---
 
-The widgets shown on [`/widgets`](/widgets) come from
-[awesome-grist-widgets](https://github.com/ArthurBlanchon/awesome-grist-widgets),
-a public list of Grist custom widgets **built with `grist-widget-sdk`**.
+[`/widgets`](/widgets) lists two kinds of widgets:
+- **the catalog,** built and maintained in this repository, each with its
+  own page: what it does, its columns, its access and its install URL;
+- **community widgets,** from
+  [awesome-grist-widgets](https://github.com/ArthurBlanchon/awesome-grist-widgets),
+  a public list of Grist custom widgets **built with `grist-widget-sdk`**.
 
-## Where the details come from
+## The catalog in a self-hosted Grist
+
+A self-hosted Grist can offer the catalog in its custom widget gallery,
+next to Grist Labs' own widgets. Add it as a plugin:
+
+1. Set `GRIST_USER_ROOT` to a directory Grist keeps (in Docker, a mounted
+   volume such as `/persist`), and create `plugins/grist-widgets` in it.
+2. Save the catalog's list there as `widgets.json`:
+   ```bash
+   curl -o widgets.json https://gristwidgets.com/widgets/grist-widgets.json
+   ```
+3. Next to it, write `manifest.yml`:
+   ```yaml
+   name: grist-widget-sdk catalog
+   components:
+     widgets: widgets.json
+   ```
+4. Restart Grist.
+
+Each widget in the list is at its install URL,
+`/widgets/<slug>/v<major>/`: it takes that major version's fixes and
+features, never a breaking change. Your copy of the list never goes stale
+for the documents that use it; download it again to offer a widget's new
+major version, or a new widget.
+
+A document that added a widget from the gallery stays on its major version.
+To move it to a new one, pick the widget again in the gallery: Grist then
+asks for its columns and options again.
+
+<Callout type="warn">
+`GRIST_WIDGET_LIST_URL` also takes a list, but it **replaces** Grist Labs'
+own. Every document that uses one of their widgets (Calendar, Map,
+Markdown…) would show a blank section: Grist finds those widgets by their
+id in that list.
+</Callout>
+
+The same list, with the github.io install URLs, is at
+`https://arthurblanchon.github.io/grist-widget-sdk/widgets/grist-widgets.json`.
+
+## Community widgets
+
+### Where the details come from
 
 Each widget's deploy publishes `grist-widget.json` next to the widget, on
 every channel ([`create-grist-widget manifest`](/docs/cli#manifest--the-widgets-grist-manifest)):

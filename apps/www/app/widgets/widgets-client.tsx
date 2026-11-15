@@ -205,9 +205,9 @@ export function WidgetsClient() {
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-8 px-4 py-12">
       <div className="flex flex-col items-center gap-2 text-center">
-        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Widget registry</h1>
+        <h2 className="text-2xl font-bold tracking-tight">Community widgets</h2>
         <p className="max-w-xl text-muted-foreground">
-          Grist custom widgets built with grist-widget-sdk, from{' '}
+          Grist custom widgets others built with grist-widget-sdk, from{' '}
           <Link
             href={REGISTRY_REPO_URL}
             target="_blank"

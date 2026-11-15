@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "A personal e-mail for each row the section shows, opened ready to send in the person's own mail app, Gmail or Outlook: no provider, no key.",
+  "description": "A personal e-mail for each row the section shows, from a subject and a body with the row's columns in them, opened in the person's own mail app, Gmail or Outlook.",
   "license": "MIT",
   "scripts": {
     "dev": "vite",

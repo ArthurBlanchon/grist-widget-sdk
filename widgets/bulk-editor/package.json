@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "Set one column to one value on every row the section shows, after a confirmation, in one action that can be undone.",
+  "description": "Set one column to one value on every row the section shows, after a confirmation, in one action you can undo.",
   "license": "MIT",
   "scripts": {
     "dev": "vite",

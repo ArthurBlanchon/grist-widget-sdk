@@ -4,7 +4,7 @@
 // Every page gets the usual hardening. The docs may only be framed by the
 // site itself; what Grist (or another origin) embeds or loads is exempt:
 //
-// - /examples/*, /widgets/:slug/* and /template-preview/*: widgets, added to any Grist
+// - /examples/*, a catalog widget's folders and /template-preview/*: widgets, added to any Grist
 //   document as a custom widget URL, so any origin frames them.
 // - /grist-static/*: grist-static, which widgets' own demo pages on other
 //   origins load and fetch (Pyodide, wheels, wasm), hence the CORS header.
@@ -29,9 +29,18 @@ export const DOCS_ONLY_HEADERS = {
 }
 
 /** Paths other origins embed or load: the docs-only headers are removed there. */
-// /widgets/:slug/* (a catalog widget's versions) and not /widgets/*: /widgets/ itself is the
-// docs' widget directory, framed by the site only.
-export const EMBEDDABLE_PATHS = ["/examples/*", "/widgets/:slug/*", "/template-preview/*", "/grist-static/*"]
+// A catalog widget's folders (/widgets/:slug/<version, channel or demo>/), and not
+// /widgets/* or /widgets/:slug/*: /widgets/ and each widget's page, /widgets/:slug/, are
+// docs pages, framed by the site only. So is /widgets/:slug/versions.json, fetched and never
+// framed: the docs' headers do it no harm. The folder itself is listed beside its `*`, so a
+// channel's URL is matched whether or not Cloudflare's `*` matches nothing.
+export const EMBEDDABLE_PATHS = [
+  "/examples/*",
+  "/widgets/:slug/:folder/",
+  "/widgets/:slug/:folder/*",
+  "/template-preview/*",
+  "/grist-static/*",
+]
 
 /** The `_headers` file's text. */
 export function siteHeaders() {
@@ -80,8 +89,14 @@ export function headersFor(file, url) {
   return out
 }
 
-/** The paths the live check probes: a docs page, a widget, a grist-static file. */
-export const PROBE_PATHS = ["/docs/", "/examples/hello-world/latest/", `/grist-static/${GRIST_STATIC_VERSION}/app.html`]
+/** The paths the live check probes: docs pages, widgets, a grist-static file. */
+export const PROBE_PATHS = [
+  "/docs/",
+  "/examples/hello-world/latest/",
+  "/widgets/kanban-board/",
+  "/widgets/kanban-board/v0/",
+  `/grist-static/${GRIST_STATIC_VERSION}/app.html`,
+]
 
 /**
  * What differs between the headers `_headers` promises for `path` and the

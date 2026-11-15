@@ -17,6 +17,8 @@ coloured by its category; points close together cluster, and clicking one
 selects its row, so linked widgets follow. In countries mode, each
 country is coloured by a value (a sum per country, or a count of rows).
 
+## Implementation
+
 This is the world-map widget brought into the catalog on the component it
 already used, mapcn's map (shadcn registry, MIT, on MapLibre GL,
 BSD-3-Clause), in `widgets/_shared/ui/map.tsx`, with a points mode added.

@@ -10,7 +10,7 @@ a private workspace package; `widgets/_shared/` is what they all share.
 | Path | What |
 | --- | --- |
 | `CHANGELOG.md` | What changed in each version, for the people using it; newest first, the declared version on top. Each release carries it |
-| `SPEC.md` | The source of truth: front matter (`slug`, `title`, `category`, `status`, `access`), then Job, Columns, Access, Acceptance criteria (`**AC-n**`), Out of scope, Demo data |
+| `SPEC.md` | The source of truth: front matter (`slug`, `title`, `category`, `status`, `access`), then Job, Columns, Access, Acceptance criteria (`**AC-n**`), Out of scope, Demo data. The catalog page publishes Job, Columns, Access and Network as written, for the people using it: notes for maintainers (components, paths, advisories) go in an Implementation section |
 | `src/app/App.tsx` | The `widget` declaration (`defineGristWidget`) and the default export `App` |
 | `src/app/messages.ts` | Its English and French text (`defineMessages`) |
 | `src/app/*.test.tsx` | One test per criterion, named `it("AC-n …")`; `App.smoke.test.tsx` mounts it as Grist does |
@@ -26,6 +26,10 @@ the first).
 
 - **The spec comes first, and stays true.** A change in behaviour changes
   `SPEC.md` and its tests in the same pull request.
+- **No placeholder past a draft.** Once `status` is `beta` or `stable`, the
+  widget is on the site's catalog (`scripts/widgets/catalog.mjs`): a `TODO` left by
+  `pnpm new-widget` in the spec, the `package.json` description or the
+  changelog fails `pnpm check:widgets`.
 - **Every criterion has a test,** named `it("AC-n …")`, using
   `renderWithGrist(<App />, { widget, rows })`.
 - **UI from `@shared/ui/*` only** (the shadcn components, one copy). A

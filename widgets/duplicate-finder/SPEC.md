@@ -31,7 +31,7 @@ purpose, and nothing that merges rows.
 
 | Column | Type | Required | Use |
 | --- | --- | --- | --- |
-| Keys | Any | yes, one or more | the columns that say two rows are the same (a name, an e-mail…) |
+| Keys | Any, several columns | yes, one or more | the columns that say two rows are the same (a name, an e-mail…) |
 
 The rows compared are the ones the section shows: its filters choose them.
 

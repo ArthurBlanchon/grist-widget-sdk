@@ -512,6 +512,7 @@ export type UseGristResult<TRow = Record<string, unknown>, TMapped = Record<stri
     actionStatus: GristWidgetActionStatus;
     actionError: string | null;
     widgetOptions: Record<string, unknown> | null;
+    optionsIssue: string | null;
 };
 
 // @public

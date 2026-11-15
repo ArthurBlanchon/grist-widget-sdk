@@ -73,16 +73,27 @@ export const widget = defineGristWidget({
 })
 ```
 
-- The SDK keeps the version with the options; the widget never sees it.
+- The SDK keeps the version with the options, under `__version`, a
+  reserved key the widget never sees.
 - Options written under an older version reach `widgetOptions` migrated,
   each time they are read. Nothing is written on load.
-- The widget's own writes (`setWidgetOptions`, `patchWidgetOptions`) carry
-  the current version; a patch merges into the migrated options.
-- Options without a version count as version 1. A new section starts at
-  the current version, with nothing to migrate.
-- Options written by a newer version of the widget are shown as they are,
-  and the SDK refuses to write over them; so it does when `migrate` throws
-  or returns no object.
+- The widget's writes (`setWidgetOptions`, `patchWidgetOptions`) carry the
+  current version; a patch merges into the migrated options.
+- Options without a version count as version 1, and may already be in a
+  later shape (an older build wrote them): check the shape in `migrate`, as
+  above, rather than trust `fromVersion` alone. A new section starts at the
+  current version, with nothing to migrate.
+- From version 2, `migrate` is required.
+
+When the options were written by a newer version of the widget, or
+`migrate` can't read them, the widget shows them as they are and may not
+write over them: `optionsIssue` says why, and the writes reject.
+`setWidgetOptions({})` resets them; so does "Remove" next to Custom options
+in the section's menu.
+
+```tsx no-check
+{w.optionsIssue ? <p role="alert">{w.optionsIssue}</p> : null}
+```
 
 Test the migration with the previous version's options:
 

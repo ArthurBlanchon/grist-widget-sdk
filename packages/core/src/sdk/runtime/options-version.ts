@@ -1,101 +1,109 @@
 /**
  * Widget options that evolve (`defineGristWidget({ optionsVersion, migrate })`).
+ * ADR 0017.
  *
  * Grist keeps a widget's options with its section for years, while the
- * widget changes. The version the widget wrote them under is kept with them,
- * under OPTIONS_VERSION_KEY, which the widget never sees.
+ * widget changes. A widget that declares `optionsVersion` keeps the version
+ * it wrote them under with them, under OPTIONS_VERSION_KEY, which it never
+ * sees. A widget that declares none reads and writes its options untouched.
  *
  * Reading: options written under an older version reach the widget
  * migrated, every time, in memory. Nothing is written on load: in Grist, a
  * widget's setOptions is a draft of the section (its menu then offers Save
  * and Revert), so writing on load would mark every section modified.
- * Writing: the widget's own writes carry the current version, merged into
- * the migrated options. A write is refused when the options were written by
- * a newer version of the widget, or when they couldn't be migrated: either
- * would label old-shaped data as current, for good.
+ * Writing: the widget's writes carry the current version; a patch merges
+ * into the migrated options. A write is refused when the options were
+ * written by a newer version, or couldn't be migrated, or carry a version
+ * the SDK can't read: either would label other-shaped data as current, for
+ * good. `optionsIssue` says so, and `setWidgetOptions({})` always resets.
  *
  * Options without a version count as version 1; an empty section starts at
  * the current version.
  */
 
-/** The options' key the version is kept under. The widget never sees it. */
+/** The options' key the version is kept under: reserved. The widget never sees it. */
 export const OPTIONS_VERSION_KEY = "__version"
 
 /**
  * Brings options written under `fromVersion` (lower than the widget's
- * `optionsVersion`) to the current version. Return a new object; options it
- * can't migrate: throw, and they are left as they are.
+ * `optionsVersion`) to the current version. Return a new plain object; options
+ * it can't migrate: throw, and they are left as they are. Check the options'
+ * shape rather than trust `fromVersion` alone: options without a version
+ * count as version 1, and may already be in a later shape.
  */
 export type MigrateWidgetOptions = (options: Record<string, unknown>, fromVersion: number) => Record<string, unknown>
 
 export type OptionsVersioning = {
   /** The version of the options this widget reads and writes: an integer from 1. */
   optionsVersion?: number
-  /** Brings options written under an older version to `optionsVersion`. */
+  /** Brings options written under an older version to `optionsVersion`: required from version 2. */
   migrate?: MigrateWidgetOptions
 }
 
-/** Refuses an optionsVersion that isn't an integer from 1, and a migrate without one. */
+/** Refuses an optionsVersion that isn't an integer from 1, a migrate without one, and a version above 1 without migrate. */
 export function checkOptionsVersioning({ optionsVersion, migrate }: OptionsVersioning): void {
   if (optionsVersion !== undefined && !(Number.isInteger(optionsVersion) && optionsVersion >= 1)) {
     throw new Error(`grist-widget-sdk: optionsVersion must be an integer from 1, not ${String(optionsVersion)}`)
   }
   if (migrate !== undefined && typeof migrate !== "function") throw new Error("grist-widget-sdk: migrate must be a function")
   if (migrate && optionsVersion === undefined) throw new Error("grist-widget-sdk: migrate needs the optionsVersion it migrates to")
+  if (optionsVersion !== undefined && optionsVersion > 1 && !migrate) {
+    throw new Error(`grist-widget-sdk: optionsVersion ${optionsVersion} needs migrate, to read the options earlier versions wrote`)
+  }
 }
 
 export type ReadOptions = {
   /** What the widget sees. */
   options: Record<string, unknown> | null
-  /** The version they were written under (1 without one). */
-  from: number
-  /** Whether the widget may write over them: false when newer, or not migrated. */
-  writable: boolean
+  /** Why the widget may not write over them, or null. */
+  issue: string | null
 }
 
-const isPlainObject = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null && !Array.isArray(value)
+const isPlainObject = (value: unknown): value is Record<string, unknown> => {
+  if (typeof value !== "object" || value === null) return false
+  const proto = Object.getPrototypeOf(value)
+  return proto === Object.prototype || proto === null
+}
+
+const warned = new Set<string>()
+function warnOnce(message: string, error: unknown) {
+  if (warned.has(message)) return
+  warned.add(message)
+  console.warn(`grist-widget-sdk: ${message}`, error)
+}
 
 /** Options as the widget reads them: migrated in memory, the version hidden. */
 export function readWidgetOptions(raw: Record<string, unknown> | null, { optionsVersion, migrate }: OptionsVersioning): ReadOptions {
-  if (!raw) return { options: raw, from: optionsVersion ?? 1, writable: true }
+  if (!raw || !optionsVersion) return { options: raw, issue: null }
   const { [OPTIONS_VERSION_KEY]: stored, ...rest } = raw
-  const hasVersion = stored !== undefined
-  const from = hasVersion
-    ? typeof stored === "number" && Number.isInteger(stored) && stored >= 1
-      ? stored
-      : 1
-    : Object.keys(rest).length
-      ? 1
-      : (optionsVersion ?? 1)
-  if (!optionsVersion || from === optionsVersion) return { options: rest, from, writable: true }
-  if (from > optionsVersion) return { options: rest, from, writable: false }
-  if (!migrate) return { options: rest, from, writable: true }
+  let from: number
+  if (stored === undefined) from = Object.keys(rest).length ? 1 : optionsVersion
+  else if (typeof stored === "number" && Number.isInteger(stored) && stored >= 1) from = stored
+  else return { options: rest, issue: `the options carry a version this widget can't read (${JSON.stringify(stored)}); reset them to write` }
+  if (from === optionsVersion) return { options: rest, issue: null }
+  if (from > optionsVersion) {
+    return { options: rest, issue: `the options were written by a newer version of this widget (${from}, this is ${optionsVersion}); reset them to write` }
+  }
   try {
-    const migrated = migrate({ ...rest }, from)
-    if (!isPlainObject(migrated)) throw new Error(`migrate returned ${Array.isArray(migrated) ? "an array" : String(migrated)}, not an object`)
-    return { options: migrated, from, writable: true }
+    // A deep copy: a migrate that changes nested values changes only its copy.
+    const migrated = migrate ? migrate(structuredClone(rest), from) : rest
+    if (!isPlainObject(migrated)) throw new Error(`migrate returned ${Array.isArray(migrated) ? "an array" : String(migrated)}, not a plain object`)
+    return { options: migrated, issue: null }
   } catch (error) {
-    console.warn(`grist-widget-sdk: the widget's options (version ${from}) couldn't be migrated; they are shown as written, and not written over.`, error)
-    return { options: rest, from, writable: false }
+    const message = `the widget's options (version ${from}) couldn't be migrated: ${String((error as Error)?.message ?? error)}`
+    warnOnce(message, error)
+    return { options: rest, issue: `${message}; reset them to write` }
   }
 }
 
 /**
- * Options the widget writes, under the current version; `current` is what
- * Grist holds now. Throws rather than write over options it shouldn't.
+ * The options a write stores: `next` (the whole options, as the widget reads
+ * them), under the current version. `read` is how the widget reads what
+ * Grist holds now. Throws rather than write over options it shouldn't; an
+ * empty object always goes through: it resets them.
  */
-export function writeWidgetOptions(
-  next: Record<string, unknown>,
-  current: Record<string, unknown> | null,
-  versioning: OptionsVersioning,
-): Record<string, unknown> {
-  const { optionsVersion } = versioning
+export function writeWidgetOptions(next: Record<string, unknown>, read: ReadOptions, { optionsVersion }: OptionsVersioning): Record<string, unknown> {
   if (!optionsVersion) return next
-  const read = readWidgetOptions(current, versioning)
-  if (read.from > optionsVersion) {
-    throw new Error(`grist-widget-sdk: these options were written by a newer version of the widget (${read.from}, this is ${optionsVersion}); not written over`)
-  }
-  if (!read.writable) throw new Error("grist-widget-sdk: these options couldn't be migrated; not written over")
+  if (read.issue && Object.keys(next).length > 0) throw new Error(`grist-widget-sdk: ${read.issue}`)
   return { ...next, [OPTIONS_VERSION_KEY]: optionsVersion }
 }

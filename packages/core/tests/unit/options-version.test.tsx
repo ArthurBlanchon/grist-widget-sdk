@@ -22,55 +22,74 @@ const v2 = { optionsVersion: 2, migrate }
 
 describe("readWidgetOptions", () => {
   it("migrates options without a version as version 1, and hides the version", () => {
-    expect(readWidgetOptions({ columns: "To do,Done" }, v2)).toEqual({ options: { columns: ["To do", "Done"] }, from: 1, writable: true })
-    expect(readWidgetOptions({ columns: ["A"], __version: 2 }, v2)).toEqual({ options: { columns: ["A"] }, from: 2, writable: true })
+    expect(readWidgetOptions({ columns: "To do,Done" }, v2)).toEqual({ options: { columns: ["To do", "Done"] }, issue: null })
+    expect(readWidgetOptions({ columns: ["A"], __version: 2 }, v2)).toEqual({ options: { columns: ["A"] }, issue: null })
   })
 
-  it("leaves options from a newer version as written, and not writable", () => {
-    expect(readWidgetOptions({ columns: ["A"], v3only: 1, __version: 3 }, v2)).toEqual({ options: { columns: ["A"], v3only: 1 }, from: 3, writable: false })
+  it("leaves options from a newer version as written, with the issue", () => {
+    const read = readWidgetOptions({ columns: ["A"], v3only: 1, __version: 3 }, v2)
+    expect(read.options).toEqual({ columns: ["A"], v3only: 1 })
+    expect(read.issue).toMatch(/newer version of this widget \(3, this is 2\)/)
   })
 
   it("starts an empty section at the current version, and passes null through", () => {
     const spy = vi.fn(migrate)
-    expect(readWidgetOptions({}, { optionsVersion: 3, migrate: spy })).toEqual({ options: {}, from: 3, writable: true })
+    expect(readWidgetOptions({}, { optionsVersion: 3, migrate: spy })).toEqual({ options: {}, issue: null })
     expect(spy).not.toHaveBeenCalled()
     expect(readWidgetOptions(null, v2).options).toBeNull()
   })
 
-  it("keeps the options as written, not writable, when migrate throws or returns no object", () => {
+  it("keeps the options as written, with the issue, when migrate throws or returns no plain object", () => {
     vi.spyOn(console, "warn").mockImplementation(() => undefined)
-    for (const broken of [
+    for (const [i, broken] of [
       () => {
         throw new Error("no")
       },
-      () => undefined as unknown as Record<string, unknown>,
-      () => [] as unknown as Record<string, unknown>,
-    ]) {
-      expect(readWidgetOptions({ columns: "A,B" }, { optionsVersion: 2, migrate: broken })).toEqual({ options: { columns: "A,B" }, from: 1, writable: false })
+      () => undefined,
+      () => [],
+      () => Promise.resolve({}),
+      () => new Map(),
+    ].entries()) {
+      const read = readWidgetOptions({ columns: "A,B", n: i }, { optionsVersion: 2, migrate: broken as never })
+      expect(read.options).toEqual({ columns: "A,B", n: i })
+      expect(read.issue).toMatch(/couldn't be migrated/)
     }
   })
 
-  it("reads a version below 1 as 1, and hides the key even without a declared version", () => {
+  it("leaves a widget without optionsVersion its options untouched, the key included", () => {
+    expect(readWidgetOptions({ a: 1, __version: 7 }, {})).toEqual({ options: { a: 1, __version: 7 }, issue: null })
+  })
+
+  it("can't read a version that isn't an integer from 1: an issue, not a migration", () => {
     const spy = vi.fn(migrate)
-    readWidgetOptions({ columns: "A", __version: 0 }, { optionsVersion: 2, migrate: spy })
-    expect(spy).toHaveBeenCalledWith({ columns: "A" }, 1)
-    expect(readWidgetOptions({ a: 1, __version: 7 }, {}).options).toEqual({ a: 1 })
+    for (const bad of [0, -1, "2", 2.5]) {
+      const read = readWidgetOptions({ columns: "A", __version: bad }, { optionsVersion: 2, migrate: spy })
+      expect(read.issue, String(bad)).toMatch(/version this widget can't read/)
+    }
+    expect(spy).not.toHaveBeenCalled()
+  })
+
+  it("gives migrate a deep copy: changing nested values doesn't change what Grist holds", () => {
+    const raw = { list: ["a"] }
+    readWidgetOptions(raw, { optionsVersion: 2, migrate: (o) => ((o.list as string[]).push("x"), o) })
+    expect(raw.list).toEqual(["a"])
   })
 })
 
 describe("writeWidgetOptions", () => {
-  it("writes under the current version", () => {
-    expect(writeWidgetOptions({ columns: ["A"] }, { columns: "A" }, v2)).toEqual({ columns: ["A"], [OPTIONS_VERSION_KEY]: 2 })
-    expect(writeWidgetOptions({ a: 1 }, null, {})).toEqual({ a: 1 })
+  const read = (raw: Record<string, unknown> | null, v = v2) => readWidgetOptions(raw, v)
+
+  it("writes under the current version; untouched without one", () => {
+    expect(writeWidgetOptions({ columns: ["A"] }, read({ columns: "A" }), v2)).toEqual({ columns: ["A"], [OPTIONS_VERSION_KEY]: 2 })
+    expect(writeWidgetOptions({ a: 1 }, read(null, {}), {})).toEqual({ a: 1 })
   })
 
-  it("refuses to write over a newer version's options, or options it couldn't migrate", () => {
-    expect(() => writeWidgetOptions({ x: 1 }, { columns: ["A"], __version: 3 }, v2)).toThrow(/newer version/)
+  it("refuses to write over a newer version's options, or options it couldn't migrate; an empty write resets them", () => {
+    expect(() => writeWidgetOptions({ x: 1 }, read({ columns: ["A"], __version: 3 }), v2)).toThrow(/newer version/)
     vi.spyOn(console, "warn").mockImplementation(() => undefined)
-    const broken = () => {
-      throw new Error("no")
-    }
-    expect(() => writeWidgetOptions({ x: 1 }, { columns: "A,B" }, { optionsVersion: 2, migrate: broken })).toThrow(/couldn't be migrated/)
+    const broken = { optionsVersion: 2, migrate: () => { throw new Error("no") } }
+    expect(() => writeWidgetOptions({ x: 1 }, read({ columns: "A,B" }, broken), broken)).toThrow(/couldn't be migrated/)
+    expect(writeWidgetOptions({}, read({ columns: ["A"], __version: 3 }), v2)).toEqual({ [OPTIONS_VERSION_KEY]: 2 })
   })
 })
 
@@ -104,5 +123,6 @@ describe("defineGristWidget({ optionsVersion, migrate })", () => {
     expect(() => defineGristWidget({ optionsVersion: 0 })).toThrow(/optionsVersion/)
     expect(() => defineGristWidget({ optionsVersion: 1.5 })).toThrow(/optionsVersion/)
     expect(() => defineGristWidget({ migrate })).toThrow(/needs the optionsVersion/)
+    expect(() => defineGristWidget({ optionsVersion: 2 })).toThrow(/needs migrate/)
   })
 })

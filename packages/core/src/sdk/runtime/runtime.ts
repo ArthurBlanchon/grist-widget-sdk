@@ -43,6 +43,8 @@ export type GristRuntimeState = {
   /** Logical → real column ids; null until Grist reports them. */
   mappings: GristWidgetColumnMap | null
   widgetOptions: Record<string, unknown> | null
+  /** Why the widget may not write over its options (optionsVersion), or null. */
+  optionsIssue: string | null
   interaction: GristWidgetInteraction | null
   currentTableId: string | null
   theme: GristTheme | null
@@ -90,6 +92,7 @@ export function initialRuntimeState(options: GristReadyOptions = {}): GristRunti
     isNewRecord: false,
     mappings: null,
     widgetOptions: null,
+    optionsIssue: null,
     interaction: null,
     currentTableId: null,
     theme: null,
@@ -194,13 +197,15 @@ export function createGristRuntime(options: GristRuntimeOptions = {}): GristRunt
       }),
       // Options written under an older version reach the widget migrated, in
       // memory (options-version.ts): nothing is written on load.
-      optionsStream.subscribe(({ options: saved, interaction }) =>
+      optionsStream.subscribe(({ options: saved, interaction }) => {
+        const read = readWidgetOptions(saved, options)
         update({
-          widgetOptions: readWidgetOptions(saved, options).options,
+          widgetOptions: read.options,
+          optionsIssue: read.issue,
           interaction,
           grantedAccess: parseAccess(interaction?.access_level) ?? state.grantedAccess,
         })
-      ),
+      }),
       newRecordStream.subscribe(({ mappings }) => update({ isNewRecord: true, ...(mappings ? { mappings } : {}) })),
       messageStream.subscribe((msg) => {
         const theme = parseGristThemePayload(msg)

@@ -93,9 +93,10 @@ widget says what to change in Grist.
 
 | Member | Access | Notes |
 | --- | --- | --- |
-| `widgetOptions` | `"read table"` | The options Grist stores for this widget, `null` until it sends them. |
-| `setWidgetOptions(options)` | `"full"` | Replaces them. |
-| `patchWidgetOptions(patch)` | `"full"` | Merges `patch` into them. |
+| `widgetOptions` | `"read table"` | The options Grist stores for this widget, `null` until it sends them. With `optionsVersion`, migrated and without the version key. |
+| `optionsIssue` | `"read table"` | Why the widget may not write over its options (written by a newer version, or not migrated), or `null`. |
+| `setWidgetOptions(options)` | `"full"` | Replaces them (under `optionsVersion`, if declared); rejects while `optionsIssue` is set, except `setWidgetOptions({})`, which resets them. |
+| `patchWidgetOptions(patch)` | `"full"` | Merges `patch` into them, as the widget reads them; rejects while `optionsIssue` is set. |
 
 ### Linking (`"read table"`)
 

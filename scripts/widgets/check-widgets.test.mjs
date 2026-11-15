@@ -42,6 +42,13 @@ test("a generated widget passes the static checks it can before its code is writ
     writeFileSync(join(dir, rel), content)
   }
   assert.deepEqual(checkStatic("gantt-chart", dir).problems, [])
+
+  // Its placeholders are fine in a draft, never once it is listed.
+  const { readFileSync } = await import("node:fs")
+  const spec = join(dir, "SPEC.md")
+  writeFileSync(spec, readFileSync(spec, "utf8").replace("status: draft", "status: beta"))
+  const todos = checkStatic("gantt-chart", dir).problems.filter((p) => p.includes("TODO"))
+  assert.deepEqual(todos.map((p) => p.split(":")[0]), ["SPEC.md", "package.json's description"])
 })
 
 test("a widget's changelog: an entry per version, newest first, the declared one on top", async () => {

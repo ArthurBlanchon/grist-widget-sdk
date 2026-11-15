@@ -15,13 +15,10 @@ The reasoning behind 0.4.0, and what it left for later, is the
 ## 1. The plan to 0.8.0: the production-grade AI widget factory
 
 From the [plan to 0.8.0](./docs/planning/2026-11-15-plan-0.8.md) §4, in
-its order: M2 to M5, with M6 (docs) alongside, then M7 (M1 is done). Each
-item is one pull request; the plan says when each milestone is done.
+its order: M3 to M5, with M6 (docs) alongside, then M7 (M1 and M2 are
+done). Each item is one pull request; the plan says when each milestone is
+done.
 
-- [ ] **M2. Versions people can rely on.** A channel per major version
-  (`/widgets/<slug>/v<major>/`, the install URL shown) and a `/dev/`
-  channel built from `main`; a changelog per widget; the catalog in `widgets.json`, `grist-widgets.json` and generated
-  catalog pages.
 - [ ] **M3. CI at catalog scale.** A matrix of the widgets a change
   touches, in batches of 8 for an SDK change; a weekly run against the
   latest Grist.

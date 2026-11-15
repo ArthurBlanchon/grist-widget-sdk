@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "TODO: what it does, in one sentence (the spec's Job).",
+  "description": "Find a row by typing part of its name, and pick it: linked widgets follow.",
   "license": "MIT",
   "scripts": {
     "dev": "vite",

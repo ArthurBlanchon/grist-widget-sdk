@@ -16,6 +16,8 @@ budget by category) chart them beyond Grist's own charts: stacked bars,
 bars and lines together, areas, pie, radar. They pick the kind of chart
 and how rows are totalled in the widget, and the choice is kept.
 
+## Implementation
+
 Charts use shadcn's chart component (Recharts, MIT) in
 `widgets/_shared/ui/chart.tsx`, so their colours are the theme's
 `--chart-1` to `--chart-5`, light and dark, like every other widget.

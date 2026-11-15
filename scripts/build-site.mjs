@@ -47,6 +47,7 @@ import { copyGristStatic } from "./site/grist-static.mjs"
 import { siteHeaders } from "./site/headers.mjs"
 import { redirectFiles } from "./site/redirects.mjs"
 import { assess, measure } from "./site/budget.mjs"
+import { writeSiteCatalog } from "./widgets/catalog.mjs"
 import { declaredVersions, latestVersion, majorChannels, RELEASE_BRANCH, releasedVersions, unreleased } from "./widgets/dist.mjs"
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..")
@@ -380,16 +381,29 @@ for (const entry of readdirSync(join(repoRoot, "apps/www/out"))) {
   })
 }
 
-// Next's /widgets/ (the docs' widget directory) was copied just above: the
-// catalog's /widgets/<slug>/ folders go next to its files.
+// Next's /widgets/ was copied just above, with a page per catalog widget at
+// /widgets/<slug>/ (its index.html): each widget's channels, versions and demo
+// go next to that page. Nothing of Next's may be overwritten.
 for (const slug of readdirSync(catalogOut)) {
-  if (existsSync(join(outDir, "widgets", slug))) {
-    console.error(`::error::widgets/${slug} collides with a page of apps/www. Refusing to publish.`)
-    process.exit(1)
+  for (const entry of readdirSync(join(catalogOut, slug))) {
+    if (existsSync(join(outDir, "widgets", slug, entry))) {
+      console.error(`::error::widgets/${slug}/${entry} collides with a page of apps/www. Refusing to publish.`)
+      process.exit(1)
+    }
   }
   cpSync(join(catalogOut, slug), join(outDir, "widgets", slug), { recursive: true })
 }
 rmSync(dirname(catalogOut), { recursive: true, force: true })
+// The catalog's lists, from the specs (scripts/widgets/catalog.mjs): for
+// agents, and for Grist's widget gallery (GRIST_WIDGET_LIST_URL), with this
+// origin's install URLs.
+for (const file of ["catalog.json", "grist-widgets.json"]) {
+  if (existsSync(join(outDir, "widgets", file))) {
+    console.error(`::error::widgets/${file} collides with a page of apps/www. Refusing to publish.`)
+    process.exit(1)
+  }
+}
+writeSiteCatalog(join(outDir, "widgets"), siteUrl)
 
 // GitHub Pages runs everything through Jekyll by default, which silently drops
 // any top-level directory starting with `_` — including Next's own `_next/`

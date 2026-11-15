@@ -1,13 +1,31 @@
 ---
 title: Widget registry
-description: "How the widget list is sourced from each widget's own manifest, and how to add a widget you built with the SDK."
+description: "Where the widgets on /widgets come from, how to list them in a self-hosted Grist, and how to add a widget you built with the SDK."
 ---
 
-The widgets shown on [`/widgets`](/widgets) come from
-[awesome-grist-widgets](https://github.com/ArthurBlanchon/awesome-grist-widgets),
-a public list of Grist custom widgets **built with `grist-widget-sdk`**.
+[`/widgets`](/widgets) lists two kinds of widgets:
+- **the catalog,** built and maintained in this repository, each with its
+  own page: what it does, its columns, its access and its install URL;
+- **community widgets,** from
+  [awesome-grist-widgets](https://github.com/ArthurBlanchon/awesome-grist-widgets),
+  a public list of Grist custom widgets **built with `grist-widget-sdk`**.
 
-## Where the details come from
+## The catalog in a self-hosted Grist
+
+A self-hosted Grist shows the catalog in its custom widget gallery with:
+
+```bash
+GRIST_WIDGET_LIST_URL=https://gristwidgets.com/widgets/grist-widgets.json
+```
+
+Each widget there is at its install URL, `/widgets/<slug>/v<major>/`: it
+takes that major version's fixes and features, never a breaking change. The
+same list, with the github.io install URLs, is at
+`https://arthurblanchon.github.io/grist-widget-sdk/widgets/grist-widgets.json`.
+
+## Community widgets
+
+### Where the details come from
 
 Each widget's deploy publishes `grist-widget.json` next to the widget, on
 every channel ([`create-grist-widget manifest`](/docs/cli#manifest--the-widgets-grist-manifest)):

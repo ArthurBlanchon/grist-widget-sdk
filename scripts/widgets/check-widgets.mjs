@@ -140,6 +140,17 @@ export function checkStatic(slug, dir = join(WIDGETS_DIR, slug)) {
   if (!ACCESS.includes(data.access)) problems.push(`SPEC.md: access must be one of ${ACCESS.join(", ")}`)
   const have = sections(body)
   for (const s of SECTIONS) if (!have.includes(s)) problems.push(`SPEC.md: no "## ${s}" section`)
+  // pnpm new-widget's placeholders, which the catalog would publish as written.
+  if (data.status !== "draft") {
+    const changelog = join(dir, "CHANGELOG.md")
+    for (const [file, text] of [
+      ["SPEC.md", body],
+      ["package.json's description", pkg.description ?? ""],
+      ["CHANGELOG.md", existsSync(changelog) ? readFileSync(changelog, "utf8") : ""],
+    ]) {
+      if (/\bTODO\b/.test(text)) problems.push(`${file}: a TODO is left (new-widget's placeholder), and the widget isn't a draft`)
+    }
+  }
 
   const srcFiles = existsSync(join(dir, "src")) ? walk(join(dir, "src"), (n) => /\.(tsx?|jsx?)$/.test(n)) : []
   const tests = srcFiles.filter((f) => /\.test\.[tj]sx?$/.test(f)).map((f) => readFileSync(f, "utf8")).join("\n")

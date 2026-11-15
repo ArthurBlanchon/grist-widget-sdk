@@ -18,9 +18,13 @@ to change its dates, or drag its ends to change its length, and Grist
 saves the new dates.
 
 Grist has no timeline view; its forum threads asking for one count
-thousands of views. This is the reference widget's Gantt brought into the
-catalog, on the same component: kibo-ui's Gantt (shadcn registry
-`@kibo-ui`, MIT), in `widgets/_shared/kibo-ui/gantt/`.
+thousands of views.
+
+## Implementation
+
+The reference widget's Gantt brought into the catalog, on the same
+component: kibo-ui's Gantt (shadcn registry `@kibo-ui`, MIT), in
+`widgets/_shared/kibo-ui/gantt/`.
 
 ## Columns
 

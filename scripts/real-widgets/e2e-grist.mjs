@@ -187,7 +187,10 @@ async function checkWidget({ browser, gristUrl, api, wsId, widgetDir, outDir, ti
     let a11y = null
     if (axe && state === "rendered" && frame) {
       const require = createRequire(import.meta.url)
-      await frame.addScriptTag({ path: require.resolve("axe-core/axe.min.js") })
+      // Evaluated through the DevTools protocol, not added as a <script>: a
+      // widget's Content Security Policy refuses inline scripts, as it should,
+      // and stays in force for the rest of the check.
+      await frame.evaluate(readFileSync(require.resolve("axe-core/axe.min.js"), "utf8"))
       const { violations } = await frame.evaluate(() =>
         globalThis.axe.run(document, { runOnly: { type: "tag", values: ["wcag2a", "wcag2aa"] } }),
       )

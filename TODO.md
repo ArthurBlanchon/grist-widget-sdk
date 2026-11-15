@@ -15,12 +15,9 @@ The reasoning behind 0.4.0, and what it left for later, is the
 ## 1. The plan to 0.8.0: the production-grade AI widget factory
 
 From the [plan to 0.8.0](./docs/planning/2026-11-15-plan-0.8.md) §4, in
-its order: M1, then M2 to M5, with M6 (docs) alongside, then M7. Each item is
-one pull request; the plan says when each milestone is done.
+its order: M2 to M5, with M6 (docs) alongside, then M7 (M1 is done). Each
+item is one pull request; the plan says when each milestone is done.
 
-- [ ] **M1. Foundations.** The release train in two jobs (`version-pr`,
-  `publish`); who merges what (ADR 0012, `AGENTS.md`); the independent
-  review and the PR template's bar checklist.
 - [ ] **M2. Versions people can rely on.** A channel per major version
   (`/widgets/<slug>/v<major>/`, the install URL shown) and a `/dev/`
   channel built from `main`; a changelog per widget; the catalog in `widgets.json`, `grist-widgets.json` and generated

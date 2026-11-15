@@ -399,6 +399,10 @@ export type GristWidgetDemo = {
         columns: Record<string, GristWidgetDemoColumnType>;
         rows: Array<Record<string, unknown>>;
         choices?: Record<string, string[]>;
+        choiceColors?: Record<string, Record<string, {
+            fillColor?: string;
+            textColor?: string;
+        }>>;
     }>;
     table?: string;
     mapping?: Record<string, string | string[]>;
@@ -406,7 +410,7 @@ export type GristWidgetDemo = {
 };
 
 // @public
-export type GristWidgetDemoColumnType = "Text" | "Numeric" | "Int" | "Bool" | "Date" | "DateTime" | `DateTime:${string}` | "Choice" | "ChoiceList" | "Any" | `Ref:${string}`;
+export type GristWidgetDemoColumnType = "Text" | "Numeric" | "Int" | "Bool" | "Date" | "DateTime" | `DateTime:${string}` | "Choice" | "ChoiceList" | "Attachments" | "Any" | `Ref:${string}` | `RefList:${string}`;
 
 // @public
 export type GristWidgetInteraction = {

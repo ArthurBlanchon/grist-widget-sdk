@@ -8,7 +8,7 @@
 // default user, and the API key comes from signing in over HTTP.
 
 import { execFileSync } from "node:child_process"
-import { existsSync } from "node:fs"
+import { existsSync, readFileSync } from "node:fs"
 import { createRequire } from "node:module"
 import path from "node:path"
 import { pathToFileURL } from "node:url"
@@ -74,7 +74,7 @@ export async function readWidgetExports(widgetDir, { demo: withDemo = false } = 
     // the manifest a deploy writes doesn't depend on it.
     if (withDemo && existsSync(path.join(widgetDir, DEMO_FILE))) {
       try {
-        found.demo = checkDemo((await server.ssrLoadModule("/" + DEMO_FILE)).demo)
+        found.demo = withDemoFiles(checkDemo((await server.ssrLoadModule("/" + DEMO_FILE)).demo), widgetDir)
       } catch (e) {
         throw new Error(`${DEMO_FILE}: ${String(e?.message ?? e).split("\n")[0]}`, { cause: e })
       }
@@ -88,6 +88,32 @@ export async function readWidgetExports(widgetDir, { demo: withDemo = false } = 
     )
   }
   return found
+}
+
+/** Where a widget's demo attachments are: `src/app/demo/`, next to `demo.ts`. */
+export const DEMO_FILES_DIR = "src/app/demo"
+
+/**
+ * The demo with the files its Attachments cells name, read from
+ * `src/app/demo/` (`files`, by name, base64): createDocument uploads them,
+ * and a change to one changes the catalog demo's hash.
+ */
+function withDemoFiles(demo, widgetDir) {
+  const names = new Set()
+  for (const t of Object.values(demo.tables)) {
+    for (const [col, type] of Object.entries(t.columns)) {
+      if (type !== "Attachments") continue
+      for (const row of t.rows) for (const n of row[col] ?? []) names.add(n)
+    }
+  }
+  if (!names.size) return demo
+  const files = {}
+  for (const n of [...names].sort()) {
+    const file = path.join(widgetDir, DEMO_FILES_DIR, n)
+    if (!existsSync(file)) throw new Error(`demo: ${n} isn't in ${DEMO_FILES_DIR}/`)
+    files[n] = readFileSync(file).toString("base64")
+  }
+  return { ...demo, files }
 }
 
 /** A `defineGristWidget()` result: its options, metadata and declaration. */
@@ -154,9 +180,11 @@ export function documentSpec(options, rowCount = 3) {
 }
 
 /** The demo data's format, part of the catalog demos' hash: a change regenerates them. */
-export const DEMO_FORMAT = 3
+export const DEMO_FORMAT = 4
 
-const DEMO_TYPES = ["Text", "Numeric", "Int", "Bool", "Date", "DateTime", "Choice", "ChoiceList", "Any"]
+const DEMO_TYPES = ["Text", "Numeric", "Int", "Bool", "Date", "DateTime", "Choice", "ChoiceList", "Attachments", "Any"]
+// An attachment: a file of src/app/demo/, by its name.
+const DEMO_FILE_NAME = /^[\w][\w.-]*\.(png|jpe?g|gif|webp|pdf|txt|csv)$/i
 // Ids Grist would rename (a new document's Table1, its own columns, Python's keywords).
 const RESERVED_IDS = new Set(["Table1", "id", "manualSort", ...["and", "as", "assert", "async", "await", "break", "class", "continue", "def", "del", "elif", "else", "except", "finally", "for", "from", "global", "if", "import", "in", "is", "lambda", "nonlocal", "not", "or", "pass", "raise", "return", "try", "while", "with", "yield", "None", "True", "False"]])
 const DAY = /^\d{4}-\d{2}-\d{2}$/
@@ -167,8 +195,13 @@ const baseType = (type) => (/^DateTime:/.test(type) ? "DateTime" : type)
 /** Problems with one demo cell, or null. */
 function cellProblem(type, value, rowCounts) {
   if (value === null) return null
-  const ref = /^Ref:(.+)$/.exec(type)
-  if (ref) return Number.isInteger(value) && value >= 1 && value <= rowCounts[ref[1]] ? null : `a row position of ${ref[1]}, 1 to ${rowCounts[ref[1]]}`
+  const ref = /^(Ref|RefList):(.+)$/.exec(type)
+  if (ref) {
+    const position = (v) => Number.isInteger(v) && v >= 1 && v <= rowCounts[ref[2]]
+    const range = `of ${ref[2]}, 1 to ${rowCounts[ref[2]]}`
+    if (ref[1] === "Ref") return position(value) ? null : `a row position ${range}`
+    return Array.isArray(value) && value.every(position) ? null : `a list of row positions ${range}`
+  }
   switch (baseType(type)) {
     case "Date":
       return typeof value === "string" && DAY.test(value) && Number.isFinite(Date.parse(`${value}T00:00:00Z`)) ? null : 'a "YYYY-MM-DD" string'
@@ -182,6 +215,10 @@ function cellProblem(type, value, rowCounts) {
       return typeof value === "boolean" ? null : "true or false"
     case "ChoiceList":
       return Array.isArray(value) && value.every((v) => typeof v === "string") ? null : "an array of strings"
+    case "Attachments":
+      return Array.isArray(value) && value.every((v) => typeof v === "string" && DEMO_FILE_NAME.test(v))
+        ? null
+        : `a list of file names of ${DEMO_FILES_DIR}/ (an image, a PDF, a text or CSV file)`
     case "Text":
     case "Choice":
       return typeof value === "string" ? null : "a string"
@@ -208,9 +245,17 @@ export function checkDemo(demo) {
   for (const [name, t] of Object.entries(demo.tables)) {
     for (const [col, type] of Object.entries(t.columns)) {
       if (!/^[A-Za-z][A-Za-z0-9_]*$/.test(col) || RESERVED_IDS.has(col)) throw new Error(`demo: ${name}.${col} isn't a Grist column id this document can take`)
-      const ref = /^Ref:(.+)$/.exec(type)
+      const ref = /^(?:Ref|RefList):(.+)$/.exec(type)
       const known = ref ? names.includes(ref[1]) : DEMO_TYPES.includes(baseType(type)) && (!/^DateTime:/.test(type) || /^DateTime:[\w/+-]+$/.test(type))
-      if (!known) throw new Error(`demo: ${name}.${col}'s type ${type} isn't one a demo takes (${DEMO_TYPES.join(", ")}, DateTime:<zone>, Ref:<table>)`)
+      if (!known) throw new Error(`demo: ${name}.${col}'s type ${type} isn't one a demo takes (${DEMO_TYPES.join(", ")}, DateTime:<zone>, Ref:<table>, RefList:<table>)`)
+    }
+    for (const [col, styles] of Object.entries(t.choiceColors ?? {})) {
+      const hex = /^#[0-9A-Fa-f]{6}$/
+      const fine =
+        ["Choice", "ChoiceList"].includes(t.columns[col]) &&
+        styles && typeof styles === "object" &&
+        Object.values(styles).every((v) => v && typeof v === "object" && Object.entries(v).every(([k, c]) => ["fillColor", "textColor"].includes(k) && hex.test(c)))
+      if (!fine) throw new Error(`demo: ${name}.choiceColors.${col} gives a Choice or ChoiceList column's choices a fillColor and textColor, "#RRGGBB"`)
     }
     for (const [col, list] of Object.entries(t.choices ?? {})) {
       if (!["Choice", "ChoiceList"].includes(t.columns[col]) || !Array.isArray(list)) throw new Error(`demo: ${name}.choices.${col} lists the choices of a Choice or ChoiceList column`)
@@ -235,7 +280,8 @@ function demoValue(type, value) {
   if (value === null || value === undefined) return null
   if (type === "Date") return Date.parse(`${value}T00:00:00Z`) / 1000
   if (baseType(type) === "DateTime") return Date.parse(value) / 1000
-  if (type === "ChoiceList") return ["L", ...value]
+  if (type === "Attachments") return value.length ? value : null
+  if (type === "ChoiceList" || type.startsWith("RefList:")) return ["L", ...value]
   return value
 }
 
@@ -258,9 +304,11 @@ export function demoSpec(options, demo) {
         const fields = { type, label: col }
         if (type === "Choice" || type === "ChoiceList") {
           const seen = t.rows.flatMap((r) => (Array.isArray(r[col]) ? r[col] : r[col] == null ? [] : [r[col]])).map(String)
-          fields.widgetOptions = JSON.stringify({ choices: [...new Set([...(t.choices?.[col] ?? []), ...seen])] })
+          const choices = [...new Set([...(t.choices?.[col] ?? []), ...seen])]
+          const choiceOptions = t.choiceColors?.[col]
+          fields.widgetOptions = JSON.stringify({ choices, ...(choiceOptions ? { choiceOptions } : {}) })
         }
-        return { id: col, fields, ref: /^Ref:(.+)$/.exec(type)?.[1] ?? null }
+        return { id: col, fields, ref: /^(?:Ref|RefList):(.+)$/.exec(type)?.[1] ?? null }
       }),
       rows: t.rows.map((r) => Object.fromEntries(Object.entries(r).map(([col, v]) => [col, demoValue(t.columns[col], v)]))),
     }
@@ -295,10 +343,12 @@ export function demoSpec(options, demo) {
 
 export function gristApi(baseUrl, key) {
   return async (method, url, body) => {
+    // A FormData (an upload) goes as it is, with its own content type.
+    const form = body instanceof FormData
     const r = await fetch(baseUrl + url, {
       method,
-      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-      body: body === undefined ? undefined : JSON.stringify(body),
+      headers: { Authorization: `Bearer ${key}`, ...(form ? {} : { "Content-Type": "application/json" }) },
+      body: body === undefined ? undefined : form ? body : JSON.stringify(body),
     })
     const text = await r.text()
     if (!r.ok) throw new Error(`${method} ${url}: ${r.status} ${text.slice(0, 300)}`)
@@ -311,14 +361,18 @@ export async function createDocument(api, wsId, name, options, widgetUrl, demo =
   const tables = spec.tables ?? [{ id: "Data", columns: spec.columns, rows: spec.rows }]
   const tableId = spec.table ?? "Data"
   const docId = await api("POST", `/api/workspaces/${wsId}/docs`, { name })
+  // A reference is made an Int first: its target table may come later in
+  // the bundle (the widget's table comes first), and Grist can't refer to it yet.
   await api("POST", `/api/docs/${docId}/tables`, {
-    tables: tables.map((t) => ({ id: t.id, columns: t.columns.map(({ id, fields }) => ({ id, fields })) })),
+    tables: tables.map((t) => ({
+      id: t.id,
+      columns: t.columns.map(({ id, fields, ref }) => ({ id, fields: ref ? { ...fields, type: fields.type.startsWith("RefList:") ? "Any" : "Int" } : fields })),
+    })),
   })
-  for (const t of tables) {
-    if (t.rows.length) await api("POST", `/api/docs/${docId}/tables/${t.id}/records`, { records: t.rows.map((fields) => ({ fields })) })
-  }
+  // A new document's empty Table1 would be a page of its own, next to the widget's.
+  await api("POST", `/api/docs/${docId}/apply`, [["RemoveTable", "Table1"]])
   const sql = async (q) => (await api("GET", `/api/docs/${docId}/sql?q=${encodeURIComponent(q)}`)).records.map((r) => r.fields)
-  // A reference shows its target's first column, not a row id.
+  // Then a Ref, showing its target's first column rather than a row id.
   const refs = tables.flatMap((t) => t.columns.filter((c) => c.ref).map((c) => ({ table: t.id, col: c.id, target: c.ref })))
   if (refs.length) {
     const ids = await sql("select c.id, c.colId, t.tableId from _grist_Tables_column c join _grist_Tables t on c.parentId = t.id")
@@ -328,10 +382,26 @@ export async function createDocument(api, wsId, name, options, widgetUrl, demo =
       "POST",
       `/api/docs/${docId}/apply`,
       refs.flatMap(({ table, col, target }) => [
-        ["ModifyColumn", table, col, { visibleCol: ref(target, first(target)) }],
+        ["ModifyColumn", table, col, { type: tables.find((t) => t.id === table).columns.find((c) => c.id === col).fields.type, visibleCol: ref(target, first(target)) }],
         ["SetDisplayFormula", table, null, ref(table, col), `$${col}.${first(target)}`],
       ])
     )
+  }
+  // The demo's files become the document's attachments, and each cell naming them their ids.
+  if (demo?.files) {
+    const names = Object.keys(demo.files)
+    const form = new FormData()
+    for (const n of names) form.append("upload", new Blob([Buffer.from(demo.files[n], "base64")]), n)
+    const ids = await api("POST", `/api/docs/${docId}/attachments`, form)
+    const idOf = new Map(names.map((n, i) => [n, ids[i]]))
+    for (const t of tables) {
+      for (const c of t.columns.filter((c) => c.fields.type === "Attachments")) {
+        for (const row of t.rows) if (Array.isArray(row[c.id])) row[c.id] = ["L", ...row[c.id].map((n) => idOf.get(n))]
+      }
+    }
+  }
+  for (const t of tables) {
+    if (t.rows.length) await api("POST", `/api/docs/${docId}/tables/${t.id}/records`, { records: t.rows.map((fields) => ({ fields })) })
   }
   const [table] = await sql(`select id, primaryViewId from _grist_Tables where tableId = '${tableId}'`)
   const cols = await sql(`select id, colId from _grist_Tables_column where parentId = ${table.id}`)

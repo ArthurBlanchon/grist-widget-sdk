@@ -2,6 +2,10 @@
 
 What changed in each version, for the people using the widget. Newest first.
 
+## 0.1.2 (2026-11-15)
+
+- The chart opens on today, rather than in the middle of the year, months away from the work.
+
 ## 0.1.1 (2026-11-15)
 
 - The widget's page carries a Content Security Policy: only its own code and Grist's plugin API run in it, which keeps a document's content from running anything there.

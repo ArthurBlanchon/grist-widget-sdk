@@ -1441,12 +1441,29 @@ export const GanttProvider: FC<GanttProviderProps> = ({
     [zoom, columnWidth, sidebarWidth]
   );
 
+  // Opens on today, a quarter of the view from the left (upstream opened
+  // mid-way through the three years, months away from the work).
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollLeft =
-        scrollRef.current.scrollWidth / 2 - scrollRef.current.clientWidth / 2;
-      setScrollX(scrollRef.current.scrollLeft);
+    const element = scrollRef.current;
+    if (!element) {
+      return;
     }
+    const today = getOffset(new Date(), getTimelineStartDate(timelineData, range), {
+      zoom,
+      range,
+      columnWidth,
+      sidebarWidth,
+      headerHeight,
+      rowHeight,
+      onAddItem,
+      placeholderLength: 2,
+      timelineData,
+      ref: scrollRef,
+    });
+    element.scrollLeft = Math.max(0, today - element.clientWidth / 4);
+    setScrollX(element.scrollLeft);
+    // Once, on mount: a later zoom or a scroll by the person keeps their place.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setScrollX]);
 
   // Update sidebar width when DOM is ready

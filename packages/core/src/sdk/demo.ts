@@ -20,9 +20,12 @@ export type GristWidgetDemo = {
   /**
    * The document's tables: each column's type, the rows, and, for a Choice
    * or ChoiceList column, its choices in order (those the rows use are
-   * added). A `Date` is `"YYYY-MM-DD"`, a `DateTime` an ISO string with its
-   * offset, a `ChoiceList` an array of strings, a `Ref` the referenced row's
-   * position (1 for the first); a reference shows its table's first column.
+   * added), and the colours Grist gives them. A `Date` is `"YYYY-MM-DD"`, a
+   * `DateTime` an ISO string with its offset, a `ChoiceList` an array of
+   * strings, a `Ref` the referenced row's position (1 for the first), a
+   * `RefList` a list of positions, `Attachments` a list of file names in
+   * `src/app/demo/` (images, PDFs, text or CSV files); a reference shows its
+   * table's first column.
    */
   tables: Record<
     string,
@@ -30,6 +33,8 @@ export type GristWidgetDemo = {
       columns: Record<string, GristWidgetDemoColumnType>
       rows: Array<Record<string, unknown>>
       choices?: Record<string, string[]>
+      /** Per column, each choice's colours, as `"#RRGGBB"`: `{ Late: { fillColor: "#FDE68A" } }`. */
+      choiceColors?: Record<string, Record<string, { fillColor?: string; textColor?: string }>>
     }
   >
   /** The widget's table, the document's first page: the first one when left out. */
@@ -51,5 +56,7 @@ export type GristWidgetDemoColumnType =
   | `DateTime:${string}`
   | "Choice"
   | "ChoiceList"
+  | "Attachments"
   | "Any"
   | `Ref:${string}`
+  | `RefList:${string}`

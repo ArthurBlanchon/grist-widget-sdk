@@ -9,7 +9,7 @@
 // - its declaration, imported (not parsed) through the widget's own Vite
 //   config: the same title and access as the spec, every declared column in
 //   the spec's Columns table;
-// - its code (src/, tests aside): no hard-coded colour, no pixel size and no
+// - its code (src/, tests and demo data aside): no hard-coded colour, no pixel size and no
 //   arbitrary Tailwind value, since the theme in widgets/_shared/ is the only
 //   place they live (ADR 0008).
 //
@@ -301,7 +301,8 @@ export function checkStatic(slug, dir = join(WIDGETS_DIR, slug)) {
     if (!new RegExp(`\\bit(?:\\.\\w+)?\\(\\s*["'\`]${id}\\b`).test(tests)) problems.push(`${id}: no test names it (it("${id} …"))`)
   }
 
-  for (const file of srcFiles.filter((f) => !/\.test\.[tj]sx?$/.test(f))) {
+  // Tests aside, and the demo data, whose colours are a Grist document's choices.
+  for (const file of srcFiles.filter((f) => !/\.test\.[tj]sx?$/.test(f) && !/(^|\/)app\/demo\.ts$/.test(f))) {
     for (const [line, reason] of designViolations(readFileSync(file, "utf8"))) {
       problems.push(`${relative(dir, file)}:${line}: ${reason}`)
     }

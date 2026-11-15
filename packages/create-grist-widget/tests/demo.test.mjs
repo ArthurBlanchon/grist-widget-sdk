@@ -99,7 +99,7 @@ describe("a widget's demo data (src/app/demo.ts)", () => {
       [t({ in: "Text" }), /column id/],
       [t({ A: "Ref:Nope" }), /isn't one a demo takes/],
       [t({ A: "Choise" }), /isn't one a demo takes/],
-      [t({ A: "Attachments" }), /isn't one a demo takes/],
+      [t({ A: "Image" }), /isn't one a demo takes/],
       [{ ...t({ A: "Text" }), table: "U" }, /isn't one of its tables/],
       [t({ A: "Text" }, [{ Typo: "x" }]), /isn't one of its columns/],
       [t({ D: "Date" }, [{ D: "2026-12-1" }]), /YYYY-MM-DD/],
@@ -133,6 +133,25 @@ describe("a widget's demo data (src/app/demo.ts)", () => {
     expect(spec.options).toEqual({ columns: ["To do", "Done"], __version: 2 })
     expect(spec.tables[0].columns.find((c) => c.id === "Owner").ref).toBe("People")
   })
+
+  it("colours choices and takes a RefList as a list of row positions", async () => {
+    const { demoSpec } = await import("../src/grist-local.mjs")
+    const tasks = {
+      ...demo.tables.Tasks,
+      columns: { ...demo.tables.Tasks.columns, Helpers: "RefList:People" },
+      rows: demo.tables.Tasks.rows.map((r, i) => ({ ...r, Helpers: i ? [] : [1, 2] })),
+      choiceColors: { Status: { Done: { fillColor: "#16A34A", textColor: "#FFFFFF" } } },
+    }
+    const spec = demoSpec(options, { ...demo, tables: { ...demo.tables, Tasks: tasks } })
+    const status = spec.tables[0].columns.find((c) => c.id === "Status")
+    expect(JSON.parse(status.fields.widgetOptions).choiceOptions).toEqual({ Done: { fillColor: "#16A34A", textColor: "#FFFFFF" } })
+    expect(spec.tables[0].columns.find((c) => c.id === "Helpers").ref).toBe("People")
+    expect(spec.tables[0].rows[0].Helpers).toEqual(["L", 1, 2])
+    const bad = (t) => () => demoSpec(options, { ...demo, tables: { ...demo.tables, Tasks: { ...tasks, ...t } } })
+    expect(bad({ rows: [{ ...tasks.rows[0], Helpers: [3] }] })).toThrow(/Helpers .*a list of row positions of People/)
+    expect(bad({ choiceColors: { Status: { Done: { fillColor: "green" } } } })).toThrow(/choiceColors\.Status/)
+    expect(bad({ choiceColors: { Title: { Done: { fillColor: "#16A34A" } } } })).toThrow(/choiceColors\.Title/)
+  })
 })
 
 describe("the demo document (createDocument)", () => {
@@ -157,6 +176,29 @@ describe("the demo document (createDocument)", () => {
     }
     return { api, saved }
   }
+
+  it("uploads the demo's files and puts their attachment ids in the cells", async () => {
+    const { createDocument, checkDemo } = await import("../src/grist-local.mjs")
+    const grist = fakeGrist()
+    const uploads = []
+    const records = []
+    const api = async (method, url, body) => {
+      if (url.endsWith("/attachments")) {
+        uploads.push(body.getAll("upload").map((f) => f.name))
+        return [7, 8]
+      }
+      if (url.endsWith("/records")) records.push(...body.records.map((r) => r.fields))
+      return grist.api(method, url, body)
+    }
+    const demo = {
+      tables: { Visits: { columns: { Place: "Text", Photos: "Attachments" }, rows: [{ Place: "Roof", Photos: ["b.jpg", "a.pdf"] }, { Place: "Hall", Photos: [] }] } },
+      files: { "a.pdf": Buffer.from("%PDF").toString("base64"), "b.jpg": Buffer.from("jpg").toString("base64") },
+    }
+    await createDocument(api, 1, "Visits", { requiredAccess: "full", columns: [{ name: "Files", type: "Attachments" }] }, "http://w/", { ...demo, mapping: { Files: "Photos" } })
+    expect(uploads).toEqual([["a.pdf", "b.jpg"]])
+    expect(records).toEqual([{ Place: "Roof", Photos: ["L", 8, 7] }, { Place: "Hall", Photos: null }])
+    expect(() => checkDemo({ tables: { Visits: { columns: { Photos: "Attachments" }, rows: [{ Photos: ["../secret.pdf"] }] } } })).toThrow(/a list of file names of src\/app\/demo\//)
+  })
 
   it("saves no mapping when nothing is mapped, as Grist does, and the mapping otherwise", async () => {
     const { createDocument } = await import("../src/grist-local.mjs")

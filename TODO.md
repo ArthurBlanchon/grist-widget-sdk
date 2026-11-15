@@ -15,13 +15,10 @@ The reasoning behind 0.4.0, and what it left for later, is the
 ## 1. The plan to 0.8.0: the production-grade AI widget factory
 
 From the [plan to 0.8.0](./docs/planning/2026-11-15-plan-0.8.md) §4, in
-its order: M3 to M5, with M6 (docs) alongside, then M7 (M1 and M2 are
+its order: M4 and M5, with M6 (docs) alongside, then M7 (M1 to M3 are
 done). Each item is one pull request; the plan says when each milestone is
 done.
 
-- [ ] **M3. CI at catalog scale.** A matrix of the widgets a change
-  touches, in batches of 8 for an SDK change; a weekly run against the
-  latest Grist.
 - [ ] **M4. The bar, version 2** (plan §3). `httpUrl()` and its lint rule,
   licences, a CSP per widget; the standard criteria (5,000 rows, keyboard,
   320 px, read-only) in `new-widget`, the e2e check and the 16 widgets;

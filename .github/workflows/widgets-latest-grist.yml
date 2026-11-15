@@ -1,0 +1,98 @@
+name: Widgets on Grist's latest
+
+# Plan to 0.8.0, M3: every catalog widget embedded in Grist's newest image
+# (gristlabs/grist:latest), each week, where CI pins one (GRIST_IMAGE in
+# create-grist-widget's grist-local.mjs). A Grist release that breaks a widget
+# shows up here before the pin moves to it.
+#
+# It reports and never blocks: a failure opens an issue (or comments on the
+# open one), and the next passing run closes it. It runs this repository's own
+# code on a schedule, never a pull request's; only the report job may write,
+# and only issues.
+
+on:
+  schedule:
+    - cron: "41 5 * * 2"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: widgets-latest-grist
+  cancel-in-progress: false
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      # The real-Grist step's own outcome: an install or a build that fails
+      # first is no news about Grist, and leaves it "skipped".
+      e2e: ${{ steps.e2e.outcome }}
+    env:
+      GRIST_IMAGE: gristlabs/grist:latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter grist-widget-sdk build
+      - run: pnpm --filter "./widgets/**" -r --workspace-concurrency=1 --if-present run build
+      - run: pnpm exec playwright install --with-deps chromium
+      - name: Pull the image, and say which Grist it is
+        run: |
+          docker pull "$GRIST_IMAGE"
+          docker image inspect "$GRIST_IMAGE" --format '{{ index .Config.Labels "org.opencontainers.image.version" }} {{ .Id }}' \
+            | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Every catalog widget in that Grist, with axe, both themes and no console error
+        id: e2e
+        run: |
+          dirs=$(find widgets -mindepth 1 -maxdepth 1 -type d ! -name '_*' | sort)
+          pnpm e2e:grist $dirs --axe --themes --strict-console --out "$RUNNER_TEMP/screenshots"
+      - name: Keep the screenshots
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: widgets-latest-grist-screenshots
+          path: ${{ runner.temp }}/screenshots
+          if-no-files-found: ignore
+          retention-days: 14
+
+  # One open issue at a time, found by its title: opened on the first
+  # failure, commented on while it lasts, closed by the next passing run.
+  report:
+    needs: e2e
+    # On main only: a run started from another branch reports nothing.
+    if: always() && github.ref == 'refs/heads/main' && (needs.e2e.outputs.e2e == 'success' || needs.e2e.outputs.e2e == 'failure')
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      RESULT: ${{ needs.e2e.outputs.e2e }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      TITLE: "Catalog widgets fail on Grist's latest image"
+    steps:
+      - name: Open, comment on or close the issue
+        run: |
+          # Only the issue this workflow opened: anyone can open one with its title.
+          open=$(gh issue list --state open --author "app/github-actions" --search "\"$TITLE\" in:title" --json number,title \
+            --jq "map(select(.title == env.TITLE)) | .[0].number // empty")
+          if [ "$RESULT" = "failure" ]; then
+            body="The weekly run against \`gristlabs/grist:latest\` failed: $RUN_URL
+
+          Its summary names the image's version and each widget's result; the screenshots are in its artifacts. See docs/operations/real-widgets.md."
+            if [ -n "$open" ]; then
+              gh issue comment "$open" --body "Still failing: $RUN_URL"
+            else
+              gh issue create --title "$TITLE" --body "$body"
+            fi
+          elif [ -n "$open" ]; then
+            gh issue close "$open" --comment "Passes again on the latest image: $RUN_URL"
+          fi

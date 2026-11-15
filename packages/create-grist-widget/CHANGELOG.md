@@ -1,5 +1,37 @@
 # create-grist-widget
 
+## 0.7.0
+
+### Minor Changes
+
+- abe3003: 0.7 removes the names 0.6 deprecated, and the page-wide connection. Before 1.0 a minor can break a widget; from 1.0 a name is deprecated for at least one minor first (the new [versioning policy](https://gristwidgets.com/docs/sdk/api/versioning)).
+  
+  - `useGrist()` needs `<GristWidgetProvider>`, and throws outside one. Inside Grist, `mountGristWidget()` renders the provider; in a test, pass the declaration, `renderWithGrist(<App />, { widget })`; a component that also runs outside Grist calls `useGristOptional()`, which returns `null` there.
+  - `useGrist()` takes no options: declare them with `defineGristWidget()` and call `widget.useGrist()`.
+  - `useGristSchema()` takes its schema options only: `requiredAccess`, `columns`, `allowSelectBy`, `hasCustomOptions` and `onEditOptions` go in `defineGristWidget()`. Its `isAvailable` is gone: read `useGrist().status`.
+  - `useGristContext()` is gone: call `widget.useGrist()` or `useGrist()`.
+  - `useGrist().isReady`, `isAvailable`, `fetchSelectedTable`, `fetchTable` and `fetchTableRows` are gone: `status === "ready"`, `status`, and `fetchRows()` (`{ columnar: true }` for columns).
+  - The user-action builders (`gristAddRecordAction`, …) are only in `grist-widget-sdk/actions`.
+  
+  The types public signatures use are now exported from `grist-widget-sdk`: `GristApi`, `GristCellCheck` (what `checkGristCell` returns), `GristColumnExcludeContext`, `GristDecodedValue`, `GristEncodedError`, `GristEncodedAttachmentList`, `GristMinimalRecord`, `GristReplicaSelection`, `GristTableNewRecord`, `GristTableOpOptions`, `GristTableUpdateRecord`, `GristTableUpsertOptions`, `GristTableUpsertRecord`, `GristWidgetConfiguration` and `GristWidgetLinkingInfo`.
+  
+  Existing widgets run `pnpm exec create-grist-widget upgrade` after moving to this release: it rewrites the renamed names in `src/` and lists by file and line, test files included, what to change by hand (each `useGrist(options)`, each `useGristSchema()` given connection options, each `renderWithGrist(ui)` without `widget`). `pnpm typecheck` then shows anything left.
+- d17a58c: `create-grist-widget protect` applies, with the owner's `gh` CLI, the repository settings "Use this template" doesn't copy: the rulesets the template now ships in `.github/rulesets/` (`main`: a pull request and the `check` status, no force push or deletion; `dev`: no force push or deletion; `tags`: no tag moved or deleted), private vulnerability reporting, and GitHub Pages from `gh-pages` when it is off. It only adds what is missing, leaves a ruleset of the same name as it is, refuses before the widget's first release, and `--dry-run` shows what it would change.
+  
+  The template's deploy workflow checks the rulesets on each release (`grist-widget-deploy check-protection`, with the workflow's read-only view of them; creating one takes an admin): a release without them warns in its summary, and the first release opens one issue, "Protect this repository", with the command. The check never fails a deploy.
+  
+  Existing widgets can run `pnpm exec create-grist-widget upgrade` after moving to this release (it adds `.github/rulesets/`), then `pnpm exec create-grist-widget protect --dry-run` and `protect`. A widget whose `main` and `dev` already have rulesets under other names keeps them; delete those after `protect` creates its own, or skip it.
+- ef7710f: `create-grist-widget release <patch|minor|major>`, `pnpm release` in a widget: on `dev`, it bumps `package.json`'s version, writes the `CHANGELOG.md` entry from the pull requests `dev` has that `main` doesn't, and commits, then prints the push and the link to the `dev` → `main` pull request whose merge publishes ([Releasing a widget](https://gristwidgets.com/docs/cli/releasing)). It refuses off `dev`, with uncommitted changes, out of step with `origin/dev`, or with nothing to release. The template's Dependabot config now moves `grist-widget-sdk` and `create-grist-widget` in one pull request.
+  
+  Existing widgets can run `pnpm exec create-grist-widget upgrade` after moving to this release: it adds the `release` script, the Dependabot group and the updated `AGENTS.md`.
+
+### Patch Changes
+
+- e3e6d86: The template's README links to the release notes at their new place, `docs/operations/releasing.md` in the grist-widget-sdk repository: the maintainer pages left the docs site. Existing widgets need nothing.
+- abc9df3: The template's deploy workflow says why its publish and cleanup jobs keep the checkout's credentials (they push the `gh-pages` branch), in the form zizmor, the GitHub Actions security linter, reads. Nothing changes in how a widget deploys.
+  
+  Existing widgets can run `pnpm exec create-grist-widget upgrade` after moving to this release to get the same comments; nothing else to do.
+
 ## 0.6.2
 
 ### Patch Changes

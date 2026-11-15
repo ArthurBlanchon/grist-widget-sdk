@@ -5,51 +5,112 @@ name: release
 # scoped to an exact `repo + workflow file` pair (npm's UI allows ONE trusted
 # workflow file per package), so everything that publishes lives in this file.
 #
-# ── release (push to main) ──────────────────────────────────────────────
-#   1. A PR adds a changeset (`pnpm changeset`) describing its change + semver
-#      bump. Merging it to `main` runs this job.
-#   2. With pending changesets, changesets/action opens/updates a
-#      "Version Packages" PR that bumps the package versions.
-#   3. Merging that PR runs this job again; with no pending changesets it
-#      runs `changeset publish` -- publishes to npm over OIDC (tag: latest)
-#      and creates the git tags + GitHub Releases.
+# ── Three jobs, on every push to main ─────────────────────────────────────
+#   plan        Reads what the push asks for (scripts/release/release-plan.mjs):
+#               pending changesets, and published packages whose version
+#               isn't on npm yet. Read-only.
+#   version-pr  Changesets pending: opens or updates the "Version Packages"
+#               pull request. No environment, so no approval: it never waits.
+#   publish     A version not on npm yet, i.e. the Version Packages pull
+#               request just merged: `changeset publish` over OIDC (tag:
+#               latest), git tags and GitHub Releases. Only this job uses the
+#               `npm` environment, so a release takes one approval, and a
+#               push with nothing to publish leaves no run waiting for one
+#               (plan to 0.8.0, M1; a waiting run used to block every later
+#               one, the Version Packages pull request included).
 #
 #   One-time npm setup (see docs/operations/releasing.md): after 0.2.0 was claimed manually,
 #   add a Trusted Publisher for the package pointing at repo + this file.
 #
-# Runs on pushes to `main` only, and grants permissions to the release job
-# only (none at workflow level). A `publish-staging` job used to publish an
-# `-rc.N` SDK, tagged `next`, from any other branch; it was the only path
-# that could publish from a branch other than `main`, and was retired on
-# 2026-11-01 (docs/history/2026-11-01-widget-lifecycle-plan.md, U2 / D1).
+# Runs on pushes to `main` only, and grants permissions per job (none at
+# workflow level). A `publish-staging` job used to publish an `-rc.N` SDK,
+# tagged `next`, from any other branch; it was the only path that could
+# publish from a branch other than `main`, and was retired on 2026-11-01
+# (docs/history/2026-11-01-widget-lifecycle-plan.md, U2 / D1).
 # docs/operations/releasing.md describes how to test an unreleased SDK without publishing.
 
 on:
   push:
     branches: [main]
 
-concurrency:
-  group: release-${{ github.ref }}
-  cancel-in-progress: false
-
 # Nothing at workflow level: each job states what it needs (principle 5 of
 # docs/history/2026-11-01-widget-lifecycle-plan.md).
 permissions: {}
 
 jobs:
-  release:
+  plan:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      version_pr: ${{ steps.plan.outputs.version_pr }}
+      publish: ${{ steps.plan.outputs.publish }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - id: plan
+        name: What this push asks for
+        run: node scripts/release/release-plan.mjs
+
+  version-pr:
+    needs: plan
+    if: needs.plan.outputs.version_pr == 'true'
+    runs-on: ubuntu-latest
+    # A newer push to main supersedes this one's Version Packages update.
+    concurrency:
+      group: release-version-pr
+      cancel-in-progress: true
+    permissions:
+      contents: write        # commit the Version Packages branch
+      pull-requests: write   # open/update the "Version Packages" PR
+    steps:
+      # No credentials left in .git/config: changesets/action pushes the
+      # Version Packages commit through the GitHub API with its
+      # `github-token` input (push-with-git-cli: false), not with git.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Install deps
+        run: pnpm install --frozen-lockfile
+      # No publish-script: this job never publishes. The token falls back to
+      # GITHUB_TOKEN without CHANGESET_PUSH_TOKEN (see the publish job's
+      # notes), and the Version Packages PR's CI then waits for a re-run.
+      - name: Version Packages pull request
+        uses: changesets/action@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2.1.2
+        with:
+          version-script: pnpm run version-packages
+          commit-message: "chore(release): version packages"
+          pr-title: "chore(release): version packages"
+          github-token: ${{ secrets.CHANGESET_PUSH_TOKEN || secrets.GITHUB_TOKEN }}
+
+  publish:
+    needs: plan
+    if: needs.plan.outputs.publish == 'true'
+    runs-on: ubuntu-latest
+    # One publish at a time, never cancelled half-way.
+    concurrency:
+      group: release-publish
+      cancel-in-progress: false
     # npm's trusted publishers for both packages name this environment, and
     # the environment only accepts `main` (docs/operations/releasing.md, one-time setup). A
     # branch carrying a modified copy of this workflow, pushed by anyone with
     # write access (an agent included), can then never mint a token npm
-    # accepts. Until the maintainer restricts it, GitHub creates it on first
-    # use, unrestricted, and npm accepts it either way.
+    # accepts. The maintainer is its required reviewer: one approval per
+    # release.
     environment: npm
     permissions:
-      contents: write        # commit the version PR, push tags, create releases
-      pull-requests: write   # open/update the "Version Packages" PR
+      contents: write        # push tags, create releases
       id-token: write        # OIDC Trusted Publishing
       # `workflows` is NOT a valid key here -- it's a GitHub Apps
       # installation-level permission, not one of the fixed set of scopes the
@@ -137,7 +198,9 @@ jobs:
       # -- is involved. Published packages are detected via the
       # CHANGESETS_OUTPUT file the action exports, which `pnpm run release`
       # -> `changeset publish` inherits.
-      - name: Version PR or publish
+      # The plan job runs this only when a version isn't on npm, so there are
+      # no changesets here and the action publishes.
+      - name: Publish
         uses: changesets/action@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2.1.2
         with:
           version-script: pnpm run version-packages

@@ -1,0 +1,38 @@
+import { defineMessages } from "@shared/i18n"
+
+export const messages = defineMessages({
+  en: {
+    noRow: "No row is selected. Select one in the table to have it signed.",
+    name: "Your name",
+    pad: "Signature pad, empty: draw your signature here",
+    padDrawn: "Signature pad, with a signature drawn",
+    typeLabel: "Type your signature",
+    typeInstead: "Type instead",
+    drawInstead: "Draw instead",
+    clear: "Clear",
+    save: "Save signature",
+    saving: "Saving…",
+    failed: "Grist did not save the signature: {error}",
+    signature: "Signature",
+    signed: "Signed",
+    signedBy: "Signed by {name}",
+    again: "Sign again",
+  },
+  fr: {
+    noRow: "Aucune ligne n'est sélectionnée. Choisissez-en une dans la table pour la faire signer.",
+    name: "Votre nom",
+    pad: "Zone de signature, vide : signez ici",
+    padDrawn: "Zone de signature, avec une signature",
+    typeLabel: "Tapez votre signature",
+    typeInstead: "Taper plutôt",
+    drawInstead: "Dessiner plutôt",
+    clear: "Effacer",
+    save: "Enregistrer la signature",
+    saving: "Enregistrement…",
+    failed: "Grist n'a pas enregistré la signature : {error}",
+    signature: "Signature",
+    signed: "Signé",
+    signedBy: "Signé par {name}",
+    again: "Signer à nouveau",
+  },
+})

@@ -16,6 +16,7 @@
     "grist-widget-template-vite",
     "examples",
     "@grist-widgets/shared",
+    "@grist-widgets/bulk-editor",
     "@grist-widgets/chart-builder",
     "@grist-widgets/attachment-viewer",
     "@grist-widgets/document-template",
@@ -24,7 +25,12 @@
     "@grist-widgets/grouped-view",
     "@grist-widgets/kanban-board",
     "@grist-widgets/map",
+    "@grist-widgets/mermaid-diagram",
     "@grist-widgets/record-editor",
-    "@grist-widgets/record-selector"
+    "@grist-widgets/record-selector",
+    "@grist-widgets/signature-pad",
+    "@grist-widgets/duplicate-finder",
+    "@grist-widgets/schema-viewer",
+    "@grist-widgets/mail-merge"
   ]
 }

@@ -58,8 +58,9 @@ absorbed and archived, widgets served by the site that already exists
   ([`catalog/roadmap.md`](./catalog/roadmap.md): 19 widgets in three
   waves). Wave 1 is built, all ten: Kanban board, Record selector, Record
   editor, File uploader, Grouped view, Attachment viewer, Document
-  template, Gantt chart, Map, Chart builder. Next, waves 2 and 3. Done
-  when `examples/` is gone.
+  template, Gantt chart, Map, Chart builder. Wave 2 is built, all six:
+  Signature pad, Bulk editor, Mermaid diagram, Duplicate finder, Schema
+  viewer, Mail merge. Then wave 3. Done when `examples/` is gone.
 - [ ] **F4–F8:** intake and triage, the build loop, upkeep, the catalog and
   registry, a size check at 30 and 60 widgets (plan §10).
 

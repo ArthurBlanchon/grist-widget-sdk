@@ -4,6 +4,10 @@
  * cell can never add markup; the template's own HTML is kept as written.
  */
 
+import { cellText } from "@shared/cell-text"
+
+export { cellText }
+
 export type Row = Record<string, unknown> & { id: number }
 
 const PLACEHOLDER = /\{\{\s*([A-Za-z_][\w]*)\s*\}\}/g
@@ -11,17 +15,6 @@ const SECTION = /\{\{#rows\}\}([\s\S]*?)\{\{\/rows\}\}/g
 
 export function escapeHtml(text: string): string {
   return text.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!)
-}
-
-/** A cell as text in `locale`: numbers and dates as the language writes them, lists joined. */
-export function cellText(value: unknown, locale: string): string {
-  if (value === null || value === undefined) return ""
-  if (value instanceof Date) return Number.isNaN(value.getTime()) ? "" : value.toLocaleDateString(locale, { timeZone: "UTC" })
-  if (typeof value === "number") return new Intl.NumberFormat(locale, { maximumFractionDigits: 10 }).format(value)
-  if (typeof value === "boolean") return value ? "✓" : ""
-  if (Array.isArray(value)) return (value[0] === "L" ? value.slice(1) : value).map((v) => cellText(v, locale)).join(", ")
-  if (typeof value === "object") return JSON.stringify(value)
-  return String(value)
 }
 
 function fill(part: string, row: Row | null, columns: ReadonlySet<string>, locale: string): string {

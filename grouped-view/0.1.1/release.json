@@ -1,0 +1,8 @@
+{
+  "slug": "grouped-view",
+  "version": "0.1.1",
+  "commit": "f6701102a96bb45e3aba215ba9c5ee6780caa0c9",
+  "released": "2026-11-15T18:29:08.712Z",
+  "changes": "- The widget's page carries a Content Security Policy: only its own code and Grist's plugin API run in it, which keeps a document's content from running anything there.",
+  "changelog": "CHANGELOG.md"
+}

@@ -6,6 +6,12 @@ import { parseDeployPath } from "./deploy-path"
 export type ReleasedVersion = {
   version: string
   publishedAt: string
+  /**
+   * Where the release is served, relative to the channels' base path. The
+   * widget catalog writes it (`"1.2.0/"`); without it, a release is at
+   * `v<version>/`.
+   */
+  path?: string
 }
 
 export type UseReleasedVersionsResult = {

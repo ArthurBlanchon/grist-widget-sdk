@@ -41,5 +41,13 @@ was. The `0` major is a channel like the others: `/v0/` until 1.0.0.
 - Each channel is a copy of a release, so the site holds about two copies of
   each widget more. That is around 30 MB for 16 widgets, against the 1 GB
   budget.
-- The catalog pages, and the docs that give a widget's URL, show
-  `/v<major>/`.
+- Every site build, `main`'s included, builds each widget from source for
+  `/dev/`. A widget that doesn't build stops the site's deploy on both
+  origins, as CI's `widgets` job would have stopped its pull request.
+- A page opened outside Grist (`grist-widget-sdk/app`'s release page) reads
+  `/v<major>/` as a channel and lists the releases from each widget's
+  `versions.json`. On `/dev/` it says not to paste it into a document
+  instead of offering the URL.
+- Each widget's demo page runs its newest major's channel.
+- The catalog pages to come (plan to 0.8.0, M2) show `/v<major>/` as the
+  install URL.

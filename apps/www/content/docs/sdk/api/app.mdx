@@ -136,8 +136,11 @@ the system theme instead of throwing.
 
 A widget's deploy pipeline publishes the same build at its root and at
 `/latest/`, a preview at `/dev/`, and each release at `/v<version>/`, with a
-`versions.json` listing the releases. These helpers serve a page shown
-outside Grist, such as a custom `ReleasePage`.
+`versions.json` listing the releases. The widget catalog serves each release
+at `/<version>/` and the newest of each major at `/v<major>/`, its install
+URL. These helpers serve a page shown outside Grist, such as a custom
+`ReleasePage`. The default one says, on `/dev/`, not to paste that URL into
+a document: it follows every change before its release.
 
 ### `parseDeployPath(pathname)`
 
@@ -146,6 +149,9 @@ import { parseDeployPath, deployChannelLabel } from "grist-widget-sdk/app"
 
 parseDeployPath("/my-widget/v1.2.0/")
 // { channel: { kind: "version", version: "1.2.0" }, basePath: "/my-widget/" }
+
+parseDeployPath("/widgets/map/v0/")
+// { channel: { kind: "major", major: 0 }, basePath: "/widgets/map/" }
 
 deployChannelLabel({ kind: "dev" }) // "dev"
 ```

@@ -170,7 +170,7 @@ function writeExampleDemo(id, demoDir) {
 // production) serves only released versions: a version main declares and the
 // branch doesn't have yet is waited for, since the release job builds it on the
 // same push; it is never built here. Any other build (a pull request's preview,
-// a local run) builds such a version from source, so a preview shows it.
+// a local run) serves such a version from its /dev/ build, so a preview shows it.
 const WIDGETS_DIST_REPO = process.env.WIDGETS_DIST_REPO?.trim() || "ArthurBlanchon/grist-widget-sdk"
 const isMainBuild = process.env.CF_PAGES_BRANCH
   ? process.env.CF_PAGES_BRANCH === "main"
@@ -248,16 +248,26 @@ async function buildCatalogWidgets() {
     for (const [channel, version] of Object.entries(majorChannels(list))) {
       cpSync(join(out, slug, version), join(out, slug, channel), { recursive: true })
     }
+    // The releases a page opened outside Grist lists (grist-widget-sdk/app's
+    // ReleasePage): newest first, each with where it is served.
+    const releases = [...list].reverse().map((version) => {
+      const meta = join(out, slug, version, "release.json")
+      const released = existsSync(meta) ? JSON.parse(readFileSync(meta, "utf8")).released : null
+      return { version, publishedAt: released ?? new Date().toISOString(), path: `${version}/` }
+    })
+    writeFileSync(join(out, slug, "versions.json"), `${JSON.stringify(releases, null, 2)}\n`)
   }
   // Each widget's demo page: the demo document the release job made
-  // (scripts/widgets/demos.mjs), in grist-static, pointed at /latest/.
+  // (scripts/widgets/demos.mjs), in grist-static.
   for (const slug of Object.keys(versions)) {
     const demo = distDir && join(distDir, slug, "demo")
     if (!demo || !existsSync(join(demo, "demo.grist")) || !existsSync(join(demo, "demo.json"))) continue
     const { title } = JSON.parse(readFileSync(join(demo, "demo.json"), "utf8"))
     mkdirSync(join(out, slug, "demo"), { recursive: true })
     cpSync(join(demo, "demo.grist"), join(out, slug, "demo", "demo.grist"))
-    writeFileSync(join(out, slug, "demo", "index.html"), demoPageHtml({ title, widget: "../latest/", gristStatic: gristStaticBase }))
+    // On the newest major's channel, the install URL (ADR 0013).
+    const channel = Object.keys(majorChannels(versions[slug])).at(-1)
+    writeFileSync(join(out, slug, "demo", "index.html"), demoPageHtml({ title, widget: `../${channel}/`, gristStatic: gristStaticBase }))
   }
   return out
 }

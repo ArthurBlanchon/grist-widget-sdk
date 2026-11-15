@@ -247,6 +247,43 @@ describe("outside Grist", () => {
     }
   })
 
+  it("on the widget catalog, links each major's channel and each release where it is served", async () => {
+    window.history.replaceState(null, "", "/widgets/map/v0/")
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({
+        ok: true,
+        json: async () => [
+          { version: "1.0.0", publishedAt: "2026-12-01T00:00:00Z", path: "1.0.0/" },
+          { version: "0.1.1", publishedAt: "2026-11-15T00:00:00Z", path: "0.1.1/" },
+        ],
+      })),
+    )
+    try {
+      render(<GristWidgetApp App={Widget} options={{ requiredAccess: "read table" }} />)
+      const current = await screen.findByRole("link", { name: "v0" })
+      expect(current).toHaveAttribute("href", "/widgets/map/v0/")
+      expect(current).toHaveAttribute("aria-current", "page")
+      expect(screen.getByRole("link", { name: "v1" })).toHaveAttribute("href", "/widgets/map/v1/")
+      expect(screen.getByRole("link", { name: "v0.1.1" })).toHaveAttribute("href", "/widgets/map/0.1.1/")
+      expect(screen.getByLabelText("Widget URL")).toHaveValue(window.location.href)
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
+
+  it("on /dev/, says not to paste it into a document instead of offering it", async () => {
+    window.history.replaceState(null, "", "/my-widget/dev/")
+    vi.stubGlobal("fetch", vi.fn(async () => ({ ok: false, status: 404, json: async () => null })))
+    try {
+      render(<GristWidgetApp App={Widget} options={{ requiredAccess: "read table" }} />)
+      expect(await screen.findByRole("heading", { name: "Not for a Grist document" })).toBeInTheDocument()
+      expect(screen.queryByLabelText("Widget URL")).not.toBeInTheDocument()
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
+
   it("still links latest and dev when versions.json can't be read", async () => {
     window.history.replaceState(null, "", "/my-widget/latest/")
     vi.stubGlobal("fetch", vi.fn(async () => ({ ok: false, status: 404, json: async () => null })))

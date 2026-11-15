@@ -42,6 +42,7 @@ export function widgetFiles({ slug, title = titleFromSlug(slug), category = "vis
     ),
     "src/main.tsx": readFileSync(join(WIDGETS_DIR, "kanban-board", "src", "main.tsx"), "utf8"),
     "src/vite-env.d.ts": readFileSync(join(WIDGETS_DIR, "kanban-board", "src", "vite-env.d.ts"), "utf8"),
+    "CHANGELOG.md": `# Changelog\n\nWhat changed in each version, for the people using the widget. Newest first.\n\n## 0.1.0 (${new Date().toISOString().slice(0, 10)})\n\nFirst release.\n`,
     "SPEC.md": `---
 slug: ${slug}
 title: ${title}

@@ -154,7 +154,35 @@ export function checkStatic(slug, dir = join(WIDGETS_DIR, slug)) {
       problems.push(`${relative(dir, file)}:${line}: ${reason}`)
     }
   }
+  problems.push(...checkChangelog(dir, pkg.version))
   return { problems, spec: { data, columns: specColumns(body) } }
+}
+
+/**
+ * `[version, text]` for each `## <version>` entry of a widget's CHANGELOG.md,
+ * in the order written. Code blocks and HTML comments are left out first, so
+ * neither a `## 9.9.9` in a code sample nor a `<!-- todo -->` counts.
+ */
+export function changelogEntries(text) {
+  const plain = `${text.replace(/```[\s\S]*?```/g, "").replace(/<!--[\s\S]*?-->/g, "")}\n`
+  const out = []
+  const re = /^## (\d+\.\d+\.\d+)\b[^\n]*\n([\s\S]*?)(?=^## |(?![\s\S]))/gm
+  for (const m of plain.matchAll(re)) out.push([m[1], m[2].trim()])
+  return out
+}
+
+/**
+ * A widget's CHANGELOG.md has an entry for the version its package.json
+ * declares, first: what changed for the people using it (plan to 0.8.0, M2).
+ */
+export function checkChangelog(dir, version) {
+  const path = join(dir, "CHANGELOG.md")
+  if (!existsSync(path)) return ["CHANGELOG.md is missing (an entry per version, newest first)"]
+  const entries = changelogEntries(readFileSync(path, "utf8"))
+  if (!entries.length) return ["CHANGELOG.md: no `## x.y.z` entry"]
+  if (entries[0][0] !== version) return [`CHANGELOG.md: its first entry is ${entries[0][0]}, not ${version} (package.json's version)`]
+  if (!entries[0][1]) return [`CHANGELOG.md: the ${version} entry says nothing`]
+  return []
 }
 
 /** Problems between the spec and the widget's declaration, imported through its Vite config. */

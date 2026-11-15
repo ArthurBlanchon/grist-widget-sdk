@@ -4,7 +4,10 @@
 // On the merge to main, the release job (deploy-apps.yml) builds each version
 // that isn't released yet, once, into the `widgets-dist` branch:
 //
-//   widgets-dist/<slug>/<version>/   the build (relative URLs) and release.json
+//   widgets-dist/<slug>/<version>/   the build (relative URLs), the widget's
+//                                    CHANGELOG.md, and release.json (slug,
+//                                    version, commit, released, and this
+//                                    version's changelog entry as `changes`)
 //
 // A released version is never rebuilt or replaced, so what a Grist document
 // loads never changes under it. The site build (build-site.mjs) copies the

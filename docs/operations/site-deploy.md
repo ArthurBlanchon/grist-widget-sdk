@@ -92,7 +92,10 @@ its `package.json`, in the pull request that changes it. Then:
 1. **On the push to main,** the `release-widgets` job of `deploy-apps.yml`
    builds each declared version that the `widgets-dist` branch doesn't have
    (`scripts/widgets/release.mjs`) into `widgets-dist/<slug>/<version>/`,
-   with a `release.json`, and pushes the branch.
+   with a `release.json` and the widget's `CHANGELOG.md` (from each widget's
+   next version: the versions released before it stay as they were), and
+   pushes the branch. It refuses a version whose changelog has no entry for
+   it.
 2. **A version is never rebuilt or replaced.** A change merged without a
    new version publishes nothing.
 3. **Both origins serve them.** `build-site.mjs` copies the branch to

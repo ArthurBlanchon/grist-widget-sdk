@@ -1,0 +1,8 @@
+{
+  "slug": "record-editor",
+  "version": "0.1.2",
+  "commit": "e65deb5a30380fc722187ae984176af5ae5e8aad",
+  "released": "2026-11-15T23:37:40.780Z",
+  "changes": "- A reference field shows the row it points to. Grist sends a reference as the text its column shows (a name), so the field was empty for any reference showing a column; the widget now reads the row ids from the table.",
+  "changelog": "CHANGELOG.md"
+}

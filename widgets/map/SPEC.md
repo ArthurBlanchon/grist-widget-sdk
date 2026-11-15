@@ -4,6 +4,7 @@ title: Map
 category: maps
 status: beta
 access: read table
+csp: connect-src https://basemaps.cartocdn.com https://*.basemaps.cartocdn.com
 bundle-kb: 400
 ---
 

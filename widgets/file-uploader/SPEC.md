@@ -4,6 +4,7 @@ title: File uploader
 category: data-entry
 status: beta
 access: full
+csp: connect-src grist
 ---
 
 # File uploader

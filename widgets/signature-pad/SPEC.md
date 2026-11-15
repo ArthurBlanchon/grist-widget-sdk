@@ -4,6 +4,7 @@ title: Signature pad
 category: data-entry
 status: beta
 access: full
+csp: connect-src grist
 ---
 
 # Signature pad

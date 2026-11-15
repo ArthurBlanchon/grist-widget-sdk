@@ -26,6 +26,7 @@ import { dirname, join, relative, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 
 import { jsGzipBytes } from "../ci/size-budget.mjs"
+import { parseCspExtra, PLUGIN_API_ORIGIN } from "../../widgets/_shared/csp.mjs"
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..")
 export const WIDGETS_DIR = join(repoRoot, "widgets")
@@ -241,6 +242,13 @@ export function checkStatic(slug, dir = join(WIDGETS_DIR, slug)) {
   if (!ACCESS.includes(data.access)) problems.push(`SPEC.md: access must be one of ${ACCESS.join(", ")}`)
   const have = sections(body)
   for (const s of SECTIONS) if (!have.includes(s)) problems.push(`SPEC.md: no "## ${s}" section`)
+  // The Content Security Policy's additions (widgets/_shared/csp.mjs), and
+  // the page's only outside script, which the policy allows: Grist's plugin API.
+  problems.push(...parseCspExtra(data.csp).problems.map((p) => `SPEC.md: ${p}`))
+  const html = existsSync(join(dir, "index.html")) ? readFileSync(join(dir, "index.html"), "utf8") : ""
+  for (const m of html.matchAll(/<script[^>]*\bsrc="(https?:[^"]+)"/g)) {
+    if (!m[1].startsWith(`${PLUGIN_API_ORIGIN}/`)) problems.push(`index.html: a script from ${m[1]}, which the policy refuses`)
+  }
   const table = columnsSection(body)
   if (table.rows.length) {
     for (const h of ["column", "type", "required", "use"]) {

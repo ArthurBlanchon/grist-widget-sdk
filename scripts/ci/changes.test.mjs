@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 
-import { changedJobs, RULES } from "./changes.mjs"
+import { batches, BATCH_SIZE, changedJobs, listSlugs, RULES, touchedWidgets } from "./changes.mjs"
 
 const none = Object.fromEntries(Object.keys(RULES).map((k) => [k, false]))
 const all = Object.fromEntries(Object.keys(RULES).map((k) => [k, true]))
@@ -15,8 +15,36 @@ test("an SDK change runs its tests, the smokes, the real widgets and the catalog
   assert.deepEqual(jobs, { ...none, core: true, external_install: true, create_widget: true, real_widgets: true, size: true, widgets: true })
 })
 
-test("a catalog widget's change runs the widgets job only", () => {
+test("a catalog widget's change runs the widgets job only, for that widget", () => {
   assert.deepEqual(changedJobs(["widgets/kanban-board/src/app/App.tsx"]), { ...none, widgets: true })
+  assert.deepEqual(touchedWidgets(["widgets/kanban-board/src/app/App.tsx", "widgets/map/SPEC.md"]), ["kanban-board", "map"])
+})
+
+test("what every widget builds on runs them all; widgets/ files outside a widget run none", () => {
+  const slugs = listSlugs()
+  assert.ok(slugs.length >= 16 && slugs.every((s) => /^[a-z0-9-]+$/.test(s)) && !slugs.includes("_shared"))
+  for (const file of ["widgets/_shared/ui/button.tsx", "packages/core/src/sdk/index.ts", "pnpm-lock.yaml", "scripts/real-widgets/e2e-grist.mjs", ".github/workflows/ci.yml"]) {
+    assert.deepEqual(touchedWidgets([file]), slugs, file)
+  }
+  assert.deepEqual(touchedWidgets(null), slugs)
+  assert.deepEqual(touchedWidgets(["widgets/AGENTS.md"]), [])
+  assert.equal(changedJobs(["widgets/AGENTS.md"]).widgets, false)
+  // A folder named like a widget's prefix isn't that widget.
+  assert.deepEqual(touchedWidgets(["widgets/mapper/x.ts"], ["map"]), [])
+})
+
+test("batches: as few as it takes, at most BATCH_SIZE each, balanced, nothing lost", () => {
+  assert.deepEqual(batches([]), [])
+  assert.deepEqual(batches(["a"]), [["a"]])
+  for (const n of [1, 8, 9, 16, 17, 40]) {
+    const list = Array.from({ length: n }, (_, i) => `w${i}`)
+    const out = batches(list)
+    assert.equal(out.length, Math.ceil(n / BATCH_SIZE), `${n}`)
+    assert.ok(out.every((b) => b.length <= BATCH_SIZE))
+    const sizes = out.map((b) => b.length)
+    assert.ok(Math.max(...sizes) - Math.min(...sizes) <= 1, `${n}: ${sizes}`)
+    assert.deepEqual(out.flat().sort(), [...list].sort())
+  }
 })
 
 test("the template deploy smoke runs only for the deploy's files", () => {

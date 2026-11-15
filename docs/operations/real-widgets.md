@@ -26,7 +26,34 @@ have is a **regression**, and turns the job red, and with it `ci.yml`'s
 
 Lint stays out: a widget's lint debt isn't the SDK's.
 
-## In a real Grist
+## The catalog widgets
+
+The catalog widgets (`widgets/`) run in `ci.yml`'s `widgets` job, a matrix:
+`scripts/ci/changes.mjs` lists the widgets a change touches, in balanced
+batches of at most 8.
+- A change to one widget's folder runs that widget only.
+- A change to `widgets/_shared/`, the SDK, the e2e harness, the lockfile or
+  CI itself runs all of them.
+
+Each batch runs its widgets' spec checks, typecheck, lint, tests, build,
+bundle sizes, and the real-Grist check below on the pinned image.
+
+**Each week** (Tuesday, and on demand: Actions → Widgets on Grist's latest),
+`widgets-latest-grist.yml` runs every catalog widget in
+`gristlabs/grist:latest` instead of the pin. It reports and never blocks:
+- a failure opens the issue "Catalog widgets fail on Grist's latest image",
+  or comments on it while it stays open;
+- the next passing run closes it.
+
+When it fails:
+1. Open the run: its summary names the image's version and each widget's
+   result, and the screenshots are in its artifacts.
+2. Reproduce with `GRIST_IMAGE=gristlabs/grist:latest pnpm e2e:grist
+   widgets/<slug>`.
+3. Fix the widget or the SDK, before the pin
+   (`packages/create-grist-widget/src/grist-local.mjs`) moves to that
+   version.
+
 
 `pnpm e2e:grist <widget dir>...` runs the real-Grist part on widgets you
 have checked out locally:

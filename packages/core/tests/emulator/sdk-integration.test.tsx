@@ -12,14 +12,14 @@ import React from "react"
 import { act } from "react"
 import { screen, waitFor } from "@testing-library/react"
 
-import { useGrist, useGristContext } from "../../src/sdk/use-grist"
+import { useGrist } from "../../src/sdk/use-grist"
 import { GristWidgetProvider } from "../../src/sdk/components/grist-widget-provider"
 import { presets } from "../../src/emulator"
 import { renderWithGrist } from "../../src/emulator/testing"
 import { actionsOf, waitForEvent } from "../../src/emulator/testing"
 
 function MyWidget() {
-  const w = useGristContext()
+  const w = useGrist()
   if (w.status !== "ready") return <p data-testid="status">{w.status}</p>
   return (
     <div>
@@ -121,22 +121,6 @@ describe("SDK + emulator (inline)", () => {
     })
     await updateAction
     await waitFor(() => expect(screen.getByTestId("title").textContent).toBe("Renamed"))
-    emulator.dispose()
-  })
-})
-
-// Sanity check that `useGrist()` works without the provider too.
-function StandaloneWidget() {
-  const w = useGrist()
-  if (w.status !== "ready") return <p data-testid="standalone-status">{w.status}</p>
-  return <p data-testid="standalone-status">ready</p>
-}
-describe("SDK + emulator (standalone useGrist)", () => {
-  it("works without GristWidgetProvider", async () => {
-    const { emulator } = renderWithGrist(<StandaloneWidget />, { emulator: { document: presets.todoList() } })
-    await waitFor(() =>
-      expect(screen.getByTestId("standalone-status").textContent).toBe("ready")
-    )
     emulator.dispose()
   })
 })

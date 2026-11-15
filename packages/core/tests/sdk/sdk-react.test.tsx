@@ -2,11 +2,11 @@ import { describe, expect, it } from "vitest"
 import React from "react"
 import { screen, waitFor } from "@testing-library/react"
 
-import { GristBoundary, GristWidgetProvider, useGristContext } from "../../src/sdk"
+import { GristBoundary, GristWidgetProvider, useGrist } from "../../src/sdk"
 import { renderWithGrist } from "../../src/emulator/testing"
 
 function Probe() {
-  const w = useGristContext()
+  const w = useGrist()
   return (
     <div>
       <span data-testid="status">{w.status}</span>

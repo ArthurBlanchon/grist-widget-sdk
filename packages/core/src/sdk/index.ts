@@ -32,7 +32,6 @@ export {
 // Connection, data and writes
 export {
   useGrist,
-  useGristContext,
   useGristOptional,
   type FetchRows,
   type FetchRowsOptions,
@@ -89,18 +88,7 @@ export {
   type GristEncodedAttachmentList,
 } from "./helpers/grist-attachment-upload"
 
-// User actions for `applyActions`: deprecated here, in `grist-widget-sdk/actions` now
-export {
-  gristAddColumnAction,
-  gristAddRecordAction,
-  gristAddTableAction,
-  gristAddVisibleColumnAction,
-  gristModifyColumnAction,
-  gristRemoveColumnAction,
-  gristRemoveRecordAction,
-  gristRenameColumnAction,
-  gristUpdateRecordAction,
-} from "./deprecated-actions"
+// User actions for `applyActions` are in `grist-widget-sdk/actions`
 export type { GristUserActionTuple } from "./helpers/grist-user-actions"
 
 // Typed reads: each mapped cell checked against its declared type

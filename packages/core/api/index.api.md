@@ -49,25 +49,10 @@ export type FetchRowsOptions = FetchGristTableRowsOptions & {
     columnar?: boolean;
 };
 
-// @public @deprecated (undocumented)
-export const gristAddColumnAction: typeof gristAddColumnAction_2;
-
-// @public @deprecated (undocumented)
-export const gristAddRecordAction: typeof gristAddRecordAction_2;
-
-// @public @deprecated (undocumented)
-export const gristAddTableAction: typeof gristAddTableAction_2;
-
-// @public @deprecated (undocumented)
-export const gristAddVisibleColumnAction: typeof gristAddVisibleColumnAction_2;
-
 // @public
 export type GristApi = {
     reload: () => Promise<void>;
     fetchRows: FetchRows;
-    fetchSelectedTable: (options?: GristFetchSelectedOptions) => Promise<GristColumnarTable>;
-    fetchTable: (tableId: string) => Promise<GristColumnarTable>;
-    fetchTableRows: <T extends Record<string, unknown> = Record<string, unknown>>(tableId: string, options?: FetchGristTableRowsOptions) => Promise<GristRowRecord<T>[]>;
     listTables: (options?: ListTablesOptions) => Promise<string[]>;
     listColumns: (tableId: string, options?: ListColumnsOptions) => Promise<GristColumnInfo[]>;
     table: GristTableOperations;
@@ -237,9 +222,6 @@ export type GristMinimalRecord = {
     id: number;
 };
 
-// @public @deprecated (undocumented)
-export const gristModifyColumnAction: typeof gristModifyColumnAction_2;
-
 // @public (undocumented)
 export type GristNoiseColumnsOptions = {
     excludeId?: boolean;
@@ -259,15 +241,6 @@ export type GristReadyOptions = {
 
 // @public
 export type GristRecordPatch<TMapped> = Partial<Omit<TMapped, "id">>;
-
-// @public @deprecated (undocumented)
-export const gristRemoveColumnAction: typeof gristRemoveColumnAction_2;
-
-// @public @deprecated (undocumented)
-export const gristRemoveRecordAction: typeof gristRemoveRecordAction_2;
-
-// @public @deprecated (undocumented)
-export const gristRenameColumnAction: typeof gristRenameColumnAction_2;
 
 // @public
 export type GristReplicaColumn = {
@@ -383,9 +356,6 @@ export type GristTableUpsertRecord = {
 
 // @public
 export type GristTheme = "light" | "dark";
-
-// @public @deprecated (undocumented)
-export const gristUpdateRecordAction: typeof gristUpdateRecordAction_2;
 
 // @public
 export type GristUserActionTuple = unknown[];
@@ -506,12 +476,6 @@ export function tableDataToRows<T = Record<string, unknown>>(data: GristColumnar
 // @public
 export function useGrist<TRow = Record<string, unknown>, TMapped = Record<string, unknown>>(): UseGristResult<TRow, TMapped>;
 
-// @public @deprecated (undocumented)
-export function useGrist<TRow = Record<string, unknown>, TMapped = Record<string, unknown>>(options: UseGristOptions | undefined): UseGristResult<TRow, TMapped>;
-
-// @public @deprecated
-export function useGristContext<TRow = Record<string, unknown>, TMapped = Record<string, unknown>>(): UseGristResult<TRow, TMapped>;
-
 // @public
 export function useGristOptional<TRow = Record<string, unknown>, TMapped = Record<string, unknown>>(): UseGristResult<TRow, TMapped> | null;
 
@@ -519,10 +483,8 @@ export function useGristOptional<TRow = Record<string, unknown>, TMapped = Recor
 export type UseGristOptions = GristRuntimeOptions;
 
 // @public
-export type UseGristResult<TRow = Record<string, unknown>, TMapped = Record<string, unknown>> = Omit<GristApi, "fetchTableRows"> & {
+export type UseGristResult<TRow = Record<string, unknown>, TMapped = Record<string, unknown>> = GristApi & {
     status: GristWidgetStatus;
-    isAvailable: boolean | null;
-    isReady: boolean;
     error: string | null;
     theme: GristTheme | null;
     record: GristRowRecord<TRow> | null;
@@ -541,7 +503,6 @@ export type UseGristResult<TRow = Record<string, unknown>, TMapped = Record<stri
     };
     addRecord: (patch: GristRecordPatch<TMapped>) => Promise<number>;
     currentTableId: string | null;
-    fetchTableRows: <T extends Record<string, unknown> = Record<string, unknown>>(tableId: string, options?: Parameters<GristApi["fetchTableRows"]>[1]) => Promise<GristRowRecord<T>[]>;
     actionStatus: GristWidgetActionStatus;
     actionError: string | null;
     widgetOptions: Record<string, unknown> | null;
@@ -550,13 +511,8 @@ export type UseGristResult<TRow = Record<string, unknown>, TMapped = Record<stri
 // @public
 export function useGristSchema(options?: UseGristSchemaOptions): UseGristSchemaResult;
 
-// @public (undocumented)
+// @public
 export type UseGristSchemaOptions = {
-    requiredAccess?: GristRequiredAccess;
-    columns?: GristReadyOptions["columns"];
-    allowSelectBy?: GristReadyOptions["allowSelectBy"];
-    hasCustomOptions?: GristReadyOptions["hasCustomOptions"];
-    onEditOptions?: GristReadyOptions["onEditOptions"];
     tableId?: string;
     excludeSystemTableData?: boolean;
     replicaRowMode?: GristDocumentMode;
@@ -568,7 +524,6 @@ export type UseGristSchemaOptions = {
 
 // @public (undocumented)
 export type UseGristSchemaResult = {
-    isAvailable: boolean | null;
     document: GristReplicaDocument | null;
     replicaDocument: GristReplicaDocument | null;
     table: GristSchemaTableView | null;

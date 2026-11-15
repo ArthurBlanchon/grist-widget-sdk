@@ -1,4 +1,4 @@
-// upgrade's codemods: the deprecated grist-widget-sdk names a widget's own
+// upgrade's codemods: the removed grist-widget-sdk names a widget's own
 // code uses, rewritten where the meaning is the same and reported (file and
 // line) where it isn't. Each rewrite is checked to be idempotent.
 

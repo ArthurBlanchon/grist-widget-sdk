@@ -91,7 +91,7 @@ mapping, and rendering all live in `src/app/App.tsx`: that's the file to edit.
    moving it and `grist-widget-sdk` together. Once that is merged into `dev`, run `pnpm exec create-grist-widget upgrade`
    on `dev` in a follow-up pull request, then `pnpm install`, `pnpm typecheck`, `pnpm lint` and
    `pnpm test`. It rewrites the template's files (listed above) and, in the widget's code, the
-   `grist-widget-sdk` names a release deprecated, and says what it changed and what is left
+   `grist-widget-sdk` names a release removed, and says what it changed and what is left
    to change by hand.
 
 ## Commands

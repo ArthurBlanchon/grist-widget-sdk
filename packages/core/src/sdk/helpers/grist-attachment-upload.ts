@@ -106,8 +106,8 @@ function extractAttachmentIdsFromUploadPayloadStrict(parsed: unknown): string[] 
   throw new Error("Attachment upload returned an unexpected response shape.")
 }
 
-/** @deprecated Prefer {@link extractAttachmentIdsFromUploadPayload}. */
-export function extractFirstAttachmentIdFromUploadPayload(parsed: unknown): string | undefined {
+/** The first attachment id in an upload reply, for a single-file upload. */
+function extractFirstAttachmentIdFromUploadPayload(parsed: unknown): string | undefined {
   if (typeof parsed === "number" && Number.isFinite(parsed)) {
     return String(parsed)
   }

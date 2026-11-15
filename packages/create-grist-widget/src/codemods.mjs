@@ -1,6 +1,6 @@
 // `upgrade`'s codemods: rewrite the grist-widget-sdk names a widget's own
-// code uses that a release deprecated, and list by file and line the uses it
-// can't rewrite safely (https://gristwidgets.com/docs/sdk/api/deprecated).
+// code uses that a release removed, and list by file and line the uses it
+// can't rewrite safely (https://gristwidgets.com/docs/cli/upgrading#renamed-sdk-names).
 //
 // Text rewrites, not a parser: each one is a rename or a call whose meaning
 // is the same before and after, and runs only in a file that imports
@@ -12,7 +12,7 @@
 import { readdirSync, readFileSync, writeFileSync } from "node:fs"
 import path from "node:path"
 
-export const DEPRECATED_URL = "https://gristwidgets.com/docs/sdk/api/deprecated"
+export const RENAMED_NAMES_URL = "https://gristwidgets.com/docs/cli/upgrading#renamed-sdk-names"
 
 /** The user actions that moved from the root entry to grist-widget-sdk/actions (0.6). */
 export const MOVED_ACTIONS = [
@@ -136,10 +136,9 @@ function callArguments(text, open) {
 }
 
 /**
- * Calls whose meaning 0.7 deprecated and no rename can migrate: useGrist()
- * given options, useGristSchema() given connection options, and
- * renderWithGrist() without the widget's declaration (both rely on the
- * page-wide connection). `{ line, name, hint }` each.
+ * Calls 0.7 changed that no rename can migrate: useGrist() given options,
+ * useGristSchema() given connection options, and renderWithGrist() without
+ * the widget's declaration (useGrist() needs the provider since 0.7). `{ line, name, hint }` each.
  */
 function callHints(text, isComment) {
   const lines = text.split("\n")
@@ -152,12 +151,12 @@ function callHints(text, isComment) {
     const args = callArguments(text, m.index + m[0].length - 1).trim()
     const name = m[1]
     if (name === "useGrist" && args) {
-      found.push({ line, name, hint: "declare these options with defineGristWidget() and call widget.useGrist(): useGrist(options) only configures the page-wide connection, which goes in 1.0" })
+      found.push({ line, name, hint: "declare these options with defineGristWidget() and call widget.useGrist(): useGrist() takes no options since 0.7" })
     } else if (name === "useGristSchema") {
       const given = SCHEMA_CONNECTION_OPTIONS.filter((key) => new RegExp(`\\b${key}\\b`).test(args))
       if (given.length) found.push({ line, name, hint: `declare ${given.join(", ")} with defineGristWidget(): useGristSchema() keeps its schema options only` })
     } else if (name === "renderWithGrist" && args && !/\bwidget\b/.test(args)) {
-      found.push({ line, name, hint: "pass the widget's declaration, renderWithGrist(<App />, { widget }): without it the test runs on the page-wide connection, which goes in 1.0" })
+      found.push({ line, name, hint: "pass the widget's declaration, renderWithGrist(<App />, { widget }): without it there is no provider, and useGrist() throws since 0.7" })
     }
   }
   return found

@@ -94,9 +94,10 @@ renderWithGrist(<App />, {
 ```
 
 Pass `widget` (the declaration, as in the first example) whenever the
-component under test calls `useGrist()`: without it there is no provider,
-and the component runs on the page-wide connection, deprecated in 0.7 and
-removed in 1.0. `upgrade` lists the calls that omit it.
+component under test calls `useGrist()`: `renderWithGrist` then renders it
+in the provider `mountGristWidget()` renders inside Grist. Without `widget`
+it renders `ui` as it is, so `useGrist()` throws unless `ui` brings its own
+`<GristWidgetProvider>`.
 
 You can also bring your own emulator instance:
 

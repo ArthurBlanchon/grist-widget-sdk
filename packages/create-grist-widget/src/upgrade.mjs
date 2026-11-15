@@ -9,7 +9,7 @@
 // exceptions that no longer matter. The widget's own files (src/app/, smoke
 // test included, src/components/ui/, src/index.css, components.json, README.md
 // and every file the widget added) it only touches through the codemods
-// (codemods.mjs): the grist-widget-sdk names a release deprecated, rewritten
+// (codemods.mjs): the grist-widget-sdk names a release removed, rewritten
 // where the meaning is the same, listed by file and line where it isn't. It
 // runs on a clean `dev`, so what it changed is one `git diff` to review.
 
@@ -599,7 +599,7 @@ export function runUpgrade({ cwd, templateDir, cliVersion, publishedAt, now = ne
     ageRemoved: [],
     ageUnknown: [],
     codemods: [],
-    deprecatedLeft: [],
+    sdkNamesLeft: [],
   }
 
   for (const file of TEMPLATE_FILES) {
@@ -658,7 +658,7 @@ export function runUpgrade({ cwd, templateDir, cliVersion, publishedAt, now = ne
   if (sdkFloor && compareVersions(sdkFloor, CODEMODS_SINCE) >= 0) {
     const { rewritten, manual } = runCodemods(cwd, { skip: TEMPLATE_FILES })
     report.codemods = rewritten
-    report.deprecatedLeft = manual
+    report.sdkNamesLeft = manual
   }
   return report
 }

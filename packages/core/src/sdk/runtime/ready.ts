@@ -82,5 +82,3 @@ export function resetGristReady(): void {
   lastAccess = null
   lastColumnNames = null
 }
-
-/** @deprecated Use {@link resetGristReadySingleton}. Kept for test back-compat. */

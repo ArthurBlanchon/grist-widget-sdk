@@ -12,6 +12,7 @@ import { screen, waitFor } from "@testing-library/react"
 
 import { presets } from "../../src/emulator"
 import { renderWithGrist } from "../../src/emulator/testing"
+import { GristWidgetProvider } from "../../src/sdk"
 import type { GristDocumentMode, GristReplicaDocument } from "../../src/sdk/types"
 import { useGristSchema } from "../../src/sdk/use-grist-schema"
 
@@ -52,7 +53,6 @@ function SchemaCapture({
   const delivered = useRef(false)
   const schema = useGristSchema({
     replicaRowMode,
-    requiredAccess: "read table",
     source: "vitest-snapshot",
   })
 
@@ -75,12 +75,14 @@ describe("useGristSchema() replica snapshots", () => {
         let captured: GristReplicaDocument | null = null
 
         const { emulator } = renderWithGrist(
-          <SchemaCapture
-            replicaRowMode={mode}
-            onDocument={(doc) => {
-              captured = doc
-            }}
-          />,
+          <GristWidgetProvider options={{ requiredAccess: "read table" }}>
+            <SchemaCapture
+              replicaRowMode={mode}
+              onDocument={(doc) => {
+                captured = doc
+              }}
+            />
+          </GristWidgetProvider>,
           { emulator: { document: presets[presetName]() } }
         )
 

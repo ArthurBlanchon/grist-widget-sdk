@@ -17,18 +17,19 @@ From 1.0, the version follows [semantic versioning](https://semver.org/):
 | **Minor** (1.x.0) | New names and options, and deprecations | takes it without change; its tests may log deprecation warnings |
 | **Major** (x.0.0) | The removal of names deprecated in an earlier minor, and nothing else breaking without one | runs `upgrade`, whose codemods do the mechanical part |
 
-Before 1.0, a minor could break a widget. Since 0.6, the same rules
-already apply: a name goes only after a release in which it was deprecated.
+Before 1.0, a minor can break a widget. Its changelog entry says what
+changed, and `upgrade` rewrites what it can and lists the rest by file and
+line ([Upgrading a widget](/docs/cli/upgrading)).
 
 ## How a name is retired
 
-A name, option or behaviour on its way out:
+From 1.0, a name, option or behaviour on its way out:
 
 1. **Is deprecated in a minor.** Its type is marked `@deprecated`, so the
    editor strikes it through, and its first use logs one console warning in
    development (`process.env.NODE_ENV` is not `"production"`, as in `pnpm
-   dev` and `pnpm test`). A production build stays silent. The
-   [deprecated names](/docs/sdk/api/deprecated) page says what replaces it.
+   dev` and `pnpm test`). A production build stays silent. Its changelog
+   entry says what replaces it.
 2. **Keeps working for at least one minor.**
 3. **Comes with its migration.** When the change is mechanical,
    `pnpm exec create-grist-widget upgrade` rewrites it; otherwise `upgrade`

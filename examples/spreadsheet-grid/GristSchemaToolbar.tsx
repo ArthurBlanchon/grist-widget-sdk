@@ -49,7 +49,6 @@ export function GristSchemaToolbar({
   const w = useGrist()
   const internalSchema = useGristSchema({
     tableId: schemaProp ? undefined : (w.currentTableId ?? undefined),
-    requiredAccess: "full",
   })
   const schema = schemaProp ?? internalSchema
 

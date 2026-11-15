@@ -42,7 +42,7 @@ import { createComposer } from "../vendor/compose-example.mjs"
 import { checkGitGate } from "../src/git-gate.mjs"
 import { addedAgeExceptions } from "../src/age-exceptions.mjs"
 import { installPlan } from "../src/package-manager.mjs"
-import { DEPRECATED_URL } from "../src/codemods.mjs"
+import { RENAMED_NAMES_URL } from "../src/codemods.mjs"
 import { runUpgrade, upgradeRefusal } from "../src/upgrade.mjs"
 import { BUMPS, runRelease } from "../src/release.mjs"
 import { runProtect } from "../src/protect.mjs"
@@ -747,8 +747,8 @@ function cmdUpgrade(argv) {
     report.codemods.map(({ file, changes }) => `${file}: ${changes.join("; ")}`)
   )
   printList(
-    `Deprecated names left for you to change (${DEPRECATED_URL}):`,
-    report.deprecatedLeft.map(({ file, line, name, hint }) => `${file}:${line}  ${name}: ${hint}`)
+    `SDK names left for you to change (${RENAMED_NAMES_URL}):`,
+    report.sdkNamesLeft.map(({ file, line, name, hint }) => `${file}:${line}  ${name}: ${hint}`)
   )
   if (!changed) return
 

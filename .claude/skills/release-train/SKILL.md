@@ -31,7 +31,9 @@ Never publish by hand, and never add a token to make a bot push run CI.
    approval, because it was pushed with `GITHUB_TOKEN`: ask the maintainer
    to approve them, or re-run them from the Actions tab if you can.
 4. **Ask the maintainer to merge it,** unless they already told you to.
-   The release job then publishes both packages over OIDC and tags them.
+   The `publish` job of `release.yml` then waits for the maintainer's
+   approval of the `npm` environment (one per release): give them the
+   run's link. It publishes both packages over OIDC and tags them.
 5. **Verify:**
 
    ```bash

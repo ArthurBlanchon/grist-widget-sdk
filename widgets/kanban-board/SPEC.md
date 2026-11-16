@@ -48,6 +48,17 @@ the widget's options.
   rendered.
 - **AC-8** Given an empty table and no saved columns, a message says rows
   will appear here.
+- **AC-9** Given a column of more than 50 cards, it shows 50 at a time, with a
+  button that shows the next ones; the card selected in Grist is always shown.
+
+## Standard criteria
+
+The same in every catalog widget ([ADR 0018](../../docs/decisions/0018-standard-criteria.md)).
+
+- **AC-volume** Given 5,000 rows, the widget renders them with at most 3,000 DOM nodes.
+- **AC-keyboard** Tab reaches the widget's controls without getting stuck, and the page passes axe after it.
+- **AC-narrow** The widget fits a 320 px side panel and a 1,280 px page, without scrolling sideways.
+- **AC-readonly** On a document open read-only, the widget shows its data, and if it writes, it says why it can't.
 
 ## Out of scope
 

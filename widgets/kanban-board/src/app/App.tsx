@@ -27,6 +27,9 @@ export const widget = defineGristWidget({
 
 type Card = { id: number; title: string; status: string; notes: string | null }
 
+/** Cards a column shows at a time (the selected one always among them). */
+const CARDS_SHOWN = 50
+
 export default function App() {
   const w = widget.useGrist()
   const t = useT(messages)
@@ -34,6 +37,7 @@ export default function App() {
   const [newColumn, setNewColumn] = useState("")
   const [error, setError] = useState<string | null>(null)
 
+  const [listed, setListed] = useState<Record<string, number>>({})
   const cards = useMemo<Card[]>(
     () =>
       (w.mappedRecords ?? []).map((row) => ({
@@ -156,7 +160,7 @@ export default function App() {
                   </Button>
                 </header>
                 <ul className="flex min-h-16 flex-col gap-2 overflow-y-auto">
-                  {inColumn.map((card) => (
+                  {inColumn.filter((card, j) => j < (listed[status] ?? CARDS_SHOWN) || card.id === w.record?.id).map((card) => (
                     <li key={card.id}>
                       <Card
                         role="button"
@@ -182,6 +186,15 @@ export default function App() {
                   ))}
                   {inColumn.length === 0 ? <li className="text-xs text-muted-foreground">{t("noCards")}</li> : null}
                 </ul>
+                {inColumn.length > (listed[status] ?? CARDS_SHOWN) ? (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setListed((l) => ({ ...l, [status]: (l[status] ?? CARDS_SHOWN) + CARDS_SHOWN }))}
+                  >
+                    {t("moreCards", { n: Math.min(CARDS_SHOWN, inColumn.length - (listed[status] ?? CARDS_SHOWN)), left: inColumn.length - (listed[status] ?? CARDS_SHOWN) })}
+                  </Button>
+                ) : null}
               </section>
             )
           })}

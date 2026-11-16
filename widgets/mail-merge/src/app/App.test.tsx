@@ -5,6 +5,8 @@ import type { GristReplicaDocument, GristReplicaRow } from "grist-widget-sdk"
 
 import App, { widget } from "./App"
 import { link, recipients } from "./mail"
+import { expectVolume, VOLUME_TIMEOUT_MS } from "@shared/testing"
+import { demo } from "./demo"
 
 beforeAll(installJsdomStubs)
 
@@ -155,6 +157,18 @@ describe("Mail merge", () => {
     expect(await screen.findByText(/This e-mail is long/)).toBeInTheDocument()
   })
 
+  it("AC-11 lists 100 rows at a time, and shows the next ones on demand", async () => {
+    const many = Array.from({ length: 250 }, (_, i) => ({ ...MEMBERS[0]!, id: i + 1, Name: `Member ${i + 1}`, Email: `m${i + 1}@example.org` }))
+    setup(TEMPLATE, undefined, many)
+    await openLink("m1@example.org")
+    expect(screen.getAllByRole("link", { name: /^Open the e-mail to / })).toHaveLength(100)
+    fireEvent.click(screen.getByRole("button", { name: "Show 100 more (150 not shown)" }))
+    expect(screen.getAllByRole("link", { name: /^Open the e-mail to / })).toHaveLength(200)
+    fireEvent.click(screen.getByRole("button", { name: "Show 50 more (50 not shown)" }))
+    expect(screen.getAllByRole("link", { name: /^Open the e-mail to / })).toHaveLength(250)
+    expect(screen.queryByRole("button", { name: /^Show \d+ more/ })).not.toBeInTheDocument()
+  })
+
   it("AC-10 speaks French to a browser that prefers it", async () => {
     vi.stubGlobal("navigator", { ...navigator, languages: ["fr-FR"], language: "fr-FR" })
     setup(null)
@@ -162,3 +176,5 @@ describe("Mail merge", () => {
     expect(screen.getByLabelText("Objet")).toHaveValue("Bonjour")
   })
 })
+
+it("AC-volume renders 5,000 rows within the DOM budget", () => expectVolume(<App />, widget, demo), VOLUME_TIMEOUT_MS)

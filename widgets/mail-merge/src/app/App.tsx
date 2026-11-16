@@ -26,6 +26,8 @@ export const widget = defineGristWidget({
 })
 
 const CLIENTS: Client[] = ["mailto", "gmail", "outlook"]
+/** The rows the list shows at a time: Open the next one goes through all of them. */
+const PAGE = 100
 
 /** A reference cell read from the table (a row id, or a list of them) as the text its column shows. */
 function shown(raw: unknown, label: ReadonlyMap<number, unknown>): unknown {
@@ -47,6 +49,7 @@ export default function App() {
   const [client, setClient] = useState<Client | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [opened, setOpened] = useState<ReadonlySet<number>>(new Set())
+  const [listed, setListed] = useState(PAGE)
 
   const s = subject ?? savedSubject
   const b = body ?? savedBody
@@ -266,7 +269,7 @@ export default function App() {
           ) : null}
         </div>
         <ul className="flex flex-col divide-y rounded-lg border">
-          {mails.map((m) => (
+          {mails.slice(0, listed).map((m) => (
             <li key={m.row.id} className="flex items-center gap-2 px-3 py-2 text-sm" data-row={m.row.id}>
               <span className="min-w-0 flex-1 truncate">{m.to.join(", ") || <span className="text-muted-foreground">{t("noAddress")}</span>}</span>
               {m.sent ? <Badge variant="secondary">{t("sent")}</Badge> : opened.has(m.row.id) ? <Badge variant="outline">{t("opened")}</Badge> : null}
@@ -287,6 +290,11 @@ export default function App() {
             </li>
           ))}
         </ul>
+        {mails.length > listed ? (
+          <Button size="sm" variant="outline" className="self-start" onClick={() => setListed((n) => n + PAGE)}>
+            {t("showMore", { n: Math.min(PAGE, mails.length - listed), left: mails.length - listed })}
+          </Button>
+        ) : null}
       </section>
     </main>
   )

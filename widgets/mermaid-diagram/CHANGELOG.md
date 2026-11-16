@@ -2,6 +2,10 @@
 
 What changed in each version, for the people using the widget. Newest first.
 
+## 0.3.1 (2026-11-16)
+
+- A flowchart built from more rows than a diagram can hold (500 arrows) draws the first ones and says how many of how many are drawn, instead of an error about a setting nobody using the widget can change.
+
 ## 0.3.0 (2026-11-16)
 
 - "Report a problem": when a change fails to save, or if the widget ever stops working, a link opens this widget's bug form, filled in with its name and version. Nothing is sent from your document: you write what you choose.

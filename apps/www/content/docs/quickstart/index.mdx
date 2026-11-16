@@ -1,11 +1,12 @@
 ---
 title: "Your first widget"
-description: "Scaffold a widget, declare its columns, read and write the selected row, test it, see it in a real Grist, release it and protect its repository."
+description: "Scaffold a widget, publish it, change it, test it, see it in your own Grist, release it and protect its repository."
 ---
 
-This builds a widget that shows the selected task of a Grist table and
-marks it done. You need Node 22, [pnpm](https://pnpm.io/installation), git
-and a GitHub account.
+The scaffold is a working widget: it shows the selected task of a Grist
+table and marks it done. This page publishes it, then adds a column to it
+and releases that. You need Node 22.22 or later,
+[pnpm](https://pnpm.io/installation), git, and a GitHub account.
 
 ## 1. Scaffold it
 
@@ -16,22 +17,48 @@ pnpm dev
 ```
 
 The command writes the widget, installs its dependencies with pnpm, and
-makes the first commit on `main`, with a `dev` branch ready.
+commits it on `main`, with a `dev` branch next to it.
 
 Open `http://localhost:5173/demo/index.html`: Grist itself, running in
-your browser, with a document and your widget in it. Edits reload in
-place. Nothing is saved, and nothing leaves your machine.
+your browser, with a document and the widget in it. Your data stays in
+the browser; the page loads Grist from the network. Stop the server
+(Ctrl-C) when you're done looking.
 
-## 2. Declare what it reads
+## 2. Publish the first version
+
+Create an empty, public GitHub repository named `my-widget`, then push
+`main`:
+
+```bash
+git remote add origin https://github.com/<you>/my-widget.git
+git push -u origin main
+```
+
+That push runs the widget's deploy workflow, which publishes version
+`0.0.1`: it creates the `gh-pages` branch, commits the widget's install
+URL to the README on `main`, and sets `dev` to `main`. Point GitHub Pages
+at it once: **Settings → Pages → Deploy from a branch → `gh-pages`,
+`/ (root)`**. If the workflow failed to push, allow it (**Settings →
+Actions → General → Read and write permissions**) and run it again.
+
+Once the workflow is green, bring both branches up to date and work on
+`dev` from now on:
+
+```bash
+git pull
+git switch dev
+git pull origin dev
+git push -u origin dev
+```
+
+## 3. Read the widget
 
 The widget is `src/app/App.tsx`. Its declaration says what it asks Grist
 for:
 
 ```ts
-import { defineGristWidget } from "grist-widget-sdk"
-
 export const widget = defineGristWidget({
-  title: "Task",
+  title: "My Widget",
   description: "Mark the selected task done.",
   requiredAccess: "full",
   columns: [
@@ -47,78 +74,47 @@ export const widget = defineGristWidget({
 - **`requiredAccess`** is `"full"` because the widget writes. A widget
   that only reads asks for `"read table"`.
 
-## 3. Read the selected row
+The component reads the selected row with `widget.useGrist()`, typed from
+the declaration: `w.mappedRecord.Title` is a `string | null`, `Done` a
+`boolean | null`. It writes with `w.updateRecord({ Done: !Done })`, under
+your names, into the column the person mapped. If Grist refuses a write,
+an alert above the widget says why.
 
-```tsx
-import { defineGristWidget } from "grist-widget-sdk"
+## 4. Add a column
 
-export const widget = defineGristWidget({
-  requiredAccess: "full",
-  columns: [
-    { name: "Title", type: "Text" },
-    { name: "Done", type: "Bool" },
-  ],
-})
+Add an optional due date to the declaration, after `Done`:
 
-export default function App() {
-  const w = widget.useGrist()
-  if (w.mode === "new-row") return <p>Add the row in Grist, then select it.</p>
-  if (!w.mappedRecord) return <p>Select a task in Grist.</p>
-  return <h1>{w.mappedRecord.Title || "Untitled"}</h1>
-}
+```ts
+    { name: "Due", type: "Date", optional: true },
 ```
 
-`widget.useGrist()` is typed from the declaration: `w.mappedRecord.Title`
-is a `string | null`, `Done` a `boolean | null`. `w.mode` says whether a
-row is selected, none is, or the new-row line is.
+and, in `App`, read it with the others and show it under the title:
 
-## 4. Write it back
-
-```tsx
-import { defineGristWidget } from "grist-widget-sdk"
-
-export const widget = defineGristWidget({
-  requiredAccess: "full",
-  columns: [
-    { name: "Title", type: "Text" },
-    { name: "Done", type: "Bool" },
-  ],
-})
-
-export default function App() {
-  const w = widget.useGrist()
-  if (!w.mappedRecord) return <p>Select a task in Grist.</p>
-  const { Title, Done } = w.mappedRecord
-  return (
-    <main>
-      <h1>{Title || "Untitled"}</h1>
-      <button disabled={w.actionStatus === "running"} onClick={() => w.updateRecord({ Done: !Done })}>
-        {Done ? "Mark as not done" : "Mark as done"}
-      </button>
-    </main>
-  )
-}
+```tsx no-check
+const { Title, Done, Due } = w.mappedRecord
+// …
+<h1 className="text-base font-medium">{Title || "Untitled"}</h1>
+{Due ? <p>Due {Due.toLocaleDateString()}</p> : null}
 ```
 
-`w.updateRecord` writes the selected row under your names, into the
-column the person mapped. If Grist refuses the write, an alert above the
-widget says why.
+`Due` is a `Date | null`, decoded from Grist's format. Being optional,
+it doesn't stop the widget from rendering when nobody maps it. Then
+regenerate the demo page's document, which needs Docker:
+`pnpm demo --save`.
 
 ## 5. Test it
 
 `src/app/App.test.tsx` runs the widget against an emulated Grist: a table
-built from the declared columns, mapped, with the rows you give.
+built from the declared columns, mapped, with the rows you give. Add a
+test next to the ones already there:
 
 ```tsx no-check
-import { expect, it } from "vitest"
-import { fireEvent, renderWithGrist, screen, waitFor } from "grist-widget-sdk/emulator/testing"
-
-import App, { widget } from "./App"
-
-it("marks the selected task done in Grist", async () => {
-  const { emulator } = renderWithGrist(<App />, { widget, rows: [{ Title: "Buy milk", Done: false }] })
-  fireEvent.click(await screen.findByRole("button", { name: "Mark as done" }))
-  await waitFor(() => expect(emulator.state.tables.get("Table1")!.rows[0]).toMatchObject({ Done: true }))
+it("shows the due date", async () => {
+  renderWithGrist(<App />, {
+    widget,
+    rows: [{ Title: "Buy milk", Done: false, Due: new Date("2026-03-16") }],
+  })
+  expect(await screen.findByText(/^Due /)).toBeInTheDocument()
 })
 ```
 
@@ -128,51 +124,47 @@ pnpm test
 
 ## 6. See it in your own Grist
 
-Create an empty GitHub repository, then push both branches:
+Commit the change on `dev` and push it:
 
 ```bash
-git remote add origin https://github.com/<you>/my-widget.git
-git push -u origin main
-git push origin dev
+git add -A
+git commit -m "Show the due date"
+git push
 ```
 
-The push to `main` runs the deploy workflow once, which creates the
-`gh-pages` branch. Point GitHub Pages at it (**Settings → Pages → Deploy
-from a branch → `gh-pages`**); if the workflow can't push, allow it
-(**Settings → Actions → General → Read and write permissions**).
-
-Your `dev` branch is then served at
-`https://<you>.github.io/my-widget/dev/`. In a Grist document, add a
-**Custom widget** section, paste that URL, and map your columns. Every
-push to `dev` reloads it there.
+The workflow serves `dev` at `https://<you>.github.io/my-widget/dev/`. In
+a Grist document, add a **Custom widget** section, paste that URL, and
+map your columns. Each push to `dev` reloads it there.
 
 ## 7. Release it
 
-Once it works on `/dev/`, release it:
+Once it works on `/dev/`:
 
 ```bash
 pnpm release minor
-git push origin dev
+git push
 ```
 
-That raises the version and writes the changelog entry. Open the pull
-request from `dev` into `main` (the command prints its link), and merge
-it once its checks are green. The workflow publishes
-`…/my-widget/v<version>/`, which never changes, and moves
+That raises the version to `0.1.0` and writes the changelog entry. Open
+the pull request from `dev` into `main` (the command prints its link),
+and merge it once its checks are green. The workflow publishes
+`…/my-widget/v0.1.0/`, which never changes, and moves
 `…/my-widget/latest/` to it: paste one of those into the documents that
 use the widget.
 
 ## 8. Protect the repository
 
-After that first release:
+Any time after the first version is out (the workflow opened an issue to
+remind you):
 
 ```bash
 pnpm exec create-grist-widget protect
 ```
 
-It uses the GitHub CLI (`gh auth login` first). From then on, `main`
-changes only through a pull request with green checks, and neither
-branch can be force-pushed or deleted.
+It needs the GitHub CLI (`gh auth login` first) and admin rights on the
+repository. From then on, `main` changes only through a pull request with
+green checks, neither branch can be force-pushed or deleted, and release
+tags can't be moved.
 
 ## Next
 

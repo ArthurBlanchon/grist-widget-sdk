@@ -68,6 +68,14 @@ Each item is one pull request; the plan says when each milestone is done.
   an identical build (the timeline scrolls to "today" on mount, by layout
   timing): make that scroll deterministic in the next Gantt change, so
   `--baseline` reads "unchanged" for it as for the 15 others.
+- [ ] **The scaffold, as a newcomer meets it** (found following "Your
+  first widget" word for word, 2026-11-16): its README carries the
+  template's maintainer sections ("This is the source template", "Monorepo
+  dev", "How this template is distributed"); its `CHANGELOG.md` is headed
+  `grist-widget-template-vite` and its demo's widget section "Grist Widget
+  Template", not the widget's name; `pnpm dev` and `pnpm test` warn about
+  `__dirname` in `vite.config.ts`. Done when a fresh scaffold names itself
+  everywhere and starts without a warning.
 - [ ] **Release 0.8.0** when M1–M7 are done.
 
 ## 2. After 0.8.0

@@ -12,11 +12,13 @@ import { Switch } from "@shared/ui/switch"
 import { Textarea } from "@shared/ui/textarea"
 
 import { display, fieldOf, fromForm, sameValue, toForm, type Field, type FormValue } from "@shared/grist-fields"
+import { reportUrl } from "@shared/report-url"
 import { messages } from "./messages"
 
 export const widget = defineGristWidget({
   title: "Record editor",
   description: "Edit the selected row in a form, each field typed by its column, with Save and Cancel; or add a row.",
+  reportUrl: reportUrl(),
   requiredAccess: "full",
   columns: [{ name: "Fields", allowMultiple: true, title: "Fields of the form" }],
 })

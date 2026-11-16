@@ -68,6 +68,10 @@ the first).
   own server and allows every http(s) origin: it is what a widget calling
   Grist's REST API needs, and `check-widgets` requires it then. A new
   `connect-src` host is a new outbound host.
+- **"Report a problem"** ([ADR 0019](../docs/decisions/0019-report-a-problem.md)):
+  the declaration says `reportUrl: reportUrl()` (`@shared/report-url`), the
+  widget bug form prefilled with its slug and version; `check-widgets`
+  checks it. Nothing is sent from the widget.
 - **No API key in widget options** ([ADR 0010](../docs/decisions/0010-api-keys.md)).
 - **Dependencies are `catalog:` versions.** A dependency only one widget
   needs goes in its own `package.json`.

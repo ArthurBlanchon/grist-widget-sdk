@@ -7,6 +7,7 @@ import { Badge } from "@shared/ui/badge"
 import { Button } from "@shared/ui/button"
 import { Card, CardContent } from "@shared/ui/card"
 import { Input } from "@shared/ui/input"
+import { reportUrl } from "@shared/report-url"
 
 import { boardColumns, moveColumn, neighbour, readOrder } from "./board"
 import { messages } from "./messages"
@@ -14,6 +15,7 @@ import { messages } from "./messages"
 export const widget = defineGristWidget({
   title: "Kanban board",
   description: "Move cards between status columns by dragging, or with the arrow keys.",
+  reportUrl: reportUrl(),
   requiredAccess: "full",
   // Options carry their version (ADR 0017): version 1, read as before.
   optionsVersion: 1,

@@ -1,0 +1,59 @@
+# Every released widget links this form (ADR 0019): keep its file name and the
+# ids `widget` and `version`, and keep them prefillable (inputs, not dropdowns).
+name: Widget bug
+description: A catalog widget (gristwidgets.com) doesn't work as it should. "Report a problem" in the widget opens this form.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. Nothing was sent from your document: what you write here is all we see, and this issue is public, so leave out anything private (names, amounts, a document's link).
+  - type: input
+    id: widget
+    attributes:
+      label: Widget
+      description: Its slug, as in its install URL (`/widgets/<slug>/v0/`). "Report a problem" fills it in.
+      placeholder: kanban-board
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Widget version
+      description: '"Report a problem" fills it in. Otherwise: the version in the widget''s install URL, or "latest".'
+      placeholder: 0.2.0
+    validations:
+      required: true
+  - type: input
+    id: grist-version
+    attributes:
+      label: Grist version
+      description: 'In Grist, "Help" then "About" where it has one, or the admin panel on a self-hosted Grist. "Don''t know" is fine.'
+      placeholder: 1.7.22
+    validations:
+      required: true
+  - type: dropdown
+    id: hosting
+    attributes:
+      label: Where your Grist runs
+      options:
+        - getgrist.com (Grist's own service, a team site included)
+        - Self-hosted
+        - Grist Desktop
+        - Don't know
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what the widget did instead. An error message or a screenshot helps, once you've removed or blurred any data from your document in it. This issue is public.
+    validations:
+      required: true
+  - type: textarea
+    id: columns
+    attributes:
+      label: The columns you mapped
+      description: Which columns of your table you mapped to the widget's, and their types (Text, Date, Reference…). Not their content.
+    validations:
+      required: false

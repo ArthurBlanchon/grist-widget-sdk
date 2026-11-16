@@ -5,6 +5,7 @@ import { defineGristWidget } from "grist-widget-sdk"
 import { detectLocale, useT } from "@shared/i18n"
 import { Badge } from "@shared/ui/badge"
 import { Button } from "@shared/ui/button"
+import { reportUrl } from "@shared/report-url"
 
 import { AGGREGATES, BLANK, aggregate, groupItems, keysOf, numberOf, pivotItems, type Aggregate, type Item } from "./group"
 import { messages } from "./messages"
@@ -12,6 +13,7 @@ import { messages } from "./messages"
 export const widget = defineGristWidget({
   title: "Grouped view",
   description: "Rows grouped by a column, with counts and totals; with a second column, a pivot table. Clicking a group filters the linked widgets.",
+  reportUrl: reportUrl(),
   requiredAccess: "read table",
   allowSelectBy: true,
   columns: [

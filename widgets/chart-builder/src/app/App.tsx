@@ -6,6 +6,7 @@ import { defineGristWidget } from "grist-widget-sdk"
 import { detectLocale, useT } from "@shared/i18n"
 import { Button } from "@shared/ui/button"
 import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@shared/ui/chart"
+import { reportUrl } from "@shared/report-url"
 
 import { messages } from "./messages"
 import { AGGREGATES, KINDS, ORDERED_KINDS, buildData, readSettings, type ChartKind } from "./series"
@@ -13,6 +14,7 @@ import { AGGREGATES, KINDS, ORDERED_KINDS, buildData, readSettings, type ChartKi
 export const widget = defineGristWidget({
   title: "Chart builder",
   description: "Bar, line, area, pie, radar or combined charts of a table, grouped by a column, in the theme's colours.",
+  reportUrl: reportUrl(),
   requiredAccess: "full",
   // Options carry their version (ADR 0017): version 1, read as before.
   optionsVersion: 1,

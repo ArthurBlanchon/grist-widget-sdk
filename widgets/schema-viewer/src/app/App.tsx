@@ -8,6 +8,7 @@ import { Button } from "@shared/ui/button"
 import { NativeSelect, NativeSelectOption } from "@shared/ui/native-select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@shared/ui/tabs"
 import { Textarea } from "@shared/ui/textarea"
+import { reportUrl } from "@shared/report-url"
 
 import { messages } from "./messages"
 import { around, HEAD, layout, markdown, mermaid, PAD, ROW, readSchema, type Schema } from "./schema"
@@ -15,6 +16,7 @@ import { around, HEAD, layout, markdown, mermaid, PAD, ROW, readSchema, type Sch
 export const widget = defineGristWidget({
   title: "Schema viewer",
   description: "An entity-relationship diagram of the document: its tables, their columns and the references between them, with the schema as text for an AI.",
+  reportUrl: reportUrl(),
   // The document's columns and their types are in Grist's metadata tables, readable with full access.
   requiredAccess: "full",
   // It shows the whole document, whatever row is selected.

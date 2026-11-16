@@ -7,6 +7,7 @@ import { Alert, AlertDescription } from "@shared/ui/alert"
 import { Button } from "@shared/ui/button"
 import { NativeSelect, NativeSelectOption } from "@shared/ui/native-select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@shared/ui/tabs"
+import { reportUrl } from "@shared/report-url"
 
 import { defaultKeep, findGroups, type Mode, type Row } from "./match"
 import { columnReport, planMerge, type ColumnReport, type Plan, type Reader } from "./merge"
@@ -15,6 +16,7 @@ import { messages } from "./messages"
 export const widget = defineGristWidget({
   title: "Duplicate finder",
   description: "Find the rows that are the same on key columns, exactly or approximately, and merge them; with a data-quality report per column.",
+  reportUrl: reportUrl(),
   requiredAccess: "full",
   columns: [{ name: "Keys", allowMultiple: true, title: "Columns that identify a row" }],
 })

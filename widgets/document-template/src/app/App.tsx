@@ -5,6 +5,7 @@ import { checkGristCell, defineGristWidget } from "grist-widget-sdk"
 import { detectLocale, useT } from "@shared/i18n"
 import { Button } from "@shared/ui/button"
 import { Textarea } from "@shared/ui/textarea"
+import { reportUrl } from "@shared/report-url"
 
 import { messages } from "./messages"
 import { defaultTemplate, hasSection, page, placeholders, render, type Row } from "./template"
@@ -12,6 +13,7 @@ import { defaultTemplate, hasSection, page, placeholders, render, type Row } fro
 export const widget = defineGristWidget({
   title: "Document template",
   description: "One document per row (a quote, a certificate, a letter) from an HTML template with the columns as placeholders; or one for all rows. Print it, or save it as PDF.",
+  reportUrl: reportUrl(),
   requiredAccess: "full",
   // Options carry their version (ADR 0017): version 1, read as before.
   optionsVersion: 1,

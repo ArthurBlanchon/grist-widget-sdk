@@ -1,7 +1,7 @@
 {
   "name": "@grist-widgets/attachment-viewer",
   "private": true,
-  "version": "0.1.1",
+  "version": "0.2.0",
   "type": "module",
   "description": "The selected row's files shown large, images and PDFs in the widget; or every row's files in a gallery.",
   "license": "MIT",

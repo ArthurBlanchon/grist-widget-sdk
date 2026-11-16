@@ -1,7 +1,7 @@
 {
   "name": "@grist-widgets/document-template",
   "private": true,
-  "version": "0.1.1",
+  "version": "0.2.0",
   "type": "module",
   "description": "One document per row (a quote, a certificate, a letter) from an HTML template with the columns as placeholders; or one for all rows. Print it, or save it as PDF.",
   "license": "MIT",

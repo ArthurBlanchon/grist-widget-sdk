@@ -24,27 +24,35 @@ test("only the Columns section's first table is columns; a second one is prose",
 
 test("the declaration matches what the catalog publishes: title, description, columns both ways", () => {
   const spec = {
-    data: { title: "Board", access: "full" },
+    data: { slug: "board", title: "Board", access: "full" },
     body: "## Columns\n\n| Column | Type | Required | Use |\n| --- | --- | --- | --- |\n| Title | Text | yes | x |\n| Keys | Any, several columns | no | y |\n| Notes | Text | no | z |\n",
   }
   const options = {
     requiredAccess: "full",
     columns: [{ name: "Title", type: "Text" }, { name: "Keys", optional: true, allowMultiple: true }, { name: "Notes", type: "Text", optional: true }],
   }
-  const ok = { options, metadata: { title: "Board", description: "Cards." }, pkg: { description: "Cards." }, spec }
+  const reportUrl = "https://github.com/ArthurBlanchon/grist-widget-sdk/issues/new?template=widget-bug.yml&title=%5Bboard%5D+&widget=board&version=1.2.0"
+  const ok = { options, metadata: { title: "Board", description: "Cards.", reportUrl }, pkg: { description: "Cards.", version: "1.2.0" }, spec }
   assert.deepEqual(declarationProblems(ok), [])
   const problems = declarationProblems({
     ...ok,
-    metadata: { title: "Board", description: "Other." },
+    metadata: { title: "Board", description: "Other.", reportUrl: reportUrl.replace("1.2.0", "1.1.0") },
     options: { requiredAccess: "full", columns: [{ name: "Title", type: "Text,Choice", optional: true }, { name: "Keys", optional: true }] },
   })
   assert.deepEqual(problems.map((p) => p.split(":")[0]), [
     "description",
+    "reportUrl",
     "column Title",
     "column Title",
     "column Keys",
     "column Notes",
   ])
+})
+
+test("a declaration without reportUrl is refused, with what to write", () => {
+  const spec = { data: { slug: "board", title: "Board", access: "read table" }, body: "## Columns\n\n| Column | Type | Required | Use |\n| --- | --- | --- | --- |\n" }
+  const problems = declarationProblems({ options: {}, metadata: { title: "Board", description: "Cards." }, pkg: { description: "Cards.", version: "1.0.0" }, spec })
+  assert.deepEqual(problems, ['reportUrl: the declaration has none; write `reportUrl: reportUrl()`, from "@shared/report-url"'])
 })
 
 test("design rules: colours, pixels and arbitrary values, comments aside", () => {

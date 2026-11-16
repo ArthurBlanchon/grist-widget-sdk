@@ -1,7 +1,7 @@
 {
   "name": "@grist-widgets/chart-builder",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.3.0",
   "type": "module",
   "description": "Bar, line, area, pie, radar or combined charts of a table, grouped by a column, in the theme's colours.",
   "license": "MIT",

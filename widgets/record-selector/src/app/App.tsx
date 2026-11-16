@@ -4,6 +4,7 @@ import { defineGristWidget } from "grist-widget-sdk"
 
 import { useT } from "@shared/i18n"
 import { Input } from "@shared/ui/input"
+import { reportUrl } from "@shared/report-url"
 
 import { messages } from "./messages"
 import { display, matches, normalize } from "./search"
@@ -11,6 +12,7 @@ import { display, matches, normalize } from "./search"
 export const widget = defineGristWidget({
   title: "Record selector",
   description: "Find a row by typing part of its name, and pick it: linked widgets follow.",
+  reportUrl: reportUrl(),
   requiredAccess: "read table",
   allowSelectBy: true,
   columns: [

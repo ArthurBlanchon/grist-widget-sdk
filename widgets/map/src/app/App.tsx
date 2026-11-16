@@ -1,10 +1,12 @@
 import { lazy } from "react"
 
 import { defineGristWidget } from "grist-widget-sdk"
+import { reportUrl } from "@shared/report-url"
 
 export const widget = defineGristWidget({
   title: "Map",
   description: "Rows as points by their coordinates, coloured by category and clustered; or countries coloured by a value. Clicking a point selects its row.",
+  reportUrl: reportUrl(),
   requiredAccess: "read table",
   allowSelectBy: true,
   columns: [

@@ -1,7 +1,7 @@
 {
   "name": "@grist-widgets/signature-pad",
   "private": true,
-  "version": "0.1.1",
+  "version": "0.2.0",
   "type": "module",
   "description": "Have the selected row signed on a tablet, a phone or with a mouse; the signature is saved as an image with the signer's name and the time.",
   "license": "MIT",

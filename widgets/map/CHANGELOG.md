@@ -2,6 +2,11 @@
 
 What changed in each version, for the people using the widget. Newest first.
 
+## 0.3.0 (2026-11-16)
+
+- "Report a problem": when a change fails to save, or if the widget ever stops working, a link opens this widget's bug form, filled in with its name and version. Nothing is sent from your document: you write what you choose.
+- If the widget stops working, it says so, with a button to reload it, instead of showing an empty panel.
+
 ## 0.2.0 (2026-11-16)
 
 - With more categories than the theme has colours (five), the five with the most points keep their own colour and the others are one "Others" group, in a neutral colour, last in the legend: no two categories share a colour, and the map stays readable and quick with thousands of rows. Each point's card still names its own category.

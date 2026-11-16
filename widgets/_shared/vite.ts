@@ -160,6 +160,11 @@ export function widgetViteConfig(widgetDir: string): UserConfig & { test: Record
     // Relative URLs: a released version works at any path, on both origins.
     base: "./",
     plugins: [react(), tailwindcss(), licencesPlugin(), cspPlugin(widgetDir)],
+    // The widget's slug and version, for its reportUrl (_shared/report-url.ts).
+    define: {
+      __WIDGET_SLUG__: JSON.stringify(path.basename(widgetDir)),
+      __WIDGET_VERSION__: JSON.stringify(JSON.parse(readFileSync(path.join(widgetDir, "package.json"), "utf8")).version),
+    },
     resolve: {
       alias: {
         "@shared": shared,

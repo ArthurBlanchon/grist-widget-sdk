@@ -49,6 +49,12 @@ test("the declaration matches what the catalog publishes: title, description, co
   ])
 })
 
+test("a declaration without reportUrl is refused, with what to write", () => {
+  const spec = { data: { slug: "board", title: "Board", access: "read table" }, body: "## Columns\n\n| Column | Type | Required | Use |\n| --- | --- | --- | --- |\n" }
+  const problems = declarationProblems({ options: {}, metadata: { title: "Board", description: "Cards." }, pkg: { description: "Cards.", version: "1.0.0" }, spec })
+  assert.deepEqual(problems, ['reportUrl: the declaration has none; write `reportUrl: reportUrl()`, from "@shared/report-url"'])
+})
+
 test("design rules: colours, pixels and arbitrary values, comments aside", () => {
   assert.equal(designViolations('className="text-[#fff]"').length, 2)
   assert.equal(designViolations("style={{ width: '12px' }}").length, 1)

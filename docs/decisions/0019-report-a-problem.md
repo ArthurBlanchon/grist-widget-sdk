@@ -37,3 +37,8 @@ telemetry. Three facts shaped it:
   admin panel; the issue form says where.
 - Anything more (an error's stack, a document's shape) is a new decision,
   not an addition to this one.
+- Every released widget carries its link for good (a release is never
+  rebuilt), so the form's file name (`widget-bug.yml`) and its field ids
+  `widget` and `version` stay as they are, prefillable from the URL
+  (inputs, not dropdowns). A change to the intake keeps the old link
+  working.

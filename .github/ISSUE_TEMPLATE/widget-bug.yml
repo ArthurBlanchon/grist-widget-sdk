@@ -1,3 +1,5 @@
+# Every released widget links this form (ADR 0019): keep its file name and the
+# ids `widget` and `version`, and keep them prefillable (inputs, not dropdowns).
 name: Widget bug
 description: A catalog widget (gristwidgets.com) doesn't work as it should. "Report a problem" in the widget opens this form.
 labels: ["bug"]
@@ -26,7 +28,7 @@ body:
     id: grist-version
     attributes:
       label: Grist version
-      description: 'In Grist: the account menu, then "About Grist" (or the admin panel on a self-hosted Grist). Write "don''t know" if you can''t find it.'
+      description: 'In Grist, "Help" then "About" where it has one, or the admin panel on a self-hosted Grist. "Don''t know" is fine.'
       placeholder: 1.7.22
     validations:
       required: true
@@ -35,7 +37,7 @@ body:
     attributes:
       label: Where your Grist runs
       options:
-        - docs.getgrist.com (Grist's own service)
+        - getgrist.com (Grist's own service, a team site included)
         - Self-hosted
         - Grist Desktop
         - Don't know
@@ -45,7 +47,7 @@ body:
     id: what-happened
     attributes:
       label: What happened
-      description: What you did, what you expected, and what the widget did instead. An error message or a screenshot helps.
+      description: What you did, what you expected, and what the widget did instead. An error message or a screenshot helps, once you've removed or blurred any data from your document in it. This issue is public.
     validations:
       required: true
   - type: textarea

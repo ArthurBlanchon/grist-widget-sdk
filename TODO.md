@@ -23,10 +23,6 @@ From the [plan to 0.8.0](./docs/planning/2026-11-15-plan-0.8.md) §4, in
 its order: M5, with M6 (docs) alongside, then M7 (M1 to M4 are done).
 Each item is one pull request; the plan says when each milestone is done.
 
-- [ ] **Gantt's comparison with its last release reads ~0.2 % changed** on
-  an identical build (the timeline scrolls to "today" on mount, by layout
-  timing): make that scroll deterministic in the next Gantt change, so
-  `--baseline` reads "unchanged" for it as for the 15 others.
 - [ ] **Attachments on the static demo pages.** grist-static serves no
   attachment, so the demo pages of Attachment viewer, File uploader and
   Signature pad open with their attachments cells empty (`pnpm demo` and
@@ -44,7 +40,9 @@ Each item is one pull request; the plan says when each milestone is done.
   emulator should also refuse `fetchTable` below full access, as Grist does.
 - [ ] **M5. The loop, from issue to release.** Issue forms and labels; the
   skills `triage-issue`, `new-widget`, `fix-issue`, `catalog-upgrade`,
-  `release-widgets`, `sota-review`; upkeep on a schedule.
+  `release-widgets`, `sota-review`; upkeep on a schedule. The widget bug
+  form exists (`widget-bug.yml`): every released widget links it, so its
+  file name and its `widget` and `version` ids stay (ADR 0019).
 - [ ] **M6. Documentation, alongside.** R2 to R6 to the 2026-11-14 target
   structure, with *Replica document* as a Concepts page and *Examples* as
   the catalog (R1, the frame, is done: four sections, the docs check in
@@ -54,6 +52,17 @@ Each item is one pull request; the plan says when each milestone is done.
   an API coverage check; awesome-grist-widgets absorbed and archived; the
   six reference repositories retired, the news feed with them
   ([ADR 0011](./docs/decisions/0011-reference-widgets-retired.md)).
+- [ ] **The SDK's chrome in the widget's language.** "Report a problem",
+  "The widget stopped working" and the SDK's alerts are English only, in
+  widgets that are English and French. Done when the chrome follows the
+  widget's language (French at least), with a test.
+- [ ] **One click on "Report a problem" inside Grist** on `/widgets/<slug>/dev/`
+  before the next widget release: whether Grist's iframe sandbox lets the
+  link open its tab. Done when checked, or the link works around it.
+- [ ] **Gantt's comparison with its last release reads ~0.2 % changed** on
+  an identical build (the timeline scrolls to "today" on mount, by layout
+  timing): make that scroll deterministic in the next Gantt change, so
+  `--baseline` reads "unchanged" for it as for the 15 others.
 - [ ] **Release 0.8.0** when M1–M7 are done.
 
 ## 2. After 0.8.0

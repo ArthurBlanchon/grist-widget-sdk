@@ -402,7 +402,7 @@ export function declarationProblems({ options, metadata, pkg, spec }) {
     }
     // ADR 0019: "Report a problem" leads to this widget's prefilled form.
     const report = reportUrlFor(spec.data.slug, pkg.version)
-    if (metadata.reportUrl !== report) problems.push(`reportUrl: the declaration has ${metadata.reportUrl ?? "none"}; it says reportUrl: reportUrl() (@shared/report-url)`)
+    if (metadata.reportUrl !== report) problems.push(`reportUrl: the declaration has ${metadata.reportUrl ?? "none"}; write \`reportUrl: reportUrl()\`, from "@shared/report-url"`)
     const documented = new Map(columnsSection(spec.body).rows.map(columnSpec).map((c) => [c.name, c]))
     const declared = new Set()
     for (const col of options.columns ?? []) {

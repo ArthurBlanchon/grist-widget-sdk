@@ -155,15 +155,17 @@ async function waitRendered(page, origin, timeout) {
 
 /** The widget's frame element in Grist's page, pinned at `width` (a side panel at 320, a full page at 1,280). */
 async function pinWidth(page, origin, width) {
-  await page.evaluate(
+  const found = await page.evaluate(
     ({ origin, width }) => {
       const el = [...document.querySelectorAll("iframe")].find((f) => f.src.startsWith(origin))
-      if (!el) return
-      Object.assign(el.style, { position: "fixed", left: "0", top: "0", width: `${width}px`, height: "640px", zIndex: "9999", background: "white" })
+      if (!el) return false
+      Object.assign(el.style, { position: "fixed", left: "0", top: "0", width: `${width}px`, height: "640px", zIndex: "2147483647", background: "white" })
+      return true
     },
     { origin, width },
   )
   await page.waitForTimeout(800)
+  return found
 }
 
 /** How far the widget's page scrolls sideways (0: it fits). */
@@ -189,35 +191,50 @@ async function runAxe(frame) {
 /**
  * The keyboard path: Tab from the start of the widget's page through its
  * controls (at most 40 steps, until focus comes back round), then Escape.
- * Returns the controls reached, and how many the page shows.
+ * Returns the controls reached, and whether Tab got stuck in a loop.
  */
+
+/** Whether the widget's page shows a control (a link, a button, a field, a tabindex). */
+const hasControl = (frame) =>
+  frame.evaluate(() =>
+    [...document.querySelectorAll('a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])')].some((el) => {
+      const r = el.getBoundingClientRect()
+      return r.width > 0 && r.height > 0 && !el.disabled
+    }),
+  )
 async function keyboardPath(page, frame) {
   await frame.evaluate(() => {
     document.activeElement?.blur?.()
     window.focus()
   })
+  // Each element focused is marked: the walk stops when focus comes back to
+  // one already reached (round, or a trap), whatever its label.
   const reached = []
+  let trapped = false
   for (let i = 0; i < 40; i++) {
     await page.keyboard.press("Tab")
-    const here = await frame.evaluate(() => {
+    const here = await frame.evaluate((step) => {
       const el = document.activeElement
       if (!el || el === document.body) return null
+      const seen = el.getAttribute("data-e2e-tab")
+      if (seen !== null) return { again: Number(seen) }
+      el.setAttribute("data-e2e-tab", String(step))
       const name = el.getAttribute("aria-label") || el.textContent?.trim().slice(0, 40) || el.getAttribute("name") || ""
-      return `${el.tagName.toLowerCase()}${name ? ` "${name}"` : ""}`
-    })
+      return { label: `${el.tagName.toLowerCase()}${name ? ` "${name}"` : ""}` }
+    }, reached.length)
     if (!here) continue
-    if (reached.length && here === reached[0]) break
-    reached.push(here)
+    if ("again" in here) {
+      // The same element again: Tab moves within it (a date field's parts).
+      if (here.again === reached.length - 1) continue
+      // Back to the first: round. To another one before: stuck in a loop.
+      trapped = here.again !== 0
+      break
+    }
+    reached.push(here.label)
   }
   await page.keyboard.press("Escape")
-  const controls = await frame.evaluate(
-    () =>
-      [...document.querySelectorAll('a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])')].filter((el) => {
-        const r = el.getBoundingClientRect()
-        return r.width > 0 && r.height > 0 && !el.disabled
-      }).length,
-  )
-  return { reached, controls }
+  await frame.evaluate(() => document.querySelectorAll("[data-e2e-tab]").forEach((el) => el.removeAttribute("data-e2e-tab")))
+  return { reached, trapped }
 }
 
 async function checkWidget({ browser, gristUrl, api, wsId, widgetDir, outDir, timeout, build, axe, themes, strictConsole, standard }) {
@@ -283,26 +300,37 @@ async function checkWidget({ browser, gristUrl, api, wsId, widgetDir, outDir, ti
     let standardFailure = null
     if (standard && state === "rendered" && frame) {
       result.standard = []
+      // At each width: no overflow, the keyboard path, then axe again.
       for (const width of [320, 1280]) {
-        await pinWidth(page, origin, width)
+        if (!(await pinWidth(page, origin, width))) {
+          standardFailure ??= "narrow: the widget's frame wasn't found"
+          break
+        }
         const shot = path.join(outDir, `${name}-${width}.png`)
         await page.screenshot({ path: shot, clip: { x: 0, y: 0, width: Math.min(width, 1400), height: 640 } })
         const wider = await overflow(frame)
         result.standard.push(`${width} px: ${wider ? `${wider} px wider than the panel` : "fits"} (${shot})`)
-        if (wider > 1 && !standardFailure) standardFailure = `narrow: ${wider} px of horizontal overflow at ${width} px`
-      }
-      const keys = await keyboardPath(page, frame)
-      result.standard.push(`keyboard: ${keys.reached.length} of ${keys.controls} controls reached by Tab (${keys.reached.slice(0, 6).join(", ")}${keys.reached.length > 6 ? ", …" : ""})`)
-      if (keys.controls > 0 && keys.reached.length === 0 && !standardFailure) standardFailure = "keyboard: Tab reaches no control"
-      if (axe) {
-        const after = await runAxe(frame)
-        if (after.failing.length && !standardFailure) standardFailure = `accessibility after the keyboard path: ${after.failing.join(", ")}`
+        if (wider > 1) standardFailure ??= `narrow: ${wider} px of horizontal overflow at ${width} px`
+        const keys = await keyboardPath(page, frame)
+        result.standard.push(`keyboard at ${width} px: ${keys.reached.length} controls reached by Tab${keys.trapped ? ", then stuck in a loop" : ""} (${keys.reached.slice(0, 6).join(", ")}${keys.reached.length > 6 ? ", …" : ""})`)
+        if (keys.trapped) standardFailure ??= `keyboard: Tab is stuck in a loop at ${width} px`
+        else if (keys.reached.length === 0 && (await hasControl(frame))) standardFailure ??= `keyboard: Tab reaches no control at ${width} px`
+        if (axe) {
+          const after = await runAxe(frame)
+          if (after.failing.length) standardFailure ??= `accessibility after the keyboard path at ${width} px: ${after.failing.join(", ")}`
+        }
       }
 
       // Read-only: the same document in view mode.
       const view = await context.newPage()
       const viewUncaught = []
+      const viewConsole = []
       view.on("pageerror", (e) => viewUncaught.push(String(e).slice(0, 300)))
+      view.on("console", (m) => {
+        if (m.type() === "error" && ((m.location().url ?? "").startsWith(origin) || m.text().startsWith("[csp-violation]"))) {
+          viewConsole.push(m.text().slice(0, 300))
+        }
+      })
       await view.goto(result.doc.replace("/p/", "/m/view/p/"))
       const ro = await waitRendered(view, origin, timeout)
       const writes = (options.requiredAccess ?? "read table") === "full"
@@ -312,6 +340,7 @@ async function checkWidget({ browser, gristUrl, api, wsId, widgetDir, outDir, ti
       result.standard.push(`read-only: ${ro.state}${writes ? (says ? ", says so" : ", doesn't say so") : ""}`)
       if (ro.state !== "rendered" && !standardFailure) standardFailure = `read-only: ${ro.state}`
       else if (viewUncaught.length && !standardFailure) standardFailure = `read-only: uncaught: ${viewUncaught[0]}`
+      else if (strictConsole && viewConsole.length && !standardFailure) standardFailure = `read-only: console error: ${viewConsole[0]}`
       else if (writes && !says && !standardFailure) standardFailure = "read-only: the widget writes and doesn't say it can't"
       await view.close()
     }
@@ -346,7 +375,7 @@ async function checkWidget({ browser, gristUrl, api, wsId, widgetDir, outDir, ti
 async function main() {
   const args = parseArgs(process.argv.slice(2))
   if (!args.dirs.length) {
-    console.error("Usage: pnpm e2e:grist <widget dir>... [--build] [--axe] [--themes] [--strict-console] [--out <dir>] [--grist-url <url>] [--keep] [--timeout <s>]")
+    console.error("Usage: pnpm e2e:grist <widget dir>... [--build] [--axe] [--themes] [--strict-console] [--standard] [--out <dir>] [--grist-url <url>] [--keep] [--timeout <s>]")
     process.exit(2)
   }
   const gristUrl = args.gristUrl ?? (await startGrist({ container: CONTAINER, port: GRIST_PORT, email: EMAIL }))

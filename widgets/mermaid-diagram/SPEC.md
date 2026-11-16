@@ -61,6 +61,8 @@ flowchart, the entry chunk (about 140 KB) and its own chunks.
   empty cell), the widget says what to do.
 - **AC-9** Given a browser that prefers French, the widget's text is in
   French.
+- **AC-10** Given a diagram larger than the panel, it can be reached with
+  Tab and scrolled from the keyboard, with a visible focus ring.
 
 ## Out of scope
 

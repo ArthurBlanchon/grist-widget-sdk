@@ -94,7 +94,7 @@ export default function App() {
         </Alert>
       ) : null}
       {/* Focusable: a diagram larger than the panel scrolls, from the keyboard too. */}
-      <div ref={holder} role="img" tabIndex={0} aria-label={t("diagram")} className="flex min-h-0 flex-1 items-center justify-center overflow-auto [&_svg]:h-auto [&_svg]:max-w-full" />
+      <div ref={holder} role="img" tabIndex={0} aria-label={t("diagram")} className="flex min-h-0 flex-1 items-center justify-center overflow-auto rounded-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none [&_svg]:h-auto [&_svg]:max-w-full" />
     </main>
   )
 }

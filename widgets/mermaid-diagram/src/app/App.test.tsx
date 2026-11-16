@@ -116,6 +116,14 @@ describe("Mermaid diagram", () => {
     expect(await screen.findByText(/No row is selected/)).toBeInTheDocument()
   })
 
+  it("AC-10 lets the keyboard reach and scroll the diagram", async () => {
+    cell("flowchart TD\n  A --> B")
+    const diagram = await screen.findByRole("img", { name: "The diagram" })
+    expect(diagram).toHaveAttribute("tabindex", "0")
+    diagram.focus()
+    expect(diagram).toHaveFocus()
+  })
+
   it("AC-9 speaks French to a browser that prefers it", async () => {
     vi.stubGlobal("navigator", { ...navigator, languages: ["fr-FR"], language: "fr-FR" })
     cell("flowchart TD\n  A --> B")

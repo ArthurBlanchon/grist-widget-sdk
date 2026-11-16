@@ -5,6 +5,8 @@ import type { GristReplicaDocument, GristReplicaRow } from "grist-widget-sdk"
 
 import App, { widget } from "./App"
 import { findGroups } from "./match"
+import { expectVolume, VOLUME_TIMEOUT_MS } from "@shared/testing"
+import { demo } from "./demo"
 
 beforeAll(installJsdomStubs)
 
@@ -186,9 +188,29 @@ describe("Duplicate finder", () => {
     expect(await screen.findByText("No duplicates among the 6 rows this section shows.")).toBeInTheDocument()
   })
 
+  it("AC-12 lists 20 groups at a time, and 10 rows in a group", async () => {
+    // 25 names, each written 12 times: 25 groups of 12.
+    const people = Array.from({ length: 300 }, (_, i) => ({ id: i + 1, Name: `Person ${i % 25}`, Email: "", City: "", Manager: 0, Score: 1, Initial: "P" }))
+    setup(["Name"], people)
+    await screen.findByText(/25 groups/)
+    expect(screen.getAllByRole("group", { name: /^Group \d+$/ })).toHaveLength(20)
+    expect(within(groupOf(1)).getAllByRole("radio")).toHaveLength(10)
+    // The merge says how many of the rows it deletes aren't shown.
+    fireEvent.click(within(groupOf(1)).getByRole("button", { name: "Merge…" }))
+    expect(await within(groupOf(1)).findByText("2 of the rows it deletes aren't shown above: show all the group's rows to see them.")).toBeInTheDocument()
+    fireEvent.click(within(groupOf(1)).getByRole("button", { name: "Cancel" }))
+    // All of one group's rows, to read and to choose from.
+    fireEvent.click(within(groupOf(1)).getByRole("button", { name: "Show all 12 rows" }))
+    expect(within(groupOf(1)).getAllByRole("radio")).toHaveLength(12)
+    fireEvent.click(screen.getByRole("button", { name: "Show 5 more groups (5 not shown)" }))
+    expect(screen.getAllByRole("group", { name: /^Group \d+$/ })).toHaveLength(25)
+  })
+
   it("AC-11 speaks French to a browser that prefers it", async () => {
     vi.stubGlobal("navigator", { ...navigator, languages: ["fr-FR"], language: "fr-FR" })
     setup()
     expect(await screen.findByRole("button", { name: "Fusionner…" })).toBeInTheDocument()
   })
 })
+
+it("AC-volume renders 5,000 rows within the DOM budget", () => expectVolume(<App />, widget, demo), VOLUME_TIMEOUT_MS)

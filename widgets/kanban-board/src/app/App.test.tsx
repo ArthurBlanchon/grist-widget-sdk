@@ -3,6 +3,8 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 import { act, cleanup, fireEvent, renderWithGrist, screen, waitFor, within } from "grist-widget-sdk/emulator/testing"
 
 import App, { widget } from "./App"
+import { expectVolume, VOLUME_TIMEOUT_MS } from "@shared/testing"
+import { demo } from "./demo"
 
 afterEach(() => {
   cleanup()
@@ -85,4 +87,33 @@ describe("Kanban board", () => {
     renderWithGrist(<App />, { widget, rows: [] })
     expect(await screen.findByText(/No rows yet/)).toBeInTheDocument()
   })
+
+  it("AC-9 shows 50 cards of a column at a time, the selected one always among them", async () => {
+    const many = Array.from({ length: 120 }, (_, i) => ({ Title: `Task ${i + 1}`, Status: "To do", Notes: null }))
+    const { emulator } = renderWithGrist(<App />, { widget, rows: many })
+    await screen.findByRole("button", { name: "Task 1, in To do" })
+    expect(within(column("To do")).getAllByRole("button", { name: /^Task \d+, in To do$/ })).toHaveLength(50)
+    // The selected card is shown even past the 50 first.
+    act(() => emulator.selectRow(100))
+    expect(await within(column("To do")).findByRole("button", { name: "Task 100, in To do" })).toBeInTheDocument()
+    // 70 past the 50, the selected one already shown.
+    fireEvent.click(within(column("To do")).getByRole("button", { name: "Show 50 more (69 not shown)" }))
+    expect(within(column("To do")).getAllByRole("button", { name: /^Task \d+, in To do$/ })).toHaveLength(100)
+  })
+
+  it("AC-9 keeps a moved card in view, past the 50 of its new column", async () => {
+    const many = [
+      ...Array.from({ length: 60 }, (_, i) => ({ Title: `Doing ${i + 1}`, Status: "Doing", Notes: null })),
+      { Title: "Mover", Status: "To do", Notes: null },
+    ]
+    renderWithGrist(<App />, { widget, rows: many })
+    const mover = await screen.findByRole("button", { name: "Mover, in To do" })
+    // The columns come in the rows' order: Doing, then To do.
+    fireEvent.keyDown(mover, { key: "ArrowLeft" })
+    expect(await within(column("Doing")).findByRole("button", { name: "Mover, in Doing" })).toBeInTheDocument()
+  })
 })
+
+it("AC-volume renders 5,000 rows within the DOM budget", () => expectVolume(<App />, widget, demo), VOLUME_TIMEOUT_MS)
+
+it("AC-volume holds with a distinct status for every card", () => expectVolume(<App />, widget, demo, { unique: ["Status"] }), VOLUME_TIMEOUT_MS)

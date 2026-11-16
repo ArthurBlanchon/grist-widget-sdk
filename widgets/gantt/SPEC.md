@@ -65,6 +65,17 @@ read from the columns' settings, which only full access reads.
   timeline's dates are in French.
 - **AC-10** Given a title that is HTML, it is shown as text.
 - **AC-11** Given no task with dates, the widget says so.
+- **AC-12** Given more than 50 tasks, the chart shows the first 50 in the
+  section's order, with a button that shows the next ones.
+
+## Standard criteria
+
+The same in every catalog widget ([ADR 0018](../../docs/decisions/0018-standard-criteria.md)).
+
+- **AC-volume** Given 5,000 rows, the widget renders them with at most 3,000 DOM nodes.
+- **AC-keyboard** Tab reaches the widget's controls without getting stuck, and the page passes axe after it.
+- **AC-narrow** The widget fits a 320 px side panel and a 1,280 px page, without scrolling sideways.
+- **AC-readonly** On a document open read-only, the widget shows its data, and if it writes, it says why it can't.
 
 ## Out of scope
 

@@ -55,8 +55,8 @@ The same list, with the github.io install URLs, is at
 
 Each widget's deploy publishes `grist-widget.json` next to the widget, on
 every channel ([`create-grist-widget manifest`](/docs/cli#manifest--the-widgets-grist-manifest)):
-its name and description from `WIDGET_METADATA`, the access level and the
-columns it expects from `GRIST_OPTIONS`, its version and license, and the
+its name, description, access level and the columns it expects from its
+declaration (`defineGristWidget`), its version and license, and the
 SDK version it was built with. The registry reads it from the widget's
 install URL, and so does the [`/widgets`](/widgets) page, live: what you see
 there is what the widget's latest release declares, not text typed into a

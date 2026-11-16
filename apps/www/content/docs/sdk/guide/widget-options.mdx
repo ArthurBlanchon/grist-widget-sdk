@@ -103,15 +103,15 @@ renderWithGrist(<App />, { widget, emulator: { widgetOptions: { columns: "To do,
 
 ## Opening the configuration panel
 
-`hasCustomOptions: true` in `GRIST_OPTIONS` shows "Open configuration" in
+`hasCustomOptions: true` in the declaration shows "Open configuration" in
 Grist's widget menu, and Grist calls `onEditOptions` when the user picks it:
 
 ```tsx no-check
-export const GRIST_OPTIONS: UseGristOptions = {
+export const widget = defineGristWidget({
   requiredAccess: "full",
   hasCustomOptions: true,
   onEditOptions: () => setShowSettings(true),
-}
+})
 ```
 
 ## Pitfalls

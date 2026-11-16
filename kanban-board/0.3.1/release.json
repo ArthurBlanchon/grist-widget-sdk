@@ -1,0 +1,8 @@
+{
+  "slug": "kanban-board",
+  "version": "0.3.1",
+  "commit": "fbd9794b2b01b3c1d1189fe7f763046fb9a081cf",
+  "released": "2026-11-16T20:51:58.654Z",
+  "changes": "- Moving a card with the arrow keys keeps the keyboard on it in its new column, and a screen reader says where it went: before, the focus jumped back to the top of the board.\n- A screen reader reads a card's notes along with its title and column.",
+  "changelog": "CHANGELOG.md"
+}

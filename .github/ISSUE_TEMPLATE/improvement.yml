@@ -1,0 +1,38 @@
+name: Improvement
+description: A change to a widget, the SDK, the CLI, the template or the docs, for something that already works.
+labels: ["improvement", "triage"]
+body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: What it's about
+      options:
+        - A catalog widget
+        - grist-widget-sdk
+        - create-grist-widget (the CLI)
+        - The widget template
+        - The docs site
+    validations:
+      required: true
+  - type: input
+    id: widget
+    attributes:
+      label: Which widget
+      description: Its slug, as in its install URL (`/widgets/<slug>/v0/`), if it's about one.
+      placeholder: kanban-board
+    validations:
+      required: false
+  - type: textarea
+    id: today
+    attributes:
+      label: What happens today
+      description: What you do, and where it falls short.
+    validations:
+      required: true
+  - type: textarea
+    id: change
+    attributes:
+      label: The change
+      description: What you'd like instead. For the SDK's public API, check it against the design rules first (docs/architecture.md).
+    validations:
+      required: true

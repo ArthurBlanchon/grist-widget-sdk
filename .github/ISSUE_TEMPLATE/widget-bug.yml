@@ -2,7 +2,7 @@
 # ids `widget` and `version`, and keep them prefillable (inputs, not dropdowns).
 name: Widget bug
 description: A catalog widget (gristwidgets.com) doesn't work as it should. "Report a problem" in the widget opens this form.
-labels: ["bug"]
+labels: ["bug", "area:catalog", "triage"]
 body:
   - type: markdown
     attributes:

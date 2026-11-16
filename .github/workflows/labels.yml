@@ -1,0 +1,44 @@
+name: Labels
+
+# The repository's issue labels, from the catalog (scripts/widgets/labels.mjs):
+# a widget:<slug> per catalog widget, the area:* labels and the kinds the
+# issue forms set. Created or updated on main when a widget comes or its
+# title changes; never deleted.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "widgets/*/SPEC.md"
+      - "scripts/widgets/labels.mjs"
+      - ".github/workflows/labels.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: labels
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: |
+            scripts/ci
+            scripts/widgets
+            widgets
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+      - run: node scripts/widgets/labels.mjs --sync
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}

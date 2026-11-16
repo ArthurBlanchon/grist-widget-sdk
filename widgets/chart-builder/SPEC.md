@@ -59,6 +59,15 @@ About 220 KB of JavaScript (gzip), budget 240 KB: Recharts is half of it.
   numbers are in French.
 - **AC-10** Given a label that is HTML, it is shown as text.
 
+## Standard criteria
+
+The same in every catalog widget ([ADR 0018](../../docs/decisions/0018-standard-criteria.md)).
+
+- **AC-volume** Given 5,000 rows, the widget renders them with at most 3,000 DOM nodes.
+- **AC-keyboard** Tab reaches the widget's controls without getting stuck, and the page passes axe after it.
+- **AC-narrow** The widget fits a 320 px side panel and a 1,280 px page, without scrolling sideways.
+- **AC-readonly** On a document open read-only, the widget shows its data, and if it writes, it says why it can't.
+
 ## Out of scope
 
 Later:

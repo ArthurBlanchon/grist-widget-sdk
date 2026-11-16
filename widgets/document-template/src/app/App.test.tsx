@@ -4,6 +4,8 @@ import { cleanup, fireEvent, renderWithGrist, screen, waitFor } from "grist-widg
 import type { GristReplicaDocument, GristReplicaRow } from "grist-widget-sdk"
 
 import App, { widget } from "./App"
+import { expectVolume, VOLUME_TIMEOUT_MS } from "@shared/testing"
+import { demo } from "./demo"
 
 afterEach(() => {
   cleanup()
@@ -120,3 +122,5 @@ describe("Document template", () => {
     await waitFor(() => expect(doc.getAttribute("srcdoc")).toMatch(/<p>1\s234,5<\/p>/))
   })
 })
+
+it("AC-volume renders 5,000 rows within the DOM budget", () => expectVolume(<App />, widget, demo), VOLUME_TIMEOUT_MS)

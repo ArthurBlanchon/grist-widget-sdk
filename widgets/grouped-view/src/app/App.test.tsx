@@ -3,6 +3,8 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 import { cleanup, fireEvent, renderWithGrist, screen, waitFor, within } from "grist-widget-sdk/emulator/testing"
 
 import App, { widget } from "./App"
+import { expectVolume, VOLUME_TIMEOUT_MS } from "@shared/testing"
+import { demo } from "./demo"
 
 afterEach(() => {
   cleanup()
@@ -132,3 +134,5 @@ describe("Grouped view", () => {
     expect(await screen.findByText(/No rows to group/)).toBeInTheDocument()
   })
 })
+
+it("AC-volume renders 5,000 rows within the DOM budget", () => expectVolume(<App />, widget, demo), VOLUME_TIMEOUT_MS)

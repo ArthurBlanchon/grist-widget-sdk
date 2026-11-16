@@ -4,6 +4,8 @@ import { cleanup, fireEvent, renderWithGrist, screen, waitFor } from "grist-widg
 import type { GristReplicaDocument, GristReplicaRow } from "grist-widget-sdk"
 
 import App, { widget } from "./App"
+import { expectVolume, VOLUME_TIMEOUT_MS } from "@shared/testing"
+import { demo } from "./demo"
 
 /** What the saved image was drawn with: jsdom has no canvas, so a minimal 2D context records it. */
 let drawn: { fills: string[]; strokes: string[]; text: string[] }
@@ -182,3 +184,5 @@ describe("Signature pad", () => {
     expect(document.querySelectorAll("img[src=x]")).toHaveLength(0)
   })
 })
+
+it("AC-volume renders 5,000 rows within the DOM budget", () => expectVolume(<App />, widget, demo), VOLUME_TIMEOUT_MS)

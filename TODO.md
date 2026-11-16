@@ -25,11 +25,10 @@ done). Each item is one pull request; the plan says when each milestone is
 done.
 
 - [ ] **M4. The bar, version 2** (plan §3). Left: the standard criteria
-  in the 16 widgets, by category ([ADR 0018](./docs/decisions/0018-standard-criteria.md):
-  the "Standard criteria" section and the AC-volume test; the Gantt, the
-  Kanban board, Duplicate finder and Mail merge render every row and must
-  stay under 3,000 DOM nodes at 5,000 rows), then `check-widgets` requiring
-  the section; visual comparison and "Report a problem". Done: the SDK's
+  ([ADR 0018](./docs/decisions/0018-standard-criteria.md)) in the four
+  widgets still in `STANDARD_PENDING`, which render every row and must stay
+  under 3,000 DOM nodes at 5,000 rows: the Gantt, the Kanban board,
+  Duplicate finder and Mail merge (the 12 others carry them); visual comparison and "Report a problem". Done: the SDK's
   `readOnly` and its alert, the e2e check's `--standard`, `new-widget`'s
   criteria,
   `httpUrl()` and its lint rule, licences, a CSP per widget,

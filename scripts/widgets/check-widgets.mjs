@@ -156,9 +156,7 @@ export const STANDARD_CRITERIA = ["AC-volume", "AC-keyboard", "AC-narrow", "AC-r
  * pull request that gives it the section and its AC-volume test.
  */
 export const STANDARD_PENDING = [
-  "attachment-viewer", "bulk-editor", "chart-builder", "document-template", "duplicate-finder", "file-uploader",
-  "gantt", "grouped-view", "kanban-board", "mail-merge", "map", "mermaid-diagram", "record-editor",
-  "record-selector", "schema-viewer", "signature-pad",
+  "duplicate-finder", "gantt", "kanban-board", "mail-merge",
 ]
 
 /** A test named for `id`, not skipped nor left to do: `it("AC-1 …")`, `it.only(…)` but no `it.skip(…)`. */

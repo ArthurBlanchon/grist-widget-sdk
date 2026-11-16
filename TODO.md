@@ -17,6 +17,14 @@ The reasoning behind 0.4.0, and what it left for later, is the
   Either withdraw that version from `widgets-dist`, or add elkjs's licence
   next to it: both are direct pushes to `widgets-dist`, the maintainer's.
 
+## Upkeep
+
+The scheduled runs ([upkeep](./docs/operations/upkeep.md)), latest first:
+one line each, the date, the skill, and what it did or that there was
+nothing to do.
+
+- 2026-11-16: the schedule set; no run yet.
+
 ## 1. The plan to 0.8.0: the production-grade AI widget factory
 
 From the [plan to 0.8.0](./docs/planning/2026-11-15-plan-0.8.md) §4, in
@@ -38,10 +46,13 @@ Each item is one pull request; the plan says when each milestone is done.
   for the row id, silently. Done when a declared Ref column reads as its
   row id in real Grist and in the emulator, whatever column it shows. The
   emulator should also refuse `fetchTable` below full access, as Grist does.
-- [ ] **M5. The loop, from issue to release.** Left: the skills
-  `triage-issue`, `new-widget`, `fix-issue`, `catalog-upgrade`,
-  `release-widgets`, `sota-review`; upkeep on a schedule. Done: the four
-  issue forms, no blank issues, the labels from the catalog. Every released
+- [ ] **M5. The loop, from issue to release.** Left: three real issues
+  from report to release through the skills, with only the maintainer's
+  approvals (the plan's "done when"), and the scheduled runs set up as
+  tasks. Done: the four issue forms, no blank issues, the labels from the
+  catalog, the six skills (`triage-issue`, `fix-issue`, `new-widget`,
+  `catalog-upgrade`, `release-widgets`, `sota-review`), the upkeep
+  schedule ([upkeep](./docs/operations/upkeep.md)). Every released
   widget links `widget-bug.yml`, so its file name and its `widget` and
   `version` ids stay (ADR 0019).
 - [ ] **M6. Documentation, alongside.** R2 to R6 to the 2026-11-14 target

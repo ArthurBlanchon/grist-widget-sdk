@@ -21,6 +21,11 @@ export const KIND_LABELS = [
   { name: "widget-request", color: "0e8a16", description: "A widget the catalog doesn't have yet" },
   { name: "improvement", color: "a2eeef", description: "A change to something that works" },
   { name: "triage", color: "fbca04", description: "New: to be labelled, reproduced and given its criteria" },
+  // Triage's outcomes (the triage-issue skill).
+  { name: "needs-info", color: "d876e3", description: "Waiting for the reporter's answer" },
+  { name: "reproduced", color: "0052cc", description: "A bug reproduced, its criterion proposed: ready for fix-issue" },
+  { name: "accepted", color: "0e8a16", description: "Accepted by the maintainer: ready to build" },
+  { name: "declined", color: "e4e669", description: "Not taken, with the maintainer's reason" },
 ]
 
 /** The parts of the repository an issue can be about. */

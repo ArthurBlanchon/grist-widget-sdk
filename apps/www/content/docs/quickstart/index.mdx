@@ -1,130 +1,184 @@
 ---
-title: Quickstart
-description: "Copy the template repo, hand it to an AI coding agent or the CLI, connect it to a real Grist document, and ship."
+title: "Your first widget"
+description: "Scaffold a widget, declare its columns, read and write the selected row, test it, see it in a real Grist, release it and protect its repository."
 ---
 
-## What it looks like
+This builds a widget that shows the selected task of a Grist table and
+marks it done. You need Node 22, [pnpm](https://pnpm.io/installation), git
+and a GitHub account.
 
-The **[hello-world](/examples/hello-world/demo/)** demo is the
-whole idea in a handful of lines. The provider and boundary handle the Grist
-handshake; you only write:
+## 1. Scaffold it
+
+```bash
+npm create grist-widget my-widget
+cd my-widget
+pnpm dev
+```
+
+The command writes the widget, installs its dependencies with pnpm, and
+makes the first commit on `main`, with a `dev` branch ready.
+
+Open `http://localhost:5173/demo/index.html`: Grist itself, running in
+your browser, with a document and your widget in it. Edits reload in
+place. Nothing is saved, and nothing leaves your machine.
+
+## 2. Declare what it reads
+
+The widget is `src/app/App.tsx`. Its declaration says what it asks Grist
+for:
+
+```ts
+import { defineGristWidget } from "grist-widget-sdk"
+
+export const widget = defineGristWidget({
+  title: "Task",
+  description: "Mark the selected task done.",
+  requiredAccess: "full",
+  columns: [
+    { name: "Title", type: "Text" },
+    { name: "Done", type: "Bool" },
+  ],
+})
+```
+
+- **`columns`** are the widget's own names. In Grist, the person maps a
+  column of their table to each: their `Task name` to your `Title`, say.
+  Until they do, the widget shows "Map your columns".
+- **`requiredAccess`** is `"full"` because the widget writes. A widget
+  that only reads asks for `"read table"`.
+
+## 3. Read the selected row
 
 ```tsx
 import { defineGristWidget } from "grist-widget-sdk"
 
 export const widget = defineGristWidget({
-  requiredAccess: "read table",
+  requiredAccess: "full",
+  columns: [
+    { name: "Title", type: "Text" },
+    { name: "Done", type: "Bool" },
+  ],
 })
 
-export function WidgetApp() {
+export default function App() {
   const w = widget.useGrist()
-
-  if (w.mode === "empty") return <p>Select a row.</p>
-  if (w.mode === "new-row") return <p>New row flow</p>
-  return <p>Selected row #{w.record?.id}</p>
+  if (w.mode === "new-row") return <p>Add the row in Grist, then select it.</p>
+  if (!w.mappedRecord) return <p>Select a task in Grist.</p>
+  return <h1>{w.mappedRecord.Title || "Untitled"}</h1>
 }
 ```
 
-`defineGristWidget()` declares what the widget asks Grist for (here, read
-access to the selected table; a widget that maps columns lists them, with
-their types), and `widget.useGrist()` is typed from it.
+`widget.useGrist()` is typed from the declaration: `w.mappedRecord.Title`
+is a `string | null`, `Done` a `boolean | null`. `w.mode` says whether a
+row is selected, none is, or the new-row line is.
 
-[Try it](/examples/hello-world/demo/) in a real Grist, running in your
-browser. See [Examples](/docs/quickstart/examples) for the
-other 15 starting points.
+## 4. Write it back
 
-## Copy the template repo
+```tsx
+import { defineGristWidget } from "grist-widget-sdk"
 
-<Steps>
-<Step>
+export const widget = defineGristWidget({
+  requiredAccess: "full",
+  columns: [
+    { name: "Title", type: "Text" },
+    { name: "Done", type: "Bool" },
+  ],
+})
 
-### Copy this starter repo
+export default function App() {
+  const w = widget.useGrist()
+  if (!w.mappedRecord) return <p>Select a task in Grist.</p>
+  const { Title, Done } = w.mappedRecord
+  return (
+    <main>
+      <h1>{Title || "Untitled"}</h1>
+      <button disabled={w.actionStatus === "running"} onClick={() => w.updateRecord({ Done: !Done })}>
+        {Done ? "Mark as not done" : "Mark as done"}
+      </button>
+    </main>
+  )
+}
+```
 
-Use [grist-widget-template](https://github.com/ArthurBlanchon/grist-widget-template/generate)
-to create your own copy. On the next page, check **Include all branches**
-so GitHub Pages comes already configured — no manual Settings step.
+`w.updateRecord` writes the selected row under your names, into the
+column the person mapped. If Grist refuses the write, an alert above the
+widget says why.
 
-</Step>
-<Step>
+## 5. Test it
 
-### Grant your AI coding agent access
+`src/app/App.test.tsx` runs the widget against an emulated Grist: a table
+built from the declared columns, mapped, with the rows you give.
 
-If you're driving the repo with an AI coding agent (Claude Code, Codex,
-Cursor, …), install its GitHub App on the new repo so it can see and push
-to it: [Claude](https://github.com/apps/claude),
-[Codex](https://github.com/apps/chatgpt-codex-connector), or
-[Cursor](https://github.com/apps/cursor). Skip this step if you're driving
-the repo yourself.
+```tsx no-check
+import { expect, it } from "vitest"
+import { fireEvent, renderWithGrist, screen, waitFor } from "grist-widget-sdk/emulator/testing"
 
-</Step>
-<Step>
+import App, { widget } from "./App"
 
-### Push and go
+it("marks the selected task done in Grist", async () => {
+  const { emulator } = renderWithGrist(<App />, { widget, rows: [{ Title: "Buy milk", Done: false }] })
+  fireEvent.click(await screen.findByRole("button", { name: "Mark as done" }))
+  await waitFor(() => expect(emulator.state.tables.get("Table1")!.rows[0]).toMatchObject({ Done: true }))
+})
+```
 
-Your new widget starts deploying on its first push. Ask your AI coding
-agent for two URLs: the **dev build** (auto-reloads as you iterate) and
-the **latest build** (ready to paste into a production Grist document). See
-[Understand the deploy](#understand-the-deploy) below for what actually
-runs.
+```bash
+pnpm test
+```
 
-</Step>
-</Steps>
+## 6. See it in your own Grist
 
-<Callout title="If your AI can't see the new widget repo">
-  Check its GitHub App has been granted access to it — same three links as
-  above.
-</Callout>
+Create an empty GitHub repository, then push both branches:
 
-Prefer the CLI over copying the template, or scaffolding with an agent from
-an empty repo? See [Getting started with the CLI](/docs/cli).
+```bash
+git remote add origin https://github.com/<you>/my-widget.git
+git push -u origin main
+git push origin dev
+```
 
-## Connect it to a real Grist document
+The push to `main` runs the deploy workflow once, which creates the
+`gh-pages` branch. Point GitHub Pages at it (**Settings → Pages → Deploy
+from a branch → `gh-pages`**); if the workflow can't push, allow it
+(**Settings → Actions → General → Read and write permissions**).
 
-Once you have a deployed URL — the `dev` build while iterating, or the
-`latest` build once you're happy with it:
+Your `dev` branch is then served at
+`https://<you>.github.io/my-widget/dev/`. In a Grist document, add a
+**Custom widget** section, paste that URL, and map your columns. Every
+push to `dev` reloads it there.
 
-1. Open a Grist document.
-2. Add a **Custom Widget** section.
-3. Paste the deployed URL into the URL field and press **Save**.
+## 7. Release it
 
-The widget now renders inside Grist with full plugin-api access — real
-tables, real selection, real writes.
+Once it works on `/dev/`, release it:
 
-## Understand the deploy
+```bash
+pnpm release minor
+git push origin dev
+```
 
-Every scaffolded repo ships its own `.github/workflows/deploy.yml`, doing
-two things from one workflow:
+That raises the version and writes the changelog entry. Open the pull
+request from `dev` into `main` (the command prints its link), and merge
+it once its checks are green. The workflow publishes
+`…/my-widget/v<version>/`, which never changes, and moves
+`…/my-widget/latest/` to it: paste one of those into the documents that
+use the widget.
 
-- **Push to `main`** → the release channel: an immutable `/<repo>/v<version>/`
-  plus a mutable `/<repo>/latest/` — what you paste into a production Grist
-  document.
-- **Push to `dev`** → the dev channel: a mutable `/<repo>/dev/`, for live
-  review inside Grist as you iterate — every push self-reloads it.
+## 8. Protect the repository
 
-If you used ["Use this template"](https://github.com/ArthurBlanchon/grist-widget-template/generate)
-with **Include all branches** checked, nothing else needs configuring — GitHub
-Pages is already pointed at the branch the workflow publishes to. See the
-[CLI reference](/docs/cli#the-bundled-deploy-pipeline) for the two one-time
-Settings steps a hand-rolled (non-template) repo needs instead, and for what
-each channel actually contains.
+After that first release:
 
-## CLI commands
+```bash
+pnpm exec create-grist-widget protect
+```
 
-The template repo and `npm create grist-widget` scaffold identical code —
-the CLI embeds the same template and examples, offline. See the
-[CLI reference](/docs/cli) for its commands (`create`, `init`, `use`,
-`upgrade`, `list`) if you'd rather drive the scaffold from a terminal than copy the
-repo on GitHub.
+It uses the GitHub CLI (`gh auth login` first). From then on, `main`
+changes only through a pull request with green checks, and neither
+branch can be force-pushed or deleted.
 
-## Where to go next
+## Next
 
-- [What is grist-widget-sdk?](/docs/quickstart/introduction) — why it
-  exists, and when to reach for the raw plugin API instead.
-- [Core concepts](/docs/quickstart/concepts) — the mental model behind
-  selection modes, mappings, and the ready handshake.
-- [Examples](/docs/quickstart/examples) — the 16 starting widgets, each in
-  a real Grist in your browser.
-- [SDK guide](/docs/sdk) — add the SDK to an existing Vite or Next.js
-  project, and the core hooks you'll write against.
-- [CLI reference](/docs/cli) — scaffold and manage widgets from a terminal.
-- [Emulator](/docs/emulator) — test widgets without a live Grist document.
+- [Declare and map columns](/docs/sdk/guide/column-mapping): types,
+  optional columns, several columns under one name.
+- [Test a widget](/docs/emulator/testing): rows, writes, options and
+  errors in tests.
+- [Releasing a widget](/docs/cli/releasing) and
+  [the CLI](/docs/cli): every command.

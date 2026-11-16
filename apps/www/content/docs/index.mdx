@@ -1,12 +1,91 @@
 ---
-title: Documentation
-description: "Start here: the quickstart, CLI reference, SDK guide, emulator, and the community widget registry."
+title: Overview
+description: "What a Grist custom widget is, what grist-widget-sdk does for one, and when to use Grist's plugin API on its own."
 ---
 
-<Cards>
-  <Card title="Quickstart" href="/docs/quickstart" description="Build a widget in minutes, with or without an AI coding agent." />
-  <Card title="CLI reference" href="/docs/cli" description="What `npm create grist-widget` scaffolds, and the bundled deploy pipeline." />
-  <Card title="SDK guide" href="/docs/sdk" description="The full guide, API reference, and design rationale." />
-  <Card title="Emulator" href="/docs/emulator" description="Run and preview widgets without a live Grist document." />
-  <Card title="Widget registry" href="/docs/registry" description="How to submit a widget to the community registry." />
-</Cards>
+A **Grist custom widget** is a web page that Grist shows in a section of a
+document, in an iframe. Grist hands it the selected table and row, and
+lets it write back, through **`grist-plugin-api.js`**: a global `grist`
+object with a handshake (`grist.ready`), event streams (`onRecord`,
+`onRecords`, `onOptions`) and a channel to the document (`docApi`). The
+widget can be anything a page can be: a chart, a form, a map, a kanban
+board.
+
+## What the SDK does
+
+`grist-widget-sdk` is a React library on top of that API. A widget made
+with it is one declaration and one component:
+
+```tsx
+import { defineGristWidget } from "grist-widget-sdk"
+
+export const widget = defineGristWidget({
+  title: "Task",
+  requiredAccess: "full",
+  columns: [
+    { name: "Title", type: "Text" },
+    { name: "Done", type: "Bool" },
+  ],
+})
+
+export default function App() {
+  const w = widget.useGrist()
+  if (!w.mappedRecord) return <p>Select a task in Grist.</p>
+  const { Title, Done } = w.mappedRecord
+  return (
+    <button onClick={() => w.updateRecord({ Done: !Done })}>
+      {Title}: {Done ? "done" : "to do"}
+    </button>
+  )
+}
+```
+
+From that, the SDK:
+
+- **asks Grist once** for the access and the columns the declaration
+  names, and lets the person map their own columns to them in Grist's
+  panel;
+- **shows the waiting screens** (connecting, access, columns to map)
+  until the widget can render, and an alert when a write fails;
+- **gives typed records:** `w.mappedRecord` has `Title: string | null` and
+  `Done: boolean | null`, decoded from Grist's wire format and checked
+  against the declared types;
+- **writes back** under the declared names (`w.updateRecord`,
+  `w.addRecord`), in the column the person mapped;
+- **runs the same code in tests:** `renderWithGrist(<App />, { widget,
+  rows })` mounts the widget against an emulated Grist, in Vitest, with no
+  browser and no document.
+
+## The rest of the kit
+
+- **`create-grist-widget`** scaffolds a widget repository: the SDK, Vite,
+  Tailwind and shadcn/ui, tests, and a GitHub workflow that publishes
+  every version to GitHub Pages, with a live preview of the `dev` branch.
+  [Your first widget](/docs/quickstart) walks through it.
+- **[The catalog](/widgets)** holds ready-made widgets built the same way,
+  each with a demo in a real Grist running in your browser. A widget
+  there is installed by pasting its URL into a custom widget section.
+
+## When to use the plugin API on its own
+
+The SDK fits a widget written in React that runs inside a Grist document.
+Reach for `grist-plugin-api.js` directly when:
+
+- **the widget isn't React:** the plugin API works with any framework, or
+  none;
+- **you embed Grist in your own application,** rather than a widget in
+  Grist: that is the host's side, not the widget's;
+- **you need something the plugin API itself doesn't offer:** the SDK
+  wraps it and adds nothing Grist doesn't allow.
+
+Everything the SDK does goes through the plugin API, so a widget can
+start with it and stay with it.
+
+## Next
+
+- [Your first widget](/docs/quickstart): scaffold, declare, read, write,
+  test, release.
+- [Examples](/docs/quickstart/examples): starting points, each in a real
+  Grist.
+- [Core concepts](/docs/quickstart/concepts): sections, records, mapping
+  and access, as a widget sees them.

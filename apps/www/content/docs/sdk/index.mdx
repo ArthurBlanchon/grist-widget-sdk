@@ -5,8 +5,8 @@ description: "Add grist-widget-sdk to an existing Vite or Next.js project, then 
 
 `grist-widget-sdk` wraps the Grist plugin API — the JavaScript bridge
 between a custom widget iframe and a Grist document — into one hook, a
-provider, and a boundary. New here? [What is grist-widget-sdk?](/docs/quickstart/introduction)
-covers why it exists and when to reach for the raw plugin API instead.
+provider, and a boundary. New here? The [Overview](/docs) says what it does and when to use the
+plugin API on its own.
 
 Already have a scaffolded project from the [template or the CLI](/docs/quickstart)?
 Its dependencies and plugin-api script tag are pre-wired — skip ahead to
@@ -114,7 +114,7 @@ everything you need to:
 - Switch between `empty` / `row` / `new-row` modes.
 
 See [Provider & boundary](/docs/sdk/api/provider-boundary) for what each
-piece does, and [Raw plugin API vs SDK](/docs/sdk/guide/raw-plugin-api-vs-sdk)
+piece does, and the [Overview](/docs)
 for why you use this package instead of calling `grist` directly.
 
 ## What `useGrist()` returns
@@ -190,7 +190,7 @@ in the [Cookbook](/docs/sdk/guide/cookbook).
 
 | Topic | What it covers |
 | --- | --- |
-| [Raw plugin API vs SDK](/docs/sdk/guide/raw-plugin-api-vs-sdk) | Why use this package instead of calling `grist` directly |
+| [Overview](/docs) | Why use this package instead of calling `grist` directly |
 | [Column mapping](/docs/sdk/guide/column-mapping) | Declaring logical column names, letting users map them |
 | [Reading data](/docs/sdk/guide/reading-data) | The two paths for reading data out of a document |
 | [Writing data](/docs/sdk/guide/writing-data) | The two write paths, and when to use each |
@@ -210,7 +210,7 @@ document is reduced to for tests and tooling.
 
 ## Where to go next
 
-- [What is grist-widget-sdk?](/docs/quickstart/introduction) — why it
+- [Overview](/docs) — why it
   exists, and when to reach for the raw plugin API instead.
 - [Core concepts](/docs/quickstart/concepts) — the mental model behind
   selection modes, mappings, and the ready handshake.

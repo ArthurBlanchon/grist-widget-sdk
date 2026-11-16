@@ -5,7 +5,9 @@
 //   WIDGET_METADATA, useGrist<…>, useGristContext, fetchSelectedTable,
 //   fetchTable(, isReady, isAvailable, or a bare renderWithGrist(<…/>)
 //   without its { widget, rows }. Report mode lists them; --strict fails on
-//   them (once the guides are rewritten, R4).
+//   them (CI runs it). A page that documents the old names on purpose (the
+//   upgrade guide, which the CLI links) says so once, with its reason:
+//   {/* docs-check: old forms allowed, <why> */}.
 // - **Short pages.** A page over about 800 words of prose (code aside) is
 //   two pages: a warning, never a failure.
 //
@@ -39,6 +41,9 @@ export const OLD_FORMS = [
 export function bareRenders(text) {
   const found = []
   for (const m of text.matchAll(/\brenderWithGrist\(/g)) {
+    // Its own signature, renderWithGrist(ui, …), and GristWidgetApp, which
+    // brings its own provider, are no bare render.
+    if (/^\s*(ui\b|<GristWidgetApp\b)/.test(text.slice(m.index + m[0].length))) continue
     let depth = 1
     let i = m.index + m[0].length
     for (; i < text.length && depth > 0; i++) {
@@ -62,8 +67,12 @@ export function listPages(dir = DOCS_DIR) {
   return out.sort()
 }
 
+/** A page's own allowance: {/* docs-check: old forms allowed, <why> *\/}, with a reason. */
+export const ALLOWED = /\{\/\*\s*docs-check:\s*old forms allowed,\s*\S[^*]*\*\/\}/
+
 /** `[line, label]` for each old form in a page's text, by line. */
 export function oldForms(text) {
+  if (ALLOWED.test(text)) return []
   const found = []
   text.split("\n").forEach((line, i) => {
     for (const [re, label] of OLD_FORMS) if (re.test(line)) found.push([i + 1, label])

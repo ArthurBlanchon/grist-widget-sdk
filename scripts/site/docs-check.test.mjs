@@ -32,3 +32,13 @@ test("every page is listed, and the navigation lists every page", async () => {
   const nav = JSON.parse(readFileSync(new URL("../../apps/www/content/docs/meta.json", import.meta.url), "utf8")).pages.filter((p) => !p.startsWith("---"))
   assert.deepEqual([...nav].sort(), [...pages].sort())
 })
+
+test("its own signature and GristWidgetApp are no bare render", () => {
+  assert.deepEqual(oldForms("### `renderWithGrist(ui, options?)`\nrenderWithGrist(<GristWidgetApp App={W} options={o} />)"), [])
+})
+
+test("a page allows the old forms only with its reason", () => {
+  const forms = "export const GRIST_OPTIONS = {}"
+  assert.deepEqual(oldForms(`{/* docs-check: old forms allowed, it documents the renames */}\n${forms}`), [])
+  assert.equal(oldForms(`{/* docs-check: old forms allowed */}\n${forms}`).length, 1)
+})

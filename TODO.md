@@ -48,16 +48,12 @@ Each item is one pull request; the plan says when each milestone is done.
   upkeep schedule ([upkeep](./docs/operations/upkeep.md)). Every released
   widget links `widget-bug.yml`, so its file name and its `widget` and
   `version` ids stay (ADR 0019).
-- [ ] **M6. Documentation, alongside.** Left, to the 2026-11-14 target
-  structure: R4's last part, the old-forms check made blocking (a
-  `scripts/site` change, so the maintainer's go), with `cli/upgrading`
-  allowed the old names it documents (the CLI links its
-  `#renamed-sdk-names`); R5, the reference (TSDoc for 27 public names, then
-  generated per entry point, and the CLI's from its help); R6, Concepts,
-  with *Replica document* as a Concepts page, `cheatsheet` and `cookbook`
-  retired (redirects: the go). Done: R1 (the frame), R2 (Get started), R3
-  (the data guides), R4's guides (options, attachments, testing, the
-  registry and the SDK page on the current API).
+- [ ] **M6. Documentation, alongside.** Left: R5's generated reference
+  (TSDoc for the 27 public names without it, then the reference generated
+  per entry point, and the CLI's from its help: `packages/`, so the
+  maintainer's go), and the concept page "How the SDK works" (the
+  declaration, provider, boundary, runtime). Done: R1 to R4, the old-forms
+  check blocking in CI, `cheatsheet` and `cookbook` retired with redirects.
 - [ ] **M7. Bring the widgets home, then retire.** Wave 3 (REST
   enrichment, Ask AI, Scan with AI) after M1–M4; `examples/` removed with
   an API coverage check; awesome-grist-widgets absorbed and archived; the

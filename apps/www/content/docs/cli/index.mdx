@@ -102,7 +102,7 @@ example.
 
 After scaffolding, the first edit is typically `src/app/App.tsx` — replace the
 placeholder with the widget you want. The
-[Cookbook](/docs/sdk/guide/cookbook) has ten ready-to-paste recipes for
+[Examples](/docs/quickstart/examples) are working starting points for
 common shapes, and `create-grist-widget list` shows every example the CLI
 itself can start you from directly (see below).
 
@@ -283,8 +283,8 @@ through `GRIST_WIDGET_LIST_URL`:
 }
 ```
 
-`name` and `description` come from `WIDGET_METADATA`, `accessLevel` and
-`columns` from the widget's declaration, so the manifest always says what the widget
+`name`, `description`, `accessLevel` and `columns` come from the widget's
+declaration, so the manifest always says what the widget
 declares. A `/dev/` build is marked `"published": false`: listed, but not
 offered in Grist's widget picker. `gristWidgetSdk` holds what Grist doesn't
 read: the widget's version and license, and the SDK and CLI versions it was
@@ -401,7 +401,6 @@ pnpm add -D typescript @types/react @types/react-dom vite @vitejs/plugin-react
 
 Then create `index.html` (with the plugin-api script tag), `src/main.tsx`
 (React root), and `src/App.tsx` (your widget) — see the
-[Cheat sheet](/docs/sdk/guide/cheatsheet) for the smallest possible code,
-or the [Cookbook](/docs/sdk/guide/cookbook) for ten ready-to-paste
-recipes. The template path saves about ten minutes of boilerplate and one
+[SDK page](/docs/sdk) for the smallest possible code, or the
+[Examples](/docs/quickstart/examples) for working starting points. The template path saves about ten minutes of boilerplate and one
 or two configuration gotchas, but the SDK works fine without it.

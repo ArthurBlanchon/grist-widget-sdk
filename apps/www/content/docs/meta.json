@@ -22,8 +22,6 @@
     "cli/upgrading",
     "registry/index",
     "sdk/guide/troubleshooting",
-    "sdk/guide/cheatsheet",
-    "sdk/guide/cookbook",
     "---Reference---",
     "sdk/api/index",
     "sdk/api/use-grist",

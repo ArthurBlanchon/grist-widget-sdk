@@ -101,11 +101,20 @@ describe("Grouped view", () => {
     expect(within(all).getAllByRole("cell").map((c) => c.textContent)).toEqual(["308", "200.5", "508.5"])
   })
 
+  it("AC-7 gives every pivot cell's button its total, as a screen reader reads it (#93)", async () => {
+    renderWithGrist(<App />, { widget, rows })
+    const table = await screen.findByRole("table")
+    for (const button of within(table).getAllByRole("button")) {
+      // The number shown is in the button's accessible name.
+      expect(button.getAttribute("aria-label")).toContain(button.textContent)
+    }
+  })
+
   it("AC-8 filters the linked widgets to a pivot cell's rows", async () => {
     const { emulator } = renderWithGrist(<App />, { widget, rows })
     await screen.findByRole("table")
     const spy = linked(emulator)
-    fireEvent.click(screen.getByRole("button", { name: "Travel, April. Show only these rows in linked widgets" }))
+    fireEvent.click(screen.getByRole("button", { name: "Travel, April: 300. Show only these rows in linked widgets" }))
     expect(spy).toHaveBeenLastCalledWith([3])
   })
 

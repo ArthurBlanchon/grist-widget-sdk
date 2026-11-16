@@ -2,6 +2,10 @@
 
 What changed in each version, for the people using the widget. Newest first.
 
+## 0.3.1 (2026-11-16)
+
+- In a pivot table, a screen reader now reads each cell's total with it ("Travel, July: 70"), and the grand total too: before, only the row and column totals carried their number.
+
 ## 0.3.0 (2026-11-16)
 
 - "Report a problem": when a change fails to save, or if the widget ever stops working, a link opens this widget's bug form, filled in with its name and version. Nothing is sent from your document: you write what you choose.

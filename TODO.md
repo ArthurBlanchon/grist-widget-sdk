@@ -76,11 +76,10 @@ Each item is one pull request; the plan says when each milestone is done.
   Template", not the widget's name; `pnpm dev` and `pnpm test` warn about
   `__dirname` in `vite.config.ts`. Done when a fresh scaffold names itself
   everywhere and starts without a warning.
-- [ ] **Dates shown a day early west of UTC** in `sdk/guide/typing.mdx`
-  and `examples/typed-reads`: a Grist Date is midnight UTC, so
-  `toLocaleDateString()` needs `timeZone: "UTC"` (as "Your first widget"
-  does). Done when both show the stored day in any time zone, with a test
-  run under a western `TZ`.
+- [ ] **The typed-reads example shows a Date a day early west of UTC**
+  (#85; the docs page is fixed): `examples/typed-reads/WidgetApp.tsx` needs
+  `timeZone: "UTC"`. `examples/` isn't in ADR 0012's table, so its fix
+  waits for the maintainer's go, or for M7, which retires the folder.
 - [ ] **Release 0.8.0** when M1–M7 are done.
 
 ## 2. After 0.8.0

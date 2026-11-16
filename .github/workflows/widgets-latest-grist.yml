@@ -55,7 +55,7 @@ jobs:
         id: e2e
         run: |
           dirs=$(find widgets -mindepth 1 -maxdepth 1 -type d ! -name '_*' | sort)
-          pnpm e2e:grist $dirs --axe --themes --strict-console --out "$RUNNER_TEMP/screenshots"
+          pnpm e2e:grist $dirs --axe --themes --strict-console --standard --out "$RUNNER_TEMP/screenshots"
       # Grist's gallery lists the catalog (ADR 0014): this Grist, with the
       # list gristwidgets.com serves added as a plugin, the way the docs say,
       # serves every id, next to Grist Labs' own widgets.

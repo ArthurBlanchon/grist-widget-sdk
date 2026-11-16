@@ -2,6 +2,10 @@
 
 What changed in each version, for the people using the widget. Newest first.
 
+## 0.2.2 (2026-11-16)
+
+- A diagram larger than the panel can be scrolled from the keyboard: Tab reaches it.
+
 ## 0.2.1 (2026-11-15)
 
 - The widget's page carries a Content Security Policy: only its own code and Grist's plugin API run in it, which keeps a document's content from running anything there.

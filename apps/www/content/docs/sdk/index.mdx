@@ -140,7 +140,7 @@ Cheat sheet under [Mappings + column gate](/docs/sdk/guide/cheatsheet#mappings--
 
 In the widget configuration panel, the user maps these logical names
 to real columns. You consume them via `w.mappedRecord` and
-`w.mapBack(...)` on writes — see [Column mapping](/docs/sdk/guide/column-mapping).
+`w.updateRecord(...)` on writes — see [Declare and map columns](/docs/sdk/guide/column-mapping).
 
 ## Run a write
 
@@ -191,14 +191,14 @@ in the [Cookbook](/docs/sdk/guide/cookbook).
 | Topic | What it covers |
 | --- | --- |
 | [Overview](/docs) | Why use this package instead of calling `grist` directly |
-| [Column mapping](/docs/sdk/guide/column-mapping) | Declaring logical column names, letting users map them |
-| [Reading data](/docs/sdk/guide/reading-data) | The two paths for reading data out of a document |
-| [Writing data](/docs/sdk/guide/writing-data) | The two write paths, and when to use each |
+| [Declare and map columns](/docs/sdk/guide/column-mapping) | Naming the columns a widget needs, and reading and writing under those names |
+| [Read data](/docs/sdk/guide/reading-data) | The section kept up to date, and other tables on demand |
+| [Write data](/docs/sdk/guide/writing-data) | Under your names, any table, the schema |
 | [Widget options](/docs/sdk/guide/widget-options) | Persisting per-section settings in Grist's own store |
 | [Attachments & REST](/docs/sdk/guide/attachments-and-rest) | Attachment bytes, SQL, and the REST API via pre-authenticated fetch |
 | [Widget linking & theme](/docs/sdk/guide/linking-and-theme) | Driving another widget's cursor; adopting the document theme |
 | [Typing your rows](/docs/sdk/guide/typing) | The two generics on `useGrist()` |
-| [Error handling](/docs/sdk/guide/error-handling) | Where errors surface, and which layer to read |
+| [Errors and alerts](/docs/sdk/guide/error-handling) | Where a widget's problems show |
 | [Performance](/docs/sdk/guide/performance) | How `useGrist()` re-renders, and keeping large widgets fast |
 | [Cheat sheet](/docs/sdk/guide/cheatsheet) | Copy-pasteable shapes for daily reference |
 | [Troubleshooting](/docs/sdk/guide/troubleshooting) | Symptom-first fixes |

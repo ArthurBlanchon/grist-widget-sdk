@@ -144,7 +144,7 @@ jobs:
       - run: node scripts/widgets/check-widgets.mjs --sizes $BATCH
       - run: pnpm exec playwright install --with-deps chromium
       - name: In a real Grist, with axe, both themes and no console error
-        run: pnpm e2e:grist $DIRS --axe --themes --strict-console --out "$RUNNER_TEMP/screenshots"
+        run: pnpm e2e:grist $DIRS --axe --themes --strict-console --standard --out "$RUNNER_TEMP/screenshots"
       - name: Keep the screenshots
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

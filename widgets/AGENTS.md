@@ -112,7 +112,8 @@ For every widget at once, as CI runs it:
 After a build, `node scripts/widgets/check-widgets.mjs --sizes` checks each
 bundle against its budget (`bundle-kb` in the spec, 125 KB gzipped by
 default). In a real Grist (Docker), with axe and a dark screenshot:
-`pnpm e2e:grist widgets/<slug> --build --axe --themes`.
+`pnpm e2e:grist widgets/<slug> --build --axe --themes --standard` (the
+standard criteria: 320 and 1,280 px, the keyboard path, read-only).
 
 ## Path map
 

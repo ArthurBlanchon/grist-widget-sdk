@@ -93,7 +93,8 @@ export default function App() {
           <AlertDescription>{t("syntax", { error })}</AlertDescription>
         </Alert>
       ) : null}
-      <div ref={holder} role="img" aria-label={t("diagram")} className="flex min-h-0 flex-1 items-center justify-center overflow-auto [&_svg]:h-auto [&_svg]:max-w-full" />
+      {/* Focusable: a diagram larger than the panel scrolls, from the keyboard too. */}
+      <div ref={holder} role="img" tabIndex={0} aria-label={t("diagram")} className="flex min-h-0 flex-1 items-center justify-center overflow-auto [&_svg]:h-auto [&_svg]:max-w-full" />
     </main>
   )
 }

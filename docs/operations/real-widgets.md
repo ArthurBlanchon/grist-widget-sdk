@@ -36,7 +36,16 @@ batches of at most 8.
   CI itself runs all of them.
 
 Each batch runs its widgets' spec checks, typecheck, lint, tests, build,
-bundle sizes, and the real-Grist check below on the pinned image.
+bundle sizes, and the real-Grist check below on the pinned image, with the
+standard criteria (`--standard`, plan 0.8 §3):
+- **narrow and wide:** the widget at 320 px (a side panel) and at 1,280 px,
+  with no horizontal overflow (`<slug>-320.png`, `<slug>-1280.png`);
+- **the keyboard path:** Tab from the start of the widget through its
+  controls, then Escape, then axe again. Tab has to reach a control when
+  the widget shows one;
+- **read-only:** the same document open in view mode (`/m/view`, Grist's
+  `readonly=true`) renders without an error, and a widget asking for full
+  access shows the SDK's read-only alert.
 
 **Each week** (Tuesday, and on demand: Actions → Widgets on Grist's latest),
 `widgets-latest-grist.yml` runs every catalog widget in

@@ -33,6 +33,12 @@
 //   --axe              fail on a serious or critical accessibility violation (axe-core, WCAG 2 A and AA)
 //   --strict-console   fail on an error the widget logs to the console (the catalog's CI uses it)
 //   --themes           also screenshot it with the browser in dark mode (<name>-dark.png)
+//   --standard         the standard criteria (plan 0.8 §3): the widget at 320 px and
+//                      at 1,280 px without horizontal overflow (<name>-320.png,
+//                      <name>-1280.png); a keyboard path (Tab through, Escape, then
+//                      axe again with --axe) that reaches a control when there is one;
+//                      and the document open read-only (/m/view): it renders, and a
+//                      widget asking for full access shows the read-only alert
 //
 // Needs Docker (unless --grist-url) and Playwright's Chromium. The browser
 // path can be forced with CHROMIUM_PATH, the Grist image with GRIST_IMAGE.
@@ -69,7 +75,7 @@ const EMAIL = "e2e@example.com"
 const BOUNDARY_TITLES = ["Connecting to Grist", "Open inside Grist", "Something went wrong", "Map your columns"]
 
 export function parseArgs(argv) {
-  const out = { dirs: [], build: false, out: "e2e-grist-output", gristUrl: null, keep: false, timeout: 20, axe: false, themes: false, strictConsole: false }
+  const out = { dirs: [], build: false, out: "e2e-grist-output", gristUrl: null, keep: false, timeout: 20, axe: false, themes: false, strictConsole: false, standard: false }
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i]
     if (a === "--build") out.build = true
@@ -77,6 +83,7 @@ export function parseArgs(argv) {
     else if (a === "--axe") out.axe = true
     else if (a === "--themes") out.themes = true
     else if (a === "--strict-console") out.strictConsole = true
+    else if (a === "--standard") out.standard = true
     else if (a === "--out") out.out = argv[++i]
     else if (a === "--grist-url") out.gristUrl = argv[++i]
     else if (a === "--timeout") out.timeout = Number(argv[++i])
@@ -146,7 +153,74 @@ async function waitRendered(page, origin, timeout) {
   return { state, frame: found }
 }
 
-async function checkWidget({ browser, gristUrl, api, wsId, widgetDir, outDir, timeout, build, axe, themes, strictConsole }) {
+/** The widget's frame element in Grist's page, pinned at `width` (a side panel at 320, a full page at 1,280). */
+async function pinWidth(page, origin, width) {
+  await page.evaluate(
+    ({ origin, width }) => {
+      const el = [...document.querySelectorAll("iframe")].find((f) => f.src.startsWith(origin))
+      if (!el) return
+      Object.assign(el.style, { position: "fixed", left: "0", top: "0", width: `${width}px`, height: "640px", zIndex: "9999", background: "white" })
+    },
+    { origin, width },
+  )
+  await page.waitForTimeout(800)
+}
+
+/** How far the widget's page scrolls sideways (0: it fits). */
+const overflow = (frame) => frame.evaluate(() => Math.max(0, document.documentElement.scrollWidth - document.documentElement.clientWidth))
+
+/** axe on the widget's frame: the failing violations' ids, and every violation as text. */
+async function runAxe(frame) {
+  const require = createRequire(import.meta.url)
+  // Evaluated through the DevTools protocol, not added as a <script>: a
+  // widget's Content Security Policy refuses inline scripts, as it should,
+  // and stays in force for the rest of the check.
+  if (!(await frame.evaluate(() => Boolean(globalThis.axe)))) await frame.evaluate(readFileSync(require.resolve("axe-core/axe.min.js"), "utf8"))
+  const { violations } = await frame.evaluate(() => globalThis.axe.run(document, { runOnly: { type: "tag", values: ["wcag2a", "wcag2aa"] } }))
+  return {
+    lines: violations.flatMap((v) => [
+      `${v.impact}: ${v.id} (${v.nodes.length}): ${v.help}`,
+      ...v.nodes.slice(0, 3).map((n) => `  at ${n.target.join(" ")}: ${(n.failureSummary ?? "").replace(/\s+/g, " ").slice(0, 240)}`),
+    ]),
+    failing: failingViolations(violations).map((v) => v.id),
+  }
+}
+
+/**
+ * The keyboard path: Tab from the start of the widget's page through its
+ * controls (at most 40 steps, until focus comes back round), then Escape.
+ * Returns the controls reached, and how many the page shows.
+ */
+async function keyboardPath(page, frame) {
+  await frame.evaluate(() => {
+    document.activeElement?.blur?.()
+    window.focus()
+  })
+  const reached = []
+  for (let i = 0; i < 40; i++) {
+    await page.keyboard.press("Tab")
+    const here = await frame.evaluate(() => {
+      const el = document.activeElement
+      if (!el || el === document.body) return null
+      const name = el.getAttribute("aria-label") || el.textContent?.trim().slice(0, 40) || el.getAttribute("name") || ""
+      return `${el.tagName.toLowerCase()}${name ? ` "${name}"` : ""}`
+    })
+    if (!here) continue
+    if (reached.length && here === reached[0]) break
+    reached.push(here)
+  }
+  await page.keyboard.press("Escape")
+  const controls = await frame.evaluate(
+    () =>
+      [...document.querySelectorAll('a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])')].filter((el) => {
+        const r = el.getBoundingClientRect()
+        return r.width > 0 && r.height > 0 && !el.disabled
+      }).length,
+  )
+  return { reached, controls }
+}
+
+async function checkWidget({ browser, gristUrl, api, wsId, widgetDir, outDir, timeout, build, axe, themes, strictConsole, standard }) {
   const pkg = JSON.parse(readFileSync(path.join(widgetDir, "package.json"), "utf8"))
   // A scoped name (@grist-widgets/kanban-board) keeps its last part: it names a URL path and a file.
   const name = pkg.name.replace(/^@[^/]+\//, "")
@@ -200,20 +274,46 @@ async function checkWidget({ browser, gristUrl, api, wsId, widgetDir, outDir, ti
 
     let a11y = null
     if (axe && state === "rendered" && frame) {
-      const require = createRequire(import.meta.url)
-      // Evaluated through the DevTools protocol, not added as a <script>: a
-      // widget's Content Security Policy refuses inline scripts, as it should,
-      // and stays in force for the rest of the check.
-      await frame.evaluate(readFileSync(require.resolve("axe-core/axe.min.js"), "utf8"))
-      const { violations } = await frame.evaluate(() =>
-        globalThis.axe.run(document, { runOnly: { type: "tag", values: ["wcag2a", "wcag2aa"] } }),
-      )
-      result.a11y = violations.flatMap((v) => [
-        `${v.impact}: ${v.id} (${v.nodes.length}): ${v.help}`,
-        ...v.nodes.slice(0, 3).map((n) => `  at ${n.target.join(" ")}: ${(n.failureSummary ?? "").replace(/\s+/g, " ").slice(0, 240)}`),
-      ])
-      const failing = failingViolations(violations)
-      if (failing.length) a11y = `accessibility: ${failing.map((v) => v.id).join(", ")}`
+      const { lines, failing } = await runAxe(frame)
+      result.a11y = lines
+      if (failing.length) a11y = `accessibility: ${failing.join(", ")}`
+    }
+
+    // The standard criteria: narrow and wide, the keyboard path, read-only.
+    let standardFailure = null
+    if (standard && state === "rendered" && frame) {
+      result.standard = []
+      for (const width of [320, 1280]) {
+        await pinWidth(page, origin, width)
+        const shot = path.join(outDir, `${name}-${width}.png`)
+        await page.screenshot({ path: shot, clip: { x: 0, y: 0, width: Math.min(width, 1400), height: 640 } })
+        const wider = await overflow(frame)
+        result.standard.push(`${width} px: ${wider ? `${wider} px wider than the panel` : "fits"} (${shot})`)
+        if (wider > 1 && !standardFailure) standardFailure = `narrow: ${wider} px of horizontal overflow at ${width} px`
+      }
+      const keys = await keyboardPath(page, frame)
+      result.standard.push(`keyboard: ${keys.reached.length} of ${keys.controls} controls reached by Tab (${keys.reached.slice(0, 6).join(", ")}${keys.reached.length > 6 ? ", …" : ""})`)
+      if (keys.controls > 0 && keys.reached.length === 0 && !standardFailure) standardFailure = "keyboard: Tab reaches no control"
+      if (axe) {
+        const after = await runAxe(frame)
+        if (after.failing.length && !standardFailure) standardFailure = `accessibility after the keyboard path: ${after.failing.join(", ")}`
+      }
+
+      // Read-only: the same document in view mode.
+      const view = await context.newPage()
+      const viewUncaught = []
+      view.on("pageerror", (e) => viewUncaught.push(String(e).slice(0, 300)))
+      await view.goto(result.doc.replace("/p/", "/m/view/p/"))
+      const ro = await waitRendered(view, origin, timeout)
+      const writes = (options.requiredAccess ?? "read table") === "full"
+      const says = ro.frame
+        ? await ro.frame.evaluate(() => [...document.querySelectorAll("h2, [role=status]")].some((h) => /Read-only document/.test(h.textContent ?? ""))).catch(() => false)
+        : false
+      result.standard.push(`read-only: ${ro.state}${writes ? (says ? ", says so" : ", doesn't say so") : ""}`)
+      if (ro.state !== "rendered" && !standardFailure) standardFailure = `read-only: ${ro.state}`
+      else if (viewUncaught.length && !standardFailure) standardFailure = `read-only: uncaught: ${viewUncaught[0]}`
+      else if (writes && !says && !standardFailure) standardFailure = "read-only: the widget writes and doesn't say it can't"
+      await view.close()
     }
 
     if (themes && state === "rendered") {
@@ -232,6 +332,7 @@ async function checkWidget({ browser, gristUrl, api, wsId, widgetDir, outDir, ti
     else if (uncaught.length) result.reason = `uncaught: ${uncaught[0]}`
     else if (strictConsole && result.console.length) result.reason = `console error: ${result.console[0]}`
     else if (a11y) result.reason = a11y
+    else if (standardFailure) result.reason = standardFailure
     else result.ok = true
   } finally {
     await context.close()
@@ -269,6 +370,7 @@ async function main() {
             axe: args.axe,
             themes: args.themes,
             strictConsole: args.strictConsole,
+            standard: args.standard,
           })
         )
       } catch (e) {
@@ -285,6 +387,7 @@ async function main() {
     if (r.optionsFrom) console.log(`      Declaration from ${r.optionsFrom}`)
     for (const c of r.console ?? []) console.log(`      console error: ${c}`)
     for (const v of r.a11y ?? []) console.log(`      axe: ${v}`)
+    for (const v of r.standard ?? []) console.log(`      ${v}`)
     if (r.screenshot) console.log(`      screenshot: ${r.screenshot}`)
     if (r.darkScreenshot) {
       console.log(`      dark screenshot: ${r.darkScreenshot}${r.darkApplied ? "" : " (Grist did not switch to its dark theme)"}`)

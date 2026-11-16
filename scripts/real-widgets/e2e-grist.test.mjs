@@ -86,4 +86,6 @@ test("only serious and critical accessibility violations fail, and --axe/--theme
   assert.equal(args.build, true)
   assert.equal(args.strictConsole, true)
   assert.equal(parseArgs(["w"]).strictConsole, false)
+  assert.equal(parseArgs(["w", "--standard"]).standard, true)
+  assert.equal(parseArgs(["w"]).standard, false)
 })

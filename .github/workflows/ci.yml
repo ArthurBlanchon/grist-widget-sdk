@@ -93,7 +93,8 @@ jobs:
   # its acceptance criteria and the design rules
   # (scripts/widgets/check-widgets.mjs); typecheck, lint, tests and build; the
   # bundle against its budget; then each widget embedded in a real Grist
-  # (Docker), with axe and a light and a dark screenshot.
+  # (Docker), with axe and a light and a dark screenshot, compared with its
+  # last release's.
   widgets:
     needs: changes
     if: needs.changes.outputs.widgets == 'true'
@@ -143,8 +144,19 @@ jobs:
       - run: pnpm $FILTERS --workspace-concurrency=1 --if-present run build
       - run: node scripts/widgets/check-widgets.mjs --sizes $BATCH
       - run: pnpm exec playwright install --with-deps chromium
+      # The released builds (widgets-dist, read-only): each widget's last
+      # release is screenshotted on the same document and compared with this
+      # build, in the job summary. Reported, never failed on (plan 0.8 §3).
+      - name: The released widgets, to compare with
+        run: |
+          set -euo pipefail
+          if git ls-remote --exit-code --heads origin widgets-dist >/dev/null; then
+            git fetch --depth=1 origin widgets-dist
+            git worktree add "$RUNNER_TEMP/widgets-dist" FETCH_HEAD
+            echo "BASELINE=--baseline $RUNNER_TEMP/widgets-dist" >> "$GITHUB_ENV"
+          fi
       - name: In a real Grist, with axe, both themes and no console error
-        run: pnpm e2e:grist $DIRS --axe --themes --strict-console --standard --out "$RUNNER_TEMP/screenshots"
+        run: pnpm e2e:grist $DIRS --axe --themes --strict-console --standard $BASELINE --out "$RUNNER_TEMP/screenshots"
       - name: Keep the screenshots
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

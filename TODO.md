@@ -24,13 +24,13 @@ its order: M4 and M5, with M6 (docs) alongside, then M7 (M1 to M3 are
 done). Each item is one pull request; the plan says when each milestone is
 done.
 
-- [ ] **M4. The bar, version 2** (plan §3). Left: visual comparison and
-  "Report a problem". Done: the standard criteria
+- [ ] **M4. The bar, version 2** (plan §3). Left: "Report a problem".
+  Done: the standard criteria
   ([ADR 0018](./docs/decisions/0018-standard-criteria.md)) in all 16
   widgets, the SDK's `readOnly` and its alert, the e2e check's
   `--standard`, `new-widget`'s criteria, `httpUrl()` and its lint rule,
   licences, a CSP per widget, `optionsVersion` and `migrate`, a `demo.ts`
-  per widget.
+  per widget, the comparison with the last release (`--baseline`).
 - [ ] **Attachments on the static demo pages.** grist-static serves no
   attachment, so the demo pages of Attachment viewer, File uploader and
   Signature pad open with their attachments cells empty (`pnpm demo` and

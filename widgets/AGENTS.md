@@ -121,7 +121,11 @@ After a build, `node scripts/widgets/check-widgets.mjs --sizes` checks each
 bundle against its budget (`bundle-kb` in the spec, 125 KB gzipped by
 default). In a real Grist (Docker), with axe and a dark screenshot:
 `pnpm e2e:grist widgets/<slug> --build --axe --themes --standard` (the
-standard criteria: 320 and 1,280 px, the keyboard path, read-only).
+standard criteria: 320 and 1,280 px, the keyboard path, read-only). With
+`--baseline <a checkout of widgets-dist>`, it also compares each widget's
+frame with its last release's, in each theme (`<slug>-diff.png`, the
+changed pixels in red); CI does, and reports it in the job summary without
+failing on it: a change that looks wrong there is for the review.
 
 ## Path map
 

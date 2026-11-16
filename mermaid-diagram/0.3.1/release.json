@@ -1,0 +1,8 @@
+{
+  "slug": "mermaid-diagram",
+  "version": "0.3.1",
+  "commit": "8f55e548f6c135eae77e58ed0d622b3af86579a3",
+  "released": "2026-11-16T20:54:33.920Z",
+  "changes": "- A flowchart built from more rows than a diagram can hold (500 arrows) draws the first ones and says how many of how many are drawn, instead of an error about a setting nobody using the widget can change.",
+  "changelog": "CHANGELOG.md"
+}

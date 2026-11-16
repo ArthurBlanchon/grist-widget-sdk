@@ -81,41 +81,42 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
 ## Hello world
 
-**[hello-world](/examples/hello-world/demo/)**
-is the canonical minimal widget. It is type-checked on every
-`pnpm typecheck:examples` run (root `pnpm test` includes that step).
+A widget is a declaration and a component, in `src/app/App.tsx`:
 
 ```tsx
-import { useGrist, type UseGristOptions } from "grist-widget-sdk"
+import { defineGristWidget } from "grist-widget-sdk"
 
-export const GRIST_OPTIONS: UseGristOptions = {
+export const widget = defineGristWidget({
+  title: "Hello",
   requiredAccess: "read table",
-}
+})
 
-export function WidgetApp() {
-  const w = useGrist()
-  const rowKey =
-    w.record && typeof w.record.id === "number" ? String(w.record.id) : w.mode
-
+export default function App() {
+  const w = widget.useGrist()
   if (w.mode === "empty") return <p>Select a row.</p>
-  if (w.mode === "new-row") return <p>New row flow</p>
-  return <p key={rowKey}>Selected row #{String(w.record!.id)}</p>
+  if (w.mode === "new-row") return <p>Add the row in Grist.</p>
+  return <p>Selected row #{w.record?.id}</p>
 }
 ```
 
-Wrap it with `GristWidgetProvider` + `GristBoundary` — the
-[template](/docs/quickstart) does exactly this in `main.tsx`. That's
-everything you need to:
+and one call mounts it, in `src/main.tsx`:
 
-- Wait for Grist to finish its handshake.
-- Render a friendly fallback when the page is opened outside Grist.
-- Render an error UI if anything goes wrong, with a retry button.
-- Subscribe to the currently selected row.
-- Switch between `empty` / `row` / `new-row` modes.
+```tsx no-check
+import { mountGristWidget } from "grist-widget-sdk/app"
+import * as entry from "./app/App"
 
-See [Provider & boundary](/docs/sdk/api/provider-boundary) for what each
-piece does, and the [Overview](/docs)
-for why you use this package instead of calling `grist` directly.
+mountGristWidget(entry, { dev: import.meta.env.DEV })
+```
+
+That is everything you need to:
+
+- wait for Grist to answer, and show a page when it is opened outside Grist;
+- show a screen while access or columns are missing, with a retry;
+- re-render on the selected row, in `empty`, `row` or `new-row` mode.
+
+See [Mounting a widget](/docs/sdk/api/app) for what `mountGristWidget()`
+renders, and the [Overview](/docs) for why use this package instead of
+calling `grist` directly.
 
 ## What `useGrist()` returns
 
@@ -135,8 +136,7 @@ See the [API reference](/docs/sdk/api/use-grist) for every field.
 ## Asking for write access and declared columns
 
 **[declared-columns](/examples/declared-columns/demo/)**
-shows `GRIST_OPTIONS.columns` and `columnMappingStatus` — full source in the
-Cheat sheet under [Mappings + column gate](/docs/sdk/guide/cheatsheet#mappings--column-gate).
+shows declared columns and `columnMappingStatus`.
 
 In the widget configuration panel, the user maps these logical names
 to real columns. You consume them via `w.mappedRecord` and
@@ -171,12 +171,12 @@ in the [Cookbook](/docs/sdk/guide/cookbook).
   />
   <Card
     title="Decoded values"
-    description="Mapped records typed from GRIST_OPTIONS and checked cell by cell, read-only."
+    description="Mapped records typed from the declaration and checked cell by cell, read-only."
     href="/docs/sdk/guide/reading-data"
   />
   <Card
     title="Mapped columns"
-    description="mappedRecord and mapBack for simple read/write on Grist tables."
+    description="mappedRecord, updateRecord and addRecord under your own column names."
     href="/docs/sdk/guide/column-mapping"
   />
   <Card

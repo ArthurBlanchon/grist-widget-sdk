@@ -115,7 +115,7 @@ const urls = await Promise.all(ids.map((id) => w.getAttachmentUrl(id)))
 
 ## Required access level
 
-You need at least `requiredAccess: "read table"` for read-only tokens, and `requiredAccess: "full"` for read-write REST. Set it in the widget's `GRIST_OPTIONS`.
+You need at least `requiredAccess: "read table"` for read-only tokens, and `requiredAccess: "full"` for read-write REST. Set it in the widget's declaration (`defineGristWidget`).
 
 ## Error handling
 

@@ -1,9 +1,9 @@
 ---
-title: "Testing"
+title: "Test a widget"
 description: "Run widget tests against an in-process plugin-API emulator, with no live Grist document needed."
 ---
 
-The SDK ships an **emulator** under `grist-widget-sdk/emulator` that recreates the plugin API in-process. Used through `renderWithGrist(...)`, your hooks take their real code path inside vitest/Jest.
+The SDK ships an **emulator** under `grist-widget-sdk/emulator` that recreates the plugin API in-process. Used through `renderWithGrist(<App />, { widget, rows })`, the widget takes its real code path inside Vitest, with no browser and no Grist document.
 
 ## Quick start
 
@@ -19,7 +19,7 @@ it("marks the selected task done", async () => {
 })
 ```
 
-With `widget` (the declaration from `defineGristWidget()`, or `GRIST_OPTIONS`),
+With `widget` (the declaration from `defineGristWidget()`),
 `renderWithGrist` runs the widget as `mountGristWidget()` does inside Grist
 (provider, boundary, alerts), against one table, `Table1`, with a column per
 declared column, every one mapped, and the access the widget asks for. `rows`
@@ -50,9 +50,7 @@ it("renders inside Grist with every declared column mapped", () => smokeTestWidg
 ```
 
 It takes the entry module as [`mountGristWidget()`](/docs/sdk/api/app#the-entry-module)
-does, so the same test works for a widget declared with `defineGristWidget`
-(`widget`) or `GRIST_OPTIONS`. `smokeTestWidget({ App, widget })` and
-`smokeTestWidget({ App, options })` work too.
+does. `smokeTestWidget({ App, widget })` works too.
 
 `smokeTestWidget()` mounts the widget the way
 [`mountGristWidget()`](/docs/sdk/api/app) does inside Grist. The emulated
@@ -70,7 +68,7 @@ An error the widget leaves unhandled, such as a rejected promise in an
 effect, fails the run too: Vitest reports it. Pass `document` to run against
 your own data.
 
-Since it only reads `GRIST_OPTIONS`, the test stays valid as the widget
+Since it only reads the declaration, the test stays valid as the widget
 changes, and each SDK release can improve it. `ci.yml` runs it on every pull
 request, so an SDK update that breaks the widget turns that pull request red
 before it's merged.
@@ -87,6 +85,7 @@ A mock of your own stays in place.
 
 ```ts
 renderWithGrist(<App />, {
+  widget,
   // anything from RenderOptions (container, wrapper, etc.) is accepted
   emulator: {
     document: presets.contacts(),  // or your own GristReplicaDocument
@@ -105,7 +104,7 @@ You can also bring your own emulator instance:
 
 ```ts
 const emulator = createGristEmulator({ document: presets.blank() })
-renderWithGrist(<App />, { existing: emulator })
+renderWithGrist(<App />, { widget, existing: emulator })
 ```
 
 ## Document fixtures

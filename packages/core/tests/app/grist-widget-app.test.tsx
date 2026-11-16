@@ -229,7 +229,8 @@ describe("default alerts", () => {
       expect(screen.getByRole("button", { name: "Reload the widget" })).toBeInTheDocument()
       expect(screen.getByRole("link", { name: "Report a problem" })).toHaveAttribute("href", "https://example.com/report")
       // A test runner, the real-Grist check and the console still see it.
-      await waitFor(() => expect(uncaught).toEqual([new Error("boom")]))
+      // React 18 also dispatches it while retrying the render: present, maybe more than once.
+      await waitFor(() => expect(uncaught).toContainEqual(new Error("boom")))
     })
 
     it("catches a falsy thrown value too", async () => {
@@ -238,7 +239,7 @@ describe("default alerts", () => {
       }
       renderWithGrist(<GristWidgetApp App={ThrowsZero} options={{ requiredAccess: "read table" }} />, { emulator: { document: presets.blank() } })
       expect(await screen.findByRole("heading", { name: "The widget stopped working" })).toBeInTheDocument()
-      await waitFor(() => expect(uncaught).toEqual([0]))
+      await waitFor(() => expect(uncaught).toContain(0))
     })
 
     it("offers no report link without a reportUrl, or with one that isn't http(s)", async () => {

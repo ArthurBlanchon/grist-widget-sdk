@@ -40,10 +40,7 @@ export function GristWidgetApp(input: GristWidgetAppProps): react.JSX.Element;
 export type GristWidgetAppProps = {
     App: ComponentType;
     options: UseGristOptions;
-    metadata?: {
-        title?: string;
-        description?: string;
-    };
+    metadata?: GristWidgetMetadata;
     dev?: boolean;
     Alerts?: ComponentType<{
         children: ReactNode;
@@ -59,10 +56,7 @@ export type GristWidgetEntry = {
     default: ComponentType;
     widget?: GristWidget;
     GRIST_OPTIONS?: UseGristOptions;
-    WIDGET_METADATA?: {
-        title?: string;
-        description?: string;
-    };
+    WIDGET_METADATA?: GristWidgetMetadata;
     Alerts?: GristWidgetAppProps["Alerts"];
     LocalDevPage?: GristWidgetAppProps["LocalDevPage"];
     ReleasePage?: GristWidgetAppProps["ReleasePage"];

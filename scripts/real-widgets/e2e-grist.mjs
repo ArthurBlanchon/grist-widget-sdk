@@ -79,7 +79,8 @@ const EMAIL = "e2e@example.com"
 
 // GristBoundary's screens (packages/core/src/sdk/components/grist-boundary.tsx,
 // helpers/grist-boundary-view.ts): still showing one after the timeout fails.
-const BOUNDARY_TITLES = ["Connecting to Grist", "Open inside Grist", "Something went wrong", "Map your columns"]
+// "The widget stopped working" is the app's screen for a widget that throws (ADR 0019).
+const BOUNDARY_TITLES = ["Connecting to Grist", "Open inside Grist", "Something went wrong", "Map your columns", "The widget stopped working"]
 
 export function parseArgs(argv) {
   const out = { dirs: [], build: false, out: "e2e-grist-output", gristUrl: null, keep: false, timeout: 20, axe: false, themes: false, strictConsole: false, standard: false, baseline: null }

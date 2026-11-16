@@ -26,6 +26,7 @@ export {
   defineGristWidget,
   type GristWidget,
   type GristWidgetDefinition,
+  type GristWidgetMetadata,
   type GristWidgetRow,
 } from "./define-widget"
 

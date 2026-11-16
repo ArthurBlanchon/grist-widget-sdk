@@ -50,6 +50,12 @@ describe("defineGristWidget", () => {
     expect(widget.options).toEqual({ requiredAccess: "full", columns: widget.definition.columns })
     expect(widget.metadata).toEqual({ title: "Tasks", description: "Mark the selected task done." })
   })
+
+  it("keeps the report URL with the metadata, out of what Grist is asked for", () => {
+    const reported = defineGristWidget({ title: "T", requiredAccess: "read table", reportUrl: "https://example.com/report" })
+    expect(reported.options).toEqual({ requiredAccess: "read table" })
+    expect(reported.metadata).toEqual({ title: "T", description: undefined, reportUrl: "https://example.com/report" })
+  })
 })
 
 describe("renderWithGrist({ widget, rows })", () => {

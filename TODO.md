@@ -24,7 +24,9 @@ its order: M4 and M5, with M6 (docs) alongside, then M7 (M1 to M3 are
 done). Each item is one pull request; the plan says when each milestone is
 done.
 
-- [ ] **M4. The bar, version 2** (plan §3). Left: "Report a problem".
+- [ ] **M4. The bar, version 2** (plan §3). Left: "Report a problem" in the 16
+  catalog widgets and the widget bug form (the SDK's link and crash screen
+  are done, [ADR 0019](./docs/decisions/0019-report-a-problem.md)).
   Done: the standard criteria
   ([ADR 0018](./docs/decisions/0018-standard-criteria.md)) in all 16
   widgets, the SDK's `readOnly` and its alert, the e2e check's

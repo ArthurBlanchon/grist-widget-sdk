@@ -17,8 +17,8 @@ export const messages = defineMessages({
     groups: "Groups",
     all: "All",
     filterGroup: "{name}: {total}. Show only these rows in linked widgets",
-    filterCell: "{row}, {column}. Show only these rows in linked widgets",
-    filterAll: "All rows. Show them in linked widgets",
+    filterCell: "{row}, {column}: {total}. Show only these rows in linked widgets",
+    filterAll: "All rows: {total}. Show them in linked widgets",
   },
   fr: {
     moreItems: "Montrer {n} lignes de plus ({left} non montrées)",
@@ -36,7 +36,7 @@ export const messages = defineMessages({
     groups: "Groupes",
     all: "Tout",
     filterGroup: "{name} : {total}. N'afficher que ces lignes dans les widgets liés",
-    filterCell: "{row}, {column}. N'afficher que ces lignes dans les widgets liés",
-    filterAll: "Toutes les lignes. Les afficher dans les widgets liés",
+    filterCell: "{row}, {column} : {total}. N'afficher que ces lignes dans les widgets liés",
+    filterAll: "Toutes les lignes : {total}. Les afficher dans les widgets liés",
   },
 })

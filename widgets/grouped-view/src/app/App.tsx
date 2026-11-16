@@ -234,7 +234,7 @@ function PivotTable({
                 {name(r)}
               </th>
               {columns.map((c) => (
-                <Fragment key={c}>{cell(`${r}\u0000${c}`, p.cell(r, c), t("filterCell", { row: name(r), column: name(c) }))}</Fragment>
+                <Fragment key={c}>{cell(`${r}\u0000${c}`, p.cell(r, c), t("filterCell", { row: name(r), column: name(c), total: total(p.cell(r, c)) }))}</Fragment>
               ))}
               {cell(`${r}\u0000*`, p.rowItems(r), t("filterGroup", { name: name(r), total: total(p.rowItems(r)) }))}
             </tr>
@@ -246,7 +246,7 @@ function PivotTable({
             {columns.map((c) => (
               <Fragment key={c}>{cell(`*\u0000${c}`, p.columnItems(c), t("filterGroup", { name: name(c), total: total(p.columnItems(c)) }))}</Fragment>
             ))}
-            {cell("*", p.all, t("filterAll"))}
+            {cell("*", p.all, t("filterAll", { total: total(p.all) }))}
           </tr>
         </tbody>
       </table>

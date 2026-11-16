@@ -37,6 +37,19 @@ describe("patchDemoDocument", () => {
     expect(text).not.toContain("grist-widget-demo.invalid")
   })
 
+  it("points every copy of the placeholder at the widget: the action history and the section Grist loads (#91)", () => {
+    // A real .grist file holds the URL three times: twice in its action history, once in _grist_Views_section.
+    const one = fakeDocument().bytes
+    const bytes = new Uint8Array(one.length * 3)
+    bytes.set(one, 0)
+    bytes.set(one, one.length)
+    bytes.set(one, one.length * 2)
+    expect(patchDemoDocument(bytes, "https://owner.github.io/repo/v1.2.0/")).toBe(true)
+    const text = dec.decode(bytes)
+    expect(text).not.toContain("grist-widget-demo.invalid")
+    expect(text.split("https://owner.github.io/repo/v1.2.0/?demo=").length - 1).toBe(3)
+  })
+
   it("keeps a widget URL's own query", () => {
     const { bytes } = fakeDocument()
     patchDemoDocument(bytes, "https://example.com/w/?a=1")

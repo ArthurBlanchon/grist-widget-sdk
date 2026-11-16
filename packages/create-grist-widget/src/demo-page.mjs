@@ -24,28 +24,29 @@ export const GRIST_STATIC_VERSION = "0.1.6"
 export const GRIST_STATIC_BASE = `https://gristwidgets.com/grist-static/${GRIST_STATIC_VERSION}/`
 
 /**
- * Point the demo document at `widgetUrl`: replaces the placeholder in the
- * document's bytes, in place, keeping its length (the rest is padded with
- * an unused query string). Embedded verbatim in the demo page, so it must
- * stay self-contained. Returns false when the document holds no placeholder.
+ * Point the demo document at `widgetUrl`: replaces every copy of the
+ * placeholder in the document's bytes (a .grist file holds it in its action
+ * history and in the section Grist loads), in place, keeping its length (the
+ * rest is padded with an unused query string). Embedded verbatim in the demo
+ * page, so it must stay self-contained. Returns false when the document holds
+ * no placeholder.
  */
 export function patchDemoDocument(bytes, widgetUrl) {
   var prefix = new TextEncoder().encode("https://grist-widget-demo.invalid/?")
-  var at = -1
+  var url = new TextEncoder().encode(widgetUrl + (widgetUrl.indexOf("?") < 0 ? "?" : "&") + "demo=")
+  var found = false
   search: for (var i = 0; i <= bytes.length - prefix.length; i++) {
     for (var j = 0; j < prefix.length; j++) if (bytes[i + j] !== prefix[j]) continue search
-    at = i
-    break
+    var end = i + prefix.length
+    while (bytes[end] === 0x78) end++ // the "x" padding
+    if (url.length > end - i) throw new Error("demo: widget URL too long for the demo document")
+    var next = new Uint8Array(end - i).fill(0x78)
+    next.set(url)
+    bytes.set(next, i)
+    found = true
+    i = end - 1
   }
-  if (at < 0) return false
-  var end = at + prefix.length
-  while (bytes[end] === 0x78) end++ // the "x" padding
-  var url = new TextEncoder().encode(widgetUrl + (widgetUrl.indexOf("?") < 0 ? "?" : "&") + "demo=")
-  if (url.length > end - at) throw new Error("demo: widget URL too long for the demo document")
-  var next = new Uint8Array(end - at).fill(0x78)
-  next.set(url)
-  bytes.set(next, at)
-  return true
+  return found
 }
 
 const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`)

@@ -39,8 +39,9 @@ the first).
   `AC-readonly` in its "Standard criteria" section, as `new-widget` writes
   them. `AC-volume` has its test, `expectVolume(<App />, widget, demo)`
   (5,000 rows from the demo data, at most `VOLUME_NODES` DOM nodes); the
-  real-Grist check (`--standard`) checks the other three. A widget still to
-  migrate is in `STANDARD_PENDING` (`check-widgets`), a list that only shrinks.
+  real-Grist check (`--standard`) checks the other three. A widget that
+  makes an element per distinct value (a category, a group) caps or pages
+  them, and adds a volume test with that column `unique`.
 - **UI from `@shared/ui/*` only** (the shadcn components, one copy). A
   missing component is added once, to `widgets/_shared/`, with
   `pnpm dlx shadcn add <name>` run there.

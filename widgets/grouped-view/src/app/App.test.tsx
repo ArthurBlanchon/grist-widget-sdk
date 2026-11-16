@@ -3,6 +3,8 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 import { cleanup, fireEvent, renderWithGrist, screen, waitFor, within } from "grist-widget-sdk/emulator/testing"
 
 import App, { widget } from "./App"
+import { expectVolume, VOLUME_TIMEOUT_MS } from "@shared/testing"
+import { demo } from "./demo"
 
 afterEach(() => {
   cleanup()
@@ -131,4 +133,34 @@ describe("Grouped view", () => {
     grouped([])
     expect(await screen.findByText(/No rows to group/)).toBeInTheDocument()
   })
+
+  it("AC-13 shows 50 groups at a time, 20 rows a group and 20 columns, totals counting every row", async () => {
+    const many = Array.from({ length: 120 }, (_, i) => ({ Group: `G${String(i).padStart(3, "0")}`, Label: `Row ${i}`, Across: `A${String(i % 30).padStart(2, "0")}`, Value: 1 }))
+    const full = Array.from({ length: 25 }, (_, i) => ({ Group: "G000", Label: `Extra ${i}`, Across: "A00", Value: 1 }))
+    grouped([...full, ...many])
+    await screen.findByText("G000")
+    expect(groupNames()).toHaveLength(50)
+    expect(screen.getByText("And 6 more rows (the total counts them)")).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: /^G000: 26\./ })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole("button", { name: "Show 50 more groups (70 not shown)" }))
+    expect(groupNames()).toHaveLength(100)
+    fireEvent.click(screen.getByRole("button", { name: "Show 20 more groups (20 not shown)" }))
+    expect(groupNames()).toHaveLength(120)
+    expect(screen.queryByRole("button", { name: /more groups/ })).toBeNull()
+    cleanup()
+
+    renderWithGrist(<App />, { widget, rows: [...full, ...many] })
+    const table = await screen.findByRole("table")
+    expect(within(table).getAllByRole("columnheader")).toHaveLength(22)
+    expect(screen.getByText("10 more columns, not shown (the All total counts them)")).toBeInTheDocument()
+    expect(within(table).getAllByRole("rowheader")).toHaveLength(51)
+    const all = within(table).getAllByRole("rowheader", { name: "All" })[0]!.closest("tr")!
+    expect(within(all).getAllByRole("cell").at(-1)!.textContent).toBe("145")
+    fireEvent.click(screen.getByRole("button", { name: "Show 50 more groups (70 not shown)" }))
+    expect(within(table).getAllByRole("rowheader")).toHaveLength(101)
+  })
 })
+
+it("AC-volume renders 5,000 rows within the DOM budget", () => expectVolume(<App />, widget, demo), VOLUME_TIMEOUT_MS)
+it("AC-volume holds with a distinct group for every row", () => expectVolume(<App />, widget, demo, { unique: ["Category"] }), VOLUME_TIMEOUT_MS)
+it("AC-volume holds with a distinct Across value for every row", () => expectVolume(<App />, widget, demo, { unique: ["Month"] }), VOLUME_TIMEOUT_MS)

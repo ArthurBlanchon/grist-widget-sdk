@@ -2,6 +2,10 @@
 
 What changed in each version, for the people using the widget. Newest first.
 
+## 0.2.0 (2026-11-16)
+
+- With more than 10 categories, the 9 with the most points keep their own colour and the others are one "Others" group, last in the legend: the map stays readable and quick with thousands of rows.
+
 ## 0.1.2 (2026-11-15)
 
 - The widget's page carries a Content Security Policy: only its own code and Grist's plugin API run in it, which keeps a document's content from running anything there.

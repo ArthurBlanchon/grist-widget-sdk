@@ -47,10 +47,10 @@ export default function MapView() {
         </div>
         {mode === "points" && groups.length > 1 ? (
           <ul aria-label={t("legend")} className="flex flex-wrap gap-3 text-xs">
-            {groups.map(([category], i) => (
-              <li key={category} className="flex items-center gap-1">
+            {groups.map((c, i) => (
+              <li key={c.other ? "\u0000other" : c.name} className="flex items-center gap-1">
                 <span aria-hidden className="size-3 rounded-full" style={{ background: colour(i) }} />
-                {category || t("noCategory")}
+                {c.other ? t("other", { n: number.format(c.points.length) }) : c.name || t("noCategory")}
               </li>
             ))}
           </ul>
@@ -68,9 +68,9 @@ export default function MapView() {
         <MapCanvas className="absolute inset-0" projection={mode === "countries" ? { type: "globe" } : undefined} center={[10, 30]} zoom={mode === "countries" ? 1.4 : 1.6}>
           {mode === "countries" ? <WorldCountryLayer counts={counts} palette={palette} valueLabel={valueLabel} /> : null}
           {mode === "points"
-            ? groups.map(([category, list], i) => (
+            ? groups.map(({ name, other, points: list }, i) => (
                 <MapClusterLayer
-                  key={`${category}:${colour(i)}`}
+                  key={`${other ? "\u0000other" : name}:${colour(i)}`}
                   data={{
                     type: "FeatureCollection",
                     features: list.map((p) => ({ type: "Feature", geometry: { type: "Point", coordinates: [p.lon, p.lat] }, properties: { id: p.id } })),

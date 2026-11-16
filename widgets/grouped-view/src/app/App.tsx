@@ -22,12 +22,18 @@ export const widget = defineGristWidget({
   ],
 })
 
+/** Groups (list or pivot rows) shown at a time, rows shown in an open group, pivot columns shown. Totals count every row. */
+const GROUPS_SHOWN = 50
+const ITEMS_SHOWN = 20
+const COLUMNS_SHOWN = 20
+
 export default function App() {
   const w = widget.useGrist()
   const t = useT(messages)
   const locale = detectLocale()
   const [fn, setFn] = useState<Aggregate>("sum")
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set())
+  const [listed, setListed] = useState(GROUPS_SHOWN)
   const [filter, setFilter] = useState<string | null>(null)
 
   const hasValue = Boolean(w.mappings.Value)
@@ -86,7 +92,7 @@ export default function App() {
 
       {!pivot ? (
         <ul className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto">
-          {groupItems(items).map((g) => {
+          {groupItems(items).slice(0, listed).map((g) => {
             const open = !collapsed.has(g.key)
             const label = name(g.key)
             return (
@@ -122,7 +128,7 @@ export default function App() {
                 </div>
                 {open ? (
                   <ul className="flex flex-col border-t py-1">
-                    {g.items.map((item) => (
+                    {g.items.slice(0, ITEMS_SHOWN).map((item) => (
                       <li key={item.id}>
                         <button
                           type="button"
@@ -135,12 +141,18 @@ export default function App() {
                         </button>
                       </li>
                     ))}
+                    {g.items.length > ITEMS_SHOWN ? (
+                      <li className="px-4 py-1 text-xs text-muted-foreground">{t("moreItems", { n: number.format(g.items.length - ITEMS_SHOWN) })}</li>
+                    ) : null}
                   </ul>
                 ) : null}
               </li>
             )
           })}
         </ul>
+      ) : null}
+      {!pivot && groupItems(items).length > listed ? (
+        <MoreGroups left={groupItems(items).length - listed} onClick={() => setListed((n) => n + GROUPS_SHOWN)} t={t} />
       ) : null}
     </main>
   )
@@ -162,6 +174,8 @@ function PivotTable({
   t: ReturnType<typeof useT<keyof (typeof messages)["en"]>>
 }) {
   const p = pivotItems(items)
+  const [rowsListed, setRowsListed] = useState(GROUPS_SHOWN)
+  const columns = p.columns.slice(0, COLUMNS_SHOWN)
   const cell = (key: string, rows: Item[], label: string) =>
     rows.length === 0 ? (
       <td className="px-2 py-1 text-right text-muted-foreground">·</td>
@@ -186,7 +200,7 @@ function PivotTable({
             <th scope="col" className="px-2 py-1 text-left font-medium">
               <span className="sr-only">{t("groups")}</span>
             </th>
-            {p.columns.map((c) => (
+            {columns.map((c) => (
               <th key={c} scope="col" className="px-2 py-1 text-right font-medium">
                 {name(c)}
               </th>
@@ -197,12 +211,12 @@ function PivotTable({
           </tr>
         </thead>
         <tbody>
-          {p.rows.map((r) => (
+          {p.rows.slice(0, rowsListed).map((r) => (
             <tr key={r} className="border-t">
               <th scope="row" className="px-2 py-1 text-left font-medium">
                 {name(r)}
               </th>
-              {p.columns.map((c) => (
+              {columns.map((c) => (
                 <Fragment key={c}>{cell(`${r}\u0000${c}`, p.cell(r, c), t("filterCell", { row: name(r), column: name(c) }))}</Fragment>
               ))}
               {cell(`${r}\u0000*`, p.rowItems(r), t("filterGroup", { name: name(r), total: total(p.rowItems(r)) }))}
@@ -212,13 +226,28 @@ function PivotTable({
             <th scope="row" className="px-2 py-1 text-left">
               {t("all")}
             </th>
-            {p.columns.map((c) => (
+            {columns.map((c) => (
               <Fragment key={c}>{cell(`*\u0000${c}`, p.columnItems(c), t("filterGroup", { name: name(c), total: total(p.columnItems(c)) }))}</Fragment>
             ))}
             {cell("*", p.all, t("filterAll"))}
           </tr>
         </tbody>
       </table>
+      {p.columns.length > COLUMNS_SHOWN ? (
+        <p role="status" className="px-2 py-1 text-xs text-muted-foreground">
+          {t("moreColumns", { n: p.columns.length - COLUMNS_SHOWN })}
+        </p>
+      ) : null}
+      {p.rows.length > rowsListed ? <MoreGroups left={p.rows.length - rowsListed} onClick={() => setRowsListed((n) => n + GROUPS_SHOWN)} t={t} /> : null}
     </div>
+  )
+}
+
+/** The button that shows the next groups. */
+function MoreGroups({ left, onClick, t }: { left: number; onClick: () => void; t: ReturnType<typeof useT<keyof (typeof messages)["en"]>> }) {
+  return (
+    <Button size="sm" variant="outline" className="h-auto self-start whitespace-normal" onClick={onClick}>
+      {t("moreGroups", { n: Math.min(GROUPS_SHOWN, left), left })}
+    </Button>
   )
 }

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 
-import { changelogEntries, checkChangelog, checkLicences, licenceAllowed, checkStatic, columnsSection, criteria, declarationProblems, designViolations, listWidgets, parseFrontMatter, specColumns, STANDARD_CRITERIA, STANDARD_PENDING, namesTest, standardCriteria } from "./check-widgets.mjs"
+import { changelogEntries, checkChangelog, checkLicences, licenceAllowed, checkStatic, columnsSection, criteria, declarationProblems, designViolations, listWidgets, parseFrontMatter, specColumns, STANDARD_CRITERIA, namesTest, standardCriteria } from "./check-widgets.mjs"
 
 test("front matter is key: value lines", () => {
   const { data, body } = parseFrontMatter("---\nslug: a\naccess: read table\n---\n# A\n")
@@ -93,13 +93,9 @@ test("a generated widget passes the static checks it can before its code is writ
   const withSection = readFileSync(spec, "utf8")
   writeFileSync(spec, withSection.replace(/- \*\*AC-narrow\*\*.*\n/, ""))
   assert.ok(checkStatic("gantt-chart", dir).problems.includes("SPEC.md: the Standard criteria section lacks AC-narrow"))
-  // Without the section: refused, unless the widget is still to migrate.
+  // Without the section: refused.
   writeFileSync(spec, withSection.replace("## Standard criteria", "## Other notes"))
   assert.ok(checkStatic("gantt-chart", dir).problems.includes("SPEC.md: no Standard criteria section (ADR 0018; new-widget writes it)"))
-  assert.ok(!STANDARD_PENDING.includes("gantt-chart"))
-  // The widgets still to migrate: this list only shrinks (ADR 0018). A
-  // widget leaves it, and this line, in the pull request that migrates it.
-  assert.deepEqual(STANDARD_PENDING, ["chart-builder", "grouped-view", "map"])
   writeFileSync(spec, withSection.replace("## Standard criteria", "## Standard Criteria  "))
   assert.deepEqual(standardCriteria(readFileSync(spec, "utf8")), STANDARD_CRITERIA)
   writeFileSync(spec, withSection)

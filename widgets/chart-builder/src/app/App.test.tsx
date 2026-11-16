@@ -4,6 +4,9 @@ import { cleanup, fireEvent, installJsdomStubs, renderWithGrist, screen, waitFor
 import type { GristReplicaDocument, GristReplicaRow } from "grist-widget-sdk"
 
 import App, { widget } from "./App"
+import { buildData, MAX_CATEGORIES } from "./series"
+import { expectVolume, VOLUME_TIMEOUT_MS } from "@shared/testing"
+import { demo } from "./demo"
 
 beforeAll(installJsdomStubs)
 
@@ -126,3 +129,19 @@ describe("Chart builder", () => {
     expect(document.querySelector("img")).toBeNull()
   })
 })
+
+it("AC-11 shows the largest 29 categories and the others as one Other", () => {
+  // 40 customers, customer i with i + 1 rows of 10.
+  const rows = Array.from({ length: 40 }, (_, i) => Array.from({ length: i + 1 }, () => ({ label: `C${i}`, values: [10] }))).flat()
+  const sum = buildData(rows, 1, "sum", "(blank)", "Other")
+  expect(sum).toHaveLength(MAX_CATEGORIES)
+  expect(sum.at(-1)).toEqual({ label: "Other", s0: [...Array(11).keys()].reduce((a, i) => a + (i + 1) * 10, 0) })
+  expect(sum.map((d) => d.label)).toContain("C39")
+  expect(sum.map((d) => d.label)).not.toContain("C0")
+  // An average stays one of the rows' numbers, not of the totals.
+  expect(buildData(rows, 1, "average", "(blank)", "Other").at(-1)).toMatchObject({ label: "Other", s0: 10 })
+})
+
+it("AC-volume renders 5,000 rows within the DOM budget", () => expectVolume(<App />, widget, demo), VOLUME_TIMEOUT_MS)
+
+it("AC-volume holds with a distinct category for every row", () => expectVolume(<App />, widget, demo, { unique: ["Month"] }), VOLUME_TIMEOUT_MS)

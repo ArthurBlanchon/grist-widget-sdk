@@ -4,6 +4,8 @@ import { actionsOf, cleanup, fireEvent, installJsdomStubs, renderWithGrist, scre
 import type { GristReplicaDocument, GristReplicaRow } from "grist-widget-sdk"
 
 import App, { widget } from "./App"
+import { expectVolume, VOLUME_TIMEOUT_MS } from "@shared/testing"
+import { demo } from "./demo"
 
 beforeAll(installJsdomStubs)
 
@@ -137,3 +139,5 @@ describe("Bulk editor", () => {
     expect(updates(emulator)).toHaveLength(0)
   })
 })
+
+it("AC-volume renders 5,000 rows within the DOM budget", () => expectVolume(<App />, widget, demo), VOLUME_TIMEOUT_MS)

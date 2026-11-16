@@ -3,6 +3,8 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 import { cleanup, fireEvent, renderWithGrist, screen, waitFor, within } from "grist-widget-sdk/emulator/testing"
 
 import App, { MAX_RESULTS, widget } from "./App"
+import { expectVolume, VOLUME_TIMEOUT_MS } from "@shared/testing"
+import { demo } from "./demo"
 
 afterEach(() => {
   cleanup()
@@ -97,3 +99,5 @@ describe("Record selector", () => {
     expect(screen.getByText(`Showing the first ${MAX_RESULTS} of ${MAX_RESULTS + 50} matching rows. Type more to narrow the search.`)).toBeInTheDocument()
   })
 })
+
+it("AC-volume renders 5,000 rows within the DOM budget", () => expectVolume(<App />, widget, demo), VOLUME_TIMEOUT_MS)

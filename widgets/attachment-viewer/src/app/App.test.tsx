@@ -4,6 +4,8 @@ import { cleanup, fireEvent, renderWithGrist, screen, waitFor, within } from "gr
 import type { GristReplicaDocument, GristReplicaRow } from "grist-widget-sdk"
 
 import App, { GALLERY_MAX, widget } from "./App"
+import { expectVolume, VOLUME_TIMEOUT_MS } from "@shared/testing"
+import { demo } from "./demo"
 
 /** Each attachment's type, as Grist's download endpoint answers; a missing id fails. */
 const TYPES: Record<number, string> = { 11: "image/jpeg", 12: "application/pdf", 13: "application/zip", 21: "image/png" }
@@ -158,3 +160,5 @@ describe("Attachment viewer", () => {
     expect(document.querySelector("b, i")).toBeNull()
   })
 })
+
+it("AC-volume renders 5,000 rows within the DOM budget", () => expectVolume(<App />, widget, demo), VOLUME_TIMEOUT_MS)

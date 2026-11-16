@@ -23,10 +23,16 @@ export const domNodes = (): number => document.body.getElementsByTagName("*").le
  * The demo's document with its widget table's rows repeated to `count`, and
  * the mapping of the widget's declared columns to its columns.
  */
+export type VolumeOptions = {
+  /** The widget table's columns whose value is made distinct on every row: the worst case for a widget that groups by them. */
+  unique?: string[]
+}
+
 export function volumeDocument(
   widget: GristWidget,
   demo: GristWidgetDemo,
   count = VOLUME_ROWS,
+  { unique = [] }: VolumeOptions = {},
 ): { document: GristReplicaDocument; mapping: GristWidgetColumnMap } {
   const tableId = demo.table ?? Object.keys(demo.tables)[0]
   if (!tableId || !demo.tables[tableId]) throw new Error(`volume: the demo has no table ${tableId ?? ""}`)
@@ -59,7 +65,10 @@ export function volumeDocument(
       rows: Array.from({ length }, (_, i) => {
         const row = source[i % source.length]!
         const out: Record<string, unknown> & { id: number } = { id: i + 1 }
-        for (const [col, type] of Object.entries(table.columns)) out[col] = stored(type, row[col])
+        for (const [col, type] of Object.entries(table.columns)) {
+          const value = stored(type, row[col])
+          out[col] = t === tableId && unique.includes(col) ? `${value ?? ""} ${i + 1}`.trim() : value
+        }
         return out
       }),
     }
@@ -94,18 +103,37 @@ function stored(type: string, value: unknown): unknown {
   return value
 }
 
-/** The DOM nodes once the page stops changing (or after `limitMs`). */
+/** The screens the SDK shows before a widget renders: counting them would measure nothing. */
+const WAITING = ["Connecting to Grist", "Open inside Grist", "Something went wrong", "Map your columns"]
+
+/** Whether the widget itself is on the page: some content, and none of the SDK's waiting screens. */
+function widgetRendered(): boolean {
+  for (const h of document.querySelectorAll('[role="status"] h2, [role="alert"] h2')) {
+    if (WAITING.includes(h.textContent?.trim() ?? "")) return false
+  }
+  return domNodes() > 5 && (document.body.textContent?.trim().length ?? 0) > 0
+}
+
+/**
+ * The DOM nodes once the widget has rendered and the page has stopped
+ * changing for half a second; an error if it never renders.
+ */
 async function settledNodes(limitMs = VOLUME_TIMEOUT_MS - 5_000): Promise<number> {
   const until = Date.now() + limitMs
   let last = -1
   let steady = 0
   while (Date.now() < until) {
     await new Promise((r) => setTimeout(r, 100))
+    if (!widgetRendered()) {
+      steady = 0
+      continue
+    }
     const now = domNodes()
     steady = now === last ? steady + 1 : 0
     last = now
-    if (steady >= 3 && now > 0) break
+    if (steady >= 5) return now
   }
+  if (last < 0) throw new Error(`volume: the widget didn't render within ${limitMs} ms`)
   return last
 }
 
@@ -114,8 +142,8 @@ async function settledNodes(limitMs = VOLUME_TIMEOUT_MS - 5_000): Promise<number
  * 5,000 rows renders with at most VOLUME_NODES DOM nodes. Give the test
  * VOLUME_TIMEOUT_MS: `it("AC-volume …", () => expectVolume(<App />, widget, demo), VOLUME_TIMEOUT_MS)`.
  */
-export async function expectVolume(ui: ReactElement, widget: GristWidget, demo: GristWidgetDemo): Promise<number> {
-  const { document, mapping } = volumeDocument(widget, demo)
+export async function expectVolume(ui: ReactElement, widget: GristWidget, demo: GristWidgetDemo, options: VolumeOptions = {}): Promise<number> {
+  const { document, mapping } = volumeDocument(widget, demo, VOLUME_ROWS, options)
   const { emulator } = renderWithGrist(ui, { widget, emulator: { document } })
   emulator.setColumnMappings(mapping)
   const nodes = await settledNodes()

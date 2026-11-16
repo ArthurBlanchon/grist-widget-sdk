@@ -4,6 +4,8 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 import { cleanup, fireEvent, renderWithGrist, screen, waitFor } from "grist-widget-sdk/emulator/testing"
 
 import App, { widget } from "./App"
+import { expectVolume, VOLUME_TIMEOUT_MS } from "@shared/testing"
+import { demo } from "./demo"
 
 // Mermaid lays diagrams out with the browser's text metrics, which jsdom lacks: it is a
 // stand-in here that records what it is given; CI's real-Grist check draws real ones.
@@ -130,3 +132,5 @@ describe("Mermaid diagram", () => {
     expect(await screen.findByRole("button", { name: "Télécharger le SVG" })).toBeInTheDocument()
   })
 })
+
+it("AC-volume renders 5,000 rows within the DOM budget", () => expectVolume(<App />, widget, demo), VOLUME_TIMEOUT_MS)

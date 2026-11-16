@@ -4,6 +4,8 @@ import { cleanup, fireEvent, renderWithGrist, screen, waitFor, within } from "gr
 import type { GristReplicaDocument } from "grist-widget-sdk"
 
 import App, { widget } from "./App"
+import { expectVolume, VOLUME_TIMEOUT_MS } from "@shared/testing"
+import { demo } from "./demo"
 
 afterEach(() => {
   cleanup()
@@ -171,3 +173,5 @@ describe("File uploader", () => {
     await waitFor(() => expect(screen.getByRole("button", { name: "Choose files" })).toBeEnabled())
   })
 })
+
+it("AC-volume renders 5,000 rows within the DOM budget", () => expectVolume(<App />, widget, demo), VOLUME_TIMEOUT_MS)

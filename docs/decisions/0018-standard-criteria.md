@@ -59,3 +59,10 @@ Two facts shaped how they are checked:
 - The node budget is a proxy: a widget under it can still be slow (an
   expensive computation per row). The e2e check's timings and the bench
   stay the place to look at time.
+- The rows repeat the demo's, so they keep its number of distinct values. A
+  widget that makes an element per distinct value (a category, a group, a
+  legend item) adds a case where that column is unique per row
+  (`expectVolume(…, { unique: [column] })`), and caps or pages them.
+- An attachments cell is measured empty: the demo's files aren't in the
+  emulator. A widget that shows files caps them (Attachment viewer's gallery
+  shows 60).

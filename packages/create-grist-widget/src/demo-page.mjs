@@ -24,27 +24,28 @@ export const GRIST_STATIC_VERSION = "0.1.6"
 export const GRIST_STATIC_BASE = `https://gristwidgets.com/grist-static/${GRIST_STATIC_VERSION}/`
 
 /**
- * Point the demo document at `widgetUrl`: replaces every copy of the
+ * Point the demo document at `widgetUrl`: replaces every whole copy of the
  * placeholder in the document's bytes (a .grist file holds it in its action
  * history and in the section Grist loads), in place, keeping its length (the
- * rest is padded with an unused query string). Embedded verbatim in the demo
- * page, so it must stay self-contained. Returns false when the document holds
- * no placeholder.
+ * rest is padded with an unused query string). A copy cut short (a history
+ * entry SQLite split across pages) is left alone: Grist never loads it.
+ * Embedded verbatim in the demo page, so it must stay self-contained (400 is
+ * DEMO_URL_LENGTH). Returns false when the document holds no whole copy.
  */
 export function patchDemoDocument(bytes, widgetUrl) {
+  var length = 400
   var prefix = new TextEncoder().encode("https://grist-widget-demo.invalid/?")
   var url = new TextEncoder().encode(widgetUrl + (widgetUrl.indexOf("?") < 0 ? "?" : "&") + "demo=")
+  if (url.length > length) throw new Error("demo: widget URL too long for the demo document")
+  var next = new Uint8Array(length).fill(0x78) // the "x" padding
+  next.set(url)
   var found = false
-  search: for (var i = 0; i <= bytes.length - prefix.length; i++) {
+  search: for (var i = 0; i <= bytes.length - length; i++) {
     for (var j = 0; j < prefix.length; j++) if (bytes[i + j] !== prefix[j]) continue search
-    var end = i + prefix.length
-    while (bytes[end] === 0x78) end++ // the "x" padding
-    if (url.length > end - i) throw new Error("demo: widget URL too long for the demo document")
-    var next = new Uint8Array(end - i).fill(0x78)
-    next.set(url)
+    for (j = prefix.length; j < length; j++) if (bytes[i + j] !== 0x78) continue search
     bytes.set(next, i)
     found = true
-    i = end - 1
+    i += length - 1
   }
   return found
 }

@@ -10,22 +10,21 @@
 <body>
 <script>
 function patchDemoDocument(bytes, widgetUrl) {
+  var length = 400
   var prefix = new TextEncoder().encode("https://grist-widget-demo.invalid/?")
-  var at = -1
-  search: for (var i = 0; i <= bytes.length - prefix.length; i++) {
-    for (var j = 0; j < prefix.length; j++) if (bytes[i + j] !== prefix[j]) continue search
-    at = i
-    break
-  }
-  if (at < 0) return false
-  var end = at + prefix.length
-  while (bytes[end] === 0x78) end++ // the "x" padding
   var url = new TextEncoder().encode(widgetUrl + (widgetUrl.indexOf("?") < 0 ? "?" : "&") + "demo=")
-  if (url.length > end - at) throw new Error("demo: widget URL too long for the demo document")
-  var next = new Uint8Array(end - at).fill(0x78)
+  if (url.length > length) throw new Error("demo: widget URL too long for the demo document")
+  var next = new Uint8Array(length).fill(0x78) // the "x" padding
   next.set(url)
-  bytes.set(next, at)
-  return true
+  var found = false
+  search: for (var i = 0; i <= bytes.length - length; i++) {
+    for (var j = 0; j < prefix.length; j++) if (bytes[i + j] !== prefix[j]) continue search
+    for (j = prefix.length; j < length; j++) if (bytes[i + j] !== 0x78) continue search
+    bytes.set(next, i)
+    found = true
+    i += length - 1
+  }
+  return found
 }
 (async function () {
   var config = {"title":"Grist Widget Template — demo","widget":"../"}

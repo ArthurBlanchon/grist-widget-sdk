@@ -3,6 +3,7 @@
 // tasks, and the page that opens it in Grist running in the browser.
 //
 //   node scripts/template-demo.mjs build   regenerate it (needs Docker)
+//   node scripts/template-demo.mjs page    rewrite only the page (no Docker)
 //   node scripts/template-demo.mjs check   fail if it is missing or stale
 //
 // Every scaffold gets it, so a new widget opens in real Grist from the first
@@ -71,11 +72,26 @@ async function build() {
   console.log(`template-demo: wrote ${DEMO_DIR} (${bytes.length} bytes)`)
 }
 
+/** The page for the template's title, as create-grist-widget generates it. */
+async function pageHtml(found) {
+  const { demoPageHtml } = await cli("demo-page.mjs")
+  return demoPageHtml({ title: found.metadata?.title ?? "Grist Widget Template" })
+}
+
+async function page() {
+  writeFileSync(join(DEMO_DIR, "index.html"), await pageHtml(await declaration()))
+  console.log(`template-demo: wrote ${join(DEMO_DIR, "index.html")}`)
+}
+
 async function check() {
   const problems = []
   for (const file of ["demo.grist", "index.html"]) if (!existsSync(join(DEMO_DIR, file))) problems.push(`public/demo/${file} is missing`)
+  const found = await declaration()
+  const html = join(DEMO_DIR, "index.html")
+  if (existsSync(html) && readFileSync(html, "utf8") !== (await pageHtml(found)))
+    problems.push("public/demo/index.html isn't the page create-grist-widget generates (run `node scripts/template-demo.mjs page`)")
   const recorded = existsSync(RECORD) ? JSON.parse(readFileSync(RECORD, "utf8")).hash : null
-  if (recorded !== demoHash(await declaration())) problems.push("the template's declaration (access, columns or title) changed since the document was generated")
+  if (recorded !== demoHash(found)) problems.push("the template's declaration (access, columns or title) changed since the document was generated")
   if (problems.length) {
     console.error(`template-demo: ${problems.join("; ")}.`)
     console.error("Run `node scripts/template-demo.mjs build` (needs Docker) and commit the template's public/demo/ and scripts/template-demo.json.")
@@ -87,9 +103,10 @@ async function check() {
 if (import.meta.url === `file://${process.argv[1]}`) {
   const cmd = process.argv[2]
   if (cmd === "build") await build()
+  else if (cmd === "page") await page()
   else if (cmd === "check") await check()
   else {
-    console.error("Usage: node scripts/template-demo.mjs build|check")
+    console.error("Usage: node scripts/template-demo.mjs build|page|check")
     process.exit(2)
   }
   process.exit(0)

@@ -50,6 +50,22 @@ describe("patchDemoDocument", () => {
     expect(text.split("https://owner.github.io/repo/v1.2.0/?demo=").length - 1).toBe(3)
   })
 
+  it("leaves a copy cut short alone and still points the whole one at the widget", () => {
+    // A history entry SQLite splits across pages ends its "x" padding early; Grist never loads it.
+    const whole = fakeDocument().bytes
+    const cut = new TextEncoder().encode(`{"url":"${DEMO_URL_PLACEHOLDER.slice(0, 40)}\u0000\u0007tail`)
+    const bytes = new Uint8Array(cut.length + whole.length)
+    bytes.set(cut, 0)
+    bytes.set(whole, cut.length)
+    expect(patchDemoDocument(bytes, "https://owner.github.io/repo/v1.2.0/")).toBe(true)
+    expect([...bytes.slice(0, cut.length)]).toEqual([...cut])
+    expect(dec.decode(bytes.slice(cut.length))).toContain("https://owner.github.io/repo/v1.2.0/?demo=xxx")
+  })
+
+  it("embeds the placeholder's length, since the page carries the function on its own", () => {
+    expect(patchDemoDocument.toString()).toContain(`var length = ${DEMO_URL_LENGTH}`)
+  })
+
   it("keeps a widget URL's own query", () => {
     const { bytes } = fakeDocument()
     patchDemoDocument(bytes, "https://example.com/w/?a=1")

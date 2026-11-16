@@ -140,6 +140,7 @@ export function createGristApi(runtime: GristRuntime): GristApi {
     // A read-only document: refused here, as Grist would ("No write access"),
     // without a round trip; the alerts say why, so actionError stays as it is.
     if (runtime.getState().readOnly) {
+      if (!runtime.getState().readOnlyRefused) runtime.update({ readOnlyRefused: true })
       const refused = Promise.reject(new Error(READ_ONLY_ERROR))
       refused.catch(() => {})
       return refused

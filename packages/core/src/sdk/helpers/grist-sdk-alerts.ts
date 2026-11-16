@@ -102,8 +102,9 @@ export function getGristSdkAlerts(
     out.push(alert("column-mapping", parts.join(" ")))
   }
 
-  // A widget that writes, on a document open read-only: why nothing it does changes it.
-  if (state.readOnly && state.declaredAccess === "full") {
+  // A widget that writes (full access, or a write it tried), on a document
+  // open read-only: why nothing it does changes it.
+  if (state.readOnly && (state.declaredAccess === "full" || state.readOnlyRefused)) {
     out.push(alert("read-only", "This document is open read-only: the widget shows its data, but can't change it."))
   }
 

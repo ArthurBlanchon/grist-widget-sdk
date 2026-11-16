@@ -86,7 +86,7 @@ widget says what to change in Grist.
 | `table` | `create`, `update`, `upsert`, `destroy` on the section's table (single or bulk). |
 | `getTable(tableId)` | The same, on any table. |
 | `applyActions(actions, options?)` | User actions applied together, e.g. schema changes with the [user action builders](/docs/sdk/api/helpers#user-actions). |
-| `readOnly` | `true` when Grist opened the document read-only (a viewer, view mode, a snapshot): every write above is refused without reaching Grist ("No write access"), and the `read-only` alert says so. Disable what would write. Widget options still save. |
+| `readOnly` | `true` when Grist opened the document read-only (a viewer, view mode, a snapshot): every write above is refused without reaching Grist ("No write access"), and the `read-only` alert says so. Disable what would write. Widget options still save. It tells the interface what to offer; Grist itself enforces who may write. |
 | `actionStatus` | `"idle" \| "running" \| "error"`: the last write. |
 | `actionError` | The last failed write's message, else `null`. |
 

@@ -37,6 +37,8 @@ describe("getGristSdkAlerts", () => {
     expect(alert).toMatchObject({ kind: "read-only", severity: "info", ariaRole: "status" })
     expect(alert!.message).toMatch(/open read-only/)
     expect(kinds(ready({ readOnly: true, declaredAccess: "read table" }))).toEqual([])
+    // Unless it tried to write all the same.
+    expect(kinds(ready({ readOnly: true, declaredAccess: "read table", readOnlyRefused: true }))).toEqual(["read-only"])
   })
 
   it("names the columns mapBack couldn't write", () => {

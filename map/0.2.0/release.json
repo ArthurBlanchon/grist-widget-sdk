@@ -1,0 +1,8 @@
+{
+  "slug": "map",
+  "version": "0.2.0",
+  "commit": "908ae0985df00b95a193f4b02be6bc226e2d28cf",
+  "released": "2026-11-16T10:35:23.713Z",
+  "changes": "- With more categories than the theme has colours (five), the five with the most points keep their own colour and the others are one \"Others\" group, in a neutral colour, last in the legend: no two categories share a colour, and the map stays readable and quick with thousands of rows. Each point's card still names its own category.",
+  "changelog": "CHANGELOG.md"
+}

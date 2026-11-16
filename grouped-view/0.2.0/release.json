@@ -1,0 +1,8 @@
+{
+  "slug": "grouped-view",
+  "version": "0.2.0",
+  "commit": "908ae0985df00b95a193f4b02be6bc226e2d28cf",
+  "released": "2026-11-16T10:35:22.328Z",
+  "changes": "- With many groups (a customer, a project), the view shows 50 at a time, an open group its first 10 rows, and a pivot table its first 20 columns, each with a button for the next and how many are not shown yet. Totals still count every row: the view stays quick with thousands of rows.",
+  "changelog": "CHANGELOG.md"
+}

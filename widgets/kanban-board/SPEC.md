@@ -52,6 +52,10 @@ the widget's options.
   button that shows the next ones; the card selected in Grist is always shown.
   Given more than 20 statuses, the board shows the first 20 columns and says
   how many more there are.
+- **AC-10** Given a card moved with the arrow keys, the keyboard stays on it
+  in its new column, and a screen reader is told where it went. A card's
+  name, as a screen reader reads it, holds its title, its notes and its
+  column.
 
 ## Standard criteria
 

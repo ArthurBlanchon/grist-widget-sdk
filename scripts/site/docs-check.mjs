@@ -5,7 +5,10 @@
 //   WIDGET_METADATA, useGrist<…>, useGristContext, fetchSelectedTable,
 //   fetchTable(, isReady, isAvailable, or a bare renderWithGrist(<…/>)
 //   without its { widget, rows }. Report mode lists them; --strict fails on
-//   them (once the guides are rewritten, R4).
+//   them (CI runs it). A page that documents the old names on purpose (the
+//   upgrade guide, which the CLI links) is listed in ALLOWED_PAGES, here,
+//   with its reason: adding one is a change to what CI runs, so it takes
+//   the maintainer's go (ADR 0012). Its old forms still print, as notices.
 // - **Short pages.** A page over about 800 words of prose (code aside) is
 //   two pages: a warning, never a failure.
 //
@@ -39,6 +42,10 @@ export const OLD_FORMS = [
 export function bareRenders(text) {
   const found = []
   for (const m of text.matchAll(/\brenderWithGrist\(/g)) {
+    // Its own signature as the reference writes it, renderWithGrist(ui,
+    // options?), and GristWidgetApp, which brings its own provider, are no
+    // bare render. renderWithGrist(ui) or (ui, { emulator }) still is.
+    if (/^\s*(ui,\s*options\?\s*\)|<GristWidgetApp\b)/.test(text.slice(m.index + m[0].length))) continue
     let depth = 1
     let i = m.index + m[0].length
     for (; i < text.length && depth > 0; i++) {
@@ -60,6 +67,12 @@ export function listPages(dir = DOCS_DIR) {
     else if (name.endsWith(".mdx")) out.push(path)
   }
   return out.sort()
+}
+
+/** The pages that may name old forms, by path under content/docs/, each with why. */
+export const ALLOWED_PAGES = {
+  "cli/upgrading.mdx":
+    "it documents the names `upgrade` renames and the forms older widgets move off, and the CLI links its #renamed-sdk-names",
 }
 
 /** `[line, label]` for each old form in a page's text, by line. */
@@ -89,13 +102,16 @@ function main(argv) {
     const text = readFileSync(page, "utf8")
     const rel = relative(DOCS_DIR, page)
     const found = oldForms(text)
+    const allowed = ALLOWED_PAGES[rel]
     for (const [line, label] of found) {
-      forms++
-      console.log(`${strict ? "::error" : "::notice"} file=apps/www/content/docs/${rel},line=${line}::old form: ${label}`)
+      if (!allowed) forms++
+      const level = strict && !allowed ? "::error" : "::notice"
+      console.log(`${level} file=apps/www/content/docs/${rel},line=${line}::old form: ${label}${allowed ? " (allowed on this page)" : ""}`)
     }
     const words = proseWords(text)
     if (words > MAX_WORDS) console.log(`::warning file=apps/www/content/docs/${rel}::${words} words: over about ${MAX_WORDS}, a page that needs more is two`)
-    if (found.length || words > MAX_WORDS) summary.push(`| \`${rel}\` | ${found.length} | ${words}${words > MAX_WORDS ? " ⚠" : ""} |`)
+    if (found.length || words > MAX_WORDS)
+      summary.push(`| \`${rel}\` | ${found.length}${allowed ? ` (allowed: ${allowed})` : ""} | ${words}${words > MAX_WORDS ? " ⚠" : ""} |`)
   }
   console.log(`docs-check: ${forms} old form(s)${strict ? "" : " (report mode)"}`)
   // GitHub shows only the first annotations of a step: the summary has them all, by page.

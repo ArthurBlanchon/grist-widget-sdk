@@ -1,4 +1,5 @@
 import assert from "node:assert/strict"
+import { existsSync } from "node:fs"
 import { test } from "node:test"
 
 import { REDIRECTS, redirectFiles, redirectPage, redirectTarget } from "./redirects.mjs"
@@ -20,4 +21,15 @@ test("a target inside the site takes the origin's base, a URL doesn't", () => {
 
 test("a target is escaped in the page", () => {
   assert.doesNotMatch(redirectPage('/a"><script>'), /"><script>/)
+})
+
+test("a target inside the docs is a real page", () => {
+  const docs = new URL("../../apps/www/content/docs/", import.meta.url)
+  for (const target of Object.values(REDIRECTS)) {
+    if (!target.startsWith("/docs/")) continue
+    const path = target.slice("/docs/".length).replace(/\/$/, "")
+    const page = path === "" ? "index.mdx" : `${path}.mdx`
+    const index = `${path}/index.mdx`
+    assert.ok(existsSync(new URL(page, docs)) || existsSync(new URL(index, docs)), target)
+  }
 })

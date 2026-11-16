@@ -19,6 +19,9 @@ export const REDIRECTS = {
   // Merged into the Overview (docs rewrite plan, R2).
   "/docs/quickstart/introduction/": "/docs/",
   "/docs/sdk/guide/raw-plugin-api-vs-sdk/": "/docs/",
+  // Merged into the guides, the reference and the examples (docs rewrite plan, R6).
+  "/docs/sdk/guide/cheatsheet/": "/docs/sdk/api/",
+  "/docs/sdk/guide/cookbook/": "/docs/quickstart/examples/",
 }
 
 const escapeHtml = (s) => s.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;")

@@ -10,6 +10,9 @@ import widgets from "../../../widgets.json";
 // Not the landing-page example switcher (that's Batch N) -- just answers
 // "which id do I pass to `use`/`create --example`", right where `list`/
 // `use` are already documented.
+// Each example's code, read where it lives (examples/ is the one copy).
+const SOURCE = "https://github.com/ArthurBlanchon/grist-widget-sdk/blob/main/";
+
 export function ExamplesCatalog() {
   return (
     <table>
@@ -18,6 +21,7 @@ export function ExamplesCatalog() {
           <th>Example</th>
           <th>Description</th>
           <th>Use</th>
+          <th>Code</th>
         </tr>
       </thead>
       <tbody>
@@ -30,6 +34,9 @@ export function ExamplesCatalog() {
             <td>{widget.description}</td>
             <td>
               <code>{widget.id}</code>
+            </td>
+            <td>
+              <a href={`${SOURCE}${widget.sourcePath}`}>Source</a>
             </td>
           </tr>
         ))}

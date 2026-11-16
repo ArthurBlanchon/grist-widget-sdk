@@ -82,12 +82,20 @@ A thin wrapper over `@testing-library/react`'s `render`. Adds:
 
 ```ts
 type RenderWithGristOptions = RenderOptions & {
+  /** The widget's declaration: rendered as mountGristWidget() does, every declared column mapped. */
+  widget?: GristWidget
+  /** With widget: the rows, under the declared names, as typed reads give them. The first is selected. */
+  rows?: ReadonlyArray<Record<string, unknown>>
+  /** The document open read-only, as for a viewer: writes fail as in Grist. */
+  readOnly?: boolean
   emulator?: CreateGristEmulatorOptions
   existing?: GristEmulator
 }
 ```
 
-If neither `emulator` nor `existing` is given, a blank emulator is created and torn down on `unmount`.
+A widget's tests pass `widget` and `rows`: `renderWithGrist(<App />, { widget, rows })`
+([Testing](/docs/emulator/testing)). If neither `emulator` nor `existing` is
+given, a blank emulator is created and torn down on `unmount`.
 
 Returns a `RenderResult` with the emulator:
 

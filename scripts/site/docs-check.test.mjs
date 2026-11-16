@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 
-import { listPages, oldForms, proseWords } from "./docs-check.mjs"
+import { ALLOWED_PAGES, DOCS_DIR, listPages, oldForms, proseWords } from "./docs-check.mjs"
 
 test("the old forms are found, with their line", () => {
   const text = "# Page\n\nexport const GRIST_OPTIONS = {}\nconst w = useGrist<Row>()\nrenderWithGrist(<App />)\nrenderWithGrist(<App />, { widget, rows })\nfetchTable(\"T\")"
@@ -31,4 +31,22 @@ test("every page is listed, and the navigation lists every page", async () => {
   assert.ok(pages.length > 0)
   const nav = JSON.parse(readFileSync(new URL("../../apps/www/content/docs/meta.json", import.meta.url), "utf8")).pages.filter((p) => !p.startsWith("---"))
   assert.deepEqual([...nav].sort(), [...pages].sort())
+})
+
+test("its own signature and GristWidgetApp are no bare render", () => {
+  assert.deepEqual(oldForms("### `renderWithGrist(ui, options?)`\nrenderWithGrist(<GristWidgetApp App={W} options={o} />)"), [])
+})
+
+test("a render of a variable named ui without its widget is still bare", () => {
+  assert.equal(oldForms("renderWithGrist(ui)").length, 1)
+  assert.equal(oldForms("renderWithGrist(ui, { emulator })").length, 1)
+})
+
+test("a page can't allow old forms itself: only ALLOWED_PAGES, each with a reason, on a real page", () => {
+  assert.equal(oldForms("{/* docs-check: old forms allowed, it documents the renames */}\nexport const GRIST_OPTIONS = {}").length, 1)
+  const pages = listPages().map((p) => p.slice(DOCS_DIR.length))
+  for (const [page, why] of Object.entries(ALLOWED_PAGES)) {
+    assert.ok(pages.includes(page), page)
+    assert.ok(why.length > 20, page)
+  }
 })

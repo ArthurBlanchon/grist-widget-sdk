@@ -34,7 +34,7 @@ sets them; in short:
 | Build | `pnpm --filter www build` |
 | Lint | `pnpm --filter www lint` |
 | Type-check | `pnpm --filter www types:check` |
-| Old forms and page sizes in the docs (report mode; `--strict` fails) | `node ../../scripts/site/docs-check.mjs` |
+| Old forms (CI fails on them, `--strict`) and page sizes in the docs | `node ../../scripts/site/docs-check.mjs --strict` |
 
 ## Path map
 

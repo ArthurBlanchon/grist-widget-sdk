@@ -94,7 +94,7 @@ configured to receive them. Pre-Grist-1.6 widgets never see a theme
 update.
 
 **Fix.** Treat `null` as "use system theme" rather than an error
-state. The cheat sheet pattern is:
+state. The pattern is:
 
 ```tsx
 <div data-theme={w.theme ?? "light"} />

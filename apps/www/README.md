@@ -35,7 +35,7 @@ see Deploy notes for the difference.
 - Every page needs frontmatter `description`, 40–160 chars, not a repeat of
   the page's own opening paragraph, unique across the whole corpus —
   enforced by a zod refinement in `lib/source.ts`, not just a convention.
-- Widget source in the cookbook/cheat sheet is transcluded from
-  `examples/**` via `<include>`, never hand-copied.
+- Widget source shown on a page is transcluded from `examples/**` via
+  `<include>`, never hand-copied.
 - API reference tables use `<AutoTypeTable>` against real SDK types, not
   hand-written tables.

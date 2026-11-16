@@ -144,17 +144,10 @@ to real columns. You consume them via `w.mappedRecord` and
 
 ## Run a write
 
-**[mark-done](/examples/mark-done/demo/)** is a single-row
-`table.update`; its source is in the [Cheat sheet](/docs/sdk/guide/cheatsheet).
-
-For bulk writes, pass an array and the SDK forwards it to Grist as one
-`BulkUpdateRecord` action — see
-**[bulk-mark-done](/examples/bulk-mark-done/demo/)** in the
-[Cookbook](/docs/sdk/guide/cookbook).
-
-For schema changes, see
-**[schema-migration](/examples/schema-migration/demo/)**, also
-in the [Cookbook](/docs/sdk/guide/cookbook).
+**[mark-done](/examples/mark-done/demo/)** writes the selected row;
+**[bulk-mark-done](/examples/bulk-mark-done/demo/)** writes many rows as one
+action, and **[schema-migration](/examples/schema-migration/demo/)** changes
+the schema. [Write data](/docs/sdk/guide/writing-data) explains each.
 
 ## Explore the rest of the SDK
 
@@ -180,9 +173,9 @@ in the [Cookbook](/docs/sdk/guide/cookbook).
     href="/docs/sdk/guide/column-mapping"
   />
   <Card
-    title="Cookbook"
-    description="Ten end-to-end recipes — and the working demo widgets behind each one."
-    href="/docs/sdk/guide/cookbook"
+    title="Examples"
+    description="Working starting points, each running in a real Grist in your browser."
+    href="/docs/quickstart/examples"
   />
 </Cards>
 
@@ -197,12 +190,10 @@ in the [Cookbook](/docs/sdk/guide/cookbook).
 | [Widget options](/docs/sdk/guide/widget-options) | Persisting per-section settings in Grist's own store |
 | [Attachments & REST](/docs/sdk/guide/attachments-and-rest) | Attachment bytes, SQL, and the REST API via pre-authenticated fetch |
 | [Widget linking & theme](/docs/sdk/guide/linking-and-theme) | Driving another widget's cursor; adopting the document theme |
-| [Typing your rows](/docs/sdk/guide/typing) | The two generics on `useGrist()` |
+| [Typed reads](/docs/sdk/guide/typing) | Records typed from the declaration, checked cell by cell |
 | [Errors and alerts](/docs/sdk/guide/error-handling) | Where a widget's problems show |
 | [Performance](/docs/sdk/guide/performance) | How `useGrist()` re-renders, and keeping large widgets fast |
-| [Cheat sheet](/docs/sdk/guide/cheatsheet) | Copy-pasteable shapes for daily reference |
 | [Troubleshooting](/docs/sdk/guide/troubleshooting) | Symptom-first fixes |
-| [Cookbook](/docs/sdk/guide/cookbook) | Ten ready-to-paste recipes |
 
 See the [API reference](/docs/sdk/api) for every exported symbol, and the
 [Replica document](/docs/sdk/design/replica-document) for the shape a

@@ -8,8 +8,9 @@ export type UseWidgetMetadataInput = {
 
 /**
  * Sets the page's title and its description meta tags (Open Graph and
- * Twitter included) while the component is mounted. `mountGristWidget()`
- * does this from the declaration's title and description.
+ * Twitter included) when the component mounts and whenever `input` changes;
+ * nothing is restored on unmount. `mountGristWidget()` does this from the
+ * declaration's title and description.
  */
 export function useWidgetMetadata(input?: UseWidgetMetadataInput | null) {
   useEffect(() => {

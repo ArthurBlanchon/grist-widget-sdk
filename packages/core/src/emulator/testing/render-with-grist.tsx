@@ -51,8 +51,8 @@ export type RenderWithGristResult = RenderResult & {
 /**
  * Renders a component against an in-memory Grist (the emulator), behind the
  * same `grist` global a widget reads in Grist. With `widget`, it renders the
- * widget as `mountGristWidget()` does, every declared column mapped to a
- * table of `rows`: `renderWithGrist(<App />, { widget, rows })`.
+ * widget in its provider, boundary and alerts, every declared column mapped
+ * to a table of `rows`: `renderWithGrist(<App />, { widget, rows })`.
  */
 export function renderWithGrist(
   ui: ReactElement,

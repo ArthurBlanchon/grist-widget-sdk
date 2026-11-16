@@ -127,7 +127,7 @@ export type MountedGristWidget = {
  * `ReleasePage` on a deployed URL.
  */
 export function mountGristWidget(entry: GristWidgetEntry, options?: { dev?: boolean; root?: Element | string }): MountedGristWidget
-/** The older form: the widget's props, as an object. Prefer the entry module, above. */
+/** The older form: the widget's props, as an object. Prefer `mountGristWidget(entry, { dev })`. */
 export function mountGristWidget(config: MountGristWidgetConfig): MountedGristWidget
 export function mountGristWidget(
   config: MountGristWidgetConfig | GristWidgetEntry,

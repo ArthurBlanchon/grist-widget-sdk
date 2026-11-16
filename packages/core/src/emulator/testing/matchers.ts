@@ -11,7 +11,11 @@
 import type { GristEmulator } from "../create-grist-emulator"
 import type { EmulatorEvent } from "../core/event-bus"
 
-/** Every user action the widget sent the emulator, oldest first: `["UpdateRecord", "Tasks", 1, { Done: true }]`. */
+/**
+ * The user actions applied to the emulator, oldest first: the widget's, and
+ * the test's own `apply` and `mutate`. Read from the bus's history, which
+ * keeps the last 200 events and is cleared by `dispose()`.
+ */
 export function actionsOf(emulator: GristEmulator): unknown[][] {
   return emulator.bus
     .history()
@@ -19,7 +23,10 @@ export function actionsOf(emulator: GristEmulator): unknown[][] {
     .map((e) => e.action as unknown[])
 }
 
-/** Every event on the emulator's bus, oldest first: ready, cursor, data, options, theme and user actions. */
+/**
+ * The last 200 events on the emulator's bus, oldest first (cleared by
+ * `dispose()`): ready, cursor, data, options, mappings, theme and user actions.
+ */
 export function eventsOf(emulator: GristEmulator): readonly EmulatorEvent[] {
   return emulator.bus.history()
 }

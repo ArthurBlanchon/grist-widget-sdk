@@ -1,0 +1,932 @@
+{
+  "grist-widget-sdk": [
+    {
+      "name": "checkGristCell",
+      "kind": "function",
+      "summary": "Checks one value against a Grist column type (`\"Numeric\"`, `\"Ref:People\"`, `\"Text,Ref\"`), as typed reads do: the value the type promises, or why it doesn't fit.",
+      "signatures": [
+        "checkGristCell(type: string | undefined, value: unknown): GristCellCheck"
+      ]
+    },
+    {
+      "name": "decodeGristValue",
+      "kind": "function",
+      "summary": "Decodes a Grist cell value into an idiomatic JS value.",
+      "signatures": [
+        "decodeGristValue(value: unknown, column?: GristReplicaColumn): GristDecodedValue"
+      ]
+    },
+    {
+      "name": "defineGristWidget",
+      "kind": "function",
+      "summary": "Declares a widget. The `const` type parameter keeps the column names and types literal, so the mapped record is typed with no annotation, no `as const` and no generics.",
+      "signatures": [
+        "defineGristWidget<const D extends GristWidgetDefinition>(definition: D): GristWidget<D>"
+      ]
+    },
+    {
+      "name": "encodeGristCell",
+      "kind": "function",
+      "summary": "A value as Grist stores it in a column of the declared `type`: the reverse of what typed reads give. Lists become `[\"L\", ...]` (a RefList's `Reference` items become their row ids), a `Date` for a Date or DateTime column becomes seconds since the epoch, a `Reference` for a Ref column its row id. A list already encoded (`[\"L\", ...]`, as the attachment helpers return it) and every other value pass through, so it is safe to call twice.",
+      "signatures": [
+        "encodeGristCell(type: string | undefined, value: unknown): unknown"
+      ]
+    },
+    {
+      "name": "encodeGristValue",
+      "kind": "function",
+      "summary": "Encodes a JS value into Grist's expected wire form for a given column type.",
+      "signatures": [
+        "encodeGristValue(value: unknown, column?: GristReplicaColumn): unknown"
+      ]
+    },
+    {
+      "name": "extractGristAttachmentId",
+      "kind": "function",
+      "summary": "First attachment id in the cell, if any (see `extractGristAttachmentIdsFromCell`).",
+      "signatures": [
+        "extractGristAttachmentId(value: unknown): string | undefined"
+      ]
+    },
+    {
+      "name": "extractGristAttachmentIdsFromCell",
+      "kind": "function",
+      "summary": "All attachment ids found in a Grist attachment cell value (ordered, deduped). Attachment columns are usually an **array** of file refs; a single id or one JSON object is also supported.",
+      "signatures": [
+        "extractGristAttachmentIdsFromCell(value: unknown): string[]"
+      ]
+    },
+    {
+      "name": "FetchRows",
+      "kind": "type",
+      "summary": "A table's rows, each `{ id, ...cells }` under real column ids. Without a table id, the widget's own table as its section shows it (filters and sort applied); with one, any table (full access), in Grist's row order. `{ columnar: true }` gives Grist's columns instead."
+    },
+    {
+      "name": "FetchRowsOptions",
+      "kind": "type",
+      "summary": "`fetchRows()` options: rows (the default) or Grist's columns."
+    },
+    {
+      "name": "GristApi",
+      "kind": "type",
+      "summary": "The methods `useGrist()` returns next to its state: reads, writes, attachments and the cursor."
+    },
+    {
+      "name": "GristApplyUserActionsOptions",
+      "kind": "type",
+      "summary": "Optional second argument to `docApi.applyUserActions`."
+    },
+    {
+      "name": "gristAttachmentCellValue",
+      "kind": "function",
+      "summary": "Wire value for a single-file Attachments cell.",
+      "signatures": [
+        "gristAttachmentCellValue(attachmentId: string | number): GristEncodedAttachmentList"
+      ]
+    },
+    {
+      "name": "gristAttachmentCellValues",
+      "kind": "function",
+      "summary": "Wire value for an Attachments cell (Grist list encoding).",
+      "signatures": [
+        "gristAttachmentCellValues(attachmentIds: (string | number)[]): GristEncodedAttachmentList"
+      ]
+    },
+    {
+      "name": "GristAttachmentUploadResult",
+      "kind": "type",
+      "summary": "The attachment ids an upload created."
+    },
+    {
+      "name": "GristBoundary",
+      "kind": "function",
+      "summary": "Renders the widget once Grist is connected, has granted the access it declares, and every required declared column is mapped; until then, a screen that says what is missing (with a retry where one can help). Requires `<GristWidgetProvider>`; `mountGristWidget()` renders both.",
+      "signatures": [
+        "GristBoundary(input: GristBoundaryProps): react.JSX.Element"
+      ]
+    },
+    {
+      "name": "GristBoundaryProps",
+      "kind": "type",
+      "summary": "The widget, shown once it is connected, has its access and its required columns mapped."
+    },
+    {
+      "name": "GristCellCheck",
+      "kind": "type",
+      "summary": "What `checkGristCell` returns: the cell's value, or why it doesn't match its declared type."
+    },
+    {
+      "name": "GristCellIssue",
+      "kind": "type",
+      "summary": "A mapped cell that didn't match its declared type, or a rule of the widget's schema."
+    },
+    {
+      "name": "GristChoiceListEntry",
+      "kind": "type",
+      "summary": "One selectable choice for UI (value stored in the cell is `value`)."
+    },
+    {
+      "name": "GristColumnarTable",
+      "kind": "type",
+      "summary": "Column-oriented table payload (`fetchTable`, `fetchSelectedTable`): `{ id: [...], Name: [...] }`."
+    },
+    {
+      "name": "GristColumnExcludeContext",
+      "kind": "type",
+      "summary": "What `extraExcludeColumn` is given for each column."
+    },
+    {
+      "name": "GristColumnInfo",
+      "kind": "type",
+      "summary": "One column of a table, as `listColumns()` gives it."
+    },
+    {
+      "name": "GristColumnsToMap",
+      "kind": "type",
+      "summary": "Argument shape for `grist.ready({ columns })`."
+    },
+    {
+      "name": "GristColumnToMap",
+      "kind": "type",
+      "summary": "Single-column declaration in `grist.ready({ columns })`. Mirrors Grist `ColumnToMap`. See https://support.getgrist.com/code/interfaces/grist_plugin_api.ColumnToMap/"
+    },
+    {
+      "name": "GristCursorPos",
+      "kind": "type",
+      "summary": "Argument to `grist.setCursorPos` (subset of Grist `CursorPos`)."
+    },
+    {
+      "name": "GristDecodedValue",
+      "kind": "type",
+      "summary": "A cell as `decodeGristValue` returns it: plain values, `Date`s and lists, or an error or a reference marker."
+    },
+    {
+      "name": "GristDocumentMode",
+      "kind": "type",
+      "summary": "How row bodies were populated when the replica document was built (hint only). Loaders should still treat omitted `rows` like `[]` via `normalizeReplicaTableInput`."
+    },
+    {
+      "name": "GristEncodedAttachmentList",
+      "kind": "type",
+      "summary": "An Attachments cell as Grist writes it: `[\"L\", ...ids]`."
+    },
+    {
+      "name": "GristEncodedError",
+      "kind": "type",
+      "summary": "`[\"E\", \"ErrorClass\", \"message\", traceback?]` — Grist error sentinel."
+    },
+    {
+      "name": "GristFetchedAttachmentBlob",
+      "kind": "type",
+      "summary": "An attachment's bytes, and their content type."
+    },
+    {
+      "name": "GristFetchSelectedOptions",
+      "kind": "type",
+      "summary": "Options for `fetchSelectedTable` / `fetchSelectedRecord` on `docApi` (GristView)."
+    },
+    {
+      "name": "GristFormulaKind",
+      "kind": "type",
+      "summary": "How Grist treats the column (from `_grist_Tables_column` `isFormula` + `formula`). `empty_slot` is Grist's \"empty column\" state: `isFormula` true with no formula text."
+    },
+    {
+      "name": "GristMappedRow",
+      "kind": "type",
+      "summary": "The mapped record a declaration's columns give: `{ id }` and each declared column, typed from its Grist type. `widget.useGrist()` uses it, and `GristWidgetRow<typeof widget>` names it for a component's props."
+    },
+    {
+      "name": "GristMinimalRecord",
+      "kind": "type",
+      "summary": "The least a record has: its row id."
+    },
+    {
+      "name": "GristNoiseColumnsOptions",
+      "kind": "type",
+      "summary": "Which of Grist's bookkeeping columns to leave out: the row id, helper columns, logging columns, `manualSort`."
+    },
+    {
+      "name": "GristReadyOptions",
+      "kind": "type",
+      "summary": "Arguments accepted by `grist.ready` for custom widgets."
+    },
+    {
+      "name": "GristRecordPatch",
+      "kind": "type",
+      "summary": "A write under declared names: any of the mapped record's fields but its `id`."
+    },
+    {
+      "name": "GristReplicaColumn",
+      "kind": "type",
+      "summary": "Column metadata in replica JSON: Grist-native fields only (no samples / scan stats). `formulaKind` is optional UI convenience; use `resolveGristFormulaKind` when missing."
+    },
+    {
+      "name": "GristReplicaDocument",
+      "kind": "type",
+      "summary": "Canonical Grist replica document: one JSON type for `getDocumentJson`, fixtures, and `createGristEmulator({ document })`."
+    },
+    {
+      "name": "GristReplicaRow",
+      "kind": "type",
+      "summary": "Decoded row in replica JSON (`id` + fields). Same as wire `fetchTable` row objects, but **not** columnar `Record<colId, unknown[]>` — that shape is only on `docApi.fetchTable`."
+    },
+    {
+      "name": "GristReplicaSelection",
+      "kind": "type",
+      "summary": "Selection slice persisted on replica fixtures (emulator / widget)."
+    },
+    {
+      "name": "GristReplicaTable",
+      "kind": "type",
+      "summary": "One table of a replica document: its columns and, optionally, its rows."
+    },
+    {
+      "name": "GristRequiredAccess",
+      "kind": "type",
+      "summary": "Access level passed to `grist.ready({ requiredAccess })`."
+    },
+    {
+      "name": "GristRowRecord",
+      "kind": "type",
+      "summary": "A row from `grist.onRecord` or `fetchTable`. Always carries a numeric `id`."
+    },
+    {
+      "name": "GristSchemaTableView",
+      "kind": "type",
+      "summary": "Selected table slice with `tableId` for consumers that expect it on the object."
+    },
+    {
+      "name": "GristSdkAlertKind",
+      "kind": "type",
+      "summary": "The alerts `mountGristWidget()` shows above a running widget: what needs the user's attention in Grist (column mapping, access, a failed write, an unlinked section). The blocking states (not connected, access refused, required columns unmapped) are `<GristBoundary>`'s, not alerts."
+    },
+    {
+      "name": "GristTableNewRecord",
+      "kind": "type",
+      "summary": "Record for `create` (no id needed)."
+    },
+    {
+      "name": "GristTableOperations",
+      "kind": "type",
+      "summary": "Wraps `grist.getTable(...)` / `grist.selectedTable`."
+    },
+    {
+      "name": "GristTableOpOptions",
+      "kind": "type",
+      "summary": "Options accepted by `TableOperations.create / update`."
+    },
+    {
+      "name": "GristTableUpdateRecord",
+      "kind": "type",
+      "summary": "`TableOperations`-style record for `update`. Must include `id`; other fields are partial."
+    },
+    {
+      "name": "GristTableUpsertOptions",
+      "kind": "type",
+      "summary": "Options accepted by `TableOperations.upsert`."
+    },
+    {
+      "name": "GristTableUpsertRecord",
+      "kind": "type",
+      "summary": "Record for `upsert`: `require` is the match key set, `fields` is what to write."
+    },
+    {
+      "name": "GristTheme",
+      "kind": "type",
+      "summary": "The widget's connection to Grist: one store, one `connect()`."
+    },
+    {
+      "name": "GristUserActionTuple",
+      "kind": "type",
+      "summary": "Grist `docApi.applyUserActions` payloads are arrays of user-action tuples."
+    },
+    {
+      "name": "GristWidget",
+      "kind": "type",
+      "summary": "A declared widget. Pass it to `mountGristWidget()` (as `widget`, exported from `src/app/App.tsx`)."
+    },
+    {
+      "name": "GristWidgetActionStatus",
+      "kind": "type",
+      "summary": "A write's status: none running, one running, or the last one failed (`actionError` says why)."
+    },
+    {
+      "name": "GristWidgetColumnMap",
+      "kind": "type",
+      "summary": "Mapping returned by Grist between logical widget column names and real table column ids. Single mappings are `string`; `allowMultiple` columns are `string[]`."
+    },
+    {
+      "name": "GristWidgetConfiguration",
+      "kind": "type",
+      "summary": "Last `grist.ready` options mirrored with the emulator (optional on fixtures)."
+    },
+    {
+      "name": "GristWidgetDefinition",
+      "kind": "type",
+      "summary": "What a widget declares: `UseGristOptions`, plus its title, description and where to report a problem."
+    },
+    {
+      "name": "GristWidgetDemo",
+      "kind": "type",
+      "summary": "A widget's demo data (`src/app/demo.ts`, exported as `demo`): the document its demo page, its real-Grist check and `create-grist-widget demo` open, in place of generated sample rows. The demo page is public: invented data only, and never a key in its options."
+    },
+    {
+      "name": "GristWidgetDemoColumnType",
+      "kind": "type",
+      "summary": "The column types demo data takes."
+    },
+    {
+      "name": "GristWidgetInteraction",
+      "kind": "type",
+      "summary": "Second argument to `grist.onOptions` — document ↔ widget relationship (subset of Grist `InteractionOptions`)."
+    },
+    {
+      "name": "GristWidgetLinkingInfo",
+      "kind": "type",
+      "summary": "Linking state reported by Grist in `onOptions` settings (`InteractionOptions.linking`)."
+    },
+    {
+      "name": "GristWidgetMetadata",
+      "kind": "type",
+      "summary": "What describes a widget rather than configures it: its title, description and report URL."
+    },
+    {
+      "name": "GristWidgetMode",
+      "kind": "type",
+      "summary": "Derived from the selection: no row, a row, or the add-row placeholder."
+    },
+    {
+      "name": "GristWidgetProvider",
+      "kind": "function",
+      "summary": "Connects to Grist for the widgets below it: `useGrist()` under it reads this connection. `mountGristWidget()` renders it; render it yourself only for a page that manages its own React root.",
+      "signatures": [
+        "GristWidgetProvider(input: GristWidgetProviderProps): react.JSX.Element"
+      ]
+    },
+    {
+      "name": "GristWidgetProviderProps",
+      "kind": "type",
+      "summary": "What the provider connects with, and the widgets below it."
+    },
+    {
+      "name": "GristWidgetRow",
+      "kind": "type",
+      "summary": "The widget's mapped record type, from its declaration."
+    },
+    {
+      "name": "GristWidgetStatus",
+      "kind": "type",
+      "summary": "The widget's connection to Grist, as `useGrist().status` reports it."
+    },
+    {
+      "name": "httpUrl",
+      "kind": "function",
+      "summary": "`value` as a URL a widget may link to or load from: an absolute `http:` or `https:` URL, normalised, or `undefined`. Use it on every link or source that comes from a document's data, before it reaches an `href` or a `src`.",
+      "signatures": [
+        "httpUrl(value: unknown): string | undefined"
+      ]
+    },
+    {
+      "name": "isGristCellError",
+      "kind": "function",
+      "summary": "Convenience: true when the cell is a Grist error sentinel.",
+      "signatures": [
+        "isGristCellError(value: unknown): value is GristEncodedError"
+      ]
+    },
+    {
+      "name": "ListColumnsOptions",
+      "kind": "type",
+      "summary": "`listColumns()`'s options: which columns to leave out."
+    },
+    {
+      "name": "ListTablesOptions",
+      "kind": "type",
+      "summary": "`useGrist()`'s methods, created once per runtime: every one is referentially stable for the widget's lifetime, and reads `grist` when called (the emulator installs and removes it in tests)."
+    },
+    {
+      "name": "mergeGristAttachmentCellValue",
+      "kind": "function",
+      "summary": "Merge new attachment ids into an existing Attachments cell value (deduped, order preserved).",
+      "signatures": [
+        "mergeGristAttachmentCellValue(existingCell: unknown, newIds: (string | number)[]): GristEncodedAttachmentList"
+      ]
+    },
+    {
+      "name": "MigrateWidgetOptions",
+      "kind": "type",
+      "summary": "Brings options written under `fromVersion` (lower than the widget's `optionsVersion`) to the current version. Return a new plain object; options it can't migrate: throw, and they are left as they are. Check the options' shape rather than trust `fromVersion` alone: options without a version count as version 1, and may already be in a later shape."
+    },
+    {
+      "name": "normalizeGristChoiceListEntries",
+      "kind": "function",
+      "summary": "Normalizes Grist Choice / ChoiceList widgetOptions into a flat list for dropdowns. `choices` entries are string labels (the stored cell value). Per-choice styling lives in `choiceOptions[label]`.",
+      "signatures": [
+        "normalizeGristChoiceListEntries(widgetOptions: Record<string, unknown> | undefined): GristChoiceListEntry[]"
+      ]
+    },
+    {
+      "name": "ReplicaDocumentJsonOptions",
+      "kind": "type",
+      "summary": "Options for `getDocumentJson` / `buildDocumentJson` on the return value of `useGristSchema`."
+    },
+    {
+      "name": "resolveGristFormulaKind",
+      "kind": "function",
+      "summary": "Use when `formulaKind` may be missing (e.g. older document builds).",
+      "signatures": [
+        "resolveGristFormulaKind(col: GristReplicaColumn): GristFormulaKind"
+      ]
+    },
+    {
+      "name": "StandardSchema",
+      "kind": "type",
+      "summary": "Minimal Standard Schema (https://standardschema.dev): zod 4, valibot, arktype implement it."
+    },
+    {
+      "name": "tableDataToRows",
+      "kind": "function",
+      "summary": "Turn `fetchTable` output into row objects (order follows the `id` column).",
+      "signatures": [
+        "tableDataToRows<T = Record<string, unknown>>(data: GristColumnarTable): GristRowRecord<T>[]"
+      ]
+    },
+    {
+      "name": "useGrist",
+      "kind": "function",
+      "summary": "The widget's Grist state and API, from the nearest `<GristWidgetProvider>`: `mountGristWidget()` renders one inside Grist, and `renderWithGrist(<App />, { widget })` in a test. Throws outside one; a component that also runs outside Grist calls `useGristOptional()`.",
+      "signatures": [
+        "useGrist<TRow = Record<string, unknown>, TMapped = Record<string, unknown>>(): UseGristResult<TRow, TMapped>"
+      ]
+    },
+    {
+      "name": "useGristOptional",
+      "kind": "function",
+      "summary": "`useGrist()` inside a provider, or null outside one: for components that also work without Grist.",
+      "signatures": [
+        "useGristOptional<TRow = Record<string, unknown>, TMapped = Record<string, unknown>>(): UseGristResult<TRow, TMapped> | null"
+      ]
+    },
+    {
+      "name": "UseGristOptions",
+      "kind": "type",
+      "summary": "What the widget asks Grist for: access, columns to map, and the alerts it doesn't want."
+    },
+    {
+      "name": "UseGristResult",
+      "kind": "type",
+      "summary": "The widget's Grist state and API. Every method is referentially stable for the widget's lifetime: safe in effect dependencies. The object itself is new whenever a value changes; depend on the members you use, not on it."
+    },
+    {
+      "name": "useGristSchema",
+      "kind": "function",
+      "summary": "Grist replica-document hook: metadata + optional decoded `rows` per table.",
+      "signatures": [
+        "useGristSchema(options?: UseGristSchemaOptions): UseGristSchemaResult"
+      ]
+    },
+    {
+      "name": "UseGristSchemaOptions",
+      "kind": "type",
+      "summary": "What `useGristSchema` reads. The connection (access level, columns) is the widget's declaration, from `defineGristWidget()`: the hook reads it through the provider `mountGristWidget()` renders."
+    },
+    {
+      "name": "UseGristSchemaResult",
+      "kind": "type",
+      "summary": "What `useGristSchema()` returns: the document as a replica, and its JSON."
+    },
+    {
+      "name": "useWidgetMetadata",
+      "kind": "function",
+      "summary": "Sets the page's title and its description meta tags (Open Graph and Twitter included) when the component mounts and whenever `input` changes; nothing is restored on unmount. `mountGristWidget()` does this from the declaration's title and description.",
+      "signatures": [
+        "useWidgetMetadata(input?: UseWidgetMetadataInput | null): void"
+      ]
+    },
+    {
+      "name": "UseWidgetMetadataInput",
+      "kind": "type",
+      "summary": "The page's title and description."
+    },
+    {
+      "name": "ValidateColumnMappingsResult",
+      "kind": "type",
+      "summary": "Whether the declared columns are mapped: what is missing, and whether Grist has sent the mappings yet."
+    }
+  ],
+  "grist-widget-sdk/app": [
+    {
+      "name": "DeployChannel",
+      "kind": "type",
+      "summary": "Where a deployed build is being served from."
+    },
+    {
+      "name": "deployChannelLabel",
+      "kind": "function",
+      "summary": "`\"latest\"`, `\"dev\"`, `\"v1\"` (a major's channel) or `\"v1.2.0\"`.",
+      "signatures": [
+        "deployChannelLabel(channel: DeployChannel): string"
+      ]
+    },
+    {
+      "name": "DeployPath",
+      "kind": "type",
+      "summary": "A served URL's channel, and the base path its channels share: what `parseDeployPath` returns."
+    },
+    {
+      "name": "entryProps",
+      "kind": "function",
+      "summary": "The props `GristWidgetApp` takes, from a widget's entry module.",
+      "signatures": [
+        "entryProps(entry: GristWidgetEntry, dev?: boolean): GristWidgetAppProps"
+      ]
+    },
+    {
+      "name": "GristWidgetApp",
+      "kind": "function",
+      "summary": "The tree `mountGristWidget` renders, as a component: for a test, or for a page that manages its own React root.",
+      "signatures": [
+        "GristWidgetApp(input: GristWidgetAppProps): react.JSX.Element"
+      ]
+    },
+    {
+      "name": "GristWidgetAppProps",
+      "kind": "type",
+      "summary": "What renders a widget: the component, what it asks Grist for, and the pages and alerts around it."
+    },
+    {
+      "name": "GristWidgetEntry",
+      "kind": "type",
+      "summary": "A widget's entry module, `src/app/App.tsx`, as `import * as entry` gives it: the widget as its default export, its declaration as `widget` (or, in a widget made before `defineGristWidget`, `GRIST_OPTIONS` and `WIDGET_METADATA`), and optionally its own `Alerts`, `LocalDevPage` and `ReleasePage`. Everything a widget customises lives there, in its own file: the template's `src/main.tsx` stays the same in every widget, and `create-grist-widget upgrade` can rewrite it without losing anything."
+    },
+    {
+      "name": "MountedGristWidget",
+      "kind": "type",
+      "summary": "A mounted widget: `unmount()` removes it and its React root."
+    },
+    {
+      "name": "mountGristWidget",
+      "kind": "function",
+      "summary": "Render a widget into the page: everything `src/main.tsx` used to wire by hand.",
+      "signatures": [
+        "mountGristWidget(entry: GristWidgetEntry, options?: { dev?: boolean; root?: Element | string; }): MountedGristWidget",
+        "mountGristWidget(config: MountGristWidgetConfig): MountedGristWidget"
+      ]
+    },
+    {
+      "name": "MountGristWidgetConfig",
+      "kind": "type",
+      "summary": "`mountGristWidget()`'s older form: the widget's props, and where to render."
+    },
+    {
+      "name": "parseDeployPath",
+      "kind": "function",
+      "summary": "Parse a pathname into its deploy channel and base path. A path without a channel segment (the deployed root, or a local dev server) is `latest`: the deploy places the latest release at the root too.",
+      "signatures": [
+        "parseDeployPath(pathname: string): DeployPath"
+      ]
+    },
+    {
+      "name": "ReleasedVersion",
+      "kind": "type",
+      "summary": "One entry of the `versions.json` a widget's deploy pipeline maintains."
+    },
+    {
+      "name": "ResolvedWidgetTheme",
+      "kind": "type",
+      "summary": "The theme applied: `\"system\"` resolved to light or dark."
+    },
+    {
+      "name": "useReleasedVersions",
+      "kind": "function",
+      "summary": "The widget's released versions, read from the `versions.json` next to its channels (see `parseDeployPath`). For a page shown outside Grist, such as a release page linking to each version.",
+      "signatures": [
+        "useReleasedVersions(pathname?: string): UseReleasedVersionsResult"
+      ]
+    },
+    {
+      "name": "UseReleasedVersionsResult",
+      "kind": "type",
+      "summary": "What `useReleasedVersions()` returns."
+    },
+    {
+      "name": "useTheme",
+      "kind": "function",
+      "summary": "The widget's current theme, for components that need it in JavaScript (a toaster, a chart). Same shape as shadcn's `useTheme()`. Styles should rely on the `dark` class that `mountGristWidget` keeps on `<html>`. Outside a mounted widget (a unit test, for instance) it reports the system theme and `setTheme` does nothing.",
+      "signatures": [
+        "useTheme(): UseThemeResult"
+      ]
+    },
+    {
+      "name": "UseThemeResult",
+      "kind": "type",
+      "summary": "What `useTheme()` returns."
+    },
+    {
+      "name": "WidgetTheme",
+      "kind": "type",
+      "summary": "A theme choice: light, dark, or the system's."
+    }
+  ],
+  "grist-widget-sdk/actions": [
+    {
+      "name": "gristAddColumnAction",
+      "kind": "function",
+      "summary": "`[\"AddColumn\", tableId, colId, colInfo]` — `colInfo` shape depends on Grist version / column type.",
+      "signatures": [
+        "gristAddColumnAction(tableId: string, colId: string, colInfo: Record<string, unknown>): GristUserActionTuple"
+      ]
+    },
+    {
+      "name": "gristAddRecordAction",
+      "kind": "function",
+      "summary": "`[\"AddRecord\", tableId, null, { col: value, ... }]`",
+      "signatures": [
+        "gristAddRecordAction(tableId: string, values: Record<string, unknown>): GristUserActionTuple"
+      ]
+    },
+    {
+      "name": "gristAddTableAction",
+      "kind": "function",
+      "summary": "`[\"AddTable\", tableId, tableInfo]`",
+      "signatures": [
+        "gristAddTableAction(tableId: string, tableInfo: Record<string, unknown>): GristUserActionTuple"
+      ]
+    },
+    {
+      "name": "gristAddVisibleColumnAction",
+      "kind": "function",
+      "summary": "`[\"AddVisibleColumn\", tableId, colId, colInfo]` — like `AddColumn` but also adds the column to the current view section.",
+      "signatures": [
+        "gristAddVisibleColumnAction(tableId: string, colId: string, colInfo: Record<string, unknown>): GristUserActionTuple"
+      ]
+    },
+    {
+      "name": "gristBulkAddRecordAction",
+      "kind": "function",
+      "summary": "`[\"BulkAddRecord\", tableId, rowIds | nullArray, { col: value[], ... }]`. Pass `null` (or omit) for `rowIds` to let Grist allocate ids; in user-action format Grist expects an array of nulls of the same length as the value arrays.",
+      "signatures": [
+        "gristBulkAddRecordAction(tableId: string, values: Record<string, unknown[]>, rowIds?: Array<number | null>): GristUserActionTuple"
+      ]
+    },
+    {
+      "name": "gristBulkRemoveRecordAction",
+      "kind": "function",
+      "summary": "`[\"BulkRemoveRecord\", tableId, rowIds]`",
+      "signatures": [
+        "gristBulkRemoveRecordAction(tableId: string, rowIds: number[]): GristUserActionTuple"
+      ]
+    },
+    {
+      "name": "gristBulkUpdateRecordAction",
+      "kind": "function",
+      "summary": "`[\"BulkUpdateRecord\", tableId, rowIds, { col: value[], ... }]`",
+      "signatures": [
+        "gristBulkUpdateRecordAction(tableId: string, rowIds: number[], columnarPatch: Record<string, unknown[]>): GristUserActionTuple"
+      ]
+    },
+    {
+      "name": "gristModifyColumnAction",
+      "kind": "function",
+      "summary": "`[\"ModifyColumn\", tableId, colId, colInfo]`",
+      "signatures": [
+        "gristModifyColumnAction(tableId: string, colId: string, colInfo: Record<string, unknown>): GristUserActionTuple"
+      ]
+    },
+    {
+      "name": "gristRemoveColumnAction",
+      "kind": "function",
+      "summary": "`[\"RemoveColumn\", tableId, colId]`",
+      "signatures": [
+        "gristRemoveColumnAction(tableId: string, colId: string): GristUserActionTuple"
+      ]
+    },
+    {
+      "name": "gristRemoveRecordAction",
+      "kind": "function",
+      "summary": "`[\"RemoveRecord\", tableId, rowId]`",
+      "signatures": [
+        "gristRemoveRecordAction(tableId: string, rowId: number): GristUserActionTuple"
+      ]
+    },
+    {
+      "name": "gristRenameColumnAction",
+      "kind": "function",
+      "summary": "`[\"RenameColumn\", tableId, colId, newColId]`",
+      "signatures": [
+        "gristRenameColumnAction(tableId: string, colId: string, newColId: string): GristUserActionTuple"
+      ]
+    },
+    {
+      "name": "gristUpdateRecordAction",
+      "kind": "function",
+      "summary": "`[\"UpdateRecord\", tableId, rowId, { col: value, ... }]`",
+      "signatures": [
+        "gristUpdateRecordAction(tableId: string, rowId: number, patch: Record<string, unknown>): GristUserActionTuple"
+      ]
+    },
+    {
+      "name": "GristUserActionTuple",
+      "kind": "type",
+      "summary": "Grist `docApi.applyUserActions` payloads are arrays of user-action tuples."
+    }
+  ],
+  "grist-widget-sdk/emulator": [
+    {
+      "name": "CreateDocumentInput",
+      "kind": "type",
+      "summary": "Replica document for `createDocument`; widens table columns to `EmulatorColumn`."
+    },
+    {
+      "name": "CreateDocumentTableInput",
+      "kind": "type",
+      "summary": "Replica table for `createDocument`; columns may include `formulaFn` / `inferredFormula` (emulator-only)."
+    },
+    {
+      "name": "createGristEmulator",
+      "kind": "function",
+      "summary": "Creates an emulator for a replica document: it checks the document, installs the `grist` global (inline transport) and answers the widget as Grist does. Tests usually go through `renderWithGrist()`.",
+      "signatures": [
+        "createGristEmulator(options: CreateGristEmulatorOptions): GristEmulator"
+      ]
+    },
+    {
+      "name": "CreateGristEmulatorOptions",
+      "kind": "type",
+      "summary": "Top-level emulator factory. Produces a fully-wired emulator instance:"
+    },
+    {
+      "name": "EmulatorActionError",
+      "kind": "class",
+      "summary": "A user action the emulator could not apply (a missing row, an action it does not support): the action, and why."
+    },
+    {
+      "name": "EmulatorApiBundle",
+      "kind": "type",
+      "summary": "Bundles the six host-side Grist API implementations into one record so inline transport can wire them up."
+    },
+    {
+      "name": "EmulatorColumn",
+      "kind": "type",
+      "summary": "Column metadata for the emulator: `GristReplicaColumn` plus in-process `formulaFn` (never serialized in replica JSON)."
+    },
+    {
+      "name": "EmulatorDocumentState",
+      "kind": "type",
+      "summary": "The emulator's document: its tables, the widget's selection and options."
+    },
+    {
+      "name": "EmulatorEvent",
+      "kind": "type",
+      "summary": "Tiny pub-sub used to broadcast every emulator state change to: - the transports (which translate events into protocol messages), - the React DevTools inspector (timeline view), - the testing harness (assertions on emitted events)."
+    },
+    {
+      "name": "EmulatorRowId",
+      "kind": "type",
+      "summary": "Core types for the in-memory Grist emulator document model."
+    },
+    {
+      "name": "EmulatorTable",
+      "kind": "type",
+      "summary": "One table of the emulator's document: its columns and rows."
+    },
+    {
+      "name": "EmulatorTransport",
+      "kind": "type",
+      "summary": "How the emulator reaches the widget: pushes Grist's events to it."
+    },
+    {
+      "name": "enrichEmulatorColumnMetadata",
+      "kind": "function",
+      "summary": "Ensure `formula` (original) and `inferredFormula` strings exist alongside optional `formulaFn`.",
+      "signatures": [
+        "enrichEmulatorColumnMetadata(col: EmulatorColumn): EmulatorColumn"
+      ]
+    },
+    {
+      "name": "GristEmulator",
+      "kind": "type",
+      "summary": "An in-memory Grist document and the `grist` global a widget reads it through."
+    },
+    {
+      "name": "GristReplicaDocument",
+      "kind": "type",
+      "summary": "Canonical Grist replica document: one JSON type for `getDocumentJson`, fixtures, and `createGristEmulator({ document })`."
+    },
+    {
+      "name": "InlineGristGlobal",
+      "kind": "type",
+      "summary": "Shape of the synthesised global. Matches `globalThis.grist` from `grist-global.d.ts`."
+    },
+    {
+      "name": "parseDocument",
+      "kind": "function",
+      "summary": "Checks a replica document and returns it, or throws naming each problem's path.",
+      "signatures": [
+        "parseDocument(input: unknown): GristReplicaDocument"
+      ]
+    },
+    {
+      "name": "presets",
+      "kind": "const",
+      "summary": "Useful templates for quick demos and tests."
+    },
+    {
+      "name": "resolveMappings",
+      "kind": "function",
+      "summary": "Resolves the `mappings` payload that `CustomSectionAPI.mappings()` returns.",
+      "signatures": [
+        "resolveMappings(state: EmulatorDocumentState): GristWidgetColumnMap | null"
+      ]
+    },
+    {
+      "name": "safeParseDocument",
+      "kind": "function",
+      "summary": "Checks a replica document, returning zod's result instead of throwing.",
+      "signatures": [
+        "safeParseDocument(input: unknown): z.ZodSafeParseResult<{ generatedAt: string; tables: Record<string, { label?: string | undefined; columns?: Record<string, { colRef?: number | undefined; type?: string | undefined; label?: string | undefined; parentPos?: number | undefined; isFormula?: boolean | undefined; formulaKind?: \"computed\" | \"trigger\" | \"none\" | \"empty_slot\" | undefined; formula?: string | undefined; description?: string | undefined; widgetOptions?: Record<string, unknown> | undefined; displayColRef?: number | undefined; visibleColRef?: number | undefined; }> | undefined; rows?: { [x: string]: unknown; id: number; }[] | undefined; rowCount?: number | undefined; dataOmitted?: boolean | undefined; dataOmittedReason?: string | undefined; error?: string | undefined; }>; source?: string | undefined; docName?: string | undefined; mode?: \"schema-only\" | \"schema+samples\" | \"schema+data\" | undefined; selection?: { tableId?: string | undefined; rowId?: number | \"new\" | null | undefined; mappings?: unknown; cursor?: unknown; } | undefined; widgetOptions?: Record<string, unknown> | undefined; widgetInteraction?: unknown; configuration?: { requiredAccess?: string | undefined; columns?: unknown; allowSelectBy?: boolean | undefined; hasCustomOptions?: boolean | undefined; } | undefined; accessToken?: { token: string; baseUrl: string; ttlMsecs: number; } | null | undefined; }>"
+      ]
+    }
+  ],
+  "grist-widget-sdk/emulator/testing": [
+    {
+      "name": "actionsOf",
+      "kind": "function",
+      "summary": "The user actions applied to the emulator, oldest first: the widget's, and the test's own `apply` and `mutate`. Read from the bus's history, which keeps the last 200 events and is cleared by `dispose()`.",
+      "signatures": [
+        "actionsOf(emulator: GristEmulator): unknown[][]"
+      ]
+    },
+    {
+      "name": "eventsOf",
+      "kind": "function",
+      "summary": "The last 200 events on the emulator's bus, oldest first (cleared by `dispose()`): ready, cursor, data, options, mappings, theme and user actions.",
+      "signatures": [
+        "eventsOf(emulator: GristEmulator): readonly EmulatorEvent[]"
+      ]
+    },
+    {
+      "name": "installJsdomStubs",
+      "kind": "function",
+      "summary": "Browser APIs jsdom lacks but widget UI commonly uses, as inert stand-ins: `ResizeObserver` (charts, virtualized lists, popovers) and `window.matchMedia` (the theme, responsive hooks; it reports a light, wide screen). Only installs what's missing, so a test's own mock wins.",
+      "signatures": [
+        "installJsdomStubs(): void"
+      ]
+    },
+    {
+      "name": "presets",
+      "kind": "const",
+      "summary": "Useful templates for quick demos and tests."
+    },
+    {
+      "name": "renderWithGrist",
+      "kind": "function",
+      "summary": "Renders a component against an in-memory Grist (the emulator), behind the same `grist` global a widget reads in Grist. With `widget`, it renders the widget in its provider, boundary and alerts, every declared column mapped to a table of `rows`: `renderWithGrist(<App />, { widget, rows })`.",
+      "signatures": [
+        "renderWithGrist(ui: ReactElement, options?: RenderWithGristOptions): RenderWithGristResult"
+      ]
+    },
+    {
+      "name": "RenderWithGristOptions",
+      "kind": "type",
+      "summary": "`renderWithGrist(ui, options)` — drop-in replacement for `@testing-library/react`'s `render(ui)` that boots a Grist emulator (inline transport) and exposes it to the test."
+    },
+    {
+      "name": "RenderWithGristResult",
+      "kind": "type",
+      "summary": "Testing Library's render result, with the emulator the widget runs against."
+    },
+    {
+      "name": "smokeTestWidget",
+      "kind": "function",
+      "summary": "Mounts the widget the way `mountGristWidget()` does inside Grist, against an emulated Grist document with every column it declares mapped and the access it requests granted, and waits until it renders past `GristBoundary`. Resolves once it has, rejects with the widget's own error if it throws, or with what the page showed instead if it never gets there. Then unmounts.",
+      "signatures": [
+        "smokeTestWidget(input: SmokeTestWidgetOptions | GristWidgetEntry, extra?: Pick<SmokeTestWidgetOptions, \"document\" | \"timeout\">): Promise<void>"
+      ]
+    },
+    {
+      "name": "SmokeTestWidgetOptions",
+      "kind": "type",
+      "summary": "What `smokeTestWidget()` renders, and against which document."
+    },
+    {
+      "name": "waitForEvent",
+      "kind": "function",
+      "summary": "Resolves with the next event of a kind on the emulator's bus, or rejects after the timeout, naming the last events seen.",
+      "signatures": [
+        "waitForEvent(emulator: GristEmulator, kind: WaitForEventKind, options?: WaitForEventOptions): Promise<EmulatorEvent>",
+        "waitForEvent(emulator: GristEmulator, predicate: (event: EmulatorEvent) => boolean, timeoutMs?: number): Promise<EmulatorEvent>"
+      ]
+    },
+    {
+      "name": "WaitForEventKind",
+      "kind": "type",
+      "summary": "Bus event kinds aligned with grist host callbacks (see inline transport)."
+    },
+    {
+      "name": "WaitForEventOptions",
+      "kind": "type",
+      "summary": "`waitForEvent()`'s options: how long to wait, in ms (default 1000)."
+    }
+  ]
+}

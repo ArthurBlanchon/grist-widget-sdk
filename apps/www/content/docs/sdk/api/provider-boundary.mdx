@@ -6,7 +6,7 @@ description: "The two components at a widget's root: the connection to Grist, an
 `mountGristWidget()` renders both around your `App`:
 
 ```tsx no-check
-<GristWidgetProvider options={GRIST_OPTIONS}>
+<GristWidgetProvider options={widget.options}>
   <GristBoundary>
     <App />
   </GristBoundary>

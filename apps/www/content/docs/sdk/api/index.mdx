@@ -23,7 +23,7 @@ added or removed without changing it.
 | Symbol | Purpose | Reference |
 | --- | --- | --- |
 | `defineGristWidget(definition)` | The widget's declaration (access, columns, title). `widget.useGrist()` is `useGrist()` typed from it, with no generics. | [Typed reads](/docs/sdk/guide/typing#declare-once) |
-| `useGrist<TRow, TMapped>()` | The widget's one object for Grist: status, records, mapping, writes, options, linking, REST. | [useGrist](/docs/sdk/api/use-grist) |
+| `useGrist()` | The widget's one object for Grist, untyped (`widget.useGrist()` is the typed one): status, records, mapping, writes, options, linking, REST. | [useGrist](/docs/sdk/api/use-grist) |
 | `useGristOptional()` | `useGrist()` inside a provider, `null` outside one. | [useGrist](/docs/sdk/api/use-grist#outside-a-provider) |
 | `useGristSchema(options?)` | The document's schema and sample rows (full access). | [useGristSchema](/docs/sdk/api/use-grist-schema) |
 | `useWidgetMetadata(meta)` | The page's title and meta tags. | [Helpers](/docs/sdk/api/helpers#widget-metadata) |

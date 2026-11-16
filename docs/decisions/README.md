@@ -29,6 +29,7 @@ link it from where the decision is applied.
 | [0017](./0017-widget-options-version.md) | Widget options carry the version that wrote them |
 | [0018](./0018-standard-criteria.md) | Every catalog widget meets four standard criteria |
 | [0019](./0019-report-a-problem.md) | "Report a problem" is a link the person opens, never telemetry |
+| [0020](./0020-agents-on-issues.md) | What agents do to issues on their own |
 
 The plans in [`docs/planning/`](../planning/) and
 [`docs/history/`](../history/) hold the reasoning in full. The design

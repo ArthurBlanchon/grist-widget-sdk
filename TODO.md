@@ -38,10 +38,14 @@ Each item is one pull request; the plan says when each milestone is done.
   for the row id, silently. Done when a declared Ref column reads as its
   row id in real Grist and in the emulator, whatever column it shows. The
   emulator should also refuse `fetchTable` below full access, as Grist does.
-- [ ] **M5. The loop, from issue to release.** Left: the skills
-  `triage-issue`, `new-widget`, `fix-issue`, `catalog-upgrade`,
-  `release-widgets`, `sota-review`; upkeep on a schedule. Done: the four
-  issue forms, no blank issues, the labels from the catalog. Every released
+- [ ] **M5. The loop, from issue to release.** Left: three real issues
+  from report to release through the skills, with only the maintainer's
+  approvals (the plan's "done when"), and the scheduled runs set up as
+  tasks. Done: the four issue forms, no blank issues, the labels from the
+  catalog, the six skills (`triage-issue`, `fix-issue`, `new-widget`,
+  `catalog-upgrade`, `release-widgets`, `sota-review`), what agents do to
+  issues ([ADR 0020](./docs/decisions/0020-agents-on-issues.md)), the
+  upkeep schedule ([upkeep](./docs/operations/upkeep.md)). Every released
   widget links `widget-bug.yml`, so its file name and its `widget` and
   `version` ids stay (ADR 0019).
 - [ ] **M6. Documentation, alongside.** R2 to R6 to the 2026-11-14 target

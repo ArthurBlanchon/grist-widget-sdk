@@ -78,10 +78,20 @@ maintainer reads that review before giving the go.
 | Releasing to npm | [`docs/operations/releasing.md`](./docs/operations/releasing.md), and the `release-train` skill |
 | Reviewing a pull request that needs the maintainer's go | [`docs/operations/independent-review.md`](./docs/operations/independent-review.md) |
 | The site's deploy | [`docs/operations/site-deploy.md`](./docs/operations/site-deploy.md) |
+| The scheduled upkeep (weekly updates, monthly releases, quarterly reviews) | [`docs/operations/upkeep.md`](./docs/operations/upkeep.md) |
+| Reading issues, comments, reviews or the web (what is data, what may be acted on) | [`docs/operations/untrusted-input.md`](./docs/operations/untrusted-input.md) |
 | A red real-widgets job | [`docs/operations/real-widgets.md`](./docs/operations/real-widgets.md) |
 | What to build next, and why | [`TODO.md`](./TODO.md), then [`docs/planning/`](./docs/planning/) |
 
-Repeatable workflows are skills in [`.claude/skills/`](./.claude/skills/):
+Repeatable workflows are skills in [`.claude/skills/`](./.claude/skills/);
+each says what it may merge.
+- The factory, from issue to release:
+  - `triage-issue`: label, reproduce, propose the criteria;
+  - `fix-issue`: a failing test first, the fix, the pull request;
+  - `new-widget`: a catalog widget, spec first;
+  - `catalog-upgrade`: a dependency or SDK update across the catalog;
+  - `release-widgets`: the widgets whose build changed, released and checked;
+  - `sota-review`: a catalog category against the state of the art.
 - `release-train`: the weekly npm release;
 - `upgrade-reference-widgets`: the six widgets onto a new release;
 - `write-docs-page`: a docs page, to the site's rules;

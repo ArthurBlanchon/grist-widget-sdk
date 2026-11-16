@@ -8,7 +8,7 @@ import { Button } from "@shared/ui/button"
 import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@shared/ui/chart"
 
 import { messages } from "./messages"
-import { AGGREGATES, KINDS, buildData, readSettings, type ChartKind } from "./series"
+import { AGGREGATES, KINDS, ORDERED_KINDS, buildData, readSettings, type ChartKind } from "./series"
 
 export const widget = defineGristWidget({
   title: "Chart builder",
@@ -51,7 +51,7 @@ export default function App() {
 
   const series = valueCols.map((col, i) => ({ key: `s${i}`, name: labels.get(col) ?? col }))
   // The React compiler memoizes this; the rows are a section's, so it stays light.
-  const data = buildData((w.mappedRecords ?? []).map((r) => ({ label: r.Label, values: r.Values ?? [] })), seriesCount, fn, t("blank"))
+  const data = buildData((w.mappedRecords ?? []).map((r) => ({ label: r.Label, values: r.Values ?? [] })), seriesCount, fn, t("blank"), t("other"), ORDERED_KINDS.includes(kind))
   const config: ChartConfig = Object.fromEntries(series.map((s, i) => [s.key, { label: s.name, color: colour(i) }]))
   const number = useMemo(() => new Intl.NumberFormat(locale, { maximumFractionDigits: 2 }), [locale])
 

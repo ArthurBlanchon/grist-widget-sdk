@@ -2,6 +2,7 @@ import { defineMessages } from "@shared/i18n"
 
 export const messages = defineMessages({
   en: {
+    other: "Other",
     kind: "Chart",
     bar: "Bars",
     stacked: "Stacked",
@@ -20,6 +21,7 @@ export const messages = defineMessages({
     empty: "Nothing to chart yet. Map a column to group by and at least one column of numbers.",
   },
   fr: {
+    other: "Autres",
     kind: "Graphique",
     bar: "Barres",
     stacked: "Empilé",

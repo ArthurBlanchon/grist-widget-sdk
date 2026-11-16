@@ -138,4 +138,17 @@ describe("Map", () => {
     expect(await screen.findByText("<img src=x onerror=alert(1)>")).toBeInTheDocument()
     expect(document.querySelector("img, b")).toBeNull()
   })
+
+  it("AC-11 keeps a colour per category up to the theme's five, the rest one Others group in a neutral colour", async () => {
+    const rows = Array.from({ length: 8 }, (_, c) => Array.from({ length: c === 3 ? 1 : c + 2 }, () => ({ Latitude: 45, Longitude: 4, Label: "Store", Category: `C${c}` }))).flat()
+    setup(POINTS, rows)
+    await screen.findByText(/^40 points/)
+    expect(layers()).toHaveLength(6)
+    const legend = within(screen.getByRole("list", { name: "Legend" })).getAllByRole("listitem").map((li) => li.textContent)
+    // C3 (1 point), C0 (2) and C1 (3) are the smallest.
+    expect(legend).toEqual(["C2", "C4", "C5", "C6", "C7", "Others (6 points)"])
+    expect(within(layers().at(-1)!).getAllByRole("button")).toHaveLength(6)
+    // No two groups share a colour.
+    expect(new Set(layers().map((l) => l.dataset.color)).size).toBe(6)
+  })
 })

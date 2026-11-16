@@ -40,9 +40,25 @@ export function countsOf(rows: readonly Row[], hasValue: boolean): CountryCounts
   )
 }
 
-/** Points by category, in order of first appearance. */
-export function byCategory(points: readonly Point[]): [string, Point[]][] {
+/** A category's points; `other` for the categories past the palette's colours, put together. */
+export type Category = { name: string; other: boolean; points: Point[] }
+
+/**
+ * Points by category, in order of first appearance. With more categories
+ * than `colours`, the `colours` with the most points keep their own colour
+ * and the rest are one group, last: no two categories share a colour, and
+ * a legend and a layer per category stay readable and quick.
+ */
+export function byCategory(points: readonly Point[], colours: number): Category[] {
   const groups = new Map<string, Point[]>()
-  for (const p of points) groups.set(p.category, [...(groups.get(p.category) ?? []), p])
-  return [...groups.entries()]
+  for (const p of points) {
+    const list = groups.get(p.category)
+    if (list) list.push(p)
+    else groups.set(p.category, [p])
+  }
+  const all = [...groups].map(([name, list]) => ({ name, other: false, points: list }))
+  if (all.length <= colours) return all
+  const kept = new Set([...all].sort((a, b) => b.points.length - a.points.length).slice(0, colours))
+  const rest = all.filter((c) => !kept.has(c)).flatMap((c) => c.points)
+  return [...all.filter((c) => kept.has(c)), { name: "", other: true, points: rest }]
 }

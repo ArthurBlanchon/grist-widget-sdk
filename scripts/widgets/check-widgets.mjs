@@ -150,13 +150,6 @@ export const sections = (body) => [...body.matchAll(/^## (.+)$/gm)].map((m) => m
 /** The standard criteria every catalog spec lists (ADR 0018), and the one a test checks in the widget. */
 export const STANDARD_CRITERIA = ["AC-volume", "AC-keyboard", "AC-narrow", "AC-readonly"]
 
-/**
- * The widgets that don't carry the standard criteria yet: every other one
- * must (ADR 0018). This list only shrinks; each widget leaves it in the
- * pull request that gives it the section and its AC-volume test.
- */
-export const STANDARD_PENDING = ["chart-builder", "grouped-view", "map"]
-
 /** A test named for `id`, not skipped nor left to do: `it("AC-1 …")`, `it.only(…)` but no `it.skip(…)`. */
 export const namesTest = (tests, id) => new RegExp(`\\bit(?:\\.(?!skip\\b|todo\\b|fails\\b)\\w+)?\\(\\s*["'\`]${id}\\b`).test(tests)
 
@@ -322,7 +315,7 @@ export function checkStatic(slug, dir = join(WIDGETS_DIR, slug)) {
   // The standard criteria (ADR 0018), where the spec carries them: the four
   // listed, and AC-volume's test; the e2e check (--standard) checks the rest.
   const standard = standardCriteria(body)
-  if (!standard && !STANDARD_PENDING.includes(slug)) problems.push("SPEC.md: no Standard criteria section (ADR 0018; new-widget writes it)")
+  if (!standard) problems.push("SPEC.md: no Standard criteria section (ADR 0018; new-widget writes it)")
   if (standard) {
     const missing = STANDARD_CRITERIA.filter((id) => !standard.includes(id))
     if (missing.length) problems.push(`SPEC.md: the Standard criteria section lacks ${missing.join(", ")}`)

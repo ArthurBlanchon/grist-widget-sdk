@@ -2,6 +2,9 @@ import { defineMessages } from "@shared/i18n"
 
 export const messages = defineMessages({
   en: {
+    moreItems: "Show {n} more rows ({left} not shown)",
+    moreGroups: "Show {n} more groups ({left} not shown)",
+    moreColumns: "Show {n} more columns ({left} not shown)",
     empty: "No rows to group. Add rows to the table, or widen the section's filters.",
     count: "{n} rows",
     rows: "{n} rows",
@@ -18,6 +21,9 @@ export const messages = defineMessages({
     filterAll: "All rows. Show them in linked widgets",
   },
   fr: {
+    moreItems: "Montrer {n} lignes de plus ({left} non montrées)",
+    moreGroups: "Montrer {n} groupes de plus ({left} non montrés)",
+    moreColumns: "Montrer {n} colonnes de plus ({left} non montrées)",
     empty: "Aucune ligne à regrouper. Ajoutez des lignes à la table, ou élargissez les filtres de la section.",
     count: "{n} lignes",
     rows: "{n} lignes",

@@ -24,13 +24,10 @@ its order: M4 and M5, with M6 (docs) alongside, then M7 (M1 to M3 are
 done). Each item is one pull request; the plan says when each milestone is
 done.
 
-- [ ] **M4. The bar, version 2** (plan §3). Left: the standard criteria
-  ([ADR 0018](./docs/decisions/0018-standard-criteria.md)) in Chart
-  builder, Grouped view and Map, still in `STANDARD_PENDING`: they make an
-  element per distinct category, which a column unique per row takes far
-  over 3,000 DOM nodes, so they cap or page them first. Then visual
-  comparison and "Report a problem". Done: the standard criteria in the 13
-  others, the SDK's `readOnly` and its alert, the e2e check's
+- [ ] **M4. The bar, version 2** (plan §3). Left: visual comparison and
+  "Report a problem". Done: the standard criteria
+  ([ADR 0018](./docs/decisions/0018-standard-criteria.md)) in all 16
+  widgets, the SDK's `readOnly` and its alert, the e2e check's
   `--standard`, `new-widget`'s criteria, `httpUrl()` and its lint rule,
   licences, a CSP per widget, `optionsVersion` and `migrate`, a `demo.ts`
   per widget.

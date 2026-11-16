@@ -1,7 +1,7 @@
 {
   "name": "@grist-widgets/grouped-view",
   "private": true,
-  "version": "0.1.1",
+  "version": "0.2.0",
   "type": "module",
   "description": "Rows grouped by a column, with counts and totals; with a second column, a pivot table. Clicking a group filters the linked widgets.",
   "license": "MIT",

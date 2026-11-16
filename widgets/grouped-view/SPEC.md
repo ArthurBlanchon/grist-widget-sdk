@@ -66,6 +66,20 @@ should not ask for.
   French and its numbers are written the French way.
 - **AC-11** Given a Group value that is HTML, it is shown as text.
 - **AC-12** Given no rows, the widget says so.
+- **AC-13** Given many groups, rows or Across values, the widget shows
+  some at a time, each with a button for the next, which says how many
+  are not shown: 50 groups (in a pivot too), the first 10 rows of an open
+  group, then 50 more at a time, and 20 Across values. Totals count every
+  row.
+
+## Standard criteria
+
+The same in every catalog widget ([ADR 0018](../../docs/decisions/0018-standard-criteria.md)).
+
+- **AC-volume** Given 5,000 rows, the widget renders them with at most 3,000 DOM nodes.
+- **AC-keyboard** Tab reaches the widget's controls without getting stuck, and the page passes axe after it.
+- **AC-narrow** The widget fits a 320 px side panel and a 1,280 px page, without scrolling sideways.
+- **AC-readonly** On a document open read-only, the widget shows its data, and if it writes, it says why it can't.
 
 ## Out of scope
 

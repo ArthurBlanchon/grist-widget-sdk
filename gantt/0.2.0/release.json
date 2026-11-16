@@ -1,0 +1,8 @@
+{
+  "slug": "gantt",
+  "version": "0.2.0",
+  "commit": "d682b12019b63aee8a410c10fe9237d9f42cd188",
+  "released": "2026-11-16T06:04:58.364Z",
+  "changes": "- A section of many tasks shows the first 50, in its order, with a button for the next ones: the chart stays quick with thousands of rows. Filter or sort the section to choose which come first.",
+  "changelog": "CHANGELOG.md"
+}

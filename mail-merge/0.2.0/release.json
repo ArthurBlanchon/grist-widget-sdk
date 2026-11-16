@@ -1,0 +1,8 @@
+{
+  "slug": "mail-merge",
+  "version": "0.2.0",
+  "commit": "d682b12019b63aee8a410c10fe9237d9f42cd188",
+  "released": "2026-11-16T06:04:59.996Z",
+  "changes": "- A section of many rows lists them 100 at a time, with a button for the next ones: the widget stays quick with thousands of rows. Open the next one still goes through all of them.",
+  "changelog": "CHANGELOG.md"
+}

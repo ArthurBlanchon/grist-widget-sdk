@@ -1,0 +1,8 @@
+{
+  "slug": "kanban-board",
+  "version": "0.2.0",
+  "commit": "d682b12019b63aee8a410c10fe9237d9f42cd188",
+  "released": "2026-11-16T06:04:59.147Z",
+  "changes": "- A column of many cards shows them 50 at a time, with a button for the next ones (the card selected in Grist is always shown): the board stays quick with thousands of rows.",
+  "changelog": "CHANGELOG.md"
+}

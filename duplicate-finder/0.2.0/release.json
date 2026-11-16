@@ -1,0 +1,8 @@
+{
+  "slug": "duplicate-finder",
+  "version": "0.2.0",
+  "commit": "d682b12019b63aee8a410c10fe9237d9f42cd188",
+  "released": "2026-11-16T06:04:57.441Z",
+  "changes": "- Many duplicates are listed 20 groups at a time, with a button for the next ones, and 10 rows in a group (the kept one always among them): the widget stays quick with thousands of rows. Merging a group still merges every row in it.",
+  "changelog": "CHANGELOG.md"
+}

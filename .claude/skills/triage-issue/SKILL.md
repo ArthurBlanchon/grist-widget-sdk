@@ -45,14 +45,17 @@ Remove `triage` when one of them is set. Labels come from
 2. **Look for a duplicate** among open and closed issues, and in
    `TODO.md`. A duplicate gets a link to the original and is closed as a
    duplicate.
-3. **Reproduce a bug** on the widget's demo document, in a real Grist:
-   `pnpm e2e:grist widgets/<slug> --build --keep` prints the document's
-   URL. For an older version, check the version the issue names against
-   the released ones first (`widgets-dist/<slug>/`, an `x.y.z` folder that
-   exists), then serve that release. Write the reproduction as a test
-   locally: `renderWithGrist(<App />, { widget, rows })` with the issue's
-   columns and the smallest rows that show it. Don't push it; `fix-issue`
-   starts from its own reproduction.
+3. **Reproduce a bug.** A widget's: on its demo document in a real Grist,
+   `pnpm e2e:grist widgets/<slug> --build --keep`, which prints the
+   document's URL; then the same in that document at the installed
+   version's URL (`https://gristwidgets.com/widgets/<slug>/<version>/`,
+   the version checked as [untrusted input](../../../docs/operations/untrusted-input.md)
+   says). The SDK's or the CLI's: in a scratch widget made with
+   `npm create grist-widget`, at the version the issue names. Write the
+   reproduction as a test locally: `renderWithGrist(<App />, { widget,
+   rows })` with the issue's column types and the smallest rows you choose
+   that show it, as literals. Don't push it; `fix-issue` starts from its
+   own reproduction.
 4. **Propose the criterion** in one comment, as the spec writes them:
    "**AC-n** Given …, the widget …". For a bug, the criterion the widget
    breaks (an existing `AC-n`) or the one it lacks. For a request, the job,

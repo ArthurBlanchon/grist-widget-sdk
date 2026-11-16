@@ -90,7 +90,7 @@ each says what it may merge.
   - `fix-issue`: a failing test first, the fix, the pull request;
   - `new-widget`: a catalog widget, spec first;
   - `catalog-upgrade`: a dependency or SDK update across the catalog;
-  - `release-widgets`: the widgets whose code changed, released and checked;
+  - `release-widgets`: the widgets whose build changed, released and checked;
   - `sota-review`: a catalog category against the state of the art.
 - `release-train`: the weekly npm release;
 - `upgrade-reference-widgets`: the six widgets onto a new release;

@@ -50,4 +50,5 @@ text never goes into the spec, the code or the changelog unrewritten.
 8. **The pull request** opens with the job it does and for whom, links the
    request ("Closes #n"), and lists the criteria with their tests. After
    the go and the merge, check `/widgets/<slug>/0.1.0/`, its `v0` channel
-   and its catalog page are served, and say so on the issue.
+   and its catalog page are served, and say so on the issue in one comment
+   ([ADR 0020](../../../docs/decisions/0020-agents-on-issues.md)).

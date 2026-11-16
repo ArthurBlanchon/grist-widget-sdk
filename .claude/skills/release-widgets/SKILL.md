@@ -23,7 +23,12 @@ version `widgets-dist` doesn't have, once, for good
 
 ## Steps
 
-1. **Find the widgets whose build changed.** Paths don't tell (the SDK,
+1. **Find the widgets whose build changed,** on a clean checkout of `main`
+   with everything installed and the SDK built, as the release job does
+   (`pnpm install --frozen-lockfile && pnpm --filter grist-widget-sdk
+   build`), and a read-only checkout of `widgets-dist` (`git fetch
+   --depth=1 origin widgets-dist`, then `git worktree add <dir>
+   FETCH_HEAD`). Paths don't tell (the SDK,
    `widgets/_shared/` and the catalog's versions all reach a widget's
    bundle, and the lockfile is shared): the build does. For each widget,
    build it at its released version (`pnpm --filter @grist-widgets/<slug>
@@ -48,4 +53,5 @@ version `widgets-dist` doesn't have, once, for good
    and `/latest/` serve it, the catalog (`widgets.json`) lists the version,
    and the widget's page shows its changelog entry. A version that isn't
    there after the deploy is a red release: read `docs/operations/site-deploy.md`.
-6. **Log the run** in [the upkeep log](../../../docs/operations/upkeep-log.md).
+6. **Log the run** in [the upkeep log](../../../docs/operations/upkeep-log.md),
+   in a docs pull request of its own (an agent's merge: the docs row).

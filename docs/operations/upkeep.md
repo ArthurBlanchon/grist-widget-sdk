@@ -5,14 +5,15 @@
 
 The catalog stays current through four rhythms, each run by a skill in
 `.claude/skills/`. A run that finds nothing to do still writes its line in
-[the upkeep log](./upkeep-log.md), so a missed run shows. Every run reads
+[the upkeep log](./upkeep-log.md), in a docs pull request of its own (an
+agent's merge), so a missed run shows. Every run reads
 [untrusted input](./untrusted-input.md) first.
 
 | When | What | Skill | Merged by |
 | --- | --- | --- | --- |
-| Weekly, when Dependabot's `routine` pull request opens | The week's patch and minor updates, the whole catalog checked in a real Grist and compared with its last releases | `catalog-upgrade` | The agent, once green, only when the diff is confined to `widgets/**` and those dependencies' lockfile entries; anything else (`packages/`, the template, `apps/www`, the root `package.json`, `pnpm-workspace.yaml`, CI's tools) needs the maintainer's go ([ADR 0012](../decisions/0012-merge-authority.md)) |
+| Weekly, when Dependabot's `routine` pull request opens | The week's patch and minor updates, the whole catalog checked in a real Grist and compared with its last releases | `catalog-upgrade` | The maintainer's go: the catalog's versions live in `pnpm-workspace.yaml`, with CI's tools ([ADR 0012](../decisions/0012-merge-authority.md)); the agent prepares the evidence |
 | Monthly, the first Monday | The widgets whose build changed since their release, released together | `release-widgets` | The agent for patches and minors; a major needs the maintainer's go |
-| At once | A security fix in a widget's dependency: updated and released the same day | `catalog-upgrade`, then `release-widgets` | The maintainer's go ([ADR 0012](../decisions/0012-merge-authority.md)) |
+| As soon as the fixed version is 7 days old | A security fix in a widget's dependency, updated and released ([ADR 0006](../decisions/0006-dependency-age.md): sooner is the maintainer's decision alone, never an exclude entry) | `catalog-upgrade`, then `release-widgets` | The maintainer's go ([ADR 0012](../decisions/0012-merge-authority.md)) |
 | Monthly, the third Monday, a category in turn | A catalog category against the state of the art, findings opened as issues | `sota-review` | Nothing to merge: issues only ([ADR 0020](../decisions/0020-agents-on-issues.md)) |
 
 The categories rotate in three slots, so each comes round once a quarter:

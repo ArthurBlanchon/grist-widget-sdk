@@ -2,7 +2,6 @@
   "pages": [
     "---Get started---",
     "index",
-    "quickstart/introduction",
     "quickstart/index",
     "quickstart/examples",
     "---Guides---",
@@ -23,7 +22,6 @@
     "cli/upgrading",
     "registry/index",
     "sdk/guide/troubleshooting",
-    "sdk/guide/raw-plugin-api-vs-sdk",
     "sdk/guide/cheatsheet",
     "sdk/guide/cookbook",
     "---Reference---",

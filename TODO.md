@@ -48,7 +48,7 @@ Each item is one pull request; the plan says when each milestone is done.
   upkeep schedule ([upkeep](./docs/operations/upkeep.md)). Every released
   widget links `widget-bug.yml`, so its file name and its `widget` and
   `version` ids stay (ADR 0019).
-- [ ] **M6. Documentation, alongside.** R2 to R6 to the 2026-11-14 target
+- [ ] **M6. Documentation, alongside.** R3 to R6 to the 2026-11-14 target
   structure, with *Replica document* as a Concepts page and *Examples* as
   the catalog (R1, the frame, is done: four sections, the docs check in
   report mode).
@@ -68,6 +68,19 @@ Each item is one pull request; the plan says when each milestone is done.
   an identical build (the timeline scrolls to "today" on mount, by layout
   timing): make that scroll deterministic in the next Gantt change, so
   `--baseline` reads "unchanged" for it as for the 15 others.
+- [ ] **The scaffold, as a newcomer meets it** (found following "Your
+  first widget" word for word, 2026-11-16): its README carries the
+  template's maintainer sections ("This is the source template", "Monorepo
+  dev", "How this template is distributed"); its `CHANGELOG.md` is headed
+  `grist-widget-template-vite` and its demo's widget section "Grist Widget
+  Template", not the widget's name; `pnpm dev` and `pnpm test` warn about
+  `__dirname` in `vite.config.ts`. Done when a fresh scaffold names itself
+  everywhere and starts without a warning.
+- [ ] **Dates shown a day early west of UTC** in `sdk/guide/typing.mdx`
+  and `examples/typed-reads`: a Grist Date is midnight UTC, so
+  `toLocaleDateString()` needs `timeZone: "UTC"` (as "Your first widget"
+  does). Done when both show the stored day in any time zone, with a test
+  run under a western `TZ`.
 - [ ] **Release 0.8.0** when M1–M7 are done.
 
 ## 2. After 0.8.0

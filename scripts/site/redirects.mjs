@@ -16,6 +16,9 @@ export const REDIRECTS = {
   "/docs/contributing/real-widgets/": `${REPO}/docs/operations/real-widgets.md`,
   "/docs/sdk/design/principles/": `${REPO}/docs/architecture.md#design-rules`,
   "/docs/sdk/design/open-questions/": `${REPO}/docs/history/2026-11-14-sdk-open-questions.md`,
+  // Merged into the Overview (docs rewrite plan, R2).
+  "/docs/quickstart/introduction/": "/docs/",
+  "/docs/sdk/guide/raw-plugin-api-vs-sdk/": "/docs/",
 }
 
 const escapeHtml = (s) => s.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;")

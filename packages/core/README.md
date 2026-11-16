@@ -21,7 +21,7 @@ npm create grist-widget my-widget
 | `mapColumnNames`, tuples for writes | `mappedRecord`, `mapBack`, `table.update` |
 | No test harness | `renderWithGrist` with emulator presets |
 
-Full comparison: [Raw plugin API vs SDK](https://gristwidgets.com/docs/sdk/guide/raw-plugin-api-vs-sdk).
+When to use the plugin API on its own: [Overview](https://gristwidgets.com/docs).
 
 ## Install
 

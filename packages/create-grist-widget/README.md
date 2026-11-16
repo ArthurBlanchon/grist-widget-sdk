@@ -106,7 +106,7 @@ create-grist-widget list --json   # the same, as JSON
 ## Using Claude Code?
 
 The scaffolded project ships a working GitHub Pages deploy pipeline
-([release + dev channels](https://gristwidgets.com/docs/quickstart#understand-the-deploy)), which
+([release + dev channels](https://gristwidgets.com/docs/cli#the-bundled-deploy-pipeline)), which
 needs a couple of one-time repo settings that only a human can click through. The
 simplest way to get from zero to a deployed widget:
 

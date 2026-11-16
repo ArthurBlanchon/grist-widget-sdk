@@ -28,7 +28,7 @@ function Tasks() {
   return (
     <ul>
       {(w.mappedRecords ?? []).map((t) => (
-        <li key={t.id}>{t.Title}{t.Due ? ` — ${t.Due.toLocaleDateString()}` : ""}</li>
+        <li key={t.id}>{t.Title}{t.Due ? ` — ${t.Due.toLocaleDateString(undefined, { timeZone: "UTC" })}` : ""}</li>
       ))}
     </ul>
   )
@@ -63,6 +63,11 @@ into the value its type promises:
 | `Ref` | the row id, `number` | `null` |
 | `RefList`, `Attachments` | row ids, `number[]` | `[]` |
 | `Any`, or no type | as Grist sends it | — |
+
+A `Date` cell is its day at midnight UTC: show it in UTC
+(`toLocaleDateString(undefined, { timeZone: "UTC" })`), or a reader west of
+UTC sees the day before. A `DateTime` is an instant: show it in the
+person's time zone, or the column's.
 
 A `Ref` or `RefList` column gives row ids only where its column shows the
 row id. Grist sends a reference as the text its column shows (a person's

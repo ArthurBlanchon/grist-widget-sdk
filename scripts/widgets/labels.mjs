@@ -3,8 +3,10 @@
 // a `widget:<slug>` per catalog widget, the `area:*` labels, and the kinds
 // the issue forms set. `node scripts/widgets/labels.mjs` prints them as
 // JSON; `--sync` creates or updates each with `gh label create --force`
-// (the labels workflow runs it on main). A label is never deleted here: an
-// issue may still carry one of a retired widget.
+// (the labels workflow runs it on main). The catalog is the labels' source:
+// a run resets the colour and description of every label it knows, an edit
+// made by hand included. A label is never deleted here: an issue may still
+// carry one of a retired widget.
 
 import { execFileSync } from "node:child_process"
 import { existsSync, readFileSync } from "node:fs"

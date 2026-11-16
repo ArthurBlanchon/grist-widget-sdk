@@ -1,9 +1,10 @@
 import assert from "node:assert/strict"
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs"
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { test } from "node:test"
 
+import { listWidgets } from "./check-widgets.mjs"
 import { allLabels, AREA_LABELS, KIND_LABELS, widgetLabels } from "./labels.mjs"
 
 test("a widget:<slug> label per catalog widget, its title as description", () => {
@@ -13,22 +14,27 @@ test("a widget:<slug> label per catalog widget, its title as description", () =>
     writeFileSync(join(dir, slug, "SPEC.md"), `---\nslug: ${slug}\ntitle: ${title}\n---\n# ${title}\n`)
   }
   mkdirSync(join(dir, "_shared"))
-  assert.deepEqual(
-    widgetLabels(dir).map((l) => [l.name, l.description]),
-    [["widget:kanban-board", "The Kanban board widget"], ["widget:map", "The Map widget"]],
-  )
+  try {
+    assert.deepEqual(
+      widgetLabels(dir).map((l) => [l.name, l.description]),
+      [["widget:kanban-board", "The Kanban board widget"], ["widget:map", "The Map widget"]],
+    )
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
 })
 
 test("the labels the issue forms set exist, and every label is valid for GitHub", () => {
   const names = allLabels().map((l) => l.name)
   for (const form of ["bug", "widget-request", "improvement", "triage", "area:catalog", "area:sdk"]) assert.ok(names.includes(form), form)
   assert.equal(new Set(names).size, names.length)
-  for (const l of [...KIND_LABELS, ...AREA_LABELS, ...allLabels()]) {
+  for (const l of allLabels()) {
     assert.match(l.color, /^[0-9a-f]{6}$/)
     assert.ok(l.name.length <= 50 && l.description.length <= 100, l.name)
   }
-  // Every catalog widget has its label.
-  assert.ok(names.includes("widget:kanban-board"))
+  // Every catalog widget has its label, and the kinds and areas are all there.
+  for (const slug of listWidgets()) assert.ok(names.includes(`widget:${slug}`), slug)
+  for (const l of [...KIND_LABELS, ...AREA_LABELS]) assert.ok(names.includes(l.name), l.name)
 })
 
 test("every label an issue form sets is one the labels workflow creates", async () => {

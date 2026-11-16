@@ -11,6 +11,7 @@ on:
     paths:
       - "widgets/*/SPEC.md"
       - "scripts/widgets/labels.mjs"
+      - "scripts/widgets/check-widgets.mjs"
       - ".github/workflows/labels.yml"
   workflow_dispatch:
 
@@ -23,6 +24,8 @@ concurrency:
 
 jobs:
   sync:
+    # main's own script only, a manual run from another branch included.
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       contents: read

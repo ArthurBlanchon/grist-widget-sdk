@@ -3,8 +3,9 @@ title: "useGrist"
 description: "The widget's one object for Grist: connection, records, mapping, writes, options, linking and REST."
 ---
 
-```ts
-function useGrist<TRow = Record<string, unknown>, TMapped = Record<string, unknown>>(): UseGristResult<TRow, TMapped>
+```ts no-check
+widget.useGrist(): UseGristResult // typed from the declaration
+useGrist(): UseGristResult        // the same, untyped
 ```
 
 `useGrist()` reads the connection of the `<GristWidgetProvider>` above it:

@@ -1,0 +1,8 @@
+{
+  "slug": "duplicate-finder",
+  "version": "0.3.0",
+  "commit": "465dea51f0a93049a59c2d41c996b9dff3c89e86",
+  "released": "2026-11-16T11:26:24.119Z",
+  "changes": "- \"Report a problem\": when a change fails to save, or if the widget ever stops working, a link opens this widget's bug form, filled in with its name and version. Nothing is sent from your document: you write what you choose.\n- If the widget stops working, it says so, with a button to reload it, instead of showing an empty panel.",
+  "changelog": "CHANGELOG.md"
+}

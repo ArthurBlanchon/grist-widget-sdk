@@ -21,13 +21,23 @@ import type { GristRowRecord } from "./types"
 import { checkOptionsVersioning } from "./runtime/options-version"
 import { useGrist, type UseGristOptions, type UseGristResult } from "./use-grist"
 
-/** What a widget declares: `UseGristOptions`, plus its title and description. */
+/** What a widget declares: `UseGristOptions`, plus its title, description and where to report a problem. */
 export type GristWidgetDefinition = UseGristOptions & {
   /** The widget's name: the page's title, and its manifest's. */
   title?: string
   /** One sentence: the page's description, and its manifest's. */
   description?: string
+  /**
+   * Where a person reports a problem with the widget (an http or https URL,
+   * such as a prefilled issue form). `mountGristWidget()` links it when a
+   * write fails and when the widget stops working. Nothing is sent anywhere:
+   * the person opens the link, and writes what they choose.
+   */
+  reportUrl?: string
 }
+
+/** What describes a widget rather than configures it: its title, description and report URL. */
+export type GristWidgetMetadata = { title?: string; description?: string; reportUrl?: string }
 
 /** The widget's mapped record type, from its declaration. */
 export type GristWidgetRow<W> = W extends GristWidget<infer D> ? GristMappedRow<D> : never
@@ -36,9 +46,9 @@ export type GristWidgetRow<W> = W extends GristWidget<infer D> ? GristMappedRow<
 export type GristWidget<D extends GristWidgetDefinition = GristWidgetDefinition> = {
   /** The declaration, as written. */
   readonly definition: D
-  /** What the widget asks Grist for: the declaration without its title and description. */
+  /** What the widget asks Grist for: the declaration without its title, description and report URL. */
   readonly options: UseGristOptions
-  readonly metadata: { title?: string; description?: string }
+  readonly metadata: GristWidgetMetadata
   /**
    * `useGrist()`, typed from the declaration: `mappedRecord`, `mappedRecords`,
    * `mapBack`, `updateRecord` and `addRecord` use the declared names and the
@@ -53,12 +63,12 @@ export type GristWidget<D extends GristWidgetDefinition = GristWidgetDefinition>
  * `as const` and no generics.
  */
 export function defineGristWidget<const D extends GristWidgetDefinition>(definition: D): GristWidget<D> {
-  const { title, description, ...options } = definition
+  const { title, description, reportUrl, ...options } = definition
   checkOptionsVersioning(options)
   return {
     definition,
     options,
-    metadata: { title, description },
+    metadata: reportUrl === undefined ? { title, description } : { title, description, reportUrl },
     useGrist: () => useGrist<GristRowRecord, GristMappedRow<D>>(),
   }
 }

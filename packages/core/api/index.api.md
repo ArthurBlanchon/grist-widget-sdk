@@ -366,10 +366,7 @@ export type GristUserActionTuple = unknown[];
 export type GristWidget<D extends GristWidgetDefinition = GristWidgetDefinition> = {
     readonly definition: D;
     readonly options: UseGristOptions;
-    readonly metadata: {
-        title?: string;
-        description?: string;
-    };
+    readonly metadata: GristWidgetMetadata;
     useGrist: () => UseGristResult<GristRowRecord, GristMappedRow<D>>;
 };
 
@@ -391,6 +388,7 @@ export type GristWidgetConfiguration = {
 export type GristWidgetDefinition = UseGristOptions & {
     title?: string;
     description?: string;
+    reportUrl?: string;
 };
 
 // @public
@@ -423,6 +421,13 @@ export type GristWidgetInteraction = {
 export type GristWidgetLinkingInfo = {
     asTarget: string | null;
     asSource: boolean;
+};
+
+// @public
+export type GristWidgetMetadata = {
+    title?: string;
+    description?: string;
+    reportUrl?: string;
 };
 
 // @public

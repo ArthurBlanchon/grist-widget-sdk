@@ -2,10 +2,11 @@ import { StrictMode, Suspense, type ComponentType, type ReactNode } from "react"
 import { createRoot } from "react-dom/client"
 
 import { GristBoundary, GristWidgetProvider, useWidgetMetadata } from "../sdk"
-import type { GristWidget, UseGristOptions } from "../sdk"
+import type { GristWidget, GristWidgetMetadata, UseGristOptions } from "../sdk"
 import { isGristWidget } from "../sdk/define-widget"
 import { LocalDevPage as DefaultLocalDevPage } from "./chrome/local-dev-page"
 import { ReleasePage as DefaultReleasePage } from "./chrome/release-page"
+import { ReportUrlProvider, WidgetCrashBoundary } from "./chrome/report-problem"
 import { WidgetAlerts } from "./chrome/widget-alerts"
 import { parseDeployPath, type DeployChannel } from "./deploy-path"
 import { EmbeddedThemeProvider, StandaloneThemeProvider } from "./widget-theme"
@@ -15,8 +16,12 @@ export type GristWidgetAppProps = {
   App: ComponentType
   /** The widget's `GRIST_OPTIONS`: access level, columns, and so on. */
   options: UseGristOptions
-  /** The page's title and description (the widget's `WIDGET_METADATA`, or its declaration's). */
-  metadata?: { title?: string; description?: string }
+  /**
+   * The page's title and description (the widget's `WIDGET_METADATA`, or its
+   * declaration's), and where to report a problem: the alerts and the screen
+   * shown if the widget stops working link `reportUrl`.
+   */
+  metadata?: GristWidgetMetadata
   /**
    * Whether this is the local dev server. Pass `import.meta.env.DEV`.
    * Outside Grist it picks the local-dev page over the release page.
@@ -160,13 +165,17 @@ export function GristWidgetApp({
         <PageMetadata metadata={metadata} />
         <EmbeddedThemeProvider>
           <GristBoundary>
-            <div style={FILL}>
-              <Wrap>
-                <Suspense fallback={null}>
-                  <App />
-                </Suspense>
-              </Wrap>
-            </div>
+            <ReportUrlProvider url={metadata?.reportUrl}>
+              <div style={FILL}>
+                <Wrap>
+                  <WidgetCrashBoundary>
+                    <Suspense fallback={null}>
+                      <App />
+                    </Suspense>
+                  </WidgetCrashBoundary>
+                </Wrap>
+              </div>
+            </ReportUrlProvider>
           </GristBoundary>
         </EmbeddedThemeProvider>
       </GristWidgetProvider>

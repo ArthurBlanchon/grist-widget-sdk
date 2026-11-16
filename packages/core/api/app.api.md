@@ -40,10 +40,7 @@ export function GristWidgetApp(input: GristWidgetAppProps): react.JSX.Element;
 export type GristWidgetAppProps = {
     App: ComponentType;
     options: UseGristOptions;
-    metadata?: {
-        title?: string;
-        description?: string;
-    };
+    metadata?: GristWidgetMetadata;
     dev?: boolean;
     Alerts?: ComponentType<{
         children: ReactNode;

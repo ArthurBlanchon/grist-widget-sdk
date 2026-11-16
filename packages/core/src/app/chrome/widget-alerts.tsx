@@ -1,6 +1,7 @@
 import type { CSSProperties, ReactNode } from "react"
 
 import { useGristSdkAlerts, type GristSdkAlertDescriptor, type GristSdkAlertsOptions } from "../../sdk/helpers/grist-sdk-alerts"
+import { ReportProblemLink } from "./report-problem"
 import { tokens } from "./tokens"
 
 const ALERT_OPTIONS: GristSdkAlertsOptions = {
@@ -47,6 +48,7 @@ function WidgetAlert({ alert }: { alert: GristSdkAlertDescriptor }) {
         <p style={{ margin: 0, fontWeight: 500 }}>{alert.title}</p>
         {/* The alert's own colour, not the muted one: muted text on the warning's tint falls under WCAG AA's 4.5:1. */}
         <p style={{ margin: "0.25rem 0 0" }}>{alert.message}</p>
+        {alert.severity === "error" ? <ReportProblemLink style={{ display: "inline-block", marginTop: "0.25rem" }} /> : null}
       </div>
     </div>
   )

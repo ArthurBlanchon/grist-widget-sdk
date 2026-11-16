@@ -180,6 +180,55 @@ describe("default alerts", () => {
     expect(mounts).toBe(1)
   })
 
+  it("links the widget's reportUrl under a failed write", async () => {
+    function Fails() {
+      const w = useGrist()
+      return <button onClick={() => void w.applyActions([["NoSuchAction"]]).catch(() => undefined)}>fail</button>
+    }
+    const url = "https://github.com/acme/widgets/issues/new?template=widget-bug.yml&widget=kanban-board"
+    renderWithGrist(<GristWidgetApp App={Fails} options={{ requiredAccess: "full" }} metadata={{ reportUrl: url }} />, {
+      emulator: { document: presets.blank() },
+    })
+    expect(screen.queryByRole("link", { name: "Report a problem" })).toBeNull()
+    fireEvent.click(await screen.findByRole("button", { name: "fail" }))
+    expect(await screen.findByText("Action error")).toBeInTheDocument()
+    const link = screen.getByRole("link", { name: "Report a problem" })
+    expect(link).toHaveAttribute("href", url)
+    expect(link).toHaveAttribute("target", "_blank")
+    expect(link).toHaveAttribute("rel", "noopener noreferrer")
+  })
+
+  it("shows that the widget stopped working when it throws, with a reload and the report link", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => undefined)
+    function Broken(): never {
+      throw new Error("boom")
+    }
+    renderWithGrist(<GristWidgetApp App={Broken} options={{ requiredAccess: "read table" }} metadata={{ reportUrl: "https://example.com/report" }} />, {
+      emulator: { document: presets.blank() },
+    })
+    expect(await screen.findByRole("heading", { name: "The widget stopped working" })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Reload the widget" })).toBeInTheDocument()
+    expect(screen.getByRole("link", { name: "Report a problem" })).toHaveAttribute("href", "https://example.com/report")
+    vi.restoreAllMocks()
+  })
+
+  it("offers no report link without a reportUrl, or with one that isn't http(s)", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => undefined)
+    function Broken(): never {
+      throw new Error("boom")
+    }
+    renderWithGrist(<GristWidgetApp App={Broken} options={{ requiredAccess: "read table" }} metadata={{ reportUrl: "javascript:alert(1)" }} />, {
+      emulator: { document: presets.blank() },
+    })
+    expect(await screen.findByRole("heading", { name: "The widget stopped working" })).toBeInTheDocument()
+    expect(screen.queryByRole("link")).toBeNull()
+    cleanup()
+    renderWithGrist(<GristWidgetApp App={Broken} options={{ requiredAccess: "read table" }} />, { emulator: { document: presets.blank() } })
+    expect(await screen.findByRole("heading", { name: "The widget stopped working" })).toBeInTheDocument()
+    expect(screen.queryByRole("link")).toBeNull()
+    vi.restoreAllMocks()
+  })
+
   it("can be turned off with Alerts={null}", async () => {
     renderWithGrist(<GristWidgetApp App={Widget} options={{ requiredAccess: "read table" }} Alerts={null} />, {
       emulator: { document: presets.blank() },

@@ -230,7 +230,8 @@ describe("default alerts", () => {
       expect(screen.getByRole("link", { name: "Report a problem" })).toHaveAttribute("href", "https://example.com/report")
       // A test runner, the real-Grist check and the console still see it.
       // React 18 also dispatches it while retrying the render: present, maybe more than once.
-      await waitFor(() => expect(uncaught).toContainEqual(new Error("boom")))
+      // (React 18 marks the error with a property of its own: compare the message.)
+      await waitFor(() => expect(uncaught.some((e) => e instanceof Error && e.message === "boom")).toBe(true))
     })
 
     it("catches a falsy thrown value too", async () => {

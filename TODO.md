@@ -53,7 +53,9 @@ Each item is one pull request; the plan says when each milestone is done.
   per entry point, and the CLI's from its help: `packages/`, so the
   maintainer's go), and the concept page "How the SDK works" (the
   declaration, provider, boundary, runtime). Done: R1 to R4, the old-forms
-  check blocking in CI, `cheatsheet` and `cookbook` retired with redirects.
+  check blocking in CI, `cheatsheet` and `cookbook` retired with redirects
+  (each example's code linked from the Examples page), *Replica document*
+  under Concepts (its URL stays `sdk/design/replica-document`).
 - [ ] **M7. Bring the widgets home, then retire.** Wave 3 (REST
   enrichment, Ask AI, Scan with AI) after M1–M4; `examples/` removed with
   an API coverage check; awesome-grist-widgets absorbed and archived; the

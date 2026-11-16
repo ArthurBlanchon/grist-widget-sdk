@@ -1,0 +1,8 @@
+{
+  "slug": "mermaid-diagram",
+  "version": "0.2.2",
+  "commit": "80dd9be383de0a98179b8d5956549099abcfd151",
+  "released": "2026-11-16T05:33:13.723Z",
+  "changes": "- A diagram larger than the panel can be scrolled from the keyboard: Tab reaches it.",
+  "changelog": "CHANGELOG.md"
+}

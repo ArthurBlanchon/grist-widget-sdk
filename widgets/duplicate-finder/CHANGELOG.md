@@ -2,6 +2,10 @@
 
 What changed in each version, for the people using the widget. Newest first.
 
+## 0.2.0 (2026-11-16)
+
+- Many duplicates are listed 20 groups at a time, with a button for the next ones, and 10 rows in a group (the kept one always among them): the widget stays quick with thousands of rows. Merging a group still merges every row in it.
+
 ## 0.1.2 (2026-11-15)
 
 - The row kept by default is the one with the most filled cells. Grist sends a mapped widget only its key columns, so the first row of a group always won; the widget now counts the whole row, read from the table.

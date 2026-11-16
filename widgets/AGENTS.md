@@ -99,7 +99,11 @@ install URL) and at `/latest/`
 new version publishes nothing, and a released version is never rebuilt.
 Before releasing, check what `main` holds in a real Grist document at
 `/widgets/<slug>/dev/`; a pull request's preview serves its branch the same
-way.
+way. Whoever merges a widget's pull request reads its "Compared with the
+last release" lines in the `widgets` job's summary first. When pixels
+changed, open the `-diff.png` in the screenshots artifact and say in the
+pull request whether the change is intended. "Unchanged" proves nothing
+the widget's own tests don't: the pull request's own code made the report.
 
 ## Commands
 
@@ -121,7 +125,11 @@ After a build, `node scripts/widgets/check-widgets.mjs --sizes` checks each
 bundle against its budget (`bundle-kb` in the spec, 125 KB gzipped by
 default). In a real Grist (Docker), with axe and a dark screenshot:
 `pnpm e2e:grist widgets/<slug> --build --axe --themes --standard` (the
-standard criteria: 320 and 1,280 px, the keyboard path, read-only).
+standard criteria: 320 and 1,280 px, the keyboard path, read-only). With
+`--baseline <a checkout of widgets-dist>`, it also compares each widget's
+frame with its last release's, in each theme (`<slug>-diff.png`, the
+changed pixels in red); CI does, and reports it in the job summary without
+failing on it: a change that looks wrong there is for the review.
 
 ## Path map
 

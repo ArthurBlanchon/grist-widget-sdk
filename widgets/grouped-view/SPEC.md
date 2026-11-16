@@ -66,10 +66,11 @@ should not ask for.
   French and its numbers are written the French way.
 - **AC-11** Given a Group value that is HTML, it is shown as text.
 - **AC-12** Given no rows, the widget says so.
-- **AC-13** Given many groups, the first 50 are shown, with a button for
-  the next 50 (groups down, in a pivot too); an open group lists its first
-  20 rows and says how many more it has; a pivot shows its first 20 Across
-  values and says how many more there are. Totals count every row.
+- **AC-13** Given many groups, rows or Across values, the widget shows
+  some at a time, each with a button for the next, which says how many
+  are not shown: 50 groups (in a pivot too), the first 10 rows of an open
+  group, then 50 more at a time, and 20 Across values. Totals count every
+  row.
 
 ## Standard criteria
 

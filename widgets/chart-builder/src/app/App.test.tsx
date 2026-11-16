@@ -4,7 +4,7 @@ import { cleanup, fireEvent, installJsdomStubs, renderWithGrist, screen, waitFor
 import type { GristReplicaDocument, GristReplicaRow } from "grist-widget-sdk"
 
 import App, { widget } from "./App"
-import { buildData, MAX_CATEGORIES } from "./series"
+import { buildData, MAX_CATEGORIES, MAX_POINTS } from "./series"
 import { expectVolume, VOLUME_TIMEOUT_MS } from "@shared/testing"
 import { demo } from "./demo"
 
@@ -142,6 +142,41 @@ it("AC-11 shows the largest 29 categories and the others as one Other", () => {
   expect(buildData(rows, 1, "average", "(blank)", "Other").at(-1)).toMatchObject({ label: "Other", s0: 10 })
 })
 
+it("AC-11 ranks by value sign aside, and puts a category named Other in the Other", () => {
+  // A large loss stays; a category already named "Other" joins the bucket, one label.
+  const rows = [
+    { label: "Loss", values: [-1000] },
+    { label: "Other", values: [500] },
+    ...Array.from({ length: 40 }, (_, i) => ({ label: `C${i}`, values: [i + 1] })),
+  ]
+  const data = buildData(rows, 1, "sum", "(blank)", "Other")
+  expect(data.map((d) => d.label)).toContain("Loss")
+  expect(data.filter((d) => d.label === "Other")).toHaveLength(1)
+  // Other: the 500, and C0 to C11 (1 + … + 12).
+  expect(data.at(-1)).toEqual({ label: "Other", s0: 500 + 78 })
+})
+
+it("AC-11 puts ordered categories together with their neighbours, in order, every row counted", () => {
+  const days = Array.from({ length: 365 }, (_, i) => ({ label: `Day ${String(i + 1).padStart(3, "0")}`, values: [1] }))
+  const line = buildData(days, 1, "sum", "(blank)", "Other", true)
+  expect(line.length).toBeLessThanOrEqual(MAX_POINTS)
+  expect(line[0]!.label).toBe("Day 001 – Day 004")
+  expect(line.reduce((a, d) => a + Number(d.s0), 0)).toBe(365)
+  // Dates as labels are ordered whatever the chart.
+  const dates = days.map((d, i) => ({ label: new Date(Date.UTC(2026, 0, 1 + i)), values: d.values }))
+  const bar = buildData(dates, 1, "sum", "(blank)", "Other")
+  expect(bar[0]!.label).toBe("2026-01-01 – 2026-01-04")
+  expect(bar.map((d) => d.label)).not.toContain("Other")
+  // Under the limit, nothing changes.
+  expect(buildData(days.slice(0, 100), 1, "sum", "(blank)", "Other", true)).toHaveLength(100)
+})
+
 it("AC-volume renders 5,000 rows within the DOM budget", () => expectVolume(<App />, widget, demo), VOLUME_TIMEOUT_MS)
 
 it("AC-volume holds with a distinct category for every row", () => expectVolume(<App />, widget, demo, { unique: ["Month"] }), VOLUME_TIMEOUT_MS)
+
+it("AC-volume holds with a distinct category for every row, in a line chart", () =>
+  expectVolume(<App />, widget, { ...demo, options: { ...demo.options, chart: "line" } }, { unique: ["Month"] }), VOLUME_TIMEOUT_MS)
+
+it("AC-volume holds with a distinct category for every row, in a combined chart", () =>
+  expectVolume(<App />, widget, { ...demo, options: { ...demo.options, chart: "combined" } }, { unique: ["Month"] }), VOLUME_TIMEOUT_MS)

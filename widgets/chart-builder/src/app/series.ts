@@ -18,14 +18,26 @@ const keyOf = (v: unknown) => {
 
 const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : null)
 
-/** The categories a chart shows at most: past it, the smallest are one "Other". */
+/** The categories a chart of unordered ones (customers, regions) shows at most: past it, the smallest are one "Other". */
 export const MAX_CATEGORIES = 30
+/** The points a chart of ordered categories (dates, numbers, a line) shows at most: past it, neighbours are put together. */
+export const MAX_POINTS = 120
+
+/** The kinds that draw categories in order, as a line does: their categories are never reordered or left out. */
+export const ORDERED_KINDS: readonly ChartKind[] = ["line", "area", "combined"]
 
 /**
  * Rows grouped by label, in order of first appearance; each series is the
- * sum, the average or the count of its numbers in the group. Past
- * `MAX_CATEGORIES` labels, the largest by the first series stay and the rest
- * are one `other` category, aggregated from their numbers (not their totals).
+ * sum, the average or the count of its numbers in the group. Every row
+ * counts, however many categories there are:
+ * - ordered categories (`ordered`, or every label a date or a number), past
+ *   `MAX_POINTS`, are put together with their neighbours, in order, under
+ *   "first – last";
+ * - the others, past `MAX_CATEGORIES`, keep the largest (by the first
+ *   series' value, sign aside) and put the rest in one `other` category, a
+ *   category already named so included.
+ * Put-together categories are aggregated from their rows' numbers: an
+ * average stays an average of the rows.
  */
 export function buildData(
   rows: readonly { label: unknown; values: readonly unknown[] }[],
@@ -33,34 +45,42 @@ export function buildData(
   fn: Aggregate,
   blank: string,
   other = "Other",
+  ordered = false,
 ): Datum[] {
   const groups = new Map<string, number[][]>()
+  let datesOrNumbers = true
   for (const r of rows) {
     const key = keyOf(r.label) || blank
-    const g = groups.get(key) ?? Array.from({ length: seriesCount }, () => [])
+    if (keyOf(r.label) && !(r.label instanceof Date) && typeof r.label !== "number") datesOrNumbers = false
+    let g = groups.get(key)
+    if (!g) groups.set(key, (g = Array.from({ length: seriesCount }, () => [])))
     for (let i = 0; i < seriesCount; i++) {
       const n = num(r.values[i])
       if (n !== null) g[i]!.push(n)
     }
-    groups.set(key, g)
   }
-  const total = (nums: number[]) => (fn === "count" ? nums.length : nums.reduce((a, b) => a + b, 0))
-  let entries = [...groups.entries()]
-  if (entries.length > MAX_CATEGORIES) {
-    const kept = new Set(
-      [...entries]
-        .sort(([, a], [, b]) => total(b[0] ?? []) - total(a[0] ?? []))
-        .slice(0, MAX_CATEGORIES - 1)
-        .map(([label]) => label),
-    )
-    const rest: number[][] = Array.from({ length: seriesCount }, () => [])
-    for (const [label, g] of entries) if (!kept.has(label)) g.forEach((nums, i) => rest[i]!.push(...nums))
-    entries = [...entries.filter(([label]) => kept.has(label)), [other, rest]]
+  const value = (nums: number[]) =>
+    fn === "count" ? nums.length : fn === "average" ? (nums.length ? nums.reduce((a, b) => a + b, 0) / nums.length : 0) : nums.reduce((a, b) => a + b, 0)
+  const merged = (list: (readonly [string, number[][]])[]) => Array.from({ length: seriesCount }, (_, i) => list.flatMap(([, g]) => g[i]!))
+  let entries: (readonly [string, number[][]])[] = [...groups.entries()]
+
+  if ((ordered || datesOrNumbers) && entries.length > MAX_POINTS) {
+    const size = Math.ceil(entries.length / MAX_POINTS)
+    const buckets: (readonly [string, number[][]])[] = []
+    for (let i = 0; i < entries.length; i += size) {
+      const run = entries.slice(i, i + size)
+      buckets.push([run.length > 1 ? `${run[0]![0]} – ${run.at(-1)![0]}` : run[0]![0], merged(run)])
+    }
+    entries = buckets
+  } else if (!(ordered || datesOrNumbers) && entries.length > MAX_CATEGORIES) {
+    const ranked = entries.filter(([label]) => label !== other).sort(([, a], [, b]) => Math.abs(value(b[0] ?? [])) - Math.abs(value(a[0] ?? [])))
+    const kept = new Set(ranked.slice(0, MAX_CATEGORIES - 1).map(([label]) => label))
+    entries = [...entries.filter(([label]) => kept.has(label)), [other, merged(entries.filter(([label]) => !kept.has(label)))]]
   }
   return entries.map(([label, g]) => {
     const d: Datum = { label }
     g.forEach((nums, i) => {
-      d[`s${i}`] = fn === "count" ? nums.length : fn === "average" ? (nums.length ? nums.reduce((a, b) => a + b, 0) / nums.length : 0) : nums.reduce((a, b) => a + b, 0)
+      d[`s${i}`] = value(nums)
     })
     return d
   })

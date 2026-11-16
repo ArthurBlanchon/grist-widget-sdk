@@ -40,18 +40,16 @@ export function countsOf(rows: readonly Row[], hasValue: boolean): CountryCounts
   )
 }
 
-/** The most categories the map colours and lists; past it, the smallest are one "other" group. */
-export const MAX_CATEGORIES = 10
-
-/** A category's points; `other` for the smallest categories put together. */
+/** A category's points; `other` for the categories past the palette's colours, put together. */
 export type Category = { name: string; other: boolean; points: Point[] }
 
 /**
- * Points by category, in order of first appearance. Past MAX_CATEGORIES,
- * the largest MAX_CATEGORIES - 1 keep their own and the rest are one group,
- * last: a legend and a layer per category stay readable and quick.
+ * Points by category, in order of first appearance. With more categories
+ * than `colours`, the `colours` with the most points keep their own colour
+ * and the rest are one group, last: no two categories share a colour, and
+ * a legend and a layer per category stay readable and quick.
  */
-export function byCategory(points: readonly Point[]): Category[] {
+export function byCategory(points: readonly Point[], colours: number): Category[] {
   const groups = new Map<string, Point[]>()
   for (const p of points) {
     const list = groups.get(p.category)
@@ -59,8 +57,8 @@ export function byCategory(points: readonly Point[]): Category[] {
     else groups.set(p.category, [p])
   }
   const all = [...groups].map(([name, list]) => ({ name, other: false, points: list }))
-  if (all.length <= MAX_CATEGORIES) return all
-  const kept = new Set([...all].sort((a, b) => b.points.length - a.points.length).slice(0, MAX_CATEGORIES - 1))
+  if (all.length <= colours) return all
+  const kept = new Set([...all].sort((a, b) => b.points.length - a.points.length).slice(0, colours))
   const rest = all.filter((c) => !kept.has(c)).flatMap((c) => c.points)
   return [...all.filter((c) => kept.has(c)), { name: "", other: true, points: rest }]
 }

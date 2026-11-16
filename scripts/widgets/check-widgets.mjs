@@ -150,7 +150,6 @@ export const sections = (body) => [...body.matchAll(/^## (.+)$/gm)].map((m) => m
 /** The standard criteria every catalog spec lists (ADR 0018), and the one a test checks in the widget. */
 export const STANDARD_CRITERIA = ["AC-volume", "AC-keyboard", "AC-narrow", "AC-readonly"]
 
-
 /** A test named for `id`, not skipped nor left to do: `it("AC-1 …")`, `it.only(…)` but no `it.skip(…)`. */
 export const namesTest = (tests, id) => new RegExp(`\\bit(?:\\.(?!skip\\b|todo\\b|fails\\b)\\w+)?\\(\\s*["'\`]${id}\\b`).test(tests)
 

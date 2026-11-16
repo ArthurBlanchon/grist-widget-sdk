@@ -58,9 +58,16 @@ About 220 KB of JavaScript (gzip), budget 240 KB: Recharts is half of it.
 - **AC-9** Given a browser that prefers French, the widget's text and
   numbers are in French.
 - **AC-10** Given a label that is HTML, it is shown as text.
-- **AC-11** Given more than 30 categories, the chart shows the 29 largest by
-  the first series, and the others as one "Other", aggregated from their
-  numbers (an average stays an average of the rows).
+- **AC-11** Given many categories, every row still counts:
+  - in a line, an area or a combined chart, or with dates or numbers as
+    labels, past 120 categories, neighbours are put together, in order,
+    under "first – last";
+  - otherwise, past 30 categories, the chart shows the 29 largest by the
+    first series' value (sign aside) and the others as one "Other", a
+    category already named so included.
+
+  Put-together categories are aggregated from their rows' numbers (an
+  average stays an average of the rows).
 
 ## Standard criteria
 

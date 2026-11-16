@@ -4,7 +4,9 @@ What changed in each version, for the people using the widget. Newest first.
 
 ## 0.2.0 (2026-11-16)
 
-- Grouped by a column of many values (a customer, a project), the chart shows the 29 largest categories and the others as one "Other": it stays readable and quick with thousands of rows.
+- Grouped by a column of many values, the chart stays readable and quick with thousands of rows, and every row still counts:
+  - dates, numbers, and line, area or combined charts: past 120 points, neighbours are put together, in order, under "first – last";
+  - other categories (a customer, a project): past 30, the chart shows the 29 largest, losses as much as gains, and the others as one "Other".
 
 ## 0.1.1 (2026-11-15)
 

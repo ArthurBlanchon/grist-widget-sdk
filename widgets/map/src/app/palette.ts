@@ -14,8 +14,10 @@ export type Palette = {
   border: string
   text: string
   halo: string
-  /** A colour per point category, cycling. */
+  /** A colour per point category. */
   categories: string[]
+  /** The points of the categories past those colours, put together: a neutral one. */
+  other: string
 }
 
 const TOKENS = {
@@ -24,6 +26,7 @@ const TOKENS = {
   border: "--border",
   text: "--foreground",
   halo: "--background",
+  other: "--muted-foreground",
 } as const
 
 /** What a token is when the page can't resolve it (no canvas, as in tests). */
@@ -34,6 +37,7 @@ const FALLBACK: Palette = {
   text: "black",
   halo: "white",
   categories: ["gainsboro", "darkgray", "gray", "dimgray", "black"],
+  other: "slategray",
 }
 
 /** `var(--token)` as a hex colour MapLibre reads, or null. */
@@ -67,6 +71,7 @@ export function readPalette(): Palette {
     text: get(TOKENS.text, FALLBACK.text),
     halo: get(TOKENS.halo, FALLBACK.halo),
     categories: [...scale].reverse(),
+    other: get(TOKENS.other, FALLBACK.other),
   }
 }
 

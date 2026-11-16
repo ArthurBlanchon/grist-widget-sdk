@@ -80,8 +80,9 @@ with the widget.
 - **AC-9** Given a browser that prefers French, the widget's text is in
   French.
 - **AC-10** Given a label or a category that is HTML, it is shown as text.
-- **AC-11** Given more than 10 categories, the 9 with the most points keep
-  their own colour and the others are one "Others" group, last in the
+- **AC-11** Given more categories than the theme has category colours
+  (five), those with the most points keep their own colour and the others
+  are one "Others" group, in a neutral colour of its own, last in the
   legend, with its number of points.
 
 ## Standard criteria

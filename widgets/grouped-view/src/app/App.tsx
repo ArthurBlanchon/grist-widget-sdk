@@ -22,9 +22,9 @@ export const widget = defineGristWidget({
   ],
 })
 
-/** Groups (list or pivot rows) shown at a time, rows shown in an open group, pivot columns shown. Totals count every row. */
+/** Groups (list or pivot rows), rows of an open group and pivot columns shown at a time, each with a button for the next. Totals count every row. */
 const GROUPS_SHOWN = 50
-const ITEMS_SHOWN = 20
+const ITEMS_SHOWN = 10
 const COLUMNS_SHOWN = 20
 
 export default function App() {
@@ -34,6 +34,7 @@ export default function App() {
   const [fn, setFn] = useState<Aggregate>("sum")
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set())
   const [listed, setListed] = useState(GROUPS_SHOWN)
+  const [itemsListed, setItemsListed] = useState<Readonly<Record<string, number>>>({})
   const [filter, setFilter] = useState<string | null>(null)
 
   const hasValue = Boolean(w.mappings.Value)
@@ -69,6 +70,8 @@ export default function App() {
     void w.setLinkedRowSelection(off ? null : rows.map((r) => r.id))
   }
 
+  const groups = useMemo(() => (pivot ? [] : groupItems(items)), [items, pivot])
+
   if (items.length === 0) {
     return <p className="m-auto flex h-svh max-w-sm items-center p-6 text-center text-sm text-muted-foreground">{t("empty")}</p>
   }
@@ -88,12 +91,13 @@ export default function App() {
         ) : null}
       </header>
 
-      {pivot ? <PivotTable items={items} name={name} total={total} filter={filter} filterTo={filterTo} t={t} /> : null}
+      {pivot ? <PivotTable items={items} name={name} total={total} filter={filter} filterTo={filterTo} format={number.format} t={t} /> : null}
 
       {!pivot ? (
         <ul className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto">
-          {groupItems(items).slice(0, listed).map((g) => {
+          {groups.slice(0, listed).map((g) => {
             const open = !collapsed.has(g.key)
+            const shown = itemsListed[g.key] ?? ITEMS_SHOWN
             const label = name(g.key)
             return (
               <li key={g.key} className="rounded-lg border">
@@ -128,7 +132,7 @@ export default function App() {
                 </div>
                 {open ? (
                   <ul className="flex flex-col border-t py-1">
-                    {g.items.slice(0, ITEMS_SHOWN).map((item) => (
+                    {g.items.slice(0, shown).map((item) => (
                       <li key={item.id}>
                         <button
                           type="button"
@@ -141,8 +145,13 @@ export default function App() {
                         </button>
                       </li>
                     ))}
-                    {g.items.length > ITEMS_SHOWN ? (
-                      <li className="px-4 py-1 text-xs text-muted-foreground">{t("moreItems", { n: number.format(g.items.length - ITEMS_SHOWN) })}</li>
+                    {g.items.length > shown ? (
+                      <li className="px-2 pt-1">
+                        <More
+                          label={t("moreItems", { n: number.format(Math.min(ITEMS_SHOWN * 5, g.items.length - shown)), left: number.format(g.items.length - shown) })}
+                          onClick={() => setItemsListed((m) => ({ ...m, [g.key]: shown + ITEMS_SHOWN * 5 }))}
+                        />
+                      </li>
                     ) : null}
                   </ul>
                 ) : null}
@@ -151,8 +160,11 @@ export default function App() {
           })}
         </ul>
       ) : null}
-      {!pivot && groupItems(items).length > listed ? (
-        <MoreGroups left={groupItems(items).length - listed} onClick={() => setListed((n) => n + GROUPS_SHOWN)} t={t} />
+      {groups.length > listed ? (
+        <More
+          label={t("moreGroups", { n: number.format(Math.min(GROUPS_SHOWN, groups.length - listed)), left: number.format(groups.length - listed) })}
+          onClick={() => setListed((n) => n + GROUPS_SHOWN)}
+        />
       ) : null}
     </main>
   )
@@ -164,6 +176,7 @@ function PivotTable({
   total,
   filter,
   filterTo,
+  format,
   t,
 }: {
   items: Item[]
@@ -171,11 +184,13 @@ function PivotTable({
   total: (rows: Item[]) => string
   filter: string | null
   filterTo: (key: string, rows: Item[]) => void
+  format: (n: number) => string
   t: ReturnType<typeof useT<keyof (typeof messages)["en"]>>
 }) {
-  const p = pivotItems(items)
+  const p = useMemo(() => pivotItems(items), [items])
   const [rowsListed, setRowsListed] = useState(GROUPS_SHOWN)
-  const columns = p.columns.slice(0, COLUMNS_SHOWN)
+  const [columnsListed, setColumnsListed] = useState(COLUMNS_SHOWN)
+  const columns = p.columns.slice(0, columnsListed)
   const cell = (key: string, rows: Item[], label: string) =>
     rows.length === 0 ? (
       <td className="px-2 py-1 text-right text-muted-foreground">·</td>
@@ -233,21 +248,29 @@ function PivotTable({
           </tr>
         </tbody>
       </table>
-      {p.columns.length > COLUMNS_SHOWN ? (
-        <p role="status" className="px-2 py-1 text-xs text-muted-foreground">
-          {t("moreColumns", { n: p.columns.length - COLUMNS_SHOWN })}
-        </p>
-      ) : null}
-      {p.rows.length > rowsListed ? <MoreGroups left={p.rows.length - rowsListed} onClick={() => setRowsListed((n) => n + GROUPS_SHOWN)} t={t} /> : null}
+      <div className="flex flex-wrap gap-2 p-2 empty:hidden">
+        {p.rows.length > rowsListed ? (
+          <More
+            label={t("moreGroups", { n: format(Math.min(GROUPS_SHOWN, p.rows.length - rowsListed)), left: format(p.rows.length - rowsListed) })}
+            onClick={() => setRowsListed((n) => n + GROUPS_SHOWN)}
+          />
+        ) : null}
+        {p.columns.length > columnsListed ? (
+          <More
+            label={t("moreColumns", { n: format(Math.min(COLUMNS_SHOWN, p.columns.length - columnsListed)), left: format(p.columns.length - columnsListed) })}
+            onClick={() => setColumnsListed((n) => n + COLUMNS_SHOWN)}
+          />
+        ) : null}
+      </div>
     </div>
   )
 }
 
-/** The button that shows the next groups. */
-function MoreGroups({ left, onClick, t }: { left: number; onClick: () => void; t: ReturnType<typeof useT<keyof (typeof messages)["en"]>> }) {
+/** The button that shows the next groups, rows or columns. */
+function More({ label, onClick }: { label: string; onClick: () => void }) {
   return (
     <Button size="sm" variant="outline" className="h-auto self-start whitespace-normal" onClick={onClick}>
-      {t("moreGroups", { n: Math.min(GROUPS_SHOWN, left), left })}
+      {label}
     </Button>
   )
 }

@@ -24,7 +24,7 @@ export default function MapView() {
   const hasValue = mapped("Value")
 
   const { points, skipped } = useMemo(() => pointsOf(rows), [rows])
-  const groups = useMemo(() => byCategory(points), [points])
+  const groups = useMemo(() => byCategory(points, palette.categories.length), [points, palette.categories.length])
   const counts = useMemo(() => countsOf(rows, hasValue), [rows, hasValue])
   const valueLabel = useCallback((v: number) => t(hasValue ? "value" : "count", { value: number.format(v) }), [t, hasValue, number])
 
@@ -33,7 +33,7 @@ export default function MapView() {
   }
 
   const total = [...counts.values()].reduce((a, b) => a + b, 0)
-  const colour = (i: number) => palette.categories[i % palette.categories.length]!
+  const colour = (i: number) => (groups[i]?.other ? palette.other : palette.categories[i % palette.categories.length]!)
 
   return (
     <main className="flex h-svh min-h-0 flex-col bg-background text-foreground">

@@ -11,6 +11,7 @@
 import type { GristEmulator } from "../create-grist-emulator"
 import type { EmulatorEvent } from "../core/event-bus"
 
+/** Every user action the widget sent the emulator, oldest first: `["UpdateRecord", "Tasks", 1, { Done: true }]`. */
 export function actionsOf(emulator: GristEmulator): unknown[][] {
   return emulator.bus
     .history()
@@ -18,6 +19,7 @@ export function actionsOf(emulator: GristEmulator): unknown[][] {
     .map((e) => e.action as unknown[])
 }
 
+/** Every event on the emulator's bus, oldest first: ready, cursor, data, options, theme and user actions. */
 export function eventsOf(emulator: GristEmulator): readonly EmulatorEvent[] {
   return emulator.bus.history()
 }
@@ -25,6 +27,7 @@ export function eventsOf(emulator: GristEmulator): readonly EmulatorEvent[] {
 /** Bus event kinds aligned with grist host callbacks (see inline transport). */
 export type WaitForEventKind = "ready" | "record" | "records" | "options" | "theme" | "cursor"
 
+/** `waitForEvent()`'s options: how long to wait, in ms (default 1000). */
 export type WaitForEventOptions = {
   timeoutMs?: number
 }
@@ -77,11 +80,16 @@ function waitForNextEvent(
   })
 }
 
+/**
+ * Resolves with the next event of a kind on the emulator's bus, or rejects
+ * after the timeout, naming the last events seen.
+ */
 export function waitForEvent(
   emulator: GristEmulator,
   kind: WaitForEventKind,
   options?: WaitForEventOptions
 ): Promise<EmulatorEvent>
+/** Resolves with the next event the predicate accepts, or rejects after `timeoutMs` (default 1000). */
 export function waitForEvent(
   emulator: GristEmulator,
   predicate: (event: EmulatorEvent) => boolean,

@@ -140,6 +140,7 @@ export type GristTableUpsertOptions = GristTableOpOptions & {
   allowEmptyRequire?: boolean
 }
 
+/** The least a record has: its row id. */
 export type GristMinimalRecord = { id: number }
 
 /** Wraps `grist.getTable(...)` / `grist.selectedTable`. */

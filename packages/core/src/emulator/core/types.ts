@@ -38,6 +38,7 @@ export type EmulatorFormulaContext = {
   document: EmulatorDocumentState
 }
 
+/** One table of the emulator's document: its columns and rows. */
 export type EmulatorTable = {
   tableId: string
   /** Optional human-readable label (used by the inspector). */
@@ -46,6 +47,7 @@ export type EmulatorTable = {
   rows: GristRowRecord[]
 }
 
+/** The emulator's document: its tables, the widget's selection and options. */
 export type EmulatorDocumentState = {
   /** Logical doc name returned by `getDocName()`. */
   docName: string

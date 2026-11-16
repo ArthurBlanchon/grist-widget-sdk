@@ -24,7 +24,7 @@ export type DeployChannel = {
 // @public
 export function deployChannelLabel(channel: DeployChannel): string;
 
-// @public (undocumented)
+// @public
 export type DeployPath = {
     channel: DeployChannel;
     basePath: string;
@@ -36,7 +36,7 @@ export function entryProps(entry: GristWidgetEntry, dev?: boolean): GristWidgetA
 // @public
 export function GristWidgetApp(input: GristWidgetAppProps): react.JSX.Element;
 
-// @public (undocumented)
+// @public
 export type GristWidgetAppProps = {
     App: ComponentType;
     options: UseGristOptions;
@@ -62,7 +62,7 @@ export type GristWidgetEntry = {
     ReleasePage?: GristWidgetAppProps["ReleasePage"];
 };
 
-// @public (undocumented)
+// @public
 export type MountedGristWidget = {
     unmount: () => void;
 };
@@ -73,10 +73,10 @@ export function mountGristWidget(entry: GristWidgetEntry, options?: {
     root?: Element | string;
 }): MountedGristWidget;
 
-// @public (undocumented)
+// @public
 export function mountGristWidget(config: MountGristWidgetConfig): MountedGristWidget;
 
-// @public (undocumented)
+// @public
 export type MountGristWidgetConfig = GristWidgetAppProps & {
     root?: Element | string;
 };
@@ -91,13 +91,13 @@ export type ReleasedVersion = {
     path?: string;
 };
 
-// @public (undocumented)
+// @public
 export type ResolvedWidgetTheme = "light" | "dark";
 
 // @public
 export function useReleasedVersions(pathname?: string): UseReleasedVersionsResult;
 
-// @public (undocumented)
+// @public
 export type UseReleasedVersionsResult = {
     versions: ReleasedVersion[] | null;
     error: boolean;
@@ -106,14 +106,14 @@ export type UseReleasedVersionsResult = {
 // @public
 export function useTheme(): UseThemeResult;
 
-// @public (undocumented)
+// @public
 export type UseThemeResult = {
     theme: WidgetTheme;
     resolvedTheme: ResolvedWidgetTheme;
     setTheme: (theme: WidgetTheme) => void;
 };
 
-// @public (undocumented)
+// @public
 export type WidgetTheme = "light" | "dark" | "system";
 
 // (No @packageDocumentation comment for this package)

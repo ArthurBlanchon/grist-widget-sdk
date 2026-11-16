@@ -30,8 +30,10 @@ import {
 import type { EventBus } from "./event-bus"
 import type { EmulatorColumn, EmulatorDocumentState, EmulatorTable } from "./types"
 
+/** A user action the emulator could not apply (a missing row, an action it does not support): the action, and why. */
 export class EmulatorActionError extends Error {
   constructor(
+    /** The user action, as the widget sent it. */
     public readonly action: unknown,
     message: string
   ) {

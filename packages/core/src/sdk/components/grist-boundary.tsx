@@ -4,6 +4,7 @@ import { accessDenied, accessLabel, deriveColumnMappingStatus } from "../runtime
 import type { GristRuntimeState } from "../runtime/runtime"
 import { useGristRuntime, useGristState } from "../use-grist"
 
+/** The widget, shown once it is connected, has its access and its required columns mapped. */
 export type GristBoundaryProps = {
   children: ReactNode
 }

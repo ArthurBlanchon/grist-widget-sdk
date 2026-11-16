@@ -115,6 +115,11 @@ function basesOf(type: string | undefined): string[] {
     .filter(Boolean)
 }
 
+/**
+ * Checks one value against a Grist column type (`"Numeric"`, `"Ref:People"`,
+ * `"Text,Ref"`), as typed reads do: the value the type promises, or why it
+ * doesn't fit.
+ */
 export function checkGristCell(type: string | undefined, value: unknown): GristCellCheck {
   const error = formulaError(value)
   if (error) return bad(`formula error (${error})`)

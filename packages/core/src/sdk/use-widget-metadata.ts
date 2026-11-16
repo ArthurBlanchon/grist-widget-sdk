@@ -1,10 +1,16 @@
 import { useEffect } from "react"
 
+/** The page's title and description. */
 export type UseWidgetMetadataInput = {
   title: string
   description: string
 }
 
+/**
+ * Sets the page's title and its description meta tags (Open Graph and
+ * Twitter included) while the component is mounted. `mountGristWidget()`
+ * does this from the declaration's title and description.
+ */
 export function useWidgetMetadata(input?: UseWidgetMetadataInput | null) {
   useEffect(() => {
     if (!input) return

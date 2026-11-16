@@ -50,6 +50,7 @@ export type CreateGristEmulatorOptions = {
   readOnly?: boolean
 }
 
+/** An in-memory Grist document and the `grist` global a widget reads it through. */
 export type GristEmulator = {
   /** Underlying mutable document. Treat as read-only outside of `mutate(...)`. */
   state: EmulatorDocumentState
@@ -84,6 +85,11 @@ export type GristEmulator = {
   dispose: () => void
 }
 
+/**
+ * Creates an emulator for a replica document: it checks the document,
+ * installs the `grist` global (inline transport) and answers the widget as
+ * Grist does. Tests usually go through `renderWithGrist()`.
+ */
 export function createGristEmulator(options: CreateGristEmulatorOptions): GristEmulator {
   const validatedDocument = parseDocument(options.document)
   const state = createDocument({

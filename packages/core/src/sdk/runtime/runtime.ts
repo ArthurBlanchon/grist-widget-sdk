@@ -54,6 +54,8 @@ export type GristRuntimeState = {
   readError: string | null
   /** Logical columns the last `mapBack` couldn't write (allowMultiple), for the alerts. */
   mapBackSkipped: readonly string[]
+  /** Grist opened the document read-only (`readonly=true` in the widget's URL): no write goes through. */
+  readOnly: boolean
 }
 
 /** What a widget asks Grist for (`UseGristOptions`). */
@@ -81,6 +83,11 @@ export type GristRuntime = {
 
 const READY_TIMEOUT_MS = 30_000
 
+/** Whether the widget's URL says the document is read-only, as Grist writes it (`readonly=true`). */
+export function isReadOnlyUrl(): boolean {
+  return typeof location !== "undefined" && new URLSearchParams(location.search).get("readonly") === "true"
+}
+
 export function initialRuntimeState(options: GristReadyOptions = {}): GristRuntimeState {
   return {
     connection: "connecting",
@@ -100,6 +107,7 @@ export function initialRuntimeState(options: GristReadyOptions = {}): GristRunti
     actionError: null,
     readError: null,
     mapBackSkipped: [],
+    readOnly: false,
   }
 }
 
@@ -239,6 +247,8 @@ export function createGristRuntime(options: GristRuntimeOptions = {}): GristRunt
       return () => listeners.delete(listener)
     },
     start() {
+      // Grist builds the widget's URL with readonly=true on a read-only document.
+      if (starts === 0) update({ readOnly: isReadOnlyUrl() })
       if (starts++ === 0) begin()
       return () => {
         if (--starts > 0) return

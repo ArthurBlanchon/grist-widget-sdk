@@ -55,6 +55,7 @@ export type RenderWithGristOptions = RenderOptions & {
     existing?: GristEmulator;
     widget?: GristWidget | UseGristOptions;
     rows?: ReadonlyArray<Record<string, unknown>>;
+    readOnly?: boolean;
 };
 
 // @public (undocumented)

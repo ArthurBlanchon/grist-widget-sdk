@@ -22,6 +22,7 @@ export type GristSdkAlertKind =
   | "access-insufficient"
   | "map-back-skip"
   | "cell-issues"
+  | "read-only"
 
 export type GristSdkAlertSeverity = "info" | "warning" | "error"
 
@@ -48,6 +49,7 @@ const TITLE: Record<GristSdkAlertKind, string> = {
   "access-insufficient": "Access level",
   "map-back-skip": "Write skipped",
   "cell-issues": "Unexpected values",
+  "read-only": "Read-only document",
 }
 
 const SEVERITY: Record<GristSdkAlertKind, GristSdkAlertSeverity> = {
@@ -59,6 +61,7 @@ const SEVERITY: Record<GristSdkAlertKind, GristSdkAlertSeverity> = {
   "access-insufficient": "error",
   "map-back-skip": "warning",
   "cell-issues": "warning",
+  "read-only": "info",
 }
 
 const alert = (kind: GristSdkAlertKind, message: string, ariaRole: "status" | "alert" = "status"): GristSdkAlertDescriptor => ({
@@ -97,6 +100,11 @@ export function getGristSdkAlerts(
     if (mapping.missing.length) parts.push(`Required columns: ${mapping.missing.join(", ")}.`)
     if (mapping.emptyMultiples.length) parts.push(`Assign at least one sheet column for: ${mapping.emptyMultiples.join(", ")}.`)
     out.push(alert("column-mapping", parts.join(" ")))
+  }
+
+  // A widget that writes, on a document open read-only: why nothing it does changes it.
+  if (state.readOnly && state.declaredAccess === "full") {
+    out.push(alert("read-only", "This document is open read-only: the widget shows its data, but can't change it."))
   }
 
   const failure = state.actionError ?? state.readError

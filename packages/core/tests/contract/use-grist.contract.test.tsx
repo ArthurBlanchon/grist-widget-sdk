@@ -50,6 +50,7 @@ const MEMBERS = [
   "listColumns",
   "table",
   "getTable",
+  "readOnly",
   "actionStatus",
   "actionError",
   "applyActions",
@@ -446,6 +447,34 @@ describe("getTable", () => {
     await untilReady(w)
     await settle(() => w().getTable("Tasks").create({ fields: { title: "Elsewhere" } }))
     expect(emulator.state.tables.get("Tasks")!.rows.some((r) => r.title === "Elsewhere")).toBe(true)
+  })
+})
+
+describe("readOnly", () => {
+  it("is false on a document open for editing", async () => {
+    const { w } = renderProbe({ requiredAccess: "full" })
+    await untilReady(w)
+    expect(w().readOnly).toBe(false)
+  })
+
+  it("is true on a document open read-only: writes fail without reaching Grist, options are kept", async () => {
+    const { w, emulator } = renderProbe({ requiredAccess: "full" }, { readOnly: true })
+    await untilReady(w)
+    expect(w().readOnly).toBe(true)
+    await expect(w().table.update({ id: 1, fields: { title: "Changed" } })).rejects.toThrow(/No write access/)
+    await expect(w().applyActions([["UpdateRecord", "Tasks", 1, { title: "Changed" }]])).rejects.toThrow(/read-only/)
+    expect(emulator.state.tables.get("Tasks")!.rows[0]!.title).toBe("Buy milk")
+    expect(w().actionStatus).toBe("idle")
+    // Grist keeps a widget's options in view mode too.
+    await settle(() => w().setWidgetOptions({ zoom: 2 }))
+    expect(emulator.state.widgetOptions).toMatchObject({ zoom: 2 })
+  })
+
+  it("comes from Grist's readonly=true in the widget's URL, and Grist refuses writes the same way", async () => {
+    const { w, emulator } = renderProbe({ requiredAccess: "full" }, { readOnly: true })
+    await untilReady(w)
+    expect(new URLSearchParams(location.search).get("readonly")).toBe("true")
+    await expect(emulator.grist!.docApi.applyUserActions([["UpdateRecord", "Tasks", 1, { title: "x" }]])).rejects.toThrow("No write access")
   })
 })
 

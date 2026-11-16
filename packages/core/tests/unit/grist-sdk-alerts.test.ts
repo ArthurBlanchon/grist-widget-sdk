@@ -32,6 +32,13 @@ describe("getGristSdkAlerts", () => {
     expect(alert).toMatchObject({ kind: "action-error", message: "Invalid row id", ariaRole: "alert" })
   })
 
+  it("says a widget that writes can't on a document open read-only; a widget that reads needs no word", () => {
+    const [alert] = getGristSdkAlerts(ready({ readOnly: true, declaredAccess: "full" }), {})
+    expect(alert).toMatchObject({ kind: "read-only", severity: "info", ariaRole: "status" })
+    expect(alert!.message).toMatch(/open read-only/)
+    expect(kinds(ready({ readOnly: true, declaredAccess: "read table" }))).toEqual([])
+  })
+
   it("names the columns mapBack couldn't write", () => {
     const [alert] = getGristSdkAlerts(ready({ mapBackSkipped: ["Tags"] }), {})
     expect(alert!.message).toBe("mapBack skipped multi-mapped column: Tags.")

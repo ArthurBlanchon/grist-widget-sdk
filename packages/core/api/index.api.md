@@ -315,7 +315,7 @@ export type GristSchemaTableView = GristReplicaTable & {
 };
 
 // @public
-export type GristSdkAlertKind = "column-mapping" | "mapping-pending" | "section-not-linked" | "source-not-wired" | "action-error" | "access-insufficient" | "map-back-skip" | "cell-issues";
+export type GristSdkAlertKind = "column-mapping" | "mapping-pending" | "section-not-linked" | "source-not-wired" | "action-error" | "access-insufficient" | "map-back-skip" | "cell-issues" | "read-only";
 
 // @public
 export type GristTableNewRecord = {
@@ -530,6 +530,7 @@ export type UseGristResult<TRow = Record<string, unknown>, TMapped = Record<stri
     };
     addRecord: (patch: GristRecordPatch<TMapped>) => Promise<number>;
     currentTableId: string | null;
+    readOnly: boolean;
     actionStatus: GristWidgetActionStatus;
     actionError: string | null;
     widgetOptions: Record<string, unknown> | null;

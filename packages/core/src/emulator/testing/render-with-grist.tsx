@@ -39,6 +39,8 @@ export type RenderWithGristOptions = RenderOptions & {
    * selected. Defaults to one row of sample values.
    */
   rows?: ReadonlyArray<Record<string, unknown>>
+  /** The document open read-only, as for a viewer: `w.readOnly`, and writes fail as in Grist. */
+  readOnly?: boolean
 }
 
 export type RenderWithGristResult = RenderResult & {
@@ -55,6 +57,8 @@ export function renderWithGrist(
   fakeIframeContext()
 
   resetGristForTests()
+  // Each render says whether the document is read-only: an earlier one's URL doesn't carry over.
+  clearReadOnlyUrl()
 
   const widgetOptions = options.widget ? (isGristWidget(options.widget) ? options.widget.options : options.widget) : undefined
   const columns = widgetOptions ? declaredColumns(widgetOptions) : []
@@ -66,6 +70,7 @@ export function renderWithGrist(
           widgetInteraction: options.emulator?.widgetInteraction ?? { access_level: widgetOptions.requiredAccess ?? "read table" },
         }
       : (options.emulator ?? { document: presets.blank() })
+  if (options.readOnly) emulatorOptions.readOnly = true
   const emulator = options.existing ?? createGristEmulator(emulatorOptions)
   if (widgetOptions && columns.length > 0) emulator.setColumnMappings(mapEveryColumn(columns))
 
@@ -78,6 +83,14 @@ export function renderWithGrist(
     resetGristForTests()
   }
   return Object.assign(result, { emulator })
+}
+
+function clearReadOnlyUrl() {
+  if (typeof window === "undefined" || !window.history?.replaceState) return
+  const url = new URL(window.location.href)
+  if (!url.searchParams.has("readonly")) return
+  url.searchParams.delete("readonly")
+  window.history.replaceState(window.history.state, "", url.href)
 }
 
 function fakeIframeContext() {

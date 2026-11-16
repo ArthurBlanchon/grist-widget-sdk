@@ -42,6 +42,12 @@ export type CreateGristEmulatorOptions = {
   widgetInteraction?: Record<string, unknown>
   /** Initial document theme replayed on widget ready (host `message` channel). */
   initialTheme?: "light" | "dark"
+  /**
+   * The document open read-only, as for a viewer or in view mode: the page's
+   * URL gets `readonly=true`, as Grist writes it into the widget's (until
+   * `dispose()`), and writes fail with Grist's "No write access".
+   */
+  readOnly?: boolean
 }
 
 export type GristEmulator = {
@@ -89,6 +95,8 @@ export function createGristEmulator(options: CreateGristEmulatorOptions): GristE
   })
   const bus = createEventBus()
   const api = createApiBundle(state, bus)
+  state.readOnly = options.readOnly ?? false
+  const restoreUrl = options.readOnly ? markReadOnlyUrl(options.transport?.target ?? (globalThis as Window & typeof globalThis)) : () => {}
 
   const inline = createInlineTransport({
     state,
@@ -155,6 +163,18 @@ export function createGristEmulator(options: CreateGristEmulatorOptions): GristE
     dispose() {
       transport.dispose()
       bus.clear()
+      restoreUrl()
     },
   }
+}
+
+/** `readonly=true` in the page's URL, as Grist puts it in a widget's; returns how to undo it. */
+function markReadOnlyUrl(target: Window & typeof globalThis): () => void {
+  const { location, history } = target
+  if (!location || !history?.replaceState) return () => {}
+  const before = location.href
+  const url = new URL(before)
+  url.searchParams.set("readonly", "true")
+  history.replaceState(history.state, "", url.href)
+  return () => history.replaceState(history.state, "", before)
 }

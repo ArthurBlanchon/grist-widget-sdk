@@ -64,6 +64,8 @@ export type EmulatorDocumentState = {
    */
   widgetInteraction: GristWidgetInteraction
   /** Last `ready()` payload received from the widget. */
+  /** The document is open read-only (`createGristEmulator({ readOnly })`): writes fail as in Grist. */
+  readOnly?: boolean
   configuration: GristWidgetConfiguration | null
   /**
    * Mock REST access token returned by `getAccessToken()`. Set to `null` to

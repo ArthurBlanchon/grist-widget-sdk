@@ -26,7 +26,8 @@ done.
 
 - [ ] **M4. The bar, version 2** (plan §3). Left: the standard criteria
   (5,000 rows, keyboard, 320 px, read-only) in `new-widget`, the e2e check
-  and the 16 widgets; visual comparison and "Report a problem". Done:
+  and the 16 widgets (the SDK's `readOnly` and its alert are in);
+  visual comparison and "Report a problem". Done:
   `httpUrl()` and its lint rule, licences, a CSP per widget,
   `optionsVersion` and `migrate`, a `demo.ts` per widget.
 - [ ] **Attachments on the static demo pages.** grist-static serves no

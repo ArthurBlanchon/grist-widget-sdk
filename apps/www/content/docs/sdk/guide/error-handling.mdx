@@ -54,6 +54,7 @@ attention in Grist above it:
 | `cell-issues` | A mapped cell doesn't match its declared type (or the widget's `schema`) | `warning` |
 | `section-not-linked` | The widget's section is linked to nothing | `warning` |
 | `source-not-wired` | An `allowSelectBy` widget that no section links to | `warning` |
+| `read-only` | A widget asking for full access, or one whose write was refused, on a document open read-only | `info` |
 
 A widget turns off the kinds it doesn't want with
 `suppressAlerts: ["section-not-linked"]` in its `GRIST_OPTIONS`.

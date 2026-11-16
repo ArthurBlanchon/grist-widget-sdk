@@ -264,6 +264,12 @@ export function createInlineTransport(
     }
   })
 
+  // A table write, refused on a document open read-only, as Grist does.
+  function applyOrRefuse(actions: unknown[][]) {
+    if (state.readOnly) throw new Error("No write access")
+    return applyUserActions(state, bus, actions)
+  }
+
   function makeTableOps(tableId: string): GristTableOperations {
     return {
       async getTableId() { return tableId },
@@ -271,7 +277,7 @@ export function createInlineTransport(
         const list = Array.isArray(records) ? records : [records]
         const ids: GristMinimalRecord[] = []
         for (const r of list) {
-          const result = applyUserActions(state, bus, [
+          const result = applyOrRefuse([
             gristAddRecordAction(tableId, parseFields(r.fields, options)),
           ])
           ids.push({ id: result.retValues[0] as number })
@@ -281,7 +287,7 @@ export function createInlineTransport(
       async update(records: GristTableUpdateRecord | GristTableUpdateRecord[], options?: GristTableOpOptions) {
         const list = Array.isArray(records) ? records : [records]
         const actions = list.map((r) => gristUpdateRecordAction(tableId, r.id, parseFields(r.fields, options)))
-        applyUserActions(state, bus, actions)
+        applyOrRefuse(actions)
       },
       async upsert(records: GristTableUpsertRecord | GristTableUpsertRecord[], options?: GristTableUpsertOptions) {
         const list = Array.isArray(records) ? records : [records]
@@ -301,13 +307,13 @@ export function createInlineTransport(
             actions.push(gristAddRecordAction(tableId, { ...r.require, ...parseFields(r.fields ?? {}, options) }))
           }
         }
-        if (actions.length > 0) applyUserActions(state, bus, actions)
+        if (actions.length > 0) applyOrRefuse(actions)
       },
       async destroy(recordIds: number | number[]) {
         if (Array.isArray(recordIds)) {
-          applyUserActions(state, bus, [gristBulkRemoveRecordAction(tableId, recordIds)])
+          applyOrRefuse([gristBulkRemoveRecordAction(tableId, recordIds)])
         } else {
-          applyUserActions(state, bus, [gristRemoveRecordAction(tableId, recordIds)])
+          applyOrRefuse([gristRemoveRecordAction(tableId, recordIds)])
         }
         // touch the unused bulk-add reference for tree-shaking parity, no-op
         void gristBulkAddRecordAction

@@ -36,6 +36,8 @@ export function createGristDocApiImpl(state: EmulatorDocumentState, bus: EventBu
     },
 
     async applyUserActions(actions) {
+      // Grist's answer on a document open read-only (view mode, a viewer).
+      if (state.readOnly) throw new Error("No write access")
       const result = applyUserActions(state, bus, actions)
       return { retValues: result.retValues }
     },

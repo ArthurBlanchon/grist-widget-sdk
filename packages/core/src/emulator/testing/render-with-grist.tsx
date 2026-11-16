@@ -9,7 +9,7 @@
  * Cleanup is automatic when the test's container unmounts.
  */
 
-import type { ReactElement } from "react"
+import { useEffect, type ReactElement, type ReactNode } from "react"
 
 import { render, type RenderOptions, type RenderResult } from "@testing-library/react"
 
@@ -39,6 +39,8 @@ export type RenderWithGristOptions = RenderOptions & {
    * selected. Defaults to one row of sample values.
    */
   rows?: ReadonlyArray<Record<string, unknown>>
+  /** The document open read-only, as for a viewer: `w.readOnly`, and writes fail as in Grist. */
+  readOnly?: boolean
 }
 
 export type RenderWithGristResult = RenderResult & {
@@ -55,10 +57,16 @@ export function renderWithGrist(
   fakeIframeContext()
 
   resetGristForTests()
+  // Each render says whether the document is read-only: an earlier one's URL
+  // doesn't carry over. An existing emulator keeps the URL it made.
+  if (options.existing && options.readOnly && !options.existing.state.readOnly) {
+    throw new Error("renderWithGrist: readOnly with existing: create it with createGristEmulator({ readOnly: true })")
+  }
+  if (!options.existing) clearReadOnlyUrl()
 
   const widgetOptions = options.widget ? (isGristWidget(options.widget) ? options.widget.options : options.widget) : undefined
   const columns = widgetOptions ? declaredColumns(widgetOptions) : []
-  const emulatorOptions: CreateGristEmulatorOptions =
+  const base: CreateGristEmulatorOptions =
     widgetOptions && !options.emulator?.document
       ? {
           ...options.emulator,
@@ -66,11 +74,21 @@ export function renderWithGrist(
           widgetInteraction: options.emulator?.widgetInteraction ?? { access_level: widgetOptions.requiredAccess ?? "read table" },
         }
       : (options.emulator ?? { document: presets.blank() })
+  // A copy: the caller's options object stays as it was.
+  const emulatorOptions: CreateGristEmulatorOptions = options.readOnly ? { ...base, readOnly: true } : base
   const emulator = options.existing ?? createGristEmulator(emulatorOptions)
   if (widgetOptions && columns.length > 0) emulator.setColumnMappings(mapEveryColumn(columns))
 
   const Widget = () => ui
-  const result = render(widgetOptions ? <GristWidgetApp App={Widget} options={widgetOptions} /> : ui, options)
+  // Testing Library's own cleanup unmounts the tree without our unmount: the
+  // wrapper's effect takes readonly=true back out of the URL then too.
+  const Outer = options.wrapper
+  const wrapper = ({ children }: { children: ReactNode }) => (
+    <ReadOnlyUrlScope active={!options.existing && emulator.state.readOnly === true}>
+      {Outer ? <Outer>{children}</Outer> : children}
+    </ReadOnlyUrlScope>
+  )
+  const result = render(widgetOptions ? <GristWidgetApp App={Widget} options={widgetOptions} /> : ui, { ...options, wrapper })
   const originalUnmount = result.unmount
   result.unmount = () => {
     originalUnmount()
@@ -78,6 +96,19 @@ export function renderWithGrist(
     resetGristForTests()
   }
   return Object.assign(result, { emulator })
+}
+
+function ReadOnlyUrlScope({ active, children }: { active: boolean; children: ReactNode }) {
+  useEffect(() => (active ? clearReadOnlyUrl : undefined), [active])
+  return <>{children}</>
+}
+
+function clearReadOnlyUrl() {
+  if (typeof window === "undefined" || !window.history?.replaceState) return
+  const url = new URL(window.location.href)
+  if (!url.searchParams.has("readonly")) return
+  url.searchParams.delete("readonly")
+  window.history.replaceState(window.history.state, "", url.href)
 }
 
 function fakeIframeContext() {

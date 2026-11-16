@@ -29,6 +29,7 @@ export type CreateGristEmulatorOptions = {
     widgetOptions?: Record<string, unknown>;
     widgetInteraction?: Record<string, unknown>;
     initialTheme?: "light" | "dark";
+    readOnly?: boolean;
 };
 
 // @public
@@ -61,6 +62,7 @@ export type EmulatorDocumentState = {
     selection: GristReplicaSelection;
     widgetOptions: Record<string, unknown>;
     widgetInteraction: GristWidgetInteraction;
+    readOnly?: boolean;
     configuration: GristWidgetConfiguration | null;
     accessToken: {
         token: string;

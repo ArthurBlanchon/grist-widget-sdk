@@ -26,7 +26,9 @@ declared column, every one mapped, and the access the widget asks for. `rows`
 are under the declared names, as typed reads give them (a `Date`, a
 `string[]`); the first is selected. Without `widget`, it renders `ui` as
 given against `emulator: { document }` (a preset by default), for tests that
-set up the document and mappings themselves.
+set up the document and mappings themselves. `readOnly: true` opens the
+document read-only, as for a viewer: `w.readOnly` is `true`, and writes fail
+as they do in Grist.
 
 `renderWithGrist`:
 

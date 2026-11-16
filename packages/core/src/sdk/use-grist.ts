@@ -98,6 +98,12 @@ export type UseGristResult<TRow = Record<string, unknown>, TMapped = Record<stri
   /** The section's table id. */
   currentTableId: string | null
 
+  /**
+   * The document is open read-only (a viewer, a snapshot, view mode): writes
+   * are refused, and the SDK's alerts say so. Disable what would write.
+   */
+  readOnly: boolean
+
   /** The last write's state. */
   actionStatus: GristWidgetActionStatus
   actionError: string | null
@@ -222,6 +228,7 @@ function buildResult<TRow, TMapped>(
     updateRecord: writes.updateRecord as UseGristResult<TRow, TMapped>["updateRecord"],
     addRecord: writes.addRecord as UseGristResult<TRow, TMapped>["addRecord"],
     currentTableId: state.currentTableId,
+    readOnly: state.readOnly,
     actionStatus: state.actionStatus,
     actionError: state.actionError,
     widgetOptions: state.widgetOptions,

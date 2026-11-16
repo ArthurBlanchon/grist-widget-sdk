@@ -102,6 +102,9 @@ export function isAccessInsufficientError(message: string): boolean {
 
 const message = (err: unknown) => (err instanceof Error ? err.message : String(err))
 
+/** Why a write is refused on a read-only document: Grist's own message, and what it means. */
+export const READ_ONLY_ERROR = "No write access: the document is open read-only."
+
 export function createGristApi(runtime: GristRuntime): GristApi {
   const docApi = (): GristDocApi => {
     if (runtime.getState().connection !== "ready" || typeof grist === "undefined" || !grist.docApi) {
@@ -134,6 +137,14 @@ export function createGristApi(runtime: GristRuntime): GristApi {
   let failure: string | null = null
   let patching: Promise<unknown> = Promise.resolve()
   const write = <T>(fn: () => Promise<T>): Promise<T> => {
+    // A read-only document: refused here, as Grist would ("No write access"),
+    // without a round trip; the alerts say why, so actionError stays as it is.
+    if (runtime.getState().readOnly) {
+      if (!runtime.getState().readOnlyRefused) runtime.update({ readOnlyRefused: true })
+      const refused = Promise.reject(new Error(READ_ONLY_ERROR))
+      refused.catch(() => {})
+      return refused
+    }
     if (running++ === 0) failure = null
     runtime.update({ actionStatus: "running", actionError: null })
     const done = (async () => {

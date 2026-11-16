@@ -66,20 +66,21 @@ From that, the SDK:
   each with a demo in a real Grist running in your browser. A widget
   there is installed by pasting its URL into a custom widget section.
 
-## When to use the plugin API on its own
+## When the SDK isn't the tool
 
-The SDK fits a widget written in React that runs inside a Grist document.
-Reach for `grist-plugin-api.js` directly when:
+The SDK is for a widget written in React that runs inside a Grist
+document. It isn't the tool when:
 
-- **the widget isn't React:** the plugin API works with any framework, or
-  none;
-- **you embed Grist in your own application,** rather than a widget in
-  Grist: that is the host's side, not the widget's;
-- **you need something the plugin API itself doesn't offer:** the SDK
-  wraps it and adds nothing Grist doesn't allow.
+- **the widget isn't React:** use `grist-plugin-api.js` directly, which
+  works with any framework, or none;
+- **you embed Grist in your own application:** that is the host's side,
+  done with Grist's embedding and REST API, not with a widget;
+- **you need something Grist doesn't let a widget do:** the SDK goes
+  through the plugin API, so it can't do more than it allows.
 
-Everything the SDK does goes through the plugin API, so a widget can
-start with it and stay with it.
+A widget made with the SDK never calls the `grist` global itself: the SDK
+holds the one connection, and the template's lint rule refuses a direct
+call.
 
 ## Next
 

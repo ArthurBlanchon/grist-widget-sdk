@@ -3,11 +3,11 @@ title: CLI reference
 description: "How create-grist-widget scaffolds a project, starts from a real example, and what the bundled GitHub Pages deploy pipeline does."
 ---
 
-Getting started here covers the CLI's main commands and scaffolding a new
-project from a terminal, CLI-only. If you'd rather copy the template repo on
-GitHub, set up an AI coding agent, or connect a deployed widget to a real
-Grist document, see the [Quickstart](/docs/quickstart) — both paths produce
-identical code.
+The CLI's commands, from scaffolding a widget to protecting its
+repository. [Your first widget](/docs/quickstart) walks through them in
+order; to start from GitHub instead of a terminal, see
+[Start from the template on GitHub](#start-from-the-template-on-github):
+both give the same code.
 
 ## `npm create grist-widget`
 
@@ -27,9 +27,18 @@ The template — and every starting example, and the logic that composes them
 — are embedded directly in the CLI. Nothing is fetched from GitHub or npm
 at scaffold time; the dependency install right after is the only network
 access any of this makes. Scaffolding via the CLI is the same starting
-point as [grist-widget-template](https://github.com/ArthurBlanchon/grist-widget-template)
-(what the [Quickstart](/docs/quickstart)'s template-copy path gives you), so
-both paths converge on identical code.
+point as [grist-widget-template](https://github.com/ArthurBlanchon/grist-widget-template),
+so both paths converge on identical code.
+
+### Start from the template on GitHub
+
+Instead of a terminal: open
+[grist-widget-template](https://github.com/ArthurBlanchon/grist-widget-template/generate),
+and check **Include all branches** on the next page, so the copy comes
+with its `dev` and `gh-pages` branches and GitHub Pages needs no setting.
+An AI coding agent (Claude, Codex, Cursor) works on the copy once its
+GitHub App is installed on it. From there, the widget is the same as a
+scaffolded one: [Your first widget](/docs/quickstart) from step 3.
 
 By default the scaffold is blank — a two-field editor — and its
 dependencies install automatically, with pnpm, whichever package manager

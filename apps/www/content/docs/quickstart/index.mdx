@@ -5,8 +5,10 @@ description: "Scaffold a widget, publish it, change it, test it, see it in your 
 
 The scaffold is a working widget: it shows the selected task of a Grist
 table and marks it done. This page publishes it, then adds a column to it
-and releases that. You need Node 22.22 or later,
-[pnpm](https://pnpm.io/installation), git, and a GitHub account.
+and releases that. You need Node 22.22.2 or later (or 24.15 or later),
+[pnpm](https://pnpm.io/installation), git with your name and email set
+(`git config --global user.name` and `user.email`: the scaffold commits
+with them), and a GitHub account. Docker is optional, for one step.
 
 ## 1. Scaffold it
 
@@ -94,13 +96,15 @@ and, in `App`, read it with the others and show it under the title:
 const { Title, Done, Due } = w.mappedRecord
 // …
 <h1 className="text-base font-medium">{Title || "Untitled"}</h1>
-{Due ? <p>Due {Due.toLocaleDateString()}</p> : null}
+{Due ? <p>Due {Due.toLocaleDateString(undefined, { timeZone: "UTC" })}</p> : null}
 ```
 
-`Due` is a `Date | null`, decoded from Grist's format. Being optional,
-it doesn't stop the widget from rendering when nobody maps it. Then
-regenerate the demo page's document, which needs Docker:
-`pnpm demo --save`.
+`Due` is a `Date`, or nothing when the cell is empty or the column isn't
+mapped: being optional, it doesn't stop the widget from rendering. Grist
+stores a date at midnight UTC, hence `timeZone: "UTC"`: without it, a
+reader west of UTC sees the day before. If you have Docker,
+`pnpm demo --save` regenerates the demo page's document with the new
+column; without it, the demo page simply lacks `Due`.
 
 ## 5. Test it
 
@@ -114,7 +118,7 @@ it("shows the due date", async () => {
     widget,
     rows: [{ Title: "Buy milk", Done: false, Due: new Date("2026-03-16") }],
   })
-  expect(await screen.findByText(/^Due /)).toBeInTheDocument()
+  expect(await screen.findByText(`Due ${new Date("2026-03-16").toLocaleDateString(undefined, { timeZone: "UTC" })}`)).toBeInTheDocument()
 })
 ```
 

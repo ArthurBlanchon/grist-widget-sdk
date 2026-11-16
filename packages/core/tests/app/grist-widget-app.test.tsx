@@ -198,35 +198,76 @@ describe("default alerts", () => {
     expect(link).toHaveAttribute("rel", "noopener noreferrer")
   })
 
-  it("shows that the widget stopped working when it throws, with a reload and the report link", async () => {
-    vi.spyOn(console, "error").mockImplementation(() => undefined)
+  describe("a widget that throws while rendering", () => {
+    // The boundary throws the error again outside React, as an uncaught error:
+    // these tests take it from the window, which also keeps Vitest from
+    // failing them. Without a listener, a crashing widget's test fails, as before.
+    let uncaught: unknown[] = []
+    const take = (e: ErrorEvent) => {
+      e.preventDefault()
+      uncaught.push(e.error)
+    }
+    beforeEach(() => {
+      uncaught = []
+      vi.spyOn(console, "error").mockImplementation(() => undefined)
+      window.addEventListener("error", take)
+    })
+    afterEach(() => {
+      window.removeEventListener("error", take)
+      vi.restoreAllMocks()
+    })
+
     function Broken(): never {
       throw new Error("boom")
     }
-    renderWithGrist(<GristWidgetApp App={Broken} options={{ requiredAccess: "read table" }} metadata={{ reportUrl: "https://example.com/report" }} />, {
-      emulator: { document: presets.blank() },
+
+    it("shows that it stopped working, with a reload and the report link, and leaves the error uncaught", async () => {
+      renderWithGrist(<GristWidgetApp App={Broken} options={{ requiredAccess: "read table" }} metadata={{ reportUrl: "https://example.com/report" }} />, {
+        emulator: { document: presets.blank() },
+      })
+      expect(await screen.findByRole("heading", { name: "The widget stopped working" })).toBeInTheDocument()
+      expect(screen.getByRole("button", { name: "Reload the widget" })).toBeInTheDocument()
+      expect(screen.getByRole("link", { name: "Report a problem" })).toHaveAttribute("href", "https://example.com/report")
+      // A test runner, the real-Grist check and the console still see it.
+      await waitFor(() => expect(uncaught).toEqual([new Error("boom")]))
     })
-    expect(await screen.findByRole("heading", { name: "The widget stopped working" })).toBeInTheDocument()
-    expect(screen.getByRole("button", { name: "Reload the widget" })).toBeInTheDocument()
-    expect(screen.getByRole("link", { name: "Report a problem" })).toHaveAttribute("href", "https://example.com/report")
-    vi.restoreAllMocks()
+
+    it("catches a falsy thrown value too", async () => {
+      function ThrowsZero(): never {
+        throw 0
+      }
+      renderWithGrist(<GristWidgetApp App={ThrowsZero} options={{ requiredAccess: "read table" }} />, { emulator: { document: presets.blank() } })
+      expect(await screen.findByRole("heading", { name: "The widget stopped working" })).toBeInTheDocument()
+      await waitFor(() => expect(uncaught).toEqual([0]))
+    })
+
+    it("offers no report link without a reportUrl, or with one that isn't http(s)", async () => {
+      renderWithGrist(<GristWidgetApp App={Broken} options={{ requiredAccess: "read table" }} metadata={{ reportUrl: "javascript:alert(1)" }} />, {
+        emulator: { document: presets.blank() },
+      })
+      expect(await screen.findByRole("heading", { name: "The widget stopped working" })).toBeInTheDocument()
+      expect(screen.queryByRole("link")).toBeNull()
+      cleanup()
+      renderWithGrist(<GristWidgetApp App={Broken} options={{ requiredAccess: "read table" }} />, { emulator: { document: presets.blank() } })
+      expect(await screen.findByRole("heading", { name: "The widget stopped working" })).toBeInTheDocument()
+      expect(screen.queryByRole("link")).toBeNull()
+    })
   })
 
-  it("offers no report link without a reportUrl, or with one that isn't http(s)", async () => {
-    vi.spyOn(console, "error").mockImplementation(() => undefined)
-    function Broken(): never {
-      throw new Error("boom")
+  it("offers no report link under an access-level alert: a setting, not a bug", async () => {
+    function Writes() {
+      const w = useGrist()
+      return <button onClick={() => void w.applyActions([["AddRecord", "Tasks", null, {}]]).catch(() => undefined)}>write</button>
     }
-    renderWithGrist(<GristWidgetApp App={Broken} options={{ requiredAccess: "read table" }} metadata={{ reportUrl: "javascript:alert(1)" }} />, {
-      emulator: { document: presets.blank() },
-    })
-    expect(await screen.findByRole("heading", { name: "The widget stopped working" })).toBeInTheDocument()
-    expect(screen.queryByRole("link")).toBeNull()
-    cleanup()
-    renderWithGrist(<GristWidgetApp App={Broken} options={{ requiredAccess: "read table" }} />, { emulator: { document: presets.blank() } })
-    expect(await screen.findByRole("heading", { name: "The widget stopped working" })).toBeInTheDocument()
-    expect(screen.queryByRole("link")).toBeNull()
-    vi.restoreAllMocks()
+    const { emulator } = renderWithGrist(
+      <GristWidgetApp App={Writes} options={{ requiredAccess: "full" }} metadata={{ reportUrl: "https://example.com/report" }} />,
+      { emulator: { document: presets.todoList() } },
+    )
+    // Grist refusing the write for its access level, as it says it.
+    vi.spyOn(emulator.grist!.docApi, "applyUserActions").mockRejectedValue(new Error("Access not granted. Current access level read table"))
+    fireEvent.click(await screen.findByRole("button", { name: "write" }))
+    expect(await screen.findByText("Access level")).toBeInTheDocument()
+    expect(screen.queryByRole("link", { name: "Report a problem" })).toBeNull()
   })
 
   it("can be turned off with Alerts={null}", async () => {

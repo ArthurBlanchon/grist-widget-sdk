@@ -86,7 +86,8 @@ Inside Grist, two things show when the widget has a problem:
 - **A failed write** is one of the alerts above the widget, with Grist's error.
 - **A widget that throws while rendering** is replaced by "The widget stopped
   working", with a button that reloads it, instead of a blank panel. The
-  error goes to the console.
+  error stays uncaught: the console shows it, and a `renderWithGrist` test
+  of a widget that throws still fails.
 
 Both link "Report a problem" when the declaration has a `reportUrl`, an http
 or https URL that opens in a new tab: an issue form, say, prefilled with the
@@ -95,10 +96,14 @@ widget and its version.
 ```ts
 import { defineGristWidget } from "grist-widget-sdk"
 
+// The version the build carries: Vite's `define` sets it from package.json, say.
+declare const __WIDGET_VERSION__: string
+const report = new URLSearchParams({ template: "widget-bug.yml", widget: "kanban-board", version: __WIDGET_VERSION__ })
+
 export const widget = defineGristWidget({
   title: "Kanban board",
   requiredAccess: "full",
-  reportUrl: "https://github.com/acme/widgets/issues/new?template=widget-bug.yml&widget=kanban-board&version=1.2.0",
+  reportUrl: `https://github.com/acme/widgets/issues/new?${report}`,
 })
 ```
 

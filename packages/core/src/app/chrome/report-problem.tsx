@@ -1,4 +1,4 @@
-import { Component, createContext, useContext, type CSSProperties, type ErrorInfo, type ReactNode } from "react"
+import { Component, createContext, useContext, type CSSProperties, type ReactNode } from "react"
 
 import { httpUrl } from "../../sdk/helpers/http-url"
 import { pageStyle, tokens } from "./tokens"
@@ -24,26 +24,32 @@ export function ReportProblemLink({ style }: { style?: CSSProperties }) {
   )
 }
 
-type CrashState = { error: unknown }
+type CrashState = { crashed: boolean }
 
 /**
  * What the widget shows when it throws while rendering, instead of a blank
  * panel: that it stopped working, a button to reload it, and the report
- * link. The error goes to the console, as React's would.
+ * link. The error stays uncaught for everything else: it is reported again
+ * outside React (`reportError`), so a test runner (renderWithGrist), the
+ * real-Grist check and the browser's console see it as before.
  */
 export class WidgetCrashBoundary extends Component<{ children: ReactNode }, CrashState> {
-  state: CrashState = { error: null }
+  state: CrashState = { crashed: false }
 
-  static getDerivedStateFromError(error: unknown): CrashState {
-    return { error: error ?? new Error("unknown error") }
+  static getDerivedStateFromError(): CrashState {
+    return { crashed: true }
   }
 
-  componentDidCatch(error: unknown, info: ErrorInfo) {
-    console.error("The widget stopped working:", error, info.componentStack)
+  componentDidCatch(error: unknown) {
+    if (typeof reportError === "function") reportError(error)
+    else
+      setTimeout(() => {
+        throw error
+      })
   }
 
   render() {
-    if (!this.state.error) return this.props.children
+    if (!this.state.crashed) return this.props.children
     return (
       <div role="alert" style={{ ...pageStyle, padding: "1.5rem", gap: "0.75rem", color: tokens.foreground }}>
         <h2 style={{ margin: 0, fontSize: "1rem", fontWeight: 600 }}>The widget stopped working</h2>

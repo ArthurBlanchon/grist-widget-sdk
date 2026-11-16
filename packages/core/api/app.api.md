@@ -56,10 +56,7 @@ export type GristWidgetEntry = {
     default: ComponentType;
     widget?: GristWidget;
     GRIST_OPTIONS?: UseGristOptions;
-    WIDGET_METADATA?: {
-        title?: string;
-        description?: string;
-    };
+    WIDGET_METADATA?: GristWidgetMetadata;
     Alerts?: GristWidgetAppProps["Alerts"];
     LocalDevPage?: GristWidgetAppProps["LocalDevPage"];
     ReleasePage?: GristWidgetAppProps["ReleasePage"];

@@ -1,0 +1,141 @@
+---
+title: "How the SDK works"
+description: "The declaration, the connection, the provider and the boundary, the one store behind useGrist(), and why tests run the same code."
+---
+
+A widget built on `grist-widget-sdk` is a declaration and a component.
+This page explains what happens between the two and Grist, and why it is
+built that way. For the Grist side (sections, records, mapping) see
+[Core concepts](/docs/quickstart/concepts).
+
+```text
+Grist document
+  → the widget's iframe, its own static page
+    → grist-plugin-api.js: the `grist` global, Grist's channel
+      → the SDK: one connection, one store
+        → widget.useGrist() in your components
+```
+
+## One declaration
+
+Everything a widget asks of Grist is written once, in
+`src/app/App.tsx`:
+
+```tsx
+import { defineGristWidget } from "grist-widget-sdk"
+
+export const widget = defineGristWidget({
+  title: "Tasks",
+  requiredAccess: "full",
+  columns: [
+    { name: "Title", type: "Text" },
+    { name: "Done", type: "Bool" },
+  ],
+})
+```
+
+Every other part reads that value, so none of them can disagree:
+
+- `mountGristWidget()` takes the access level and the columns to ask
+  Grist for, and the title for its pages;
+- `widget.useGrist()` types the mapped records and the writes from the
+  column names and types, with no generics;
+- `renderWithGrist(<App />, { widget, rows })` maps the same columns in
+  tests;
+- the widget's manifest takes its title and description.
+
+## One connection
+
+Grist's rule is that a widget calls `grist.ready()` once. The SDK makes the
+call for you, from the declaration. Several components asking at once share
+one call. It calls again only when a component asks for more: a higher
+access level, or a column not declared before.
+
+After that, Grist pushes. The selected row, the section's rows, the column
+mappings, the widget's options and the theme each arrive as events. The
+SDK writes each one into a single store. There is no polling and no
+heartbeat: the iframe lives and dies with the Grist page, so the
+connection lasts exactly as long as the widget.
+
+The connection is also synchronous to start. Either the page runs in
+Grist's iframe with the plugin API loaded, or it doesn't. Outside Grist,
+`mountGristWidget()` shows a page saying so instead of waiting for an
+answer that will never come.
+
+## One object to read
+
+`useGrist()` reads that store through React's `useSyncExternalStore`, so
+every component that calls it renders the same state at the same time. It
+re-renders when Grist sends something new, once per event. A heavy view
+gets only the values it shows, through its props, so it skips the changes
+it doesn't show. See [Performance](/docs/sdk/guide/performance).
+
+Everything comes through that one object:
+- the connection's status;
+- the selection, as one `mode` (`"empty"`, `"row"` or `"new-row"`) rather
+  than several flags;
+- the records, mapped and checked;
+- the reads, the writes, the options and the theme.
+
+There is no second hook to combine, no plugin to register, and no `grist`
+global in widget code. Several component trees can share a page, tests
+stay deterministic, and a change in Grist's channel is a change in one
+place in the SDK.
+
+Its values keep one meaning each. `null` is not known yet, `[]` is empty,
+and nothing returned is ever `undefined`. So `mappedRecord === null` means
+a required column isn't mapped yet, and `records` being `[]` means the
+section has no rows.
+
+## The provider and the boundary
+
+`mountGristWidget()` renders your component inside two pieces:
+
+- **The provider** holds the connection and the store.
+  `widget.useGrist()` throws outside it, so a component can't read Grist by
+  accident before it is connected.
+- **The boundary** stands in for your component until it can work: while
+  Grist answers, while access is short, while a required column isn't
+  mapped. Each screen says what fixes it, with a retry where one helps.
+
+Your component therefore starts connected, with the access it declared and
+its columns mapped, and it doesn't guard against any of that. Around it
+come the alerts (a failed write, a cell that doesn't fit its type) and
+Grist's light or dark theme. See [Errors and alerts](/docs/sdk/guide/error-handling).
+
+## Values, in and out
+
+Grist sends some cells in a wire format: a date as a tagged tuple, an error
+as another. The SDK decodes them, so a read gives JavaScript values. The
+mapped records go one step further: each cell is checked against its
+declared type, and a cell that doesn't fit is `null`, with its reason in
+`w.cellIssues` ([Typed reads](/docs/sdk/guide/typing)).
+
+Writes take the reverse path, and there are only two:
+- `updateRecord` and `addRecord`, under your column names, or `w.table` for
+  any table;
+- `applyActions`, for the schema.
+
+Before a value reaches Grist, the SDK encodes it for its declared type and
+maps your names back to the real columns
+([Write data](/docs/sdk/guide/writing-data)).
+
+## Tests run the same code
+
+The emulator implements the same `grist` global in memory.
+`renderWithGrist` puts it behind the page and renders your widget inside
+its real provider, so a test takes the same path as production:
+- the declaration;
+- the one `ready` call;
+- the events into the store;
+- the writes back.
+
+There is no mock mode to drift from the real one. The emulator follows
+Grist: a widget that passes its tests and fails in a real Grist points at a
+gap in the emulator, which gets fixed. See [Testing](/docs/emulator/testing).
+
+## What it leaves to you
+
+- **Your content:** the SDK styles only the screens and alerts around it.
+- **Features Grist lacks:** the SDK doesn't work around them. A missing
+  method throws, and the error shows.

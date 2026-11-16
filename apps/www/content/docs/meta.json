@@ -36,6 +36,7 @@
     "sdk/api/versioning",
     "---Concepts---",
     "quickstart/concepts",
+    "sdk/how-it-works",
     "sdk/design/replica-document"
   ]
 }

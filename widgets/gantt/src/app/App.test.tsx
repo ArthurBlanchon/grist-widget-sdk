@@ -174,15 +174,18 @@ describe("Gantt chart", () => {
     expect(await screen.findByText(/No tasks to show/)).toBeInTheDocument()
   })
 
-  it("AC-12 shows the first 80 tasks, and the next ones on demand", async () => {
+  it("AC-12 shows the first 50 tasks, and the next ones on demand", async () => {
     const many = Array.from({ length: 200 }, (_, i) => ({ id: i + 1, Title: `Task ${i + 1}`, Start: day(3, 2), End: day(3, 6), Group: "G", Sequence: "S", Status: null }))
     setup(ALL, many)
-    expect(await screen.findByText(/200 tasks .* 80 shown/)).toBeInTheDocument()
-    fireEvent.click(screen.getByRole("button", { name: "Show 80 more (120 not shown)" }))
-    expect(await screen.findByText(/160 shown/)).toBeInTheDocument()
-    fireEvent.click(screen.getByRole("button", { name: "Show 40 more (40 not shown)" }))
+    expect(await screen.findByText(/200 tasks .* 50 shown/)).toBeInTheDocument()
+    fireEvent.click(screen.getByRole("button", { name: "Show 50 more (150 not shown)" }))
+    expect(await screen.findByText(/100 shown/)).toBeInTheDocument()
+    fireEvent.click(screen.getByRole("button", { name: "Show 50 more (100 not shown)" }))
+    fireEvent.click(await screen.findByRole("button", { name: "Show 50 more (50 not shown)" }))
     await waitFor(() => expect(screen.queryByText(/shown/)).not.toBeInTheDocument())
   })
 })
 
 it("AC-volume renders 5,000 rows within the DOM budget", () => expectVolume(<App />, widget, demo), VOLUME_TIMEOUT_MS)
+
+it("AC-volume holds with a distinct group and row for every task", () => expectVolume(<App />, widget, demo, { unique: ["Group", "Team"] }), VOLUME_TIMEOUT_MS)

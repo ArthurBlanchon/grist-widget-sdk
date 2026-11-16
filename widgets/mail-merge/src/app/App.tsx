@@ -291,7 +291,7 @@ export default function App() {
           ))}
         </ul>
         {mails.length > listed ? (
-          <Button size="sm" variant="outline" className="self-start" onClick={() => setListed((n) => n + PAGE)}>
+          <Button size="sm" variant="outline" className="h-auto self-start whitespace-normal" onClick={() => setListed((n) => n + PAGE)}>
             {t("showMore", { n: Math.min(PAGE, mails.length - listed), left: mails.length - listed })}
           </Button>
         ) : null}

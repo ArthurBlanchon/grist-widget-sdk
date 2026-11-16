@@ -48,7 +48,7 @@ export function writeDates(updateRecord: UpdateRecord, rowId: number, startAt: D
 }
 
 /** Tasks the chart shows at a time, in the section's order. */
-const TASKS_SHOWN = 80
+const TASKS_SHOWN = 50
 
 export default function App() {
   const w = widget.useGrist()
@@ -138,21 +138,23 @@ export default function App() {
     return <p className="m-auto flex h-svh max-w-sm items-center p-6 text-center text-sm text-muted-foreground">{t("empty")}</p>
   }
 
-  const sequenceCount = groups.reduce((n, g) => n + g.sequences.length, 0)
+  // The counts cover every task, the ones not shown included.
+  const sequenceCount = new Set(tasks.map((task) => `${task.group.key}\u0000${task.sequence.key}`)).size
+  const groupCount = new Set(tasks.map((task) => task.group.key)).size
 
   return (
     <main className="flex h-svh min-h-0 flex-col bg-background text-foreground">
-      <header className="flex shrink-0 items-center justify-between gap-4 border-b px-4 py-2 text-sm">
+      <header className="flex shrink-0 flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b px-4 py-2 text-sm">
         <div>
           <h1 className="font-medium">{t("title")}</h1>
           <p className="text-xs text-muted-foreground">
-            {t("stats", { tasks: tasks.length, rows: sequenceCount, groups: groups.length })}
+            {t("stats", { tasks: tasks.length, rows: sequenceCount, groups: groupCount })}
             {skipped ? ` · ${t("skipped", { n: skipped })}` : ""}
             {tasks.length > listed ? ` · ${t("shownOf", { n: listed })}` : ""}
           </p>
         </div>
         {tasks.length > listed ? (
-          <Button size="sm" variant="outline" onClick={() => setListed((n) => n + TASKS_SHOWN)}>
+          <Button size="sm" variant="outline" className="h-auto whitespace-normal" onClick={() => setListed((n) => n + TASKS_SHOWN)}>
             {t("moreTasks", { n: Math.min(TASKS_SHOWN, tasks.length - listed), left: tasks.length - listed })}
           </Button>
         ) : null}

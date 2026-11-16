@@ -27,8 +27,9 @@ export const widget = defineGristWidget({
 
 type Card = { id: number; title: string; status: string; notes: string | null }
 
-/** Cards a column shows at a time (the selected one always among them). */
+/** Cards a column shows at a time (the selected one always among them), and columns a board shows. */
 const CARDS_SHOWN = 50
+const COLUMNS_SHOWN = 20
 
 export default function App() {
   const w = widget.useGrist()
@@ -63,8 +64,14 @@ export default function App() {
     }
   }
 
+  // A moved card becomes the selected one: past the 50 a column shows, it stays in view.
   const moveCard = (card: Card, status: string) =>
-    card.status === status ? Promise.resolve() : save(() => w.updateRecord(card.id, { Status: status }))
+    card.status === status
+      ? Promise.resolve()
+      : save(async () => {
+          await w.updateRecord(card.id, { Status: status })
+          await w.setCursorPosition({ rowId: card.id })
+        })
   const saveOrder = (next: readonly string[]) => save(() => w.patchWidgetOptions({ columns: next }))
 
   function addColumn(e: FormEvent) {
@@ -118,7 +125,7 @@ export default function App() {
         <p className="m-auto max-w-sm text-center text-sm text-muted-foreground">{t("empty")}</p>
       ) : (
         <div className="flex min-h-0 flex-1 gap-3 overflow-x-auto">
-          {columns.map((status, index) => {
+          {columns.slice(0, COLUMNS_SHOWN).map((status, index) => {
             const label = status || t("noStatus")
             const inColumn = cards.filter((c) => c.status === status)
             return (
@@ -190,14 +197,24 @@ export default function App() {
                   <Button
                     size="sm"
                     variant="ghost"
+                    className="h-auto whitespace-normal"
                     onClick={() => setListed((l) => ({ ...l, [status]: (l[status] ?? CARDS_SHOWN) + CARDS_SHOWN }))}
                   >
-                    {t("moreCards", { n: Math.min(CARDS_SHOWN, inColumn.length - (listed[status] ?? CARDS_SHOWN)), left: inColumn.length - (listed[status] ?? CARDS_SHOWN) })}
+                    {t("moreCards", {
+                      n: Math.min(CARDS_SHOWN, inColumn.length - (listed[status] ?? CARDS_SHOWN)),
+                      // The selected card past the cut is shown already.
+                      left: inColumn.filter((c, j) => j >= (listed[status] ?? CARDS_SHOWN) && c.id !== w.record?.id).length,
+                    })}
                   </Button>
                 ) : null}
               </section>
             )
           })}
+          {columns.length > COLUMNS_SHOWN ? (
+            <p role="status" className="w-56 shrink-0 self-start text-xs text-muted-foreground">
+              {t("moreColumns", { n: columns.length - COLUMNS_SHOWN })}
+            </p>
+          ) : null}
         </div>
       )}
     </main>

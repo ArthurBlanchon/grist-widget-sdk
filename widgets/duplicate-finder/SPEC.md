@@ -67,7 +67,8 @@ to them, and the report reads the column types from Grist's metadata.
   French.
 - **AC-12** Given many duplicates, the widget lists 20 groups at a time, with a
   button that shows the next ones, and 10 rows in a group (the kept one
-  always among them); the rows not shown are merged with the group all the same.
+  always among them), with a button that shows all of one group's rows; a
+  merge that deletes rows not shown says how many.
 
 ## Standard criteria
 

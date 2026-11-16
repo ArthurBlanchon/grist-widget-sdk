@@ -195,7 +195,13 @@ describe("Duplicate finder", () => {
     await screen.findByText(/25 groups/)
     expect(screen.getAllByRole("group", { name: /^Group \d+$/ })).toHaveLength(20)
     expect(within(groupOf(1)).getAllByRole("radio")).toHaveLength(10)
-    expect(within(groupOf(1)).getByText("And 2 more rows, merged with the kept one too.")).toBeInTheDocument()
+    // The merge says how many of the rows it deletes aren't shown.
+    fireEvent.click(within(groupOf(1)).getByRole("button", { name: "Merge…" }))
+    expect(await within(groupOf(1)).findByText("2 of the rows it deletes aren't shown above: show all the group's rows to see them.")).toBeInTheDocument()
+    fireEvent.click(within(groupOf(1)).getByRole("button", { name: "Cancel" }))
+    // All of one group's rows, to read and to choose from.
+    fireEvent.click(within(groupOf(1)).getByRole("button", { name: "Show all 12 rows" }))
+    expect(within(groupOf(1)).getAllByRole("radio")).toHaveLength(12)
     fireEvent.click(screen.getByRole("button", { name: "Show 5 more groups (5 not shown)" }))
     expect(screen.getAllByRole("group", { name: /^Group \d+$/ })).toHaveLength(25)
   })

@@ -39,6 +39,7 @@ export default function App() {
   const [error, setError] = useState<string | null>(null)
   const [done, setDone] = useState<number | null>(null)
   const [listed, setListed] = useState(GROUPS_SHOWN)
+  const [open, setOpen] = useState<string | null>(null)
   const [tab, setTab] = useState("duplicates")
   const [report, setReport] = useState<ColumnReport[] | null>(null)
 
@@ -158,7 +159,7 @@ export default function App() {
               <li key={id} className="flex flex-col gap-2 rounded-lg border p-3">
                 <fieldset className="flex flex-col gap-1">
                   <legend className="mb-1 text-sm font-medium">{t("group", { n: i + 1 })}</legend>
-                  {g.filter((r, j) => j < ROWS_SHOWN || r.id === keep).map((r) => (
+                  {g.filter((r, j) => open === id || j < ROWS_SHOWN || r.id === keep).map((r) => (
                     <label key={r.id} className="flex items-center gap-2 text-sm">
                       <input type="radio" name={`keep-${id}`} checked={r.id === keep} onChange={() => setChosen((c) => ({ ...c, [id]: r.id }))} aria-label={`${t("keep")} ${rowName(r.id)}`} className="accent-primary" />
                       <span className="w-20 shrink-0 text-muted-foreground tabular-nums">{rowName(r.id)}</span>
@@ -166,7 +167,10 @@ export default function App() {
                     </label>
                   ))}
                   {g.length > ROWS_SHOWN ? (
-                    <p className="text-sm text-muted-foreground">{t("moreRows", { n: g.length - g.filter((r, j) => j < ROWS_SHOWN || r.id === keep).length })}</p>
+                    // One group open at a time: every row of it, to read and to choose from.
+                    <Button size="sm" variant="ghost" className="h-auto self-start whitespace-normal" aria-expanded={open === id} onClick={() => setOpen(open === id ? null : id)}>
+                      {open === id ? t("fewerRows") : t("allRows", { n: g.length })}
+                    </Button>
                   ) : null}
                 </fieldset>
                 {plan === undefined ? (
@@ -180,6 +184,9 @@ export default function App() {
                     <p id={`confirm-${id}`} className="font-medium">
                       {t("confirm", { keep: plan.keep, remove: plan.remove.join(", ") })}
                     </p>
+                    {open !== id && g.length > ROWS_SHOWN ? (
+                      <p>{t("unseen", { n: g.filter((r, j) => j >= ROWS_SHOWN && r.id !== keep).length })}</p>
+                    ) : null}
                     {plan.filled ? <p>{t("filled", { n: plan.filled, keep: plan.keep })}</p> : null}
                     {plan.moved.map((m) => (
                       <p key={m.tableId}>{t("moved", { n: m.count, table: m.tableId, keep: plan.keep })}</p>
@@ -200,8 +207,10 @@ export default function App() {
           })}
         </ol>
         {groups.length > listed ? (
-          <Button size="sm" variant="outline" className="self-start" onClick={() => setListed((n) => n + GROUPS_SHOWN)}>
-            {t("moreGroups", { n: Math.min(GROUPS_SHOWN, groups.length - listed), left: groups.length - listed })}
+          <Button size="sm" variant="outline" className="h-auto self-start whitespace-normal" onClick={() => setListed((n) => n + GROUPS_SHOWN)}>
+            {groups.length - listed === 1
+              ? t("oneMoreGroup")
+              : t("moreGroups", { n: Math.min(GROUPS_SHOWN, groups.length - listed), left: groups.length - listed })}
           </Button>
         ) : null}
       </TabsContent>

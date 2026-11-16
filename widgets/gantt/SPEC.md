@@ -65,7 +65,7 @@ read from the columns' settings, which only full access reads.
   timeline's dates are in French.
 - **AC-10** Given a title that is HTML, it is shown as text.
 - **AC-11** Given no task with dates, the widget says so.
-- **AC-12** Given more than 80 tasks, the chart shows the first 80 in the
+- **AC-12** Given more than 50 tasks, the chart shows the first 50 in the
   section's order, with a button that shows the next ones.
 
 ## Standard criteria

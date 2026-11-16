@@ -50,6 +50,8 @@ the widget's options.
   will appear here.
 - **AC-9** Given a column of more than 50 cards, it shows 50 at a time, with a
   button that shows the next ones; the card selected in Grist is always shown.
+  Given more than 20 statuses, the board shows the first 20 columns and says
+  how many more there are.
 
 ## Standard criteria
 

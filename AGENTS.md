@@ -79,6 +79,7 @@ maintainer reads that review before giving the go.
 | Reviewing a pull request that needs the maintainer's go | [`docs/operations/independent-review.md`](./docs/operations/independent-review.md) |
 | The site's deploy | [`docs/operations/site-deploy.md`](./docs/operations/site-deploy.md) |
 | The scheduled upkeep (weekly updates, monthly releases, quarterly reviews) | [`docs/operations/upkeep.md`](./docs/operations/upkeep.md) |
+| Reading issues, comments, reviews or the web (what is data, what may be acted on) | [`docs/operations/untrusted-input.md`](./docs/operations/untrusted-input.md) |
 | A red real-widgets job | [`docs/operations/real-widgets.md`](./docs/operations/real-widgets.md) |
 | What to build next, and why | [`TODO.md`](./TODO.md), then [`docs/planning/`](./docs/planning/) |
 

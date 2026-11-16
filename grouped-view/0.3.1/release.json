@@ -1,0 +1,8 @@
+{
+  "slug": "grouped-view",
+  "version": "0.3.1",
+  "commit": "305a38bd22f660eff5adda6270f8c617c3fa755f",
+  "released": "2026-11-16T20:48:40.607Z",
+  "changes": "- In a pivot table, a screen reader now reads each cell's total with it (\"Travel, July: 70\"), and the grand total too: before, only the row and column totals carried their number.",
+  "changelog": "CHANGELOG.md"
+}

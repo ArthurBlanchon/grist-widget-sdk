@@ -5,6 +5,8 @@ import type { GristReplicaDocument, GristReplicaRow } from "grist-widget-sdk"
 
 import App, { widget, writeDates } from "./App"
 import { readableOn } from "./colors"
+import { expectVolume, VOLUME_TIMEOUT_MS } from "@shared/testing"
+import { demo } from "./demo"
 
 beforeAll(installJsdomStubs)
 
@@ -171,4 +173,16 @@ describe("Gantt chart", () => {
     setup(ALL, [{ id: 1, Title: "Undated", Start: null, End: null, Group: "G", Sequence: "S", Status: null }])
     expect(await screen.findByText(/No tasks to show/)).toBeInTheDocument()
   })
+
+  it("AC-12 shows the first 80 tasks, and the next ones on demand", async () => {
+    const many = Array.from({ length: 200 }, (_, i) => ({ id: i + 1, Title: `Task ${i + 1}`, Start: day(3, 2), End: day(3, 6), Group: "G", Sequence: "S", Status: null }))
+    setup(ALL, many)
+    expect(await screen.findByText(/200 tasks .* 80 shown/)).toBeInTheDocument()
+    fireEvent.click(screen.getByRole("button", { name: "Show 80 more (120 not shown)" }))
+    expect(await screen.findByText(/160 shown/)).toBeInTheDocument()
+    fireEvent.click(screen.getByRole("button", { name: "Show 40 more (40 not shown)" }))
+    await waitFor(() => expect(screen.queryByText(/shown/)).not.toBeInTheDocument())
+  })
 })
+
+it("AC-volume renders 5,000 rows within the DOM budget", () => expectVolume(<App />, widget, demo), VOLUME_TIMEOUT_MS)

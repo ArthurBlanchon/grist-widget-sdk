@@ -47,6 +47,9 @@ export function writeDates(updateRecord: UpdateRecord, rowId: number, startAt: D
   return updateRecord(rowId, { Start: toGristDay(startAt), End: toGristDay(endAt) })
 }
 
+/** Tasks the chart shows at a time, in the section's order. */
+const TASKS_SHOWN = 80
+
 export default function App() {
   const w = widget.useGrist()
   const t = useT(messages)
@@ -112,7 +115,10 @@ export default function App() {
     return { tasks: out, skipped: missing }
   }, [w.mappedRecords, w.records, groupCol, sequenceCol, t])
 
-  const groups = useMemo(() => buildGroups(tasks, styles), [tasks, styles])
+  // The first tasks, in the section's order, TASKS_SHOWN at a time.
+  const [listed, setListed] = useState(TASKS_SHOWN)
+  const shownTasks = useMemo(() => tasks.slice(0, listed), [tasks, listed])
+  const groups = useMemo(() => buildGroups(shownTasks, styles), [shownTasks, styles])
 
   const { updateRecord } = w
   const move = useCallback(
@@ -142,8 +148,14 @@ export default function App() {
           <p className="text-xs text-muted-foreground">
             {t("stats", { tasks: tasks.length, rows: sequenceCount, groups: groups.length })}
             {skipped ? ` · ${t("skipped", { n: skipped })}` : ""}
+            {tasks.length > listed ? ` · ${t("shownOf", { n: listed })}` : ""}
           </p>
         </div>
+        {tasks.length > listed ? (
+          <Button size="sm" variant="outline" onClick={() => setListed((n) => n + TASKS_SHOWN)}>
+            {t("moreTasks", { n: Math.min(TASKS_SHOWN, tasks.length - listed), left: tasks.length - listed })}
+          </Button>
+        ) : null}
         <div className="flex items-center gap-1 rounded-lg border p-1" role="group" aria-label={t("scale")}>
           {(
             [

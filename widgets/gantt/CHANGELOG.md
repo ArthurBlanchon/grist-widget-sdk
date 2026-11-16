@@ -2,6 +2,10 @@
 
 What changed in each version, for the people using the widget. Newest first.
 
+## 0.2.0 (2026-11-16)
+
+- A section of many tasks shows the first 80, in its order, with a button for the next ones: the chart stays quick with thousands of rows. Filter or sort the section to choose which come first.
+
 ## 0.1.2 (2026-11-15)
 
 - The chart opens on today, rather than in the middle of the year, months away from the work.

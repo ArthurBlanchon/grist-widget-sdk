@@ -2,6 +2,8 @@ import { defineMessages } from "@shared/i18n"
 
 export const messages = defineMessages({
   en: {
+    shownOf: "{n} shown",
+    moreTasks: "Show {n} more ({left} not shown)",
     title: "Gantt chart",
     tasks: "Tasks",
     duration: "Duration",
@@ -20,6 +22,8 @@ export const messages = defineMessages({
     endOf: "End of",
   },
   fr: {
+    shownOf: "{n} montrées",
+    moreTasks: "En montrer {n} de plus ({left} non montrées)",
     title: "Diagramme de Gantt",
     tasks: "Tâches",
     duration: "Durée",

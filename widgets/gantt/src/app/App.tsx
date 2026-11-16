@@ -19,6 +19,7 @@ import {
   type Range,
 } from "@shared/kibo-ui/gantt"
 import { Button } from "@shared/ui/button"
+import { reportUrl } from "@shared/report-url"
 
 import { choiceStyles } from "./colors"
 import { calendarDay, toGristDay } from "./dates"
@@ -28,6 +29,7 @@ import { messages } from "./messages"
 export const widget = defineGristWidget({
   title: "Gantt chart",
   description: "Tasks on a timeline, grouped and in rows; drag a bar to move it, or its ends to change its dates.",
+  reportUrl: reportUrl(),
   requiredAccess: "full",
   columns: [
     { name: "Title", type: "Text", title: "Task" },

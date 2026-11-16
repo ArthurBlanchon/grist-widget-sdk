@@ -2,6 +2,11 @@
 
 What changed in each version, for the people using the widget. Newest first.
 
+## 0.2.0 (2026-11-16)
+
+- "Report a problem": when a change fails to save, or if the widget ever stops working, a link opens this widget's bug form, filled in with its name and version. Nothing is sent from your document: you write what you choose.
+- If the widget stops working, it says so, with a button to reload it, instead of showing an empty panel.
+
 ## 0.1.2 (2026-11-15)
 
 - A reference field shows the row it points to. Grist sends a reference as the text its column shows (a name), so the field was empty for any reference showing a column; the widget now reads the row ids from the table.

@@ -4,6 +4,7 @@ import { defineGristWidget } from "grist-widget-sdk"
 
 import { useT } from "@shared/i18n"
 import { Button } from "@shared/ui/button"
+import { reportUrl } from "@shared/report-url"
 
 import { kindOf, useFiles, type Loaded } from "./files"
 import { messages } from "./messages"
@@ -11,6 +12,7 @@ import { messages } from "./messages"
 export const widget = defineGristWidget({
   title: "Attachment viewer",
   description: "The selected row's files shown large, images and PDFs in the widget; or every row's files in a gallery.",
+  reportUrl: reportUrl(),
   requiredAccess: "full",
   allowSelectBy: true,
   columns: [

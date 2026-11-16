@@ -114,12 +114,14 @@ export const messages = defineMessages({
     "src/app/App.tsx": `import { defineGristWidget } from "grist-widget-sdk"
 
 import { useT } from "@shared/i18n"
+import { reportUrl } from "@shared/report-url"
 
 import { messages } from "./messages"
 
 export const widget = defineGristWidget({
   title: ${JSON.stringify(title)},
   description: "TODO: what it does, in one sentence.",
+  reportUrl: reportUrl(),
   requiredAccess: "read table",
   columns: [{ name: "Title", type: "Text" }],
 })

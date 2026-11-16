@@ -5,6 +5,7 @@ import { defineGristWidget } from "grist-widget-sdk"
 import { useT } from "@shared/i18n"
 import { Alert, AlertDescription } from "@shared/ui/alert"
 import { Button } from "@shared/ui/button"
+import { reportUrl } from "@shared/report-url"
 
 import { messages } from "./messages"
 import { renderDiagram, svgNode } from "./render"
@@ -13,6 +14,7 @@ import { flowchart } from "./source"
 export const widget = defineGristWidget({
   title: "Mermaid diagram",
   description: "A Mermaid diagram written in the selected row's cell, or a flowchart drawn from the rows' From and To columns.",
+  reportUrl: reportUrl(),
   requiredAccess: "read table",
   columns: [
     { name: "Diagram", type: "Text", optional: true, title: "Mermaid source (cell mode)" },

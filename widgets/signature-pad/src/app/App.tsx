@@ -6,6 +6,7 @@ import { detectLocale, useT } from "@shared/i18n"
 import { Alert, AlertDescription } from "@shared/ui/alert"
 import { Button } from "@shared/ui/button"
 import { Input } from "@shared/ui/input"
+import { reportUrl } from "@shared/report-url"
 
 import { drawStrokes, signatureImage, type Stroke } from "./ink"
 import { messages } from "./messages"
@@ -13,6 +14,7 @@ import { messages } from "./messages"
 export const widget = defineGristWidget({
   title: "Signature pad",
   description: "Have the selected row signed on a tablet, a phone or with a mouse; the signature is saved as an image with the signer's name and the time.",
+  reportUrl: reportUrl(),
   requiredAccess: "full",
   columns: [
     { name: "Signature", type: "Attachments", title: "Signature (an attachments column)" },

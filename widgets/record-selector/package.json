@@ -1,7 +1,7 @@
 {
   "name": "@grist-widgets/record-selector",
   "private": true,
-  "version": "0.1.1",
+  "version": "0.2.0",
   "type": "module",
   "description": "Find a row by typing part of its name, and pick it: linked widgets follow.",
   "license": "MIT",

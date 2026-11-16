@@ -9,6 +9,7 @@ import { Button } from "@shared/ui/button"
 import { Input } from "@shared/ui/input"
 import { NativeSelect, NativeSelectOption } from "@shared/ui/native-select"
 import { Textarea } from "@shared/ui/textarea"
+import { reportUrl } from "@shared/report-url"
 
 import { DEFAULTS, fill, link, LONG_LINK, recipients, type Client, type Row } from "./mail"
 import { messages } from "./messages"
@@ -16,6 +17,7 @@ import { messages } from "./messages"
 export const widget = defineGristWidget({
   title: "Mail merge",
   description: "A personal e-mail for each row the section shows, from a subject and a body with the row's columns in them, opened in the person's own mail app, Gmail or Outlook.",
+  reportUrl: reportUrl(),
   requiredAccess: "full",
   // Options carry their version (ADR 0017): version 1, read as before.
   optionsVersion: 1,

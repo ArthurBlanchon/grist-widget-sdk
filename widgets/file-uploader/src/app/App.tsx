@@ -6,6 +6,7 @@ import { useT } from "@shared/i18n"
 import { Alert, AlertDescription } from "@shared/ui/alert"
 import { Button } from "@shared/ui/button"
 import { Input } from "@shared/ui/input"
+import { reportUrl } from "@shared/report-url"
 
 import { readLimits, refusal, type Limits } from "./limits"
 import { messages } from "./messages"
@@ -13,6 +14,7 @@ import { messages } from "./messages"
 export const widget = defineGristWidget({
   title: "File uploader",
   description: "Drop files onto the selected row's attachments, within the types and size its owner allows.",
+  reportUrl: reportUrl(),
   requiredAccess: "full",
   columns: [{ name: "Files", type: "Attachments", title: "Attachments column" }],
 })

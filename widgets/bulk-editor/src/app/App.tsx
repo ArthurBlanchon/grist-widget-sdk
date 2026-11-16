@@ -10,12 +10,14 @@ import { Button } from "@shared/ui/button"
 import { Input } from "@shared/ui/input"
 import { NativeSelect, NativeSelectOption } from "@shared/ui/native-select"
 import { Switch } from "@shared/ui/switch"
+import { reportUrl } from "@shared/report-url"
 
 import { messages } from "./messages"
 
 export const widget = defineGristWidget({
   title: "Bulk editor",
   description: "Set one column to one value on every row the section shows, after a confirmation, in one action you can undo.",
+  reportUrl: reportUrl(),
   requiredAccess: "full",
   columns: [{ name: "Target", title: "Column to set" }],
 })

@@ -2,6 +2,11 @@
 
 What changed in each version, for the people using the widget. Newest first.
 
+## 0.3.0 (2026-11-16)
+
+- "Report a problem": when a change fails to save, or if the widget ever stops working, a link opens this widget's bug form, filled in with its name and version. Nothing is sent from your document: you write what you choose.
+- If the widget stops working, it says so, with a button to reload it, instead of showing an empty panel.
+
 ## 0.2.0 (2026-11-16)
 
 - A column of many cards shows them 50 at a time, with a button for the next ones (the card selected in Grist is always shown): the board stays quick with thousands of rows.

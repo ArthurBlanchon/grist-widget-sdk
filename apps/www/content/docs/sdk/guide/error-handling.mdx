@@ -1,108 +1,94 @@
 ---
-title: "Error handling"
-description: "Where a widget's errors surface: the connection, the boundary, the alerts, failed writes and cells."
+title: "Errors and alerts"
+description: "Where a widget's problems show: the screens before it renders, the alerts above it, a failed call, a cell that doesn't fit, and a widget that stops working."
 ---
 
-A widget meets errors at four levels:
+A widget mounted with `mountGristWidget()` shows most problems on its own.
+This page says where each one appears, and what your code does about it.
 
-1. **The connection** — `status` / `error` from `useGrist()`, shown by `<GristBoundary>`.
-2. **What needs the user in Grist** — the alerts `mountGristWidget()` shows above the widget.
-3. **A failed call** — a rejected promise, and `actionStatus` / `actionError` for writes.
-4. **A cell** — a mapped cell that doesn't match its declared type, or a formula error: `w.cellIssues`.
+## Before the widget renders
 
-## The connection
+Until the widget can work, a screen takes its place:
 
-```ts
-type GristWidgetStatus = "booting" | "ready" | "unavailable" | "error"
-```
-
-| Status | Meaning |
-| --- | --- |
-| `booting` | Waiting for Grist to answer `grist.ready()`. |
-| `ready` | Connected, with the access the widget declares. |
-| `unavailable` | Not in Grist's iframe, or the plugin API (`grist-plugin-api.js`) didn't load. |
-| `error` | `grist.ready()` failed or didn't answer within 30 s, or Grist granted less access than `requiredAccess`. `error` says which. |
-
-`<GristBoundary>` (rendered by `mountGristWidget()`) shows a screen for each
-non-ready state, and "Map your columns" while a required declared column
-isn't mapped; see [Provider & boundary](/docs/sdk/api/provider-boundary#gristboundary).
-Its retry button calls `useGrist().reload()`, which calls `grist.ready()`
-again.
-
-### Access
-
-Grist reports the access it grants with the widget options (`access_level`:
-`none`, `read table`, `full`). When it is less than the widget's
-`requiredAccess` (the user hasn't accepted the widget's request yet, or set a
-lower level), `status` is `"error"` and the boundary asks for the level to
-set in the Custom widget settings. A call that needs more than the widget
-was granted fails with Grist's "Access not granted" error, and the
-`access-insufficient` alert says what to change.
-
-## Alerts
-
-While the widget runs, `mountGristWidget()` shows what needs the user's
-attention in Grist above it:
-
-| Kind | When | Severity |
+| Screen | When | What fixes it |
 | --- | --- | --- |
-| `mapping-pending` | Grist hasn't reported column mappings yet | `info` |
-| `column-mapping` | A required declared column isn't mapped | `warning` |
-| `access-insufficient` | A read or write failed for lack of access | `error` |
-| `action-error` | The last write failed (its message) | `error` |
-| `map-back-skip` | `mapBack` skipped an `allowMultiple` column | `warning` |
-| `cell-issues` | A mapped cell doesn't match its declared type (or the widget's `schema`) | `warning` |
-| `section-not-linked` | The widget's section is linked to nothing | `warning` |
-| `source-not-wired` | An `allowSelectBy` widget that no section links to | `warning` |
-| `read-only` | A widget asking for full access, or one whose write was refused, on a document open read-only | `info` |
+| Connecting to Grist | Grist hasn't answered yet | Nothing: it passes |
+| Open inside Grist | The page isn't in a Grist custom widget, or Grist's plugin API didn't load | Opening it in a Grist document |
+| More access needed | Grist granted less than the declaration's `requiredAccess` | The person accepts, or sets the level in the custom widget panel |
+| Something went wrong | Grist refused or didn't answer the connection (30 s) | The retry button, which connects again |
+| Map your columns | A required declared column isn't mapped | The person maps it in the panel |
 
-A widget turns off the kinds it doesn't want with
-`suppressAlerts: ["section-not-linked"]` in its `GRIST_OPTIONS`.
+Your component never renders in these states: it can assume it is
+connected, with the access it asked for and its required columns mapped.
+
+## Alerts above the widget
+
+While the widget runs, what needs the person's attention shows above it:
+
+| Kind | When |
+| --- | --- |
+| `action-error` | A write failed, with Grist's message and "Report a problem" when the declaration has a `reportUrl` |
+| `access-insufficient` | A read or write needed more access than granted |
+| `column-mapping`, `mapping-pending` | A required column lost its mapping, or Grist hasn't sent the mappings yet |
+| `map-back-skip` | A write skipped a name mapped to several columns |
+| `cell-issues` | A mapped cell doesn't fit its declared type |
+| `section-not-linked`, `source-not-wired` | The section's linking isn't set up as the widget declares |
+| `read-only` | The document is open read-only and the widget writes |
+
+To turn a kind off, list it in the declaration:
+
+```ts no-check
+export const widget = defineGristWidget({
+  requiredAccess: "read table",
+  suppressAlerts: ["section-not-linked"],
+})
+```
 
 ## A failed call
 
-Every method of `useGrist()` returns a promise that rejects with Grist's
-error. Writes also set `actionStatus` to `"error"` and `actionError` to the
-message, until the next write:
+Every call that reaches Grist returns a promise that rejects with Grist's
+error. Writes also set `w.actionStatus` to `"error"` and `w.actionError` to
+the message, until the next write:
 
 ```tsx
-function Save({ id }: { id: number }) {
-  const w = useGrist()
+import { defineGristWidget } from "grist-widget-sdk"
+
+export const widget = defineGristWidget({
+  requiredAccess: "full",
+  columns: [{ name: "Done", type: "Bool" }],
+})
+
+export function Save() {
+  const w = widget.useGrist()
   return (
-    <button
-      disabled={w.actionStatus === "running"}
-      onClick={() => void w.table.update({ id, fields: { Done: true } }).catch(() => {})}
-    >
-      {w.actionStatus === "error" ? `Retry (${w.actionError})` : "Mark done"}
+    <button disabled={w.actionStatus === "running"} onClick={() => w.updateRecord({ Done: true })}>
+      {w.actionStatus === "error" ? `Try again (${w.actionError})` : "Mark done"}
     </button>
   )
 }
 ```
 
-## Cells
+A write nobody awaits, as here, logs nothing more: the alert already says
+it failed. Await it (and catch) when the widget does something next.
 
-A formula error arrives as Grist's tagged value `["E", type, message?]`:
+## A cell that doesn't fit
 
-```ts
-import { isGristCellError } from "grist-widget-sdk"
+In the mapped records, a cell that doesn't match its declared type, a
+formula error included, is `null`, and `w.cellIssues` lists which and why:
+the row, the column, the value and a message. The `cell-issues` alert
+shows the count. See [Typed reads](/docs/sdk/guide/typing).
 
-function cellText(value: unknown): string {
-  return isGristCellError(value) ? `#${String(value[1])}` : String(value ?? "")
-}
-```
+Outside the mapped records (a raw `w.record`, `fetchRows` of another
+table), a formula error arrives as Grist's tagged value; test for it with
+`isGristCellError(value)`.
 
-In the mapped records, a cell that doesn't match its declared type (a
-formula error included) is `null`, and `w.cellIssues` says which and why;
-`mountGristWidget()` shows the `cell-issues` alert. See
-[Typed reads](/docs/sdk/guide/typing).
+## A widget that stops working
 
-## Unexpected exceptions
-
-The SDK installs no React error boundary of its own. Use your usual one
-around the widget body:
-
-```tsx no-check
-<ErrorBoundary FallbackComponent={MyErrorScreen}>
-  <App />
-</ErrorBoundary>
-```
+When the widget throws while rendering, "The widget stopped working"
+replaces it, with a button that reloads it and, with a `reportUrl` in the
+declaration, a "Report a problem" link
+([When something goes wrong](/docs/sdk/api/app#when-something-goes-wrong)).
+The error stays uncaught: it shows in the browser's console, and a
+`renderWithGrist` test of a widget that throws fails. A part of your
+widget that should fail on its own, without taking the rest with it,
+gets an error boundary of yours around it.

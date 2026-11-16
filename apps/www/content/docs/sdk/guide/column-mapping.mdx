@@ -1,156 +1,120 @@
 ---
-title: "Column mapping"
-description: "Why widgets should declare logical column names in code and let users map them to real ones."
+title: "Declare and map columns"
+description: "Name the columns a widget needs in its declaration, let the person map their own columns to them, then read and write under your names."
 ---
 
-A widget should not depend on a user's exact column names. Instead, declare **logical** names your code uses; the user maps them to real columns through the section configuration UI.
+A widget doesn't know the person's column names. It declares its own, and
+the person maps a column of their table to each in Grist's custom widget
+panel: their `Task name` to your `Title`, say. Your code only ever uses
+your names.
 
-## Declare columns once
-
-Pass `columns` to the provider:
-
-```tsx no-check
-<GristWidgetProvider
-  options={{
-    requiredAccess: "full",
-    columns: [
-      { name: "Title", type: "Text" },
-      { name: "Done", type: "Bool" },
-      {
-        name: "Tags",
-        type: "ChoiceList",
-        allowMultiple: true,
-        optional: true,
-        description: "Optional tags to filter rows.",
-      },
-    ],
-  }}
->
-```
-
-Field reference:
-
-| Field | Notes |
-| --- | --- |
-| `name` | **Required.** Must be a valid JS identifier. This is the name your code uses. |
-| `title` | Short label in the Grist mapping UI. |
-| `description` | Long help text in the mapping UI. |
-| `type` | Comma-separated allowed Grist column types. Defaults to `"Any"`. |
-| `optional` | Default `false`. Required columns gate `mappedRecord`. |
-| `allowMultiple` | `true` lets the user map several real columns to one logical name. The corresponding mapping becomes `string[]`. |
-| `strictType` | `true` makes the type match exact (so `"Any"` only matches `"Any"`). |
-
-You can also pass plain strings (`columns: ["Title", "Done"]`) when you don't need type hints.
-
-## Read mapped data
-
-`useGrist()` exposes:
-
-```ts
-const w = useGrist<MyMappedRow>()
-
-w.mappedRecord      // { id, Title, Done, Tags: [...] }: the selected row under declared names (or null)
-w.mappings          // { Title: "Name", Done: "isDone", Tags: ["tagA","tagB"] }
-w.columnMappingStatus
-//   { ok: boolean, pending?: boolean, missing: string[], emptyMultiples: string[] }
-```
-
-`mappedRecord` is `null` when **any required column is unmapped**. Never silently fall back to the raw record.
-
-### The other columns
-
-Once the user maps a column, Grist sends the widget **only the mapped columns** and the row id: in `w.record`, `w.records` and `w.fetchRows()` (the section's rows). The emulator does the same. A widget that also reads other columns, a template naming any of them say, reads the table itself with `w.fetchRows(tableId)`, which needs full access and applies the document's access rules. A reference read that way is the row id, where the section's cells show the text of its column.
-
-### Typing
-
-Type the SDK with two generics — your raw row shape (real column ids) and the mapped logical shape:
-
-```ts
-type RawTask = {
-  Name: string
-  isDone: boolean
-  tag_list: string[]
-}
-
-type MappedTask = {
-  Title: string | null   // null when the cell doesn't match its declared type
-  Done: boolean | null
-  Tags?: string[] | null
-}
-
-const w = useGrist<RawTask, MappedTask>()
-w.record?.Name          // typed
-w.mappedRecord?.Title   // typed
-```
-
-`GristMappedRow<typeof GRIST_OPTIONS>` writes the mapped shape for you from
-the declaration: see [Typed reads](/docs/sdk/guide/typing).
-
-See [Typing your rows](/docs/sdk/guide/typing) for more.
-
-## Gate UI on missing mappings
+## Declare the columns
 
 ```tsx
-if (!w.columnMappingStatus.ok) {
+import { defineGristWidget } from "grist-widget-sdk"
+
+export const widget = defineGristWidget({
+  requiredAccess: "full",
+  columns: [
+    { name: "Title", type: "Text" },
+    { name: "Done", type: "Bool" },
+    { name: "Tags", type: "ChoiceList", optional: true, allowMultiple: true, description: "Columns of tags to show." },
+  ],
+})
+```
+
+| Field | |
+| --- | --- |
+| `name` | **Required.** The name your code uses, a valid identifier. |
+| `type` | The Grist types the column may have, comma-separated (`"Text,Choice"`). Defaults to any type. It types what you read ([Typed reads](/docs/sdk/guide/typing)). |
+| `title`, `description` | The label and the help text in Grist's mapping panel. |
+| `optional` | `true` lets the widget render while it isn't mapped. Required by default. |
+| `allowMultiple` | `true` lets the person map several columns to this name: you read their values as a list. |
+| `strictType` | `true` makes `type` exact: `"Any"` then matches only an `Any` column. |
+
+Plain strings work too (`columns: ["Title", "Done"]`), with no type.
+
+## What the person sees
+
+Until every required column is mapped, a widget mounted with
+`mountGristWidget()` shows "Map your columns" with the missing names; it
+renders once they are mapped. Mappings can change at any time: the widget
+re-renders with the new ones, nothing to reload. The declared columns
+themselves are read once, when the widget starts.
+
+## Read under your names
+
+```tsx
+import { defineGristWidget } from "grist-widget-sdk"
+
+export const widget = defineGristWidget({
+  requiredAccess: "read table",
+  columns: [
+    { name: "Title", type: "Text" },
+    { name: "Done", type: "Bool" },
+  ],
+})
+
+export default function App() {
+  const w = widget.useGrist()
+  if (!w.mappedRecord) return <p>Select a task.</p>
   return (
     <p>
-      Map these columns first: {w.columnMappingStatus.missing.join(", ")}
+      {w.mappedRecord.Title} {w.mappedRecord.Done ? "(done)" : ""}
     </p>
   )
 }
 ```
 
-A widget mounted with `mountGristWidget()` doesn't need this check: its
-`<GristBoundary>` shows "Map your columns" until every required declared
-column is mapped, and the widget renders once they are.
+- **`w.mappedRecord`** is the selected row under your names, typed from
+  the declaration, or `null` while a required column is unmapped or no row
+  is selected. **`w.mappedRecords`** is every row of the section the same
+  way.
+- **`w.mappings`** says which column each name is mapped to (`{ Title:
+  "Task_name" }`), a list for an `allowMultiple` name.
+- **`w.columnMappingStatus`** says whether the widget can render: `ok`,
+  and the `missing` names. `mountGristWidget()` already waits on it; a
+  component that renders outside its boundary checks it.
 
-## Write through the mapping
+### The other columns
 
-Writing back uses real column ids. Use `w.mapBack(patch)` to reverse the logical names:
+Once the person maps a column, Grist sends the widget **only the mapped
+columns** and the row id, in `w.mappedRecord`, `w.mappedRecords` and the
+raw `w.record`. A widget that also needs other columns (a template naming
+any column of the table, say) reads the table itself with
+`w.fetchRows(tableId)`, which needs full access and follows the
+document's access rules.
 
-```ts
-async function toggle() {
-  const patch = w.mapBack({ Done: !w.mappedRecord!.Done })
-  await w.table.update({
-    id: w.record!.id,
-    fields: patch,
-  })
+## Write under your names
+
+```tsx
+import { defineGristWidget } from "grist-widget-sdk"
+
+export const widget = defineGristWidget({
+  requiredAccess: "full",
+  columns: [
+    { name: "Title", type: "Text" },
+    { name: "Done", type: "Bool" },
+  ],
+})
+
+export default function App() {
+  const w = widget.useGrist()
+  if (!w.mappedRecord) return <p>Select a task.</p>
+  const { Done } = w.mappedRecord
+  return <button onClick={() => w.updateRecord({ Done: !Done })}>{Done ? "Reopen" : "Done"}</button>
 }
 ```
 
-`mapBack`:
+`w.updateRecord` writes the selected row, and `w.addRecord` a new one,
+under your names: the SDK writes each into the column mapped to it, and
+encodes the value for its declared type. A name mapped to several columns
+(`allowMultiple`) isn't written, since nothing says which of them should
+change; the "Write skipped" alert names it. See
+[Write data](/docs/sdk/guide/writing-data).
 
-- Writes each declared name to the column mapped to it, and passes a name
-  with no mapping through unchanged.
-- Skips `allowMultiple` columns (you must choose which underlying column to
-  write); the `map-back-skip` alert names them.
+## Several columns under one name
 
-## Resolve a single mapped column
-
-For ad-hoc work, e.g. to set a `Group by` field:
-
-```ts
-const col = w.resolveMappedColumnId("Tags")
-// returns the first real id when allowMultiple, or the logical name as a last-resort fallback
-```
-
-## Dynamic mappings
-
-Mappings update as the user reconfigures the section: Grist sends them with
-the records, and `useGrist()` re-renders with the new `mappings`,
-`mappedRecord` and `columnMappingStatus`. The declared columns themselves
-are read once, at mount (`GRIST_OPTIONS.columns`).
-
-## Allow-multiple recipes
-
-```tsx
-const tagCols = (w.mappings.Tags as string[] | undefined) ?? []
-const tags = w.record
-  ? tagCols.flatMap((col) => {
-      const v = (w.record as Record<string, unknown>)[col]
-      return typeof v === "string" ? [v] : []
-    })
-  : []
-```
-
-`w.mappedRecord.Tags` already holds that list, one value per mapped column.
+With `allowMultiple`, the person maps any number of columns to one name,
+and `w.mappedRecord.Tags` holds one value per mapped column, in their
+order: a widget showing "every tag column" reads them as one list.

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 
-import { changelogEntries, checkChangelog, checkLicences, licenceAllowed, checkStatic, columnsSection, criteria, declarationProblems, designViolations, listWidgets, parseFrontMatter, specColumns } from "./check-widgets.mjs"
+import { changelogEntries, checkChangelog, checkLicences, licenceAllowed, checkStatic, columnsSection, criteria, declarationProblems, designViolations, listWidgets, parseFrontMatter, specColumns, STANDARD_CRITERIA, standardCriteria } from "./check-widgets.mjs"
 
 test("front matter is key: value lines", () => {
   const { data, body } = parseFrontMatter("---\nslug: a\naccess: read table\n---\n# A\n")
@@ -80,6 +80,14 @@ test("a generated widget passes the static checks it can before its code is writ
   writeFileSync(spec, readFileSync(spec, "utf8").replace("status: draft", "status: beta"))
   const todos = checkStatic("gantt-chart", dir).problems.filter((p) => p.includes("TODO"))
   assert.deepEqual(todos.map((p) => p.split(":")[0]), ["SPEC.md", "package.json's description", "src/app/demo.ts"])
+
+  // Its spec carries the standard criteria, and its tests AC-volume's (ADR 0018).
+  assert.deepEqual(standardCriteria(readFileSync(spec, "utf8")), STANDARD_CRITERIA)
+  const test = join(dir, "src", "app", "App.test.tsx")
+  writeFileSync(test, readFileSync(test, "utf8").replace('it("AC-volume', 'it("volume'))
+  assert.ok(checkStatic("gantt-chart", dir).problems.includes('AC-volume: no test names it (it("AC-volume …"))'))
+  writeFileSync(spec, readFileSync(spec, "utf8").replace(/- \*\*AC-narrow\*\*.*\n/, ""))
+  assert.ok(checkStatic("gantt-chart", dir).problems.includes("SPEC.md: the Standard criteria section lacks AC-narrow"))
 
   // A widget may talk about to-dos: only new-widget's placeholders count.
   writeFileSync(spec, "---\nslug: gantt-chart\ntitle: T\ncategory: planning\nstatus: beta\naccess: none\n---\n## Job\n\nA TODO list, for TODO items.\n")

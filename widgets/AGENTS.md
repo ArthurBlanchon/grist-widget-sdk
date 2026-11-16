@@ -34,6 +34,12 @@ the first).
   changelog fails `pnpm check:widgets`.
 - **Every criterion has a test,** named `it("AC-n …")`, using
   `renderWithGrist(<App />, { widget, rows })`.
+- **The standard criteria** ([ADR 0018](../docs/decisions/0018-standard-criteria.md)):
+  every spec lists `AC-volume`, `AC-keyboard`, `AC-narrow` and
+  `AC-readonly` in its "Standard criteria" section, as `new-widget` writes
+  them. `AC-volume` has its test (5,000 rows from the demo data,
+  `volumeRows()`, at most `VOLUME_NODES` DOM nodes); the real-Grist check
+  (`--standard`) checks the other three.
 - **UI from `@shared/ui/*` only** (the shadcn components, one copy). A
   missing component is added once, to `widgets/_shared/`, with
   `pnpm dlx shadcn add <name>` run there.
@@ -123,6 +129,7 @@ standard criteria: 320 and 1,280 px, the keyboard path, read-only).
 | Shared shadcn components | `_shared/ui/` |
 | Shared components from other shadcn registries (kibo-ui's Gantt) | `_shared/kibo-ui/` |
 | Typed fields from a column's Grist type (Record editor, Bulk editor) | `_shared/grist-fields.ts` |
+| The AC-volume rows and budget (ADR 0018) | `_shared/testing.ts` |
 | A cell as text, in the person's language (Document template, Mail merge) | `_shared/cell-text.ts` |
 | The theme | `_shared/theme.css` |
 | Translations | `_shared/i18n.ts` |

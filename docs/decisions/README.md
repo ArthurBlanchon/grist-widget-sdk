@@ -27,6 +27,7 @@ link it from where the decision is applied.
 | [0015](./0015-widget-licences.md) | The licences a catalog widget may ship |
 | [0016](./0016-widget-csp.md) | A Content Security Policy in every catalog widget's page |
 | [0017](./0017-widget-options-version.md) | Widget options carry the version that wrote them |
+| [0018](./0018-standard-criteria.md) | Every catalog widget meets four standard criteria |
 
 The plans in [`docs/planning/`](../planning/) and
 [`docs/history/`](../history/) hold the reasoning in full. The design

@@ -67,3 +67,19 @@ export function referenceOf(apiJson) {
     .sort((a, b) => a.name.localeCompare(b.name))
     .map(({ signatures, ...row }) => (signatures.length ? { ...row, signatures } : row))
 }
+
+/**
+ * The names an entry point re-exports from another package, which the doc
+ * model leaves out, from its API report: `export { screen_2 as screen }`
+ * with `import { screen as screen_2 } from '@testing-library/react'`.
+ */
+export function reexportsOf(reportMd) {
+  const from = new Map()
+  for (const m of reportMd.matchAll(/^import \{ (\w+)(?: as (\w+))? \} from '([^.'][^']*)';$/gm)) from.set(m[2] ?? m[1], m[3])
+  const rows = []
+  for (const m of reportMd.matchAll(/^export \{ (\w+)(?: as (\w+))? \}$/gm)) {
+    const pkg = from.get(m[1])
+    if (pkg) rows.push({ name: m[2] ?? m[1], kind: "re-export", summary: `Re-exported from \`${pkg}\`, unchanged.` })
+  }
+  return rows
+}

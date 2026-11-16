@@ -52,12 +52,14 @@ export type MountGristWidgetConfig = GristWidgetAppProps & {
 
 /**
  * A widget's entry module, `src/app/App.tsx`, as `import * as entry` gives
- * it: the widget as its default export, its declaration as `widget` (or, in
- * a widget made before `defineGristWidget`, `GRIST_OPTIONS` and
- * `WIDGET_METADATA`), and optionally its own `Alerts`, `LocalDevPage` and
- * `ReleasePage`. Everything a widget customises lives there, in its own
- * file: the template's `src/main.tsx` stays the same in every widget, and
- * `create-grist-widget upgrade` can rewrite it without losing anything.
+ * it: the widget as its default export, its declaration as `widget`, and
+ * optionally its own `Alerts`, `LocalDevPage` and `ReleasePage`.
+ *
+ * Everything a widget customises lives there, in its own file: the
+ * template's `src/main.tsx` stays the same in every widget, and
+ * `create-grist-widget upgrade` can rewrite it without losing anything. A
+ * widget made before `defineGristWidget` exports `GRIST_OPTIONS` and
+ * `WIDGET_METADATA` instead, which still works.
  */
 export type GristWidgetEntry = {
   default: ComponentType

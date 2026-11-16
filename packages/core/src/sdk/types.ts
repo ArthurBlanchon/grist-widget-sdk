@@ -65,7 +65,7 @@ export type GristWidgetConfiguration = {
  */
 export type GristFormulaKind = "computed" | "trigger" | "none" | "empty_slot"
 
-/** Options for `fetchSelectedTable` / `fetchSelectedRecord` on `docApi` (GristView). */
+/** Options for Grist's own `grist.fetchSelectedTable` / `grist.fetchSelectedRecord` (GristView). */
 export type GristFetchSelectedOptions = {
   keepEncoded?: boolean
   format?: "rows" | "columns" | string

@@ -4,8 +4,13 @@ import { readFileSync } from "node:fs"
 import { join } from "node:path"
 import { describe, expect, it } from "vitest"
 
+import * as sdk from "../../src/sdk"
+import * as actions from "../../src/actions"
+import * as app from "../../src/app"
+import * as emulator from "../../src/emulator"
+import * as emulatorTesting from "../../src/emulator/testing"
 // @ts-expect-error: a plain .mjs script, without types
-import { referenceOf, summaryOf } from "../../scripts/api-reference.mjs"
+import { reexportsOf, referenceOf, summaryOf } from "../../scripts/api-reference.mjs"
 
 describe("summaryOf", () => {
   it("keeps the first paragraph, on one line, without tags or code", () => {
@@ -45,6 +50,13 @@ describe("referenceOf", () => {
   })
 })
 
+describe("reexportsOf", () => {
+  it("finds the names re-exported from another package, under their exported name", () => {
+    const report = "import { act } from '@testing-library/react';\nimport { screen as screen_2 } from '@testing-library/react';\nimport { Local } from './local';\n\nexport { act }\n\nexport { screen_2 as screen }\n\nexport { Local }\n"
+    expect(reexportsOf(report).map((r: { name: string }) => r.name)).toEqual(["act", "screen"])
+  })
+})
+
 describe("api/reference.json", () => {
   const reference = JSON.parse(readFileSync(join(__dirname, "../../api/reference.json"), "utf8")) as Record<
     string,
@@ -61,5 +73,19 @@ describe("api/reference.json", () => {
     ])
     const missing = Object.entries(reference).flatMap(([entry, rows]) => rows.filter((r) => !r.summary).map((r) => `${entry}: ${r.name}`))
     expect(missing).toEqual([])
+  })
+
+  it("lists every name each entry point exports at run time", () => {
+    const modules: Record<string, object> = {
+      "grist-widget-sdk": sdk,
+      "grist-widget-sdk/app": app,
+      "grist-widget-sdk/actions": actions,
+      "grist-widget-sdk/emulator": emulator,
+      "grist-widget-sdk/emulator/testing": emulatorTesting,
+    }
+    for (const [entry, module] of Object.entries(modules)) {
+      const listed = new Set(reference[entry]!.map((r) => r.name))
+      expect(Object.keys(module).filter((name) => !listed.has(name)), entry).toEqual([])
+    }
   })
 })

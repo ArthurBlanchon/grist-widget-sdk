@@ -1,6 +1,7 @@
 // The CLI's help, printed by `create-grist-widget --help` and shown as the
 // docs' CLI reference (apps/www's <CliHelp />): one text, so the two can't
-// disagree.
+// disagree. The site bundles this file: keep it a plain string, with no
+// import, or the docs' build breaks.
 
 export const HELP = `create-grist-widget — scaffold a Grist custom widget, offline
 
@@ -23,8 +24,11 @@ Usage:
   create-grist-widget protect [--dry-run]        After the first release: the repository's rulesets
                                                  (main, dev, tags), private vulnerability reporting
                                                  and GitHub Pages, with your gh CLI
-  create-grist-widget manifest --base <path>     Write dist/grist-widget.json, the widget's Grist
-                                                 manifest (run by the deploy workflow after vite build)
+  create-grist-widget manifest --base <path> [--dist <dir>] [--owner-repo <owner/repo>]
+                                                 Write <dist>/grist-widget.json (default dist/), the
+                                                 widget's Grist manifest (run by the deploy workflow
+                                                 after vite build; --owner-repo defaults to
+                                                 $GITHUB_REPOSITORY)
   create-grist-widget list [--json]              List available starting examples
 
 Options (create / init):

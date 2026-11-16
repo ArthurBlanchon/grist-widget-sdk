@@ -15,7 +15,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
 
-import { referenceOf } from "./api-reference.mjs"
+import { referenceOf, reexportsOf } from "./api-reference.mjs"
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
 const check = process.argv.includes("--check")
@@ -96,11 +96,15 @@ for (const { entry, dts, report } of ENTRIES) {
     console.log(`api/${report}.api.md ${result.apiReportChanged ? "updated" : "unchanged"}`)
   }
 }
-// The docs' reference, from the doc models just written.
+// The docs' reference, from the doc models just written (and the reports,
+// for re-exports). Not after a failed entry: its doc model may be stale.
+if (failed) process.exit(1)
 const reference = {}
 for (const { entry, report } of ENTRIES) {
   const name = entry === "." ? "grist-widget-sdk" : `grist-widget-sdk${entry.slice(1)}`
-  reference[name] = referenceOf(JSON.parse(readFileSync(path.join(tempFolder, `${report}.api.json`), "utf8")))
+  const own = referenceOf(JSON.parse(readFileSync(path.join(tempFolder, `${report}.api.json`), "utf8")))
+  const reexported = reexportsOf(readFileSync(path.join(reportFolder, `${report}.api.md`), "utf8"))
+  reference[name] = [...own, ...reexported].sort((a, b) => a.name.localeCompare(b.name))
 }
 const referenceFile = path.join(reportFolder, "reference.json")
 const next = `${JSON.stringify(reference, null, 2)}\n`

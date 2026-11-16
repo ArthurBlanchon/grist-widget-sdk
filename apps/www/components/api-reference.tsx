@@ -19,8 +19,10 @@ function Summary({ text }: { text: string }) {
   );
 }
 
-export function ApiReference({ entry, kinds }: { entry: Entry; kinds?: string[] }) {
-  const rows = (reference[entry] as Row[]).filter((row) => !kinds || kinds.includes(row.kind));
+export function ApiReference({ entry }: { entry: Entry }) {
+  // MDX isn't type-checked: an unknown entry fails the build by name.
+  const rows = (reference as Record<string, Row[] | undefined>)[entry];
+  if (!rows) throw new Error(`ApiReference: no entry point "${entry}" in packages/core/api/reference.json`);
   return (
     <table>
       <thead>

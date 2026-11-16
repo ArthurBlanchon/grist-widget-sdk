@@ -128,7 +128,7 @@
     {
       "name": "GristColumnarTable",
       "kind": "type",
-      "summary": "Column-oriented table payload (`fetchTable`, `fetchSelectedTable`): `{ id: [...], Name: [...] }`."
+      "summary": "Column-oriented table payload, as Grist's `grist.docApi.fetchTable` and `grist.fetchSelectedTable` send it: `{ id: [...], Name: [...] }`."
     },
     {
       "name": "GristColumnExcludeContext",
@@ -183,7 +183,7 @@
     {
       "name": "GristFetchSelectedOptions",
       "kind": "type",
-      "summary": "Options for `fetchSelectedTable` / `fetchSelectedRecord` on `docApi` (GristView)."
+      "summary": "Options for Grist's own `grist.fetchSelectedTable` / `grist.fetchSelectedRecord` (GristView)."
     },
     {
       "name": "GristFormulaKind",
@@ -557,7 +557,7 @@
     {
       "name": "GristWidgetEntry",
       "kind": "type",
-      "summary": "A widget's entry module, `src/app/App.tsx`, as `import * as entry` gives it: the widget as its default export, its declaration as `widget` (or, in a widget made before `defineGristWidget`, `GRIST_OPTIONS` and `WIDGET_METADATA`), and optionally its own `Alerts`, `LocalDevPage` and `ReleasePage`. Everything a widget customises lives there, in its own file: the template's `src/main.tsx` stays the same in every widget, and `create-grist-widget upgrade` can rewrite it without losing anything."
+      "summary": "A widget's entry module, `src/app/App.tsx`, as `import * as entry` gives it: the widget as its default export, its declaration as `widget`, and optionally its own `Alerts`, `LocalDevPage` and `ReleasePage`."
     },
     {
       "name": "MountedGristWidget",
@@ -850,6 +850,11 @@
   ],
   "grist-widget-sdk/emulator/testing": [
     {
+      "name": "act",
+      "kind": "re-export",
+      "summary": "Re-exported from `@testing-library/react`, unchanged."
+    },
+    {
       "name": "actionsOf",
       "kind": "function",
       "summary": "The user actions applied to the emulator, oldest first: the widget's, and the test's own `apply` and `mutate`. Read from the bus's history, which keeps the last 200 events and is cleared by `dispose()`.",
@@ -858,12 +863,22 @@
       ]
     },
     {
+      "name": "cleanup",
+      "kind": "re-export",
+      "summary": "Re-exported from `@testing-library/react`, unchanged."
+    },
+    {
       "name": "eventsOf",
       "kind": "function",
       "summary": "The last 200 events on the emulator's bus, oldest first (cleared by `dispose()`): ready, cursor, data, options, mappings, theme and user actions.",
       "signatures": [
         "eventsOf(emulator: GristEmulator): readonly EmulatorEvent[]"
       ]
+    },
+    {
+      "name": "fireEvent",
+      "kind": "re-export",
+      "summary": "Re-exported from `@testing-library/react`, unchanged."
     },
     {
       "name": "installJsdomStubs",
@@ -877,6 +892,21 @@
       "name": "presets",
       "kind": "const",
       "summary": "Useful templates for quick demos and tests."
+    },
+    {
+      "name": "render",
+      "kind": "re-export",
+      "summary": "Re-exported from `@testing-library/react`, unchanged."
+    },
+    {
+      "name": "RenderOptions",
+      "kind": "re-export",
+      "summary": "Re-exported from `@testing-library/react`, unchanged."
+    },
+    {
+      "name": "RenderResult",
+      "kind": "re-export",
+      "summary": "Re-exported from `@testing-library/react`, unchanged."
     },
     {
       "name": "renderWithGrist",
@@ -897,6 +927,11 @@
       "summary": "Testing Library's render result, with the emulator the widget runs against."
     },
     {
+      "name": "screen",
+      "kind": "re-export",
+      "summary": "Re-exported from `@testing-library/react`, unchanged."
+    },
+    {
       "name": "smokeTestWidget",
       "kind": "function",
       "summary": "Mounts the widget the way `mountGristWidget()` does inside Grist, against an emulated Grist document with every column it declares mapped and the access it requests granted, and waits until it renders past `GristBoundary`. Resolves once it has, rejects with the widget's own error if it throws, or with what the page showed instead if it never gets there. Then unmounts.",
@@ -908,6 +943,11 @@
       "name": "SmokeTestWidgetOptions",
       "kind": "type",
       "summary": "What `smokeTestWidget()` renders, and against which document."
+    },
+    {
+      "name": "waitFor",
+      "kind": "re-export",
+      "summary": "Re-exported from `@testing-library/react`, unchanged."
     },
     {
       "name": "waitForEvent",
@@ -927,6 +967,11 @@
       "name": "WaitForEventOptions",
       "kind": "type",
       "summary": "`waitForEvent()`'s options: how long to wait, in ms (default 1000)."
+    },
+    {
+      "name": "within",
+      "kind": "re-export",
+      "summary": "Re-exported from `@testing-library/react`, unchanged."
     }
   ]
 }

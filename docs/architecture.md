@@ -43,8 +43,10 @@ Grist document
   `useGrist()` throws outside a provider; `useGristOptional()` returns
   `null` there.
 - **The runtime** (`packages/core/src/sdk/runtime/`) is one store per
-  provider, read through `useSyncExternalStore`, so a component re-renders
-  only when a value it reads changes:
+  provider, read through `useSyncExternalStore`: every component that
+  calls `useGrist()` re-renders once per change Grist sends (the render
+  budget in `packages/core/bench/` pins how many), and derived values
+  (`mappedRecord`, `mappedRecords`) are memoised on their inputs:
   - `ready.ts` calls `grist.ready` once;
   - `host.ts` holds the subscriptions;
   - `derive.ts` computes mapped and typed values;

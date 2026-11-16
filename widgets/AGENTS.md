@@ -99,7 +99,11 @@ install URL) and at `/latest/`
 new version publishes nothing, and a released version is never rebuilt.
 Before releasing, check what `main` holds in a real Grist document at
 `/widgets/<slug>/dev/`; a pull request's preview serves its branch the same
-way.
+way. Whoever merges a widget's pull request reads its "Compared with the
+last release" lines in the `widgets` job's summary first. When pixels
+changed, open the `-diff.png` in the screenshots artifact and say in the
+pull request whether the change is intended. "Unchanged" proves nothing
+the widget's own tests don't: the pull request's own code made the report.
 
 ## Commands
 

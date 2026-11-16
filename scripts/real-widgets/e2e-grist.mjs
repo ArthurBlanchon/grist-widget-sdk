@@ -92,7 +92,11 @@ export function parseArgs(argv) {
     else if (a === "--strict-console") out.strictConsole = true
     else if (a === "--standard") out.standard = true
     else if (a === "--out") out.out = argv[++i]
-    else if (a === "--baseline") out.baseline = path.resolve(argv[++i])
+    else if (a === "--baseline") {
+      const dir = argv[++i]
+      if (!dir || dir.startsWith("--")) throw new Error("--baseline needs a directory: a checkout of the widgets-dist branch")
+      out.baseline = path.resolve(dir)
+    }
     else if (a === "--grist-url") out.gristUrl = argv[++i]
     else if (a === "--timeout") out.timeout = Number(argv[++i])
     else out.dirs.push(path.resolve(a))
@@ -167,16 +171,27 @@ export function releasedBuild(baseline, slug) {
   return version ? { version, dir: path.join(baseline, slug, version) } : null
 }
 
-/** A screenshot of the widget's frame alone, in Grist's page, to `file`; false if the frame isn't there. */
+/**
+ * A screenshot of the widget's frame alone, in Grist's page, to `file`, with
+ * animations stopped and the caret hidden; false if the frame isn't there or
+ * can't be captured (never thrown: the comparison is reported, not failed on).
+ */
 async function frameShot(page, origin, file) {
-  for (const el of await page.$$("iframe")) {
-    if ((await el.getAttribute("src"))?.startsWith(origin)) {
-      await el.screenshot({ path: file })
-      return true
+  try {
+    for (const el of await page.$$("iframe")) {
+      if ((await el.getAttribute("src"))?.startsWith(origin)) {
+        await el.screenshot({ path: file, animations: "disabled", caret: "hide", timeout: 15_000 })
+        return true
+      }
     }
+  } catch {
+    // Reported by the caller as a frame that couldn't be captured.
   }
   return false
 }
+
+/** The instant both builds' pages are shown at: a widget that shows "today" draws the same day in both. */
+export const COMPARISON_CLOCK = new Date("2026-03-16T10:00:00Z")
 
 /**
  * How much of `before` (a PNG) `after` changes: the share of pixels whose
@@ -216,12 +231,12 @@ export async function compareShots(browser, before, after, diffFile, tolerance =
           d[i + 3] = 255
         }
         pb.ctx.putImageData(pb.data, 0, 0)
-        return { changed: n / (d.length / 4), resized: null, diff: pb.c.toDataURL("image/png") }
+        return { changed: n / (d.length / 4), pixels: n, resized: null, diff: pb.c.toDataURL("image/png") }
       },
       { a: url(before), b: url(after), tolerance },
     )
     if (out.diff) writeFileSync(diffFile, Buffer.from(out.diff.split(",")[1], "base64"))
-    return { changed: out.changed, resized: out.resized, diff: out.diff ? diffFile : null }
+    return { changed: out.changed, pixels: out.pixels ?? null, resized: out.resized, diff: out.diff ? diffFile : null }
   } finally {
     await page.close()
   }
@@ -362,9 +377,6 @@ async function checkWidget({ browser, gristUrl, api, wsId, widgetDir, outDir, ti
     mkdirSync(outDir, { recursive: true })
     result.screenshot = path.join(outDir, `${name}.png`)
     await page.screenshot({ path: result.screenshot })
-    // This build's frame alone, for the comparison with the last release.
-    const frames = {}
-    if (baseline && state === "rendered" && (await frameShot(page, origin, path.join(outDir, `${name}-frame.png`)))) frames.light = path.join(outDir, `${name}-frame.png`)
 
     let a11y = null
     if (axe && state === "rendered" && frame) {
@@ -432,14 +444,27 @@ async function checkWidget({ browser, gristUrl, api, wsId, widgetDir, outDir, ti
       result.darkApplied = dark.frame
         ? await dark.frame.evaluate(() => document.documentElement.classList.contains("dark")).catch(() => false)
         : false
-      if (baseline && dark.state === "rendered" && (await frameShot(page, origin, path.join(outDir, `${name}-dark-frame.png`)))) frames.dark = path.join(outDir, `${name}-dark-frame.png`)
     }
 
-    // The last release on the same document, compared: reported, never failed on.
-    if (baseline && Object.keys(frames).length) {
-      result.visual = await compareWithRelease({ browser, context, gristUrl, api, wsId, name, options, demo, baseline, frames, outDir, timeout }).catch((e) => ({
-        note: `not compared: ${String(e?.message ?? e).slice(0, 200)}`,
-      }))
+    // The last release on a document made the same way, compared: reported, never failed on.
+    if (baseline) {
+      result.visual =
+        state === "rendered"
+          ? await compareWithRelease({
+              browser,
+              gristUrl,
+              api,
+              wsId,
+              name,
+              options,
+              demo,
+              baseline,
+              current: { origin, doc: result.doc },
+              themes: themes ? ["light", "dark"] : ["light"],
+              outDir,
+              timeout,
+            }).catch((e) => ({ note: `not compared: ${String(e?.message ?? e).slice(0, 200)}` }))
+          : { note: `not compared: this build didn't render (${state})` }
     }
 
     if (state !== "rendered") result.reason = state
@@ -457,50 +482,78 @@ async function checkWidget({ browser, gristUrl, api, wsId, widgetDir, outDir, ti
 
 /**
  * The widget's last released build (widgets-dist) on a document made as this
- * build's, screenshotted in the same themes and compared with it.
+ * build's, both screenshotted in each theme in a context of their own, with
+ * the clock fixed at COMPARISON_CLOCK, and compared.
  */
-async function compareWithRelease({ browser, context, gristUrl, api, wsId, name, options, demo, baseline, frames, outDir, timeout }) {
+async function compareWithRelease({ browser, gristUrl, api, wsId, name, options, demo, baseline, current, themes, outDir, timeout }) {
   const released = releasedBuild(baseline, name)
   if (!released) return { note: "no released version to compare with" }
   const server = await serve(released.dir)
+  const context = await browser.newContext({ viewport: { width: 1400, height: 900 } })
   try {
+    await context.clock.setFixedTime(COMPARISON_CLOCK)
+    await context.route("https://docs.getgrist.com/grist-plugin-api.js", async (route) => {
+      const r = await fetch(`${gristUrl}/grist-plugin-api.js`)
+      await route.fulfill({ status: 200, contentType: "text/javascript", body: await r.text() })
+    })
+    await context.request.get(`${gristUrl}/login`)
     const origin = `http://127.0.0.1:${server.address().port}`
     const { docId, viewId } = await createDocument(api, wsId, `${name} ${released.version}`, options, `${origin}/${name}/dev/`, demo)
+    const builds = { current, released: { origin, doc: `${gristUrl}/doc/${docId}/p/${viewId}` } }
     const out = { version: released.version, themes: [] }
-    for (const [theme, current] of Object.entries(frames)) {
-      const page = await context.newPage()
-      try {
-        await page.emulateMedia({ colorScheme: theme === "dark" ? "dark" : "light" })
-        await page.goto(`${gristUrl}/doc/${docId}/p/${viewId}`)
-        const { state } = await waitRendered(page, origin, timeout)
-        if (state !== "rendered") {
-          out.themes.push({ theme, note: `the released version: ${state}` })
-          continue
+    for (const theme of themes) {
+      const suffix = theme === "dark" ? "-dark" : ""
+      const shots = {}
+      for (const [which, build] of Object.entries(builds)) {
+        const page = await context.newPage()
+        try {
+          await page.emulateMedia({ colorScheme: theme })
+          await page.goto(build.doc)
+          const { state } = await waitRendered(page, build.origin, timeout)
+          if (state !== "rendered") {
+            shots.note ??=
+              which === "released"
+                ? `the released version: ${state} (on this build's document: its columns or demo data may have changed)`
+                : `this build: ${state}`
+            continue
+          }
+          await page.waitForTimeout(1500)
+          const file = path.join(outDir, `${name}${suffix}-${which}.png`)
+          if (await frameShot(page, build.origin, file)) shots[which] = file
+          else shots.note ??= `${which === "released" ? "the released version's" : "this build's"} frame couldn't be captured`
+        } finally {
+          await page.close()
         }
-        await page.waitForTimeout(theme === "dark" ? 1000 : 2000)
-        const before = path.join(outDir, `${name}${theme === "dark" ? "-dark" : ""}-released.png`)
-        if (!(await frameShot(page, origin, before))) {
-          out.themes.push({ theme, note: "the released version's frame wasn't found" })
-          continue
-        }
-        const diff = path.join(outDir, `${name}${theme === "dark" ? "-dark" : ""}-diff.png`)
-        out.themes.push({ theme, ...(await compareShots(browser, before, current, diff)) })
-      } finally {
-        await page.close()
+      }
+      if (shots.current && shots.released) {
+        out.themes.push({ theme, ...(await compareShots(browser, shots.released, shots.current, path.join(outDir, `${name}${suffix}-diff.png`))) })
+      } else {
+        out.themes.push({ theme, note: shots.note ?? "not captured" })
       }
     }
     return out
   } finally {
+    await context.close()
     server.close()
   }
 }
+
+/** A share as a percentage, with two significant digits below 1%: a few pixels never read as 0%. */
+const percent = (share) => `${share * 100 >= 1 ? (share * 100).toFixed(1) : (share * 100).toPrecision(2)}%`
+
+/** Text for a cell of a Markdown table: no pipe or line break to break the row. */
+export const tableCell = (text) => String(text).replace(/[|]/g, "\\|").replace(/\s*\n\s*/g, " ")
 
 /** One line on a comparison with the last release, for the log and the job summary. */
 export function visualLine(visual) {
   if (!visual) return null
   if (visual.note) return visual.note
   const parts = visual.themes.map((t) =>
-    t.note ? `${t.theme}: ${t.note}` : t.resized ? `${t.theme}: resized ${t.resized}` : `${t.theme}: ${t.changed === 0 ? "unchanged" : `${(t.changed * 100).toFixed(t.changed < 0.001 ? 2 : 1)}% of pixels changed`}`,
+    t.note
+      ? `${t.theme}: ${t.note}`
+      : t.resized
+        ? `${t.theme}: resized ${t.resized}`
+        : `${t.theme}: ${t.changed === 0 ? "unchanged" : `${t.pixels ?? "some"} pixels changed (${percent(t.changed)})`}`,
   )
   return `against ${visual.version}: ${parts.join(", ")}`
 }
@@ -509,6 +562,10 @@ export function visualLine(visual) {
 
 async function main() {
   const args = parseArgs(process.argv.slice(2))
+  if (args.baseline && !existsSync(args.baseline)) {
+    console.error(`--baseline: ${args.baseline} doesn't exist (a checkout of the widgets-dist branch)`)
+    process.exit(2)
+  }
   if (!args.dirs.length) {
     console.error("Usage: pnpm e2e:grist <widget dir>... [--build] [--axe] [--themes] [--strict-console] [--standard] [--baseline <widgets-dist dir>] [--out <dir>] [--grist-url <url>] [--keep] [--timeout <s>]")
     process.exit(2)
@@ -565,11 +622,11 @@ async function main() {
     appendFileSync(
       process.env.GITHUB_STEP_SUMMARY,
       `### Real Grist (${GRIST_IMAGE})\n\n| Widget | Result |\n| --- | --- |\n` +
-        results.map((r) => `| ${r.widget} | ${r.ok ? "renders" : `**fails:** ${r.reason}`} |`).join("\n") +
+        results.map((r) => `| ${r.widget} | ${r.ok ? "renders" : `**fails:** ${tableCell(r.reason)}`} |`).join("\n") +
         "\n" +
         (args.baseline
           ? "\n### Compared with the last release (reported, not failed on)\n\n| Widget | Pixels |\n| --- | --- |\n" +
-            results.map((r) => `| ${r.widget} | ${visualLine(r.visual) ?? "not compared"} |`).join("\n") +
+            results.map((r) => `| ${r.widget} | ${tableCell(visualLine(r.visual) ?? `not compared: ${r.reason || "no result"}`)} |`).join("\n") +
             "\n\nThe screenshots artifact has each `-diff.png`: the changed pixels in red.\n"
           : "")
     )

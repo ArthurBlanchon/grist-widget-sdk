@@ -94,7 +94,7 @@ test("--baseline finds the last released build, and a comparison reads as one li
   const { mkdtempSync, mkdirSync, writeFileSync } = await import("node:fs")
   const { tmpdir } = await import("node:os")
   const { join } = await import("node:path")
-  const { parseArgs, releasedBuild, visualLine } = await import("./e2e-grist.mjs")
+  const { parseArgs, releasedBuild, tableCell, visualLine } = await import("./e2e-grist.mjs")
   const dist = mkdtempSync(join(tmpdir(), "widgets-dist-"))
   for (const v of ["0.1.2", "0.10.0", "0.9.1"]) {
     mkdirSync(join(dist, "map", v), { recursive: true })
@@ -106,14 +106,22 @@ test("--baseline finds the last released build, and a comparison reads as one li
   assert.equal(releasedBuild(dist, "gantt"), null)
   assert.equal(parseArgs(["w", "--baseline", dist]).baseline, dist)
   assert.equal(parseArgs(["w"]).baseline, null)
+  assert.throws(() => parseArgs(["w", "--baseline"]), /--baseline needs a directory/)
+  assert.throws(() => parseArgs(["w", "--baseline", "--themes"]), /--baseline needs a directory/)
 
   assert.equal(visualLine(undefined), null)
   assert.equal(visualLine({ note: "no released version to compare with" }), "no released version to compare with")
   assert.equal(
-    visualLine({ version: "0.1.2", themes: [{ theme: "light", changed: 0 }, { theme: "dark", changed: 0.0347 }] }),
-    "against 0.1.2: light: unchanged, dark: 3.5% of pixels changed",
+    visualLine({ version: "0.1.2", themes: [{ theme: "light", changed: 0 }, { theme: "dark", changed: 0.0347, pixels: 3470 }] }),
+    "against 0.1.2: light: unchanged, dark: 3470 pixels changed (3.5%)",
   )
-  assert.equal(visualLine({ version: "0.1.2", themes: [{ theme: "light", changed: 0.0004 }] }), "against 0.1.2: light: 0.04% of pixels changed")
+  // A few pixels on a large frame never read as 0%.
+  assert.equal(visualLine({ version: "0.1.2", themes: [{ theme: "light", changed: 9 / 1e6, pixels: 9 }] }), "against 0.1.2: light: 9 pixels changed (0.00090%)")
   assert.equal(visualLine({ version: "0.1.2", themes: [{ theme: "light", changed: 1, resized: "10×10 → 10×12" }] }), "against 0.1.2: light: resized 10×10 → 10×12")
   assert.equal(visualLine({ version: "0.1.2", themes: [{ theme: "dark", note: "the released version: blank" }] }), "against 0.1.2: dark: the released version: blank")
+})
+
+test("a table cell keeps its row whole", async () => {
+  const { tableCell } = await import("./e2e-grist.mjs")
+  assert.equal(tableCell("a | b\n  c"), "a \\| b c")
 })

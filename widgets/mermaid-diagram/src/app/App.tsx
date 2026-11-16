@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 
 import { defineGristWidget } from "grist-widget-sdk"
 
@@ -33,7 +33,8 @@ export default function App() {
   const [theme, setTheme] = useState(() => document.documentElement.className)
 
   const rowsMode = Boolean(w.mappings.From && w.mappings.To)
-  const source = rowsMode ? flowchart(w.mappedRecords ?? []).source : (w.mappedRecord?.Diagram ?? "").trim()
+  const chart = useMemo(() => (rowsMode ? flowchart(w.mappedRecords ?? []) : null), [rowsMode, w.mappedRecords])
+  const source = chart ? chart.source : (w.mappedRecord?.Diagram ?? "").trim()
 
   // Grist's light and dark themes change the colours the diagram is drawn with.
   useEffect(() => {
@@ -90,6 +91,11 @@ export default function App() {
           {t("download")}
         </Button>
       </header>
+      {chart && chart.edges < chart.rows ? (
+        <p role="status" className="text-xs text-muted-foreground">
+          {t("partial", { drawn: chart.edges, rows: chart.rows })}
+        </p>
+      ) : null}
       {error ? (
         <Alert variant="destructive">
           <AlertDescription>{t("syntax", { error })}</AlertDescription>

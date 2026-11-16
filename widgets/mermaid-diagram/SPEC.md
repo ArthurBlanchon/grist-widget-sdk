@@ -63,6 +63,9 @@ flowchart, the entry chunk (about 140 KB) and its own chunks.
   French.
 - **AC-10** Given a diagram larger than the panel, it can be reached with
   Tab and scrolled from the keyboard, with a visible focus ring.
+- **AC-11** Given more rows than a diagram can hold (Mermaid draws at most
+  500 arrows and 50,000 characters), rows mode draws the first rows that
+  fit and says how many of how many are drawn, never Mermaid's error.
 
 ## Standard criteria
 

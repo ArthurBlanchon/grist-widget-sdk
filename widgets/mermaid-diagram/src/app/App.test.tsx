@@ -57,6 +57,16 @@ describe("Mermaid diagram", () => {
     expect(lastSource().split("\n")).toEqual(['flowchart LR', '  n0["Order"]', '  n1["Pay"]', '  n2["Ship"]', '  n0 -->|"checkout"| n1', "  n1 --> n2"])
   })
 
+  it("AC-11 draws the first rows Mermaid can, and says how many are left out (#92)", async () => {
+    // Mermaid refuses more than 500 arrows, or more than 50,000 characters, with an error nobody can act on.
+    rows(Array.from({ length: 501 }, (_, i) => ({ From: `Step ${i}`, To: `Step ${i + 1}` })))
+    await waitFor(() => expect(lastSource()).toContain("flowchart LR"))
+    const src = lastSource()
+    expect(src.split("\n").filter((l) => l.includes("-->")).length).toBeLessThanOrEqual(500)
+    expect(src.length).toBeLessThanOrEqual(50_000)
+    expect(screen.getByText(/The first 500 of 501 rows are drawn/)).toBeInTheDocument()
+  })
+
   it("AC-3 draws a value with Mermaid syntax in it as text", async () => {
     rows([{ From: 'A"] --> X["evil', To: "click A call alert()", Label: "a|b" }])
     await waitFor(() => expect(lastSource()).toContain("flowchart LR"))

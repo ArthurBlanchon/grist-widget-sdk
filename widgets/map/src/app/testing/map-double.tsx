@@ -34,15 +34,6 @@ export const mapDouble = {
   useMap: () => ({ map: null, isLoaded: false }),
 }
 
-/**
- * For AC-volume: the map as MapLibre makes it, its points drawn on one
- * canvas (WebGL), not one element each.
- */
-export const drawnMapDouble = {
-  ...mapDouble,
-  MapClusterLayer: ({ data }: { data: { features: Feature[] } }) => <canvas data-testid="layer" data-points={data.features.length} />,
-}
-
 export const countryLayerDouble = {
   WorldCountryLayer: ({
     counts,

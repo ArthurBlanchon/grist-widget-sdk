@@ -48,6 +48,11 @@ describe("volumeDocument", () => {
     expect(document.selection).toEqual({ tableId: "Sales", rowId: 1 })
   })
 
+  it("makes a column's value distinct on every row when asked: the worst case for grouping", () => {
+    const { document } = volumeDocument(widget, demo, 3, { unique: ["Month"] })
+    expect(document.tables.Sales!.rows!.map((r) => r.Month)).toEqual(["Jan 1", "Feb 2", "Jan 3"])
+  })
+
   it("says so when the demo's table is missing or empty", () => {
     expect(() => volumeDocument(widget, { ...demo, table: "Nope" })).toThrow(/no table Nope/)
     expect(() => volumeDocument(widget, { tables: { Sales: { ...demo.tables.Sales!, rows: [] } } })).toThrow(/has no rows/)

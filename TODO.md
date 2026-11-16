@@ -51,8 +51,8 @@ Each item is one pull request; the plan says when each milestone is done.
 - [ ] **M6. Documentation, alongside.** Left: R5's generated reference
   (TSDoc for the 27 public names without it, then the reference generated
   per entry point, and the CLI's from its help: `packages/`, so the
-  maintainer's go), and the concept page "How the SDK works" (the
-  declaration, provider, boundary, runtime). Done: R1 to R4, the old-forms
+  maintainer's go). Done: R1 to R4, the concept page "How the SDK works"
+  (#102), the old-forms
   check blocking in CI, `cheatsheet` and `cookbook` retired with redirects
   (each example's code linked from the Examples page), *Replica document*
   under Concepts (its URL stays `sdk/design/replica-document`).

@@ -147,6 +147,29 @@ export function parseFrontMatter(text) {
 /** The `## ` headings of a Markdown body. */
 export const sections = (body) => [...body.matchAll(/^## (.+)$/gm)].map((m) => m[1].trim())
 
+/** The standard criteria every catalog spec lists (ADR 0018), and the one a test checks in the widget. */
+export const STANDARD_CRITERIA = ["AC-volume", "AC-keyboard", "AC-narrow", "AC-readonly"]
+
+/**
+ * The widgets that don't carry the standard criteria yet: every other one
+ * must (ADR 0018). This list only shrinks; each widget leaves it in the
+ * pull request that gives it the section and its AC-volume test.
+ */
+export const STANDARD_PENDING = [
+  "attachment-viewer", "bulk-editor", "chart-builder", "document-template", "duplicate-finder", "file-uploader",
+  "gantt", "grouped-view", "kanban-board", "mail-merge", "map", "mermaid-diagram", "record-editor",
+  "record-selector", "schema-viewer", "signature-pad",
+]
+
+/** A test named for `id`, not skipped nor left to do: `it("AC-1 …")`, `it.only(…)` but no `it.skip(…)`. */
+export const namesTest = (tests, id) => new RegExp(`\\bit(?:\\.(?!skip\\b|todo\\b|fails\\b)\\w+)?\\(\\s*["'\`]${id}\\b`).test(tests)
+
+/** The standard criteria ids (`**AC-volume**`) a spec's "Standard criteria" section lists. */
+export const standardCriteria = (body) => {
+  const section = /^##[ \t]+standard criteria[ \t]*\r?\n([\s\S]*?)(?=^## |(?![\s\S]))/im.exec(body)?.[1]
+  return section === undefined ? null : [...new Set([...section.matchAll(/\*\*(AC-[a-z]+)\*\*/g)].map((m) => m[1]))]
+}
+
 /** The acceptance criteria ids (`**AC-1**`) a spec lists, in order. */
 export const criteria = (body) => [...new Set([...body.matchAll(/\*\*(AC-\d+)\*\*/g)].map((m) => m[1]))]
 
@@ -298,7 +321,17 @@ export function checkStatic(slug, dir = join(WIDGETS_DIR, slug)) {
   const ids = criteria(body)
   if (ids.length === 0) problems.push("SPEC.md: no acceptance criteria (**AC-1** …)")
   for (const id of ids) {
-    if (!new RegExp(`\\bit(?:\\.\\w+)?\\(\\s*["'\`]${id}\\b`).test(tests)) problems.push(`${id}: no test names it (it("${id} …"))`)
+    if (!namesTest(tests, id)) problems.push(`${id}: no test names it (it("${id} …"))`)
+  }
+  // The standard criteria (ADR 0018), where the spec carries them: the four
+  // listed, and AC-volume's test; the e2e check (--standard) checks the rest.
+  const standard = standardCriteria(body)
+  if (!standard && !STANDARD_PENDING.includes(slug)) problems.push("SPEC.md: no Standard criteria section (ADR 0018; new-widget writes it)")
+  if (standard) {
+    const missing = STANDARD_CRITERIA.filter((id) => !standard.includes(id))
+    if (missing.length) problems.push(`SPEC.md: the Standard criteria section lacks ${missing.join(", ")}`)
+    if (!namesTest(tests, "AC-volume")) problems.push('AC-volume: no test names it (it("AC-volume …"))')
+    else if (!tests.includes("expectVolume(")) problems.push("AC-volume: its test doesn't call expectVolume() (@shared/testing), which holds the budget")
   }
 
   // Tests aside, and the demo data, whose colours are a Grist document's choices.

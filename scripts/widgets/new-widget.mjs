@@ -71,6 +71,15 @@ TODO: who uses it, for what, and what Grist does without it.
 
 - **AC-1** Given a row, when the widget opens, its title is shown.
 
+## Standard criteria
+
+The same in every catalog widget ([ADR 0018](../../docs/decisions/0018-standard-criteria.md)).
+
+- **AC-volume** Given 5,000 rows, the widget renders them with at most 3,000 DOM nodes.
+- **AC-keyboard** Tab reaches the widget's controls without getting stuck, and the page passes axe after it.
+- **AC-narrow** The widget fits a 320 px side panel and a 1,280 px page, without scrolling sideways.
+- **AC-readonly** On a document open read-only, the widget shows its data, and if it writes, it says why it can't.
+
 ## Out of scope
 
 - TODO
@@ -128,8 +137,10 @@ export default function App() {
     "src/app/App.test.tsx": `import "@testing-library/jest-dom/vitest"
 import { afterEach, expect, it } from "vitest"
 import { cleanup, renderWithGrist, screen } from "grist-widget-sdk/emulator/testing"
+import { expectVolume, VOLUME_TIMEOUT_MS } from "@shared/testing"
 
 import App, { widget } from "./App"
+import { demo } from "./demo"
 
 afterEach(() => cleanup())
 
@@ -137,6 +148,9 @@ it("AC-1 shows the row's title", async () => {
   renderWithGrist(<App />, { widget, rows: [{ Title: "First" }] })
   expect(await screen.findByRole("heading", { name: "First" })).toBeInTheDocument()
 })
+
+// AC-keyboard, AC-narrow and AC-readonly are checked in a real Grist (e2e-grist --standard).
+it("AC-volume renders 5,000 rows within the DOM budget", () => expectVolume(<App />, widget, demo), VOLUME_TIMEOUT_MS)
 `,
     "src/app/App.smoke.test.tsx": readFileSync(join(WIDGETS_DIR, "kanban-board", "src", "app", "App.smoke.test.tsx"), "utf8"),
   }

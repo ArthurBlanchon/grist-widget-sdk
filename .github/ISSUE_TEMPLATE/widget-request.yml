@@ -1,0 +1,36 @@
+name: Widget request
+description: A widget the catalog (gristwidgets.com) doesn't have yet.
+labels: ["widget-request", "area:catalog", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe the job the widget would do in your documents. This issue is public: describe your tables, not their content.
+  - type: textarea
+    id: job
+    attributes:
+      label: The job
+      description: What you'd do with it, in a sentence or two. "See my tasks on a timeline and drag them to new dates" beats "a Gantt chart".
+    validations:
+      required: true
+  - type: textarea
+    id: columns
+    attributes:
+      label: Your table
+      description: The columns the widget would read (and write, if it should), with their Grist types (Text, Date, Reference…).
+    validations:
+      required: true
+  - type: input
+    id: closest
+    attributes:
+      label: The closest catalog widget
+      description: The widget that comes nearest today, if any, and what it lacks.
+    validations:
+      required: false
+  - type: textarea
+    id: example
+    attributes:
+      label: An example
+      description: A link to a tool or a screenshot of something that does this job well, if you have one.
+    validations:
+      required: false

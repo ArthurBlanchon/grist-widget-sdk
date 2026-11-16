@@ -116,6 +116,7 @@ Run these from the repository root.
 | Intent | Command |
 | --- | --- |
 | Start a widget (pnpm new-widget does the same) | `node scripts/widgets/new-widget.mjs <slug>` |
+| The issue labels from the catalog, `widget:<slug>` and `area:*` (the labels workflow runs `--sync` on main) | `node scripts/widgets/labels.mjs` |
 | Check every widget's spec, criteria, declaration and design rules (pnpm check:widgets does the same) | `node scripts/widgets/check-widgets.mjs` |
 | Test one widget | `pnpm --filter @grist-widgets/kanban-board test` |
 | Type-check it | `pnpm --filter @grist-widgets/kanban-board typecheck` |

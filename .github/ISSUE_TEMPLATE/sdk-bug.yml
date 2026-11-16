@@ -1,0 +1,50 @@
+name: SDK or CLI bug
+description: grist-widget-sdk, create-grist-widget, the template or the docs doesn't work as documented.
+labels: ["bug", "triage"]
+body:
+  - type: dropdown
+    id: package
+    attributes:
+      label: Where
+      options:
+        - grist-widget-sdk
+        - create-grist-widget (the CLI)
+        - The scaffolded template
+        - The docs site
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: The package's version (`pnpm list grist-widget-sdk create-grist-widget`), or the docs page's URL.
+    validations:
+      required: true
+  - type: input
+    id: grist-version
+    attributes:
+      label: Grist version
+      description: 'If it happens inside Grist: "Help" then "About", or the admin panel on a self-hosted Grist. "Don''t know" is fine.'
+    validations:
+      required: false
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you expected, and what happened instead, with the error.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: A minimal `useGrist()` call or CLI command that shows it. A failing `renderWithGrist` test is the fastest way to a fix (gristwidgets.com/docs/emulator/testing).
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Node version, package manager and its version, browser if it matters.
+    validations:
+      required: false

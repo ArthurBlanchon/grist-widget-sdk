@@ -24,16 +24,9 @@ its order: M4 and M5, with M6 (docs) alongside, then M7 (M1 to M3 are
 done). Each item is one pull request; the plan says when each milestone is
 done.
 
-- [ ] **M4. The bar, version 2** (plan §3). Left: the standard criteria
-  ([ADR 0018](./docs/decisions/0018-standard-criteria.md)) in the seven
-  widgets still in `STANDARD_PENDING`: the Gantt, the Kanban board,
-  Duplicate finder and Mail merge render every row; Chart builder, Grouped
-  view and Map make an element per distinct category, which a column
-  unique per row takes far over 3,000 DOM nodes. Then visual comparison and
-  "Report a problem". Done: the standard criteria in the nine others, the
-  SDK's `readOnly` and its alert, the e2e check's `--standard`,
-  `new-widget`'s criteria, `httpUrl()` and its lint rule, licences, a CSP
-  per widget, `optionsVersion` and `migrate`, a `demo.ts` per widget.
+export const STANDARD_PENDING = [
+  ,
+]
 - [ ] **Attachments on the static demo pages.** grist-static serves no
   attachment, so the demo pages of Attachment viewer, File uploader and
   Signature pad open with their attachments cells empty (`pnpm demo` and

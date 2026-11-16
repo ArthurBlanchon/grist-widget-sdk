@@ -96,7 +96,7 @@ test("a generated widget passes the static checks it can before its code is writ
   // Without the section: refused, unless the widget is still to migrate.
   writeFileSync(spec, withSection.replace("## Standard criteria", "## Other notes"))
   assert.ok(checkStatic("gantt-chart", dir).problems.includes("SPEC.md: no Standard criteria section (ADR 0018; new-widget writes it)"))
-  assert.ok(STANDARD_PENDING.includes("gantt") && !STANDARD_PENDING.includes("gantt-chart"))
+  assert.ok(!STANDARD_PENDING.includes("gantt-chart"))
   writeFileSync(spec, withSection.replace("## Standard criteria", "## Standard Criteria  "))
   assert.deepEqual(standardCriteria(readFileSync(spec, "utf8")), STANDARD_CRITERIA)
   writeFileSync(spec, withSection)

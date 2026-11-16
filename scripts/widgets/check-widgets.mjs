@@ -155,8 +155,7 @@ export const STANDARD_CRITERIA = ["AC-volume", "AC-keyboard", "AC-narrow", "AC-r
  * must (ADR 0018). This list only shrinks; each widget leaves it in the
  * pull request that gives it the section and its AC-volume test.
  */
-export const STANDARD_PENDING = [
-]
+export const STANDARD_PENDING = []
 
 /** A test named for `id`, not skipped nor left to do: `it("AC-1 …")`, `it.only(…)` but no `it.skip(…)`. */
 export const namesTest = (tests, id) => new RegExp(`\\bit(?:\\.(?!skip\\b|todo\\b|fails\\b)\\w+)?\\(\\s*["'\`]${id}\\b`).test(tests)

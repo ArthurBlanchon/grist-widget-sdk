@@ -39,6 +39,21 @@ describe("Kanban board", () => {
     await waitFor(() => expect(rowsOf(emulator)[1]).toMatchObject({ Status: "Doing" }))
   })
 
+  it("AC-10 keeps the keyboard on the moved card, and announces the move (#94)", async () => {
+    const { emulator } = renderWithGrist(<App />, { widget, rows })
+    await act(() => emulator.setOptions({ columns: ["To do", "Doing", "Done"] }))
+    const card = await screen.findByRole("button", { name: /Ship it/ })
+    card.focus()
+    fireEvent.keyDown(card, { key: "ArrowRight" })
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByRole("button", { name: "Ship it, in Doing" })))
+    expect(screen.getByText("Ship it moved to Doing")).toBeInTheDocument()
+  })
+
+  it("AC-10 names a card with its notes, as it shows them (#94)", async () => {
+    renderWithGrist(<App />, { widget, rows })
+    expect(await screen.findByRole("button", { name: "Write the spec, Ask Léa, in Doing" })).toBeInTheDocument()
+  })
+
   it("AC-2 moves a dragged card to the column it is dropped on", async () => {
     const { emulator } = renderWithGrist(<App />, { widget, rows })
     fireEvent.dragStart(await screen.findByRole("button", { name: /Plan/ }))

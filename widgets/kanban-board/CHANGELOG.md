@@ -2,6 +2,11 @@
 
 What changed in each version, for the people using the widget. Newest first.
 
+## 0.3.1 (2026-11-16)
+
+- Moving a card with the arrow keys keeps the keyboard on it in its new column, and a screen reader says where it went: before, the focus jumped back to the top of the board.
+- A screen reader reads a card's notes along with its title and column.
+
 ## 0.3.0 (2026-11-16)
 
 - "Report a problem": when a change fails to save, or if the widget ever stops working, a link opens this widget's bug form, filled in with its name and version. Nothing is sent from your document: you write what you choose.

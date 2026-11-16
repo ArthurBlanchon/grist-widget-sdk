@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent, type KeyboardEvent } from "react"
+import { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent } from "react"
 
 import { defineGristWidget } from "grist-widget-sdk"
 
@@ -84,12 +84,28 @@ export default function App() {
     void saveOrder([...columns, name])
   }
 
+  // A card moved from the keyboard keeps the focus in its new column, and the move is announced.
+  const cardRefs = useRef(new Map<number, HTMLElement>())
+  const focusAfterMove = useRef<{ id: number; status: string } | null>(null)
+  const [announcement, setAnnouncement] = useState("")
+  useEffect(() => {
+    const pending = focusAfterMove.current
+    if (!pending) return
+    const moved = cards.find((c) => c.id === pending.id)
+    if (moved?.status !== pending.status) return
+    cardRefs.current.get(moved.id)?.focus()
+    focusAfterMove.current = null
+  }, [cards])
+
   function onCardKey(e: KeyboardEvent, card: Card) {
     const delta = e.key === "ArrowLeft" ? -1 : e.key === "ArrowRight" ? 1 : 0
     if (delta === 0) return
     e.preventDefault()
     const target = neighbour(columns, card.status, delta)
-    if (target !== null) void moveCard(card, target)
+    if (target === null) return
+    focusAfterMove.current = { id: card.id, status: target }
+    setAnnouncement(t("moved", { title: card.title, status: target || t("noStatus") }))
+    void moveCard(card, target)
   }
 
   return (
@@ -121,6 +137,9 @@ export default function App() {
 
       <p id="card-hint" className="sr-only">
         {t("cardHint")}
+      </p>
+      <p role="status" aria-live="polite" className="sr-only">
+        {announcement}
       </p>
 
       {cards.length === 0 && columns.length === 0 ? (
@@ -175,7 +194,11 @@ export default function App() {
                         role="button"
                         tabIndex={0}
                         draggable
-                        aria-label={t("card", { title: card.title, status: label })}
+                        ref={(el: HTMLDivElement | null) => {
+                          if (el) cardRefs.current.set(card.id, el)
+                          else cardRefs.current.delete(card.id)
+                        }}
+                        aria-label={card.notes ? t("cardNotes", { title: card.title, notes: card.notes, status: label }) : t("card", { title: card.title, status: label })}
                         aria-describedby="card-hint"
                         aria-pressed={w.record?.id === card.id}
                         onClick={() => void w.setCursorPosition({ rowId: card.id })}

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 
-import { changelogEntries, checkChangelog, checkLicences, licenceAllowed, checkStatic, columnsSection, criteria, declarationProblems, designViolations, listWidgets, parseFrontMatter, specColumns, STANDARD_CRITERIA, standardCriteria } from "./check-widgets.mjs"
+import { changelogEntries, checkChangelog, checkLicences, licenceAllowed, checkStatic, columnsSection, criteria, declarationProblems, designViolations, listWidgets, parseFrontMatter, specColumns, STANDARD_CRITERIA, STANDARD_PENDING, namesTest, standardCriteria } from "./check-widgets.mjs"
 
 test("front matter is key: value lines", () => {
   const { data, body } = parseFrontMatter("---\nslug: a\naccess: read table\n---\n# A\n")
@@ -83,11 +83,24 @@ test("a generated widget passes the static checks it can before its code is writ
 
   // Its spec carries the standard criteria, and its tests AC-volume's (ADR 0018).
   assert.deepEqual(standardCriteria(readFileSync(spec, "utf8")), STANDARD_CRITERIA)
-  const test = join(dir, "src", "app", "App.test.tsx")
-  writeFileSync(test, readFileSync(test, "utf8").replace('it("AC-volume', 'it("volume'))
+  const appTest = join(dir, "src", "app", "App.test.tsx")
+  const original = readFileSync(appTest, "utf8")
+  writeFileSync(appTest, original.replace('it("AC-volume', 'it.skip("AC-volume'))
   assert.ok(checkStatic("gantt-chart", dir).problems.includes('AC-volume: no test names it (it("AC-volume …"))'))
-  writeFileSync(spec, readFileSync(spec, "utf8").replace(/- \*\*AC-narrow\*\*.*\n/, ""))
+  writeFileSync(appTest, original.replace("expectVolume(<App />, widget, demo)", "Promise.resolve()"))
+  assert.ok(checkStatic("gantt-chart", dir).problems.some((p) => p.startsWith("AC-volume: its test doesn't call expectVolume()")))
+  writeFileSync(appTest, original)
+  const withSection = readFileSync(spec, "utf8")
+  writeFileSync(spec, withSection.replace(/- \*\*AC-narrow\*\*.*\n/, ""))
   assert.ok(checkStatic("gantt-chart", dir).problems.includes("SPEC.md: the Standard criteria section lacks AC-narrow"))
+  // Without the section: refused, unless the widget is still to migrate.
+  writeFileSync(spec, withSection.replace("## Standard criteria", "## Other notes"))
+  assert.ok(checkStatic("gantt-chart", dir).problems.includes("SPEC.md: no Standard criteria section (ADR 0018; new-widget writes it)"))
+  assert.ok(STANDARD_PENDING.includes("gantt") && !STANDARD_PENDING.includes("gantt-chart"))
+  writeFileSync(spec, withSection.replace("## Standard criteria", "## Standard Criteria  "))
+  assert.deepEqual(standardCriteria(readFileSync(spec, "utf8")), STANDARD_CRITERIA)
+  writeFileSync(spec, withSection)
+  assert.ok(namesTest('it.only("AC-3 x")', "AC-3") && !namesTest('it.todo("AC-3 x")', "AC-3") && !namesTest('it.fails("AC-3")', "AC-3"))
 
   // A widget may talk about to-dos: only new-widget's placeholders count.
   writeFileSync(spec, "---\nslug: gantt-chart\ntitle: T\ncategory: planning\nstatus: beta\naccess: none\n---\n## Job\n\nA TODO list, for TODO items.\n")

@@ -463,6 +463,7 @@ function identityEdits({ packageName, title }) {
   return [
     ["package.json", [["grist-widget-template-vite", packageName]]],
     ["README.md", [["grist-widget-template-vite", packageName]]],
+    ["CHANGELOG.md", [["grist-widget-template-vite", packageName]]],
     ["index.html", [["<title>Grist Widget</title>", `<title>${title}</title>`]]],
     ["src/app/App.tsx", [['title: "Grist Widget Template",', `title: "${title}",`]]],
     ["public/demo/index.html", [["Grist Widget Template — demo", `${title} — demo`]]],

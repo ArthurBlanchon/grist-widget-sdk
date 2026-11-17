@@ -24,6 +24,7 @@
 // asks the npm registry when versions in pnpm's age exceptions were published,
 // and `demo`, which runs Grist from a Docker image.
 
+import { stripTemplateOnly } from "../src/template-only.mjs"
 import {
   cpSync,
   existsSync,
@@ -146,6 +147,7 @@ function applyIdentityEdits(target, rawName) {
   const edits = [
     ["package.json", [["grist-widget-template-vite", rawName]]],
     ["README.md", [["grist-widget-template-vite", rawName]]],
+    ["CHANGELOG.md", [["grist-widget-template-vite", rawName]]],
     ["index.html", [["<title>Grist Widget</title>", `<title>${title}</title>`]]],
     ["src/app/App.tsx", [['title: "Grist Widget Template",', `title: "${title}",`]]],
     ["public/demo/index.html", [["Grist Widget Template — demo", `${title} — demo`]]],
@@ -155,6 +157,7 @@ function applyIdentityEdits(target, rawName) {
     if (!existsSync(p)) continue
     let content = readFileSync(p, "utf8")
     for (const [search, replace] of subs) content = content.split(search).join(replace)
+    if (file === "README.md") content = stripTemplateOnly(content)
     writeFileSync(p, content)
   }
   return title

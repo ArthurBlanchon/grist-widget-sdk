@@ -196,6 +196,25 @@ URL. These helpers serve a page shown outside Grist, such as a custom
 `ReleasePage`. The default one says, on `/dev/`, not to paste that URL into
 a document: it follows every change before its release.
 
+```tsx
+import { useReleasedVersions } from "grist-widget-sdk/app"
+
+// Export it from src/app/App.tsx as ReleasePage.
+export function ReleasePage() {
+  const { versions, error } = useReleasedVersions()
+  if (error) return <p>The list of releases couldn't be read.</p>
+  return (
+    <ul>
+      {(versions ?? []).map((v) => (
+        <li key={v.version}>
+          {v.version}, {new Date(v.publishedAt).toLocaleDateString()}
+        </li>
+      ))}
+    </ul>
+  )
+}
+```
+
 ### `parseDeployPath(pathname)`
 
 ```ts

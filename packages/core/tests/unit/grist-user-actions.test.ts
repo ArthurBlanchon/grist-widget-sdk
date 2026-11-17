@@ -1,3 +1,4 @@
+import { createGristEmulator, presets } from "../../src/emulator"
 /**
  * Action builders — see /api/helpers#action-builders
  *
@@ -85,12 +86,13 @@ describe("column action builders", () => {
 })
 
 describe("table action builders", () => {
-  it("AddTable", () => {
-    expect(gristAddTableAction("Reports", { columns: [] })).toEqual([
-      "AddTable",
-      "Reports",
-      { columns: [] },
-    ])
+  it("AddTable takes the table's columns, as Grist and the emulator apply it", () => {
+    const action = gristAddTableAction("Reports", [{ id: "Title", type: "Text" }])
+    expect(action).toEqual(["AddTable", "Reports", [{ id: "Title", type: "Text" }]])
+    const emulator = createGristEmulator({ document: presets.blank() })
+    emulator.apply([action])
+    expect(Object.keys(emulator.state.tables.get("Reports")!.columns)).toEqual(["Title"])
+    emulator.dispose()
   })
 
 

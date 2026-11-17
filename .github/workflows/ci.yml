@@ -263,6 +263,9 @@ jobs:
       # The catalog's scripts (spec checks, releases, channels, the catalog's
       # lists): their own tests, whichever widgets the change touches.
       - run: node --test scripts/widgets/*.test.mjs
+      # Every public runtime name used by a catalog widget or a compiled docs
+      # snippet: scripts/ci/api-coverage.mjs.
+      - run: node scripts/ci/api-coverage.mjs
       # The docs' old forms (blocking) and page sizes (warnings):
       # scripts/site/docs-check.mjs. Last, so a docs failure skips none of
       # the checks above.

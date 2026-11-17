@@ -2,6 +2,7 @@ export type GristColumnLike = {
   formula?: string
 }
 
+/** Which of Grist's bookkeeping columns to leave out: the row id, helper columns, logging columns, `manualSort`. */
 export type GristNoiseColumnsOptions = {
   excludeId?: boolean
   excludeGristHelpers?: boolean

@@ -65,7 +65,7 @@ export type GristWidgetConfiguration = {
  */
 export type GristFormulaKind = "computed" | "trigger" | "none" | "empty_slot"
 
-/** Options for `fetchSelectedTable` / `fetchSelectedRecord` on `docApi` (GristView). */
+/** Options for Grist's own `grist.fetchSelectedTable` / `grist.fetchSelectedRecord` (GristView). */
 export type GristFetchSelectedOptions = {
   keepEncoded?: boolean
   format?: "rows" | "columns" | string
@@ -140,6 +140,7 @@ export type GristTableUpsertOptions = GristTableOpOptions & {
   allowEmptyRequire?: boolean
 }
 
+/** The least a record has: its row id. */
 export type GristMinimalRecord = { id: number }
 
 /** Wraps `grist.getTable(...)` / `grist.selectedTable`. */

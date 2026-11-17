@@ -108,16 +108,9 @@ itself can start you from directly (see below).
 
 ## The commands
 
-| Command | What it does |
-| --- | --- |
-| `create <name> [--example <id>]` | Scaffold a new widget into `./<name>` — same as `npm create grist-widget <name>` |
-| `init [--example <id>]` | Scaffold into the **current** directory instead of a new one |
-| `use <example-id>` | Swap the current project's widget for a different example |
-| `upgrade` | Bring an existing widget's template files up to this version's template |
-| `demo [--port <n>]` | Open the widget in a real Grist on your machine (Docker); `pnpm demo` in a widget |
-| `demo --save` | Write the widget's demo page, `public/demo/`: a real Grist in the browser, from static files (Docker to generate) |
-| `manifest --base <path>` | Write `dist/grist-widget.json`, the widget's Grist manifest; the deploy workflow runs it |
-| `list [--json]` | Print the available starting examples |
+This is what `create-grist-widget --help` prints, every command and option:
+
+<CliHelp />
 
 `demo` and `demo --save` open the widget on sample rows from its declared
 columns. Export `demo` from `src/app/demo.ts` (a `GristWidgetDemo` from
@@ -127,13 +120,6 @@ rows, the choices and their colours, which column each declared one maps
 to, and the widget's options. An attachments cell names files of
 `src/app/demo/`, which `pnpm demo`'s document gets as attachments (the
 demo page's doesn't: grist-static has none).
-
-Common flags for `create`/`init`: `--yes` (skip interactive prompts),
-`--no-install` (skip the automatic dependency install, so the first commit
-has no lockfile), `--pm <name>`
-(install with another package manager instead of pnpm; the bundled
-workflows only read `pnpm-lock.yaml`). `init` also takes `--name <name>`
-(default: the current directory's name) and `--force` (see below).
 
 ### Starting from a real example
 

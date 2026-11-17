@@ -14,6 +14,7 @@ export type ReleasedVersion = {
   path?: string
 }
 
+/** What `useReleasedVersions()` returns. */
 export type UseReleasedVersionsResult = {
   /** Newest first, as the deploy writes them; `null` until loaded. */
   versions: ReleasedVersion[] | null

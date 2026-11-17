@@ -3,8 +3,10 @@
 The landing page and the user documentation, a static Next.js + fumadocs
 export, assembled with the example widgets by `scripts/build-site.mjs` and
 published at two origins ([site deploy](../../docs/operations/site-deploy.md)).
-It does not depend on `grist-widget-sdk`, so an SDK change cannot break
-its deploy.
+It does not depend on `grist-widget-sdk`'s build, so an SDK change cannot
+break its deploy. It reads two committed files: the SDK's reference
+(`packages/core/api/reference.json`, written by `api:report`) and the CLI's
+help (`packages/create-grist-widget/src/help.mjs`, a plain string).
 
 ## Rules for a docs page
 

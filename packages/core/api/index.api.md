@@ -7,7 +7,7 @@
 import * as react from 'react';
 import { ReactNode } from 'react';
 
-// @public (undocumented)
+// @public
 export function checkGristCell(type: string | undefined, value: unknown): GristCellCheck;
 
 // @public
@@ -87,7 +87,7 @@ export function gristAttachmentCellValue(attachmentId: string | number): GristEn
 // @public
 export function gristAttachmentCellValues(attachmentIds: (string | number)[]): GristEncodedAttachmentList;
 
-// @public (undocumented)
+// @public
 export type GristAttachmentUploadResult = {
     ids: string[];
     firstId: string;
@@ -96,7 +96,7 @@ export type GristAttachmentUploadResult = {
 // @public
 export function GristBoundary(input: GristBoundaryProps): react.JSX.Element;
 
-// @public (undocumented)
+// @public
 export type GristBoundaryProps = {
     children: ReactNode;
 };
@@ -136,7 +136,7 @@ export type GristColumnExcludeContext = {
     col: GristReplicaColumn;
 };
 
-// @public (undocumented)
+// @public
 export type GristColumnInfo = {
     colId: string;
     type?: string;
@@ -185,13 +185,13 @@ export type GristDecodedValue = null | string | number | boolean | Date | GristD
 // @public
 export type GristDocumentMode = "schema-only" | "schema+samples" | "schema+data";
 
-// @public (undocumented)
+// @public
 export type GristEncodedAttachmentList = ["L", ...(number | string)[]];
 
 // @public
 export type GristEncodedError = ["E", string, string?, string?];
 
-// @public (undocumented)
+// @public
 export type GristFetchedAttachmentBlob = {
     blob: Blob;
     contentType: string;
@@ -219,12 +219,12 @@ export type GristMappedRow<O extends {
     [N in OptionalName<C>]?: ColumnValue<ByName<C, N>>;
 } : Record<string, unknown>;
 
-// @public (undocumented)
+// @public
 export type GristMinimalRecord = {
     id: number;
 };
 
-// @public (undocumented)
+// @public
 export type GristNoiseColumnsOptions = {
     excludeId?: boolean;
     excludeGristHelpers?: boolean;
@@ -290,7 +290,7 @@ export type GristReplicaSelection = {
     cursor?: GristCursorPos;
 };
 
-// @public (undocumented)
+// @public
 export type GristReplicaTable = {
     label?: string;
     columns?: Record<string, GristReplicaColumn>;
@@ -370,7 +370,7 @@ export type GristWidget<D extends GristWidgetDefinition = GristWidgetDefinition>
     useGrist: () => UseGristResult<GristRowRecord, GristMappedRow<D>>;
 };
 
-// @public (undocumented)
+// @public
 export type GristWidgetActionStatus = "idle" | "running" | "error";
 
 // @public
@@ -389,6 +389,7 @@ export type GristWidgetDefinition = UseGristOptions & {
     title?: string;
     description?: string;
     reportUrl?: string;
+    languages?: readonly string[];
 };
 
 // @public
@@ -428,6 +429,7 @@ export type GristWidgetMetadata = {
     title?: string;
     description?: string;
     reportUrl?: string;
+    languages?: readonly string[];
 };
 
 // @public
@@ -436,7 +438,7 @@ export type GristWidgetMode = "empty" | "row" | "new-row";
 // @public
 export function GristWidgetProvider(input: GristWidgetProviderProps): react.JSX.Element;
 
-// @public (undocumented)
+// @public
 export type GristWidgetProviderProps = {
     options?: UseGristOptions;
     children: ReactNode;
@@ -454,7 +456,7 @@ export function httpUrl(value: unknown): string | undefined;
 // @public
 export function isGristCellError(value: unknown): value is GristEncodedError;
 
-// @public (undocumented)
+// @public
 export type ListColumnsOptions = GristNoiseColumnsOptions & {
     includeSystem?: boolean;
 };
@@ -556,7 +558,7 @@ export type UseGristSchemaOptions = {
     extraExcludeColumn?: (ctx: GristColumnExcludeContext) => boolean;
 };
 
-// @public (undocumented)
+// @public
 export type UseGristSchemaResult = {
     document: GristReplicaDocument | null;
     replicaDocument: GristReplicaDocument | null;
@@ -574,16 +576,16 @@ export type UseGristSchemaResult = {
     reload: () => Promise<void>;
 };
 
-// @public (undocumented)
+// @public
 export function useWidgetMetadata(input?: UseWidgetMetadataInput | null): void;
 
-// @public (undocumented)
+// @public
 export type UseWidgetMetadataInput = {
     title: string;
     description: string;
 };
 
-// @public (undocumented)
+// @public
 export type ValidateColumnMappingsResult = {
     ok: boolean;
     pending?: boolean;

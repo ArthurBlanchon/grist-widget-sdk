@@ -55,6 +55,7 @@ export type ReplicaDocumentJsonOptions = {
   space?: number
 }
 
+/** What `useGristSchema()` returns: the document as a replica, and its JSON. */
 export type UseGristSchemaResult = {
   /** Canonical replica document. */
   document: GristReplicaDocument | null

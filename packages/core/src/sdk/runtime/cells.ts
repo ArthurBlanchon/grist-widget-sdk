@@ -115,6 +115,11 @@ function basesOf(type: string | undefined): string[] {
     .filter(Boolean)
 }
 
+/**
+ * Checks one value against a Grist column type (`"Numeric"`, `"Ref:People"`,
+ * `"Text,Ref"`), as typed reads do: the value the type promises, or why it
+ * doesn't fit.
+ */
 export function checkGristCell(type: string | undefined, value: unknown): GristCellCheck {
   const error = formulaError(value)
   if (error) return bad(`formula error (${error})`)
@@ -263,17 +268,17 @@ type OptionalName<C> = C extends { optional: true; name: infer N extends string 
 type ByName<Cs, N> = Extract<Cs, N | { name: N }>
 
 /**
- * The mapped record a `GRIST_OPTIONS` declaration gives, for `useGrist`'s
- * second type argument. Declare the options with `as const satisfies
- * UseGristOptions` so the column names and types stay literal:
+ * The mapped record a declaration's columns give: `{ id }` and each
+ * declared column, typed from its Grist type. `widget.useGrist()` uses it,
+ * and `GristWidgetRow<typeof widget>` names it for a component's props.
  *
  * ```ts
- * export const GRIST_OPTIONS = {
+ * export const widget = defineGristWidget({
  *   requiredAccess: "read table",
  *   columns: [{ name: "Title", type: "Text" }, { name: "Due", type: "Date", optional: true }],
- * } as const satisfies UseGristOptions
+ * })
  *
- * const w = useGrist<GristRowRecord, GristMappedRow<typeof GRIST_OPTIONS>>()
+ * const w = widget.useGrist()
  * w.mappedRecord?.Due // Date | null | undefined
  * ```
  */

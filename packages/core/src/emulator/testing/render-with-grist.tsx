@@ -43,10 +43,17 @@ export type RenderWithGristOptions = RenderOptions & {
   readOnly?: boolean
 }
 
+/** Testing Library's render result, with the emulator the widget runs against. */
 export type RenderWithGristResult = RenderResult & {
   emulator: GristEmulator
 }
 
+/**
+ * Renders a component against an in-memory Grist (the emulator), behind the
+ * same `grist` global a widget reads in Grist. With `widget`, it renders the
+ * widget in its provider, boundary and alerts, every declared column mapped
+ * to a table of `rows`: `renderWithGrist(<App />, { widget, rows })`.
+ */
 export function renderWithGrist(
   ui: ReactElement,
   options: RenderWithGristOptions = {}
@@ -88,7 +95,10 @@ export function renderWithGrist(
       {Outer ? <Outer>{children}</Outer> : children}
     </ReadOnlyUrlScope>
   )
-  const result = render(widgetOptions ? <GristWidgetApp App={Widget} options={widgetOptions} /> : ui, { ...options, wrapper })
+  // The declaration's languages, so the SDK's chrome speaks the language it would in Grist.
+  const languages = options.widget && isGristWidget(options.widget) ? options.widget.metadata.languages : undefined
+  const app = widgetOptions ? <GristWidgetApp App={Widget} options={widgetOptions} metadata={languages ? { languages } : undefined} /> : ui
+  const result = render(app, { ...options, wrapper })
   const originalUnmount = result.unmount
   result.unmount = () => {
     originalUnmount()

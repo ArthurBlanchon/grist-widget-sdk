@@ -20,7 +20,7 @@ The reasoning behind 0.4.0, and what it left for later, is the
 ## 1. The plan to 0.8.0: the production-grade AI widget factory
 
 From the [plan to 0.8.0](./docs/planning/2026-11-15-plan-0.8.md) §4, in
-its order: M5, with M6 (docs) alongside, then M7 (M1 to M4 are done).
+its order: M5, then M7 (M1 to M4 and M6 are done).
 Each item is one pull request; the plan says when each milestone is done.
 
 - [ ] **Attachments on the static demo pages.** grist-static serves no
@@ -48,23 +48,14 @@ Each item is one pull request; the plan says when each milestone is done.
   upkeep schedule ([upkeep](./docs/operations/upkeep.md)). Every released
   widget links `widget-bug.yml`, so its file name and its `widget` and
   `version` ids stay (ADR 0019).
-- [ ] **M6. Documentation, alongside.** Left: R5's generated reference
-  (TSDoc for the 27 public names without it, then the reference generated
-  per entry point, and the CLI's from its help: `packages/`, so the
-  maintainer's go). Done: R1 to R4, the concept page "How the SDK works"
-  (#102), the old-forms
-  check blocking in CI, `cheatsheet` and `cookbook` retired with redirects
-  (each example's code linked from the Examples page), *Replica document*
-  under Concepts (its URL stays `sdk/design/replica-document`).
 - [ ] **M7. Bring the widgets home, then retire.** Wave 3 (REST
   enrichment, Ask AI, Scan with AI) after M1–M4; `examples/` removed with
   an API coverage check; awesome-grist-widgets absorbed and archived; the
   six reference repositories retired, the news feed with them
   ([ADR 0011](./docs/decisions/0011-reference-widgets-retired.md)).
-- [ ] **The SDK's chrome in the widget's language.** "Report a problem",
-  "The widget stopped working" and the SDK's alerts are English only, in
-  widgets that are English and French. Done when the chrome follows the
-  widget's language (French at least), with a test.
+- [ ] **The catalog's widgets declare `languages: ["en", "fr"]`** once the
+  SDK release with it is out ([ADR 0021](./docs/decisions/0021-chrome-language.md)),
+  so their chrome matches their messages: a patch release of each.
 - [ ] **One click on "Report a problem" inside Grist** on `/widgets/<slug>/dev/`
   before the next widget release: whether Grist's iframe sandbox lets the
   link open its tab. Done when checked, or the link works around it.

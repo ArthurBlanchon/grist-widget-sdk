@@ -6,6 +6,8 @@ import { Accordion, Accordions } from 'fumadocs-ui/components/accordion';
 import { File, Files, Folder } from 'fumadocs-ui/components/files';
 import type { MDXComponents } from 'mdx/types';
 
+import { ApiReference } from '@/components/api-reference';
+import { CliHelp } from '@/components/cli-help';
 import { ExamplesCatalog } from '@/components/examples-catalog';
 import { typeTableGenerator } from '@/lib/typescript-generator';
 
@@ -18,6 +20,8 @@ export function getMDXComponents(components?: MDXComponents) {
     AutoTypeTable: (props: React.ComponentProps<typeof AutoTypeTable>) => (
       <AutoTypeTable {...props} generator={typeTableGenerator} />
     ),
+    ApiReference,
+    CliHelp,
     ExamplesCatalog,
     Tabs,
     Tab,

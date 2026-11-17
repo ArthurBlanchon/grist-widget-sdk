@@ -25,7 +25,14 @@ const WIDGETS_DIR = fileURLToPath(new URL("../../widgets/", import.meta.url))
 export const RULES = {
   core: ["packages/core/", LOCKFILE],
   cli: ["packages/create-grist-widget/", LOCKFILE],
-  lint: ["apps/www/", "templates/grist-widget-template-vite/", LOCKFILE],
+  // The site also renders the SDK's reference and the CLI's help.
+  lint: [
+    "apps/www/",
+    "templates/grist-widget-template-vite/",
+    "packages/core/api/reference.json",
+    "packages/create-grist-widget/src/help.mjs",
+    LOCKFILE,
+  ],
   external_install: ["packages/core/", "templates/grist-widget-template-vite/", "scripts/smoke/", LOCKFILE],
   create_widget: [
     "packages/core/",

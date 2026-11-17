@@ -6,11 +6,16 @@
 //
 //   pnpm api:report          rewrite the reports from dist/
 //   pnpm api:report --check  fail if dist/ no longer matches them (CI)
+//
+// It also writes api/reference.json, the docs' reference: each entry point's
+// names with their kind and TSDoc summary (api-reference.mjs).
 
 import { Extractor, ExtractorConfig } from "@microsoft/api-extractor"
-import { existsSync, mkdirSync } from "node:fs"
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
+
+import { referenceOf, reexportsOf } from "./api-reference.mjs"
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
 const check = process.argv.includes("--check")
@@ -62,7 +67,7 @@ for (const { entry, dts, report } of ENTRIES) {
         reportFolder,
         reportTempFolder: tempFolder,
       },
-      docModel: { enabled: false },
+      docModel: { enabled: true, apiJsonFilePath: path.join(tempFolder, `${report}.api.json`) },
       dtsRollup: { enabled: false },
       tsdocMetadata: { enabled: false },
       messages: {
@@ -91,4 +96,26 @@ for (const { entry, dts, report } of ENTRIES) {
     console.log(`api/${report}.api.md ${result.apiReportChanged ? "updated" : "unchanged"}`)
   }
 }
+// The docs' reference, from the doc models just written (and the reports,
+// for re-exports). Not after a failed entry: its doc model may be stale.
+if (failed) process.exit(1)
+const reference = {}
+for (const { entry, report } of ENTRIES) {
+  const name = entry === "." ? "grist-widget-sdk" : `grist-widget-sdk${entry.slice(1)}`
+  const own = referenceOf(JSON.parse(readFileSync(path.join(tempFolder, `${report}.api.json`), "utf8")))
+  const reexported = reexportsOf(readFileSync(path.join(reportFolder, `${report}.api.md`), "utf8"))
+  reference[name] = [...own, ...reexported].sort((a, b) => a.name.localeCompare(b.name))
+}
+const referenceFile = path.join(reportFolder, "reference.json")
+const next = `${JSON.stringify(reference, null, 2)}\n`
+const current = existsSync(referenceFile) ? readFileSync(referenceFile, "utf8") : ""
+if (next === current) console.log("api/reference.json unchanged")
+else if (check) {
+  failed = true
+  console.error("::error::The SDK's reference changed (api/reference.json): run `pnpm --filter grist-widget-sdk api:report` and commit it.")
+} else {
+  writeFileSync(referenceFile, next)
+  console.log("api/reference.json updated")
+}
+
 process.exit(failed ? 1 : 0)

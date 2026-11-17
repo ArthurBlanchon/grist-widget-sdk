@@ -40,6 +40,7 @@ export type GristReplicaColumn = {
   visibleColRef?: number
 }
 
+/** One table of a replica document: its columns and, optionally, its rows. */
 export type GristReplicaTable = {
   label?: string
   columns?: Record<string, GristReplicaColumn>

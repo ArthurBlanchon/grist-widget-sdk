@@ -348,7 +348,7 @@
     {
       "name": "GristWidgetMetadata",
       "kind": "type",
-      "summary": "What describes a widget rather than configures it: its title, description and report URL."
+      "summary": "What describes a widget rather than configures it: its title, description, report URL and languages."
     },
     {
       "name": "GristWidgetMode",

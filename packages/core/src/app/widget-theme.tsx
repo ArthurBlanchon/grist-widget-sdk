@@ -2,9 +2,12 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 
 import { useNearestGristState } from "../sdk/use-grist"
 
+/** A theme choice: light, dark, or the system's. */
 export type WidgetTheme = "light" | "dark" | "system"
+/** The theme applied: `"system"` resolved to light or dark. */
 export type ResolvedWidgetTheme = "light" | "dark"
 
+/** What `useTheme()` returns. */
 export type UseThemeResult = {
   /**
    * Inside Grist: Grist's theme, or `"system"` until Grist has sent it.

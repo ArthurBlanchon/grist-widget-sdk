@@ -16,7 +16,7 @@ export type CreateDocumentTableInput = Omit<GristReplicaTable, "columns"> & {
     columns?: Record<string, EmulatorColumn>;
 };
 
-// @public (undocumented)
+// @public
 export function createGristEmulator(options: CreateGristEmulatorOptions): GristEmulator;
 
 // @public
@@ -34,8 +34,8 @@ export type CreateGristEmulatorOptions = {
 
 // @public
 export class EmulatorActionError extends Error {
-    constructor(action: unknown, message: string);
-    // (undocumented)
+    constructor(
+    action: unknown, message: string);
     readonly action: unknown;
 }
 
@@ -55,7 +55,7 @@ export type EmulatorColumn = GristReplicaColumn & {
     inferredFormula?: string;
 };
 
-// @public (undocumented)
+// @public
 export type EmulatorDocumentState = {
     docName: string;
     tables: Map<string, EmulatorTable>;
@@ -101,7 +101,7 @@ export type EmulatorEvent = {
 // @public
 export type EmulatorRowId = number;
 
-// @public (undocumented)
+// @public
 export type EmulatorTable = {
     tableId: string;
     label?: string;
@@ -109,7 +109,7 @@ export type EmulatorTable = {
     rows: GristRowRecord[];
 };
 
-// @public (undocumented)
+// @public
 export type EmulatorTransport = {
     dispose: () => void;
     fireDataChange: (tableId?: string) => void;
@@ -122,7 +122,7 @@ export type EmulatorTransport = {
 // @public
 export function enrichEmulatorColumnMetadata(col: EmulatorColumn): EmulatorColumn;
 
-// @public (undocumented)
+// @public
 export type GristEmulator = {
     state: EmulatorDocumentState;
     bus: EventBus;
@@ -213,7 +213,7 @@ export type InlineGristGlobal = {
     on: (eventName: string, listener: (...args: unknown[]) => void) => () => void;
 };
 
-// @public (undocumented)
+// @public
 export function parseDocument(input: unknown): GristReplicaDocument;
 
 // @public
@@ -227,7 +227,7 @@ export const presets: {
 // @public
 export function resolveMappings(state: EmulatorDocumentState): GristWidgetColumnMap | null;
 
-// @public (undocumented)
+// @public
 export function safeParseDocument(input: unknown): z.ZodSafeParseResult<{
     generatedAt: string;
     tables: Record<string, {

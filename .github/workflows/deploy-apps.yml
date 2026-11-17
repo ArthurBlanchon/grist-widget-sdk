@@ -58,6 +58,8 @@ on:
     paths:
       - "apps/www/**"
       - "packages/core/**"
+      # The CLI page shows the CLI's help (apps/www's <CliHelp />).
+      - "packages/create-grist-widget/src/help.mjs"
       - "examples/**"
       - "widgets/**"
       - "templates/grist-widget-template-vite/**"

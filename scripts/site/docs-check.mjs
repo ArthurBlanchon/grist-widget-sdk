@@ -9,6 +9,9 @@
 //   upgrade guide, which the CLI links) is listed in ALLOWED_PAGES, here,
 //   with its reason: adding one is a change to what CI runs, so it takes
 //   the maintainer's go (ADR 0012). Its old forms still print, as notices.
+// - **The generated reference too.** packages/core/api/reference.json's
+//   summaries render on the API reference page, so they get the same check
+//   (signatures aside: `useGrist`'s own generics are its real signature).
 // - **Short pages.** A page over about 800 words of prose (code aside) is
 //   two pages: a warning, never a failure.
 //
@@ -20,6 +23,15 @@ import { fileURLToPath } from "node:url"
 
 export const DOCS_DIR = fileURLToPath(new URL("../../apps/www/content/docs/", import.meta.url))
 export const MAX_WORDS = 800
+export const REFERENCE = fileURLToPath(new URL("../../packages/core/api/reference.json", import.meta.url))
+
+/** `[name, label]` for each old form in the reference's summaries. */
+export function referenceOldForms(reference) {
+  const found = []
+  for (const [entry, rows] of Object.entries(reference))
+    for (const row of rows) for (const [re, label] of OLD_FORMS) if (re.test(row.summary)) found.push([`${entry} ${row.name}`, label])
+  return found
+}
 
 /** The old forms, each with what replaces it. */
 export const OLD_FORMS = [
@@ -112,6 +124,10 @@ function main(argv) {
     if (words > MAX_WORDS) console.log(`::warning file=apps/www/content/docs/${rel}::${words} words: over about ${MAX_WORDS}, a page that needs more is two`)
     if (found.length || words > MAX_WORDS)
       summary.push(`| \`${rel}\` | ${found.length}${allowed ? ` (allowed: ${allowed})` : ""} | ${words}${words > MAX_WORDS ? " ⚠" : ""} |`)
+  }
+  for (const [name, label] of referenceOldForms(JSON.parse(readFileSync(REFERENCE, "utf8")))) {
+    forms++
+    console.log(`${strict ? "::error" : "::notice"} file=packages/core/api/reference.json::old form in ${name}'s TSDoc summary: ${label}`)
   }
   console.log(`docs-check: ${forms} old form(s)${strict ? "" : " (report mode)"}`)
   // GitHub shows only the first annotations of a step: the summary has them all, by page.

@@ -24,7 +24,7 @@ export function actionsOf(emulator: GristEmulator): unknown[][];
 
 export { cleanup }
 
-// @public (undocumented)
+// @public
 export function eventsOf(emulator: GristEmulator): readonly EmulatorEvent[];
 
 export { fireEvent }
@@ -46,7 +46,7 @@ export { RenderOptions }
 
 export { RenderResult }
 
-// @public (undocumented)
+// @public
 export function renderWithGrist(ui: ReactElement, options?: RenderWithGristOptions): RenderWithGristResult;
 
 // @public
@@ -58,7 +58,7 @@ export type RenderWithGristOptions = RenderOptions & {
     readOnly?: boolean;
 };
 
-// @public (undocumented)
+// @public
 export type RenderWithGristResult = RenderResult & {
     emulator: GristEmulator;
 };
@@ -68,7 +68,7 @@ export { screen_2 as screen }
 // @public
 export function smokeTestWidget(input: SmokeTestWidgetOptions | GristWidgetEntry, extra?: Pick<SmokeTestWidgetOptions, "document" | "timeout">): Promise<void>;
 
-// @public (undocumented)
+// @public
 export type SmokeTestWidgetOptions = {
     App: ComponentType;
     options?: UseGristOptions;
@@ -79,16 +79,16 @@ export type SmokeTestWidgetOptions = {
 
 export { waitFor }
 
-// @public (undocumented)
+// @public
 export function waitForEvent(emulator: GristEmulator, kind: WaitForEventKind, options?: WaitForEventOptions): Promise<EmulatorEvent>;
 
-// @public (undocumented)
+// @public
 export function waitForEvent(emulator: GristEmulator, predicate: (event: EmulatorEvent) => boolean, timeoutMs?: number): Promise<EmulatorEvent>;
 
 // @public
 export type WaitForEventKind = "ready" | "record" | "records" | "options" | "theme" | "cursor";
 
-// @public (undocumented)
+// @public
 export type WaitForEventOptions = {
     timeoutMs?: number;
 };

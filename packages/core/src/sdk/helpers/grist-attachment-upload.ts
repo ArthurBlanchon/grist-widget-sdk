@@ -5,8 +5,10 @@ import { encodeGristValue } from "./grist-value-codec"
 
 const ATTACHMENTS_COLUMN = { type: "Attachments" as const }
 
+/** An Attachments cell as Grist writes it: `["L", ...ids]`. */
 export type GristEncodedAttachmentList = ["L", ...(number | string)[]]
 
+/** The attachment ids an upload created. */
 export type GristAttachmentUploadResult = {
   /** All attachment ids returned by `POST /attachments`. */
   ids: string[]

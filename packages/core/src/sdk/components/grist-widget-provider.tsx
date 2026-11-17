@@ -2,6 +2,7 @@ import { useState, type ReactNode } from "react"
 
 import { GristContextProvider, newConnection, type UseGristOptions } from "../use-grist"
 
+/** What the provider connects with, and the widgets below it. */
 export type GristWidgetProviderProps = {
   /** Read once, at mount: what the widget asks Grist for. */
   options?: UseGristOptions

@@ -14,6 +14,7 @@ export type DeployChannel =
   | { kind: "major"; major: number }
   | { kind: "version"; version: string }
 
+/** A served URL's channel, and the base path its channels share: what {@link parseDeployPath} returns. */
 export type DeployPath = {
   channel: DeployChannel
   /**

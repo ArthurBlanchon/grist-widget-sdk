@@ -7,6 +7,7 @@ import { declaredColumns, declaredDocument, mapEveryColumn } from "./declared-do
 import { installJsdomStubs } from "./jsdom-stubs"
 import { renderWithGrist } from "./render-with-grist"
 
+/** What `smokeTestWidget()` renders, and against which document. */
 export type SmokeTestWidgetOptions = {
   /** The widget, as `src/main.tsx` passes it to `mountGristWidget()`. */
   App: ComponentType

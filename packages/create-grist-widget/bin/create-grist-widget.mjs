@@ -24,7 +24,6 @@
 // asks the npm registry when versions in pnpm's age exceptions were published,
 // and `demo`, which runs Grist from a Docker image.
 
-import { stripTemplateOnly } from "../src/template-only.mjs"
 import {
   cpSync,
   existsSync,
@@ -49,6 +48,7 @@ import { BUMPS, runRelease } from "../src/release.mjs"
 import { runProtect } from "../src/protect.mjs"
 import { DEMO_DIR, demoArgs, demoRefusal, runDemo, saveDemo } from "../src/demo.mjs"
 import { MANIFEST_FILE, writeManifest } from "../src/manifest.mjs"
+import { stripTemplateOnly } from "../src/template-only.mjs"
 
 const PKG_ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..")
 const TEMPLATE_DIR = path.join(PKG_ROOT, "template")
@@ -435,7 +435,7 @@ async function cmdInit(argv) {
   // common case, a pristine "Use this template" clone); anything else that
   // already exists and differs from the template's own pristine copy blocks
   // the run, listed, unless --force.
-  const IDENTITY_FILES = new Set(["package.json", "README.md", "index.html", "src/app/App.tsx"])
+  const IDENTITY_FILES = new Set(["package.json", "README.md", "CHANGELOG.md", "index.html", "src/app/App.tsx"])
   const templateFiles = listFilesRecursive(TEMPLATE_DIR)
   if (!args.force) {
     const conflicts = []

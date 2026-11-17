@@ -406,6 +406,17 @@ test -f "$INIT_TARGET/src/app/App.tsx" || { echo "::error::init did not scaffold
 test -d "$INIT_TARGET/.git" || { echo "::error::init did not initialize git in a fresh (non-git) directory"; exit 1; }
 [ -z "$(git -C "$INIT_TARGET" status --porcelain)" ] || { echo "::error::init left an unclean working tree"; exit 1; }
 
+echo "   init accepts an untouched 'Use this template' copy of a scaffold (its identity files differ, nothing else)"
+COPY_SOURCE="$WORK/copy-source"
+mkdir -p "$COPY_SOURCE"
+( cd "$COPY_SOURCE" && npx --yes --package="$CLI_TARBALL" create-grist-widget create grist-widget-template --yes --no-install )
+COPY_TARGET="$WORK/copy-target"
+mkdir -p "$COPY_TARGET"
+( cd "$COPY_SOURCE/grist-widget-template" && tar --exclude=.git -cf - . ) | ( cd "$COPY_TARGET" && tar -xf - )
+( cd "$COPY_TARGET" && npx --yes --package="$CLI_TARBALL" create-grist-widget init --name my-copy --yes --no-install ) \
+  || { echo "::error::init refused an untouched copy of a scaffold"; exit 1; }
+grep -q "^# my-copy" "$COPY_TARGET/CHANGELOG.md" || { echo "::error::init did not name CHANGELOG.md after the widget"; exit 1; }
+
 echo "   init refuses to overwrite a conflicting file, --force overrides it"
 COLLISION_TARGET="$WORK/init-collision"
 mkdir -p "$COLLISION_TARGET/src/lib"

@@ -18,6 +18,17 @@ const REPO_ROOT = path.join(PKG_ROOT, "..", "..")
 const SOURCE = path.join(REPO_ROOT, "templates", "grist-widget-template-vite")
 const DEST = path.join(PKG_ROOT, "template")
 
+// The README's template-only blocks (src/template-only.mjs) must be whole:
+// an unbalanced marker would ship the template's maintainer notes silently.
+{
+  const readme = readFileSync(path.join(SOURCE, "README.md"), "utf8")
+  const starts = readme.match(/<!-- template-only:start[^>]*-->/g)?.length ?? 0
+  const ends = readme.match(/<!-- template-only:end -->/g)?.length ?? 0
+  if (starts !== ends || /<!-- template-only:start[^\n]*>[^\n]*-->/.test(readme.replace(/<!-- template-only:start[^>]*-->/g, ""))) {
+    throw new Error(`build-template: the template README's template-only markers are unbalanced (${starts} start, ${ends} end)`)
+  }
+}
+
 rmSync(DEST, { recursive: true, force: true })
 const SKIP = new Set(["node_modules", "dist", ".turbo"])
 cpSync(SOURCE, DEST, { recursive: true, filter: (src) => !SKIP.has(path.basename(src)) })

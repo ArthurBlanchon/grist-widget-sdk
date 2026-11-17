@@ -25,6 +25,9 @@ export function createGristDocApiImpl(state: EmulatorDocumentState, bus: EventBu
     },
 
     async fetchTable(tableId) {
+      // Grist answers a whole-table read only with full access, whatever the table.
+      const granted = state.widgetInteraction?.access_level ?? state.configuration?.requiredAccess ?? "read table"
+      if (granted !== "full") throw new Error("Access not granted")
       if (tableId === "_grist_Tables") {
         return synthesizeTablesMeta(state)
       }

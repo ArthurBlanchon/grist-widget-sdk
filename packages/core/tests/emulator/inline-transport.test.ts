@@ -78,10 +78,16 @@ describe("inline transport", () => {
   })
 
   it("docApi.fetchTable returns columnar data", async () => {
-    const emu = createGristEmulator({ document: presets.todoList() })
+    const emu = createGristEmulator({ widgetInteraction: { access_level: "full" }, document: presets.todoList() })
     const data = await emu.grist!.docApi.fetchTable("Tasks")
     expect(data.id).toEqual([1, 2, 3])
     expect(data.title).toEqual(["Buy milk", "Write the SOTA emulator", "Ship it"])
+    emu.dispose()
+  })
+
+  it("docApi.fetchTable needs full access, as in Grist", async () => {
+    const emu = createGristEmulator({ document: presets.todoList(), widgetInteraction: { access_level: "read table" } })
+    await expect(emu.grist!.docApi.fetchTable("Tasks")).rejects.toThrow("Access not granted")
     emu.dispose()
   })
 
@@ -181,7 +187,7 @@ describe("inline transport", () => {
   })
 
   it("a mapped widget gets only its mapped columns, as from Grist; fetchTable still has them all", async () => {
-    const emu = createGristEmulator({ document: presets.todoList() })
+    const emu = createGristEmulator({ widgetInteraction: { access_level: "full" }, document: presets.todoList() })
     const g = emu.grist!
     const onRecord = vi.fn()
     const onRecords = vi.fn()
@@ -202,6 +208,7 @@ describe("inline transport", () => {
 
   it("a reference arrives as the text its column shows, as from Grist; fetchTable keeps the row ids", async () => {
     const emu = createGristEmulator({
+      widgetInteraction: { access_level: "full" },
       document: {
         generatedAt: "1970-01-01T00:00:00.000Z",
         docName: "Jobs",

@@ -22,7 +22,7 @@ import type {
   GristWidgetInteraction,
 } from "../types"
 import { parseAccess } from "./derive"
-import { messageStream, newRecordStream, optionsStream, recordsStream, recordStream } from "./host"
+import { declaresReferences, messageStream, newRecordStream, optionsStream, recordsStream, recordStream, setReferenceIds } from "./host"
 import { checkOptionsVersioning, readWidgetOptions, type OptionsVersioning } from "./options-version"
 import { ensureGristReady, resetGristReady } from "./ready"
 
@@ -241,7 +241,9 @@ export function createGristRuntime(options: GristRuntimeOptions = {}): GristRunt
       }
       return update({ connection: "unavailable" })
     }
-    // Bound before ready(): Grist may push the first record during it.
+    // Bound before ready(): Grist may push the first record during it. A
+    // declared reference column asks for row ids (host.ts).
+    setReferenceIds(declaresReferences(options.columns))
     stopStreams ??= listen()
     void connect()
   }

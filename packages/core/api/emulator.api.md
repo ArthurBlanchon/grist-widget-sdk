@@ -120,9 +120,6 @@ export type EmulatorTransport = {
 };
 
 // @public
-export function enrichEmulatorColumnMetadata(col: EmulatorColumn): EmulatorColumn;
-
-// @public
 export type GristEmulator = {
     state: EmulatorDocumentState;
     bus: EventBus;
@@ -223,9 +220,6 @@ export const presets: {
     todoList(): GristReplicaDocument;
     contacts(): GristReplicaDocument;
 };
-
-// @public
-export function resolveMappings(state: EmulatorDocumentState): GristWidgetColumnMap | null;
 
 // @public
 export function safeParseDocument(input: unknown): z.ZodSafeParseResult<{

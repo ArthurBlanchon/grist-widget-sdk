@@ -498,7 +498,7 @@
     {
       "name": "useWidgetMetadata",
       "kind": "function",
-      "summary": "Sets the page's title and its description meta tags (Open Graph and Twitter included) when the component mounts and whenever `input` changes; nothing is restored on unmount. `mountGristWidget()` does this from the declaration's title and description.",
+      "summary": "Deprecated: `mountGristWidget()` sets the page's title and meta tags from the declaration. Sets the page's title and its description meta tags.",
       "signatures": [
         "useWidgetMetadata(input?: UseWidgetMetadataInput | null): void"
       ]
@@ -532,14 +532,6 @@
       "name": "DeployPath",
       "kind": "type",
       "summary": "A served URL's channel, and the base path its channels share: what `parseDeployPath` returns."
-    },
-    {
-      "name": "entryProps",
-      "kind": "function",
-      "summary": "The props `GristWidgetApp` takes, from a widget's entry module.",
-      "signatures": [
-        "entryProps(entry: GristWidgetEntry, dev?: boolean): GristWidgetAppProps"
-      ]
     },
     {
       "name": "GristWidgetApp",
@@ -796,14 +788,6 @@
       "summary": "How the emulator reaches the widget: pushes Grist's events to it."
     },
     {
-      "name": "enrichEmulatorColumnMetadata",
-      "kind": "function",
-      "summary": "Ensure `formula` (original) and `inferredFormula` strings exist alongside optional `formulaFn`.",
-      "signatures": [
-        "enrichEmulatorColumnMetadata(col: EmulatorColumn): EmulatorColumn"
-      ]
-    },
-    {
       "name": "GristEmulator",
       "kind": "type",
       "summary": "An in-memory Grist document and the `grist` global a widget reads it through."
@@ -830,14 +814,6 @@
       "name": "presets",
       "kind": "const",
       "summary": "Useful templates for quick demos and tests."
-    },
-    {
-      "name": "resolveMappings",
-      "kind": "function",
-      "summary": "Resolves the `mappings` payload that `CustomSectionAPI.mappings()` returns.",
-      "signatures": [
-        "resolveMappings(state: EmulatorDocumentState): GristWidgetColumnMap | null"
-      ]
     },
     {
       "name": "safeParseDocument",

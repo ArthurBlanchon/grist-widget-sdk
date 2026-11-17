@@ -35,6 +35,10 @@ const MANUAL_HINTS = {
   fetchTable: "use fetchRows(tableId) for rows, fetchRows(tableId, { columnar: true }) for columns",
   fetchTableRows: "use fetchRows(tableId, options)",
   useGristContext: "use widget.useGrist() or useGrist()",
+  useWidgetMetadata: "remove it: mountGristWidget() sets the page's title and meta tags from the declaration's title and description",
+  entryProps: "remove it: pass the entry module to mountGristWidget(entry) or smokeTestWidget(entry)",
+  resolveMappings: "remove it: read the mappings with emulator.grist.sectionApi.mappings(), or w.mappings",
+  enrichEmulatorColumnMetadata: "remove it: createGristEmulator() completes each column's metadata itself",
 }
 
 const PLACEHOLDER = "\u0000grist-widget-sdk/actions\u0000"

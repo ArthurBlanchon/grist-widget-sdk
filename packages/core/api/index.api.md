@@ -576,7 +576,7 @@ export type UseGristSchemaResult = {
     reload: () => Promise<void>;
 };
 
-// @public
+// @public @deprecated
 export function useWidgetMetadata(input?: UseWidgetMetadataInput | null): void;
 
 // @public

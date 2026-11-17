@@ -16,6 +16,14 @@ const migrate = (source) => {
 }
 
 describe("migrateSource", () => {
+  it("lists uses of the names 0.8 removed or deprecated, with what to do", () => {
+    const { manual } = migrate(
+      'import { useWidgetMetadata } from "grist-widget-sdk"\nimport { entryProps } from "grist-widget-sdk/app"\nimport { resolveMappings } from "grist-widget-sdk/emulator"\n'
+    )
+    expect(manual.map((m) => m.name)).toEqual(["useWidgetMetadata", "entryProps", "resolveMappings"])
+    expect(manual[0].hint).toMatch(/mountGristWidget\(\) sets the page's title/)
+  })
+
   it("leaves a file that doesn't import grist-widget-sdk alone", () => {
     const source = `const w = { isReady: true }\nw.isReady && fetchTable(x)\n`
     expect(migrate(source)).toEqual({ text: source, changes: [], manual: [] })

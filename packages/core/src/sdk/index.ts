@@ -63,7 +63,6 @@ export {
 } from "./use-grist-schema"
 
 // The page's title and meta tags
-export { useWidgetMetadata, type UseWidgetMetadataInput } from "./use-widget-metadata"
 
 // Cells
 export { tableDataToRows, type GristColumnarTable } from "./helpers/grist-table-data"
@@ -140,3 +139,4 @@ export type {
   GristWidgetInteraction,
   GristWidgetLinkingInfo,
 } from "./types"
+export { useWidgetMetadata, type UseWidgetMetadataInput } from "./use-widget-metadata"

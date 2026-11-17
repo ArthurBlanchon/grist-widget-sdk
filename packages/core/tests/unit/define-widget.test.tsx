@@ -5,7 +5,7 @@ import "@testing-library/jest-dom/vitest"
 import { afterEach, describe, expect, expectTypeOf, it } from "vitest"
 
 import { defineGristWidget, type GristWidgetRow } from "../../src/sdk"
-import { entryProps } from "../../src/app"
+import { entryProps } from "../../src/app/mount-grist-widget"
 import { actionsOf, cleanup, fireEvent, renderWithGrist, screen, smokeTestWidget, waitFor } from "../../src/emulator/testing"
 
 afterEach(() => cleanup())

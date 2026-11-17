@@ -1,13 +1,9 @@
 import type { CSSProperties, ReactNode } from "react"
 
-import { useGristSdkAlerts, type GristSdkAlertDescriptor, type GristSdkAlertsOptions } from "../../sdk/helpers/grist-sdk-alerts"
+import { useChromeMessages } from "../../sdk/chrome-messages"
+import { useGristSdkAlerts, type GristSdkAlertDescriptor } from "../../sdk/helpers/grist-sdk-alerts"
 import { ReportProblemLink } from "./report-problem"
 import { tokens } from "./tokens"
-
-const ALERT_OPTIONS: GristSdkAlertsOptions = {
-  sectionNotLinkedHint:
-    "In Grist, select this widget section on the page, then use Link to connect a table, card, or chart view as the selector.",
-}
 
 /**
  * The default `Alerts` of {@link mountGristWidget}: what needs the user's
@@ -15,7 +11,8 @@ const ALERT_OPTIONS: GristSdkAlertsOptions = {
  * section), above the widget. Renders nothing extra when all is well.
  */
 export function WidgetAlerts({ children }: { children: ReactNode }) {
-  const alerts = useGristSdkAlerts(ALERT_OPTIONS)
+  const { locale, t } = useChromeMessages()
+  const alerts = useGristSdkAlerts({ sectionNotLinkedHint: t.sectionNotLinkedHint })
   const shown = alerts.length > 0
   // One structure whether or not there are alerts: the widget keeps its place in the tree, so
   // an alert coming or going (a failed write, a mapping being changed) never remounts it and
@@ -23,7 +20,7 @@ export function WidgetAlerts({ children }: { children: ReactNode }) {
   return (
     <div style={shown ? COLUMN : CONTENTS}>
       {shown ? (
-        <div style={{ ...COLUMN, padding: "0.75rem 0.75rem 0" }}>
+        <div lang={locale} style={{ ...COLUMN, padding: "0.75rem 0.75rem 0" }}>
           {alerts.map((alert) => (
             <WidgetAlert key={alert.id} alert={alert} />
           ))}

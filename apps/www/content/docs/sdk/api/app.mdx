@@ -31,7 +31,7 @@ own file, so `src/main.tsx` is the same in every widget and
 | Export | | |
 | --- | --- | --- |
 | `default` | required | The widget component. `React.lazy()` works. |
-| `widget` | required | The declaration, from [`defineGristWidget()`](/docs/sdk/guide/typing#declare-once): access, columns, title and description (the page's title and meta tags), and `reportUrl` (see [When something goes wrong](#when-something-goes-wrong)). |
+| `widget` | required | The declaration, from [`defineGristWidget()`](/docs/sdk/guide/typing#declare-once): access, columns, title and description (the page's title and meta tags), `reportUrl` (see [When something goes wrong](#when-something-goes-wrong)) and `languages` (see [In the widget's language](#in-the-widgets-language)). |
 | `Alerts`, `LocalDevPage`, `ReleasePage` | optional | Replace the SDK's alerts or pages (see the options below). `export const Alerts = null` renders the widget alone. |
 
 ## `mountGristWidget(config)`
@@ -63,7 +63,7 @@ mountGristWidget({ App, options, dev: false })
 | --- | --- | --- |
 | `App` | required | The widget component. `React.lazy()` works. |
 | `options` | required | The declaration's options (`widget.options`), passed to `GristWidgetProvider`. |
-| `metadata` | none | `{ title, description, reportUrl }`: the page's title and meta tags, and where to report a problem. `mountGristWidget(entry)` takes it from the declaration. |
+| `metadata` | none | `{ title, description, reportUrl, languages }`: the page's title and meta tags, where to report a problem, and the widget's languages. `mountGristWidget(entry)` takes it from the declaration. |
 | `dev` | `false` | Pass `import.meta.env.DEV`. Outside Grist, it picks `LocalDevPage` over `ReleasePage`. |
 | `Alerts` | the SDK's alerts | Wraps the widget inside Grist, under the boundary. The default lists what needs the user's attention (column mapping, access level, failed writes, an unlinked section) above the widget. `null` renders the widget alone. |
 | `LocalDevPage` | the SDK's page | Shown outside Grist on the dev server: it points at `pnpm test` and the `dev` loop. |
@@ -108,6 +108,29 @@ export const widget = defineGristWidget({
 
 Nothing is sent anywhere: the person opens the link and writes what they
 choose. A URL that isn't http or https is ignored, and so is a missing one.
+
+## In the widget's language
+
+The screens before the widget renders, the alerts above it, "Report a
+problem" and "The widget stopped working" speak English or French. They
+take the first of the person's browser languages that the widget declares
+in `languages` and the SDK speaks; the French quotes Grist's own French
+labels ("Accès complet au document").
+
+```ts
+import { defineGristWidget } from "grist-widget-sdk"
+
+export const widget = defineGristWidget({
+  title: "Kanban board",
+  requiredAccess: "full",
+  languages: ["en", "fr"],
+})
+```
+
+Without `languages`, the widget is English and so is the chrome, whatever
+the browser prefers. A widget that lists only other languages gets English
+chrome. `renderWithGrist(<App />, { widget, rows })` uses the same rule, so
+a test can check the French screens.
 
 ## `<GristWidgetApp>`
 

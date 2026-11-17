@@ -53,10 +53,9 @@ Each item is one pull request; the plan says when each milestone is done.
   an API coverage check; awesome-grist-widgets absorbed and archived; the
   six reference repositories retired, the news feed with them
   ([ADR 0011](./docs/decisions/0011-reference-widgets-retired.md)).
-- [ ] **The SDK's chrome in the widget's language.** "Report a problem",
-  "The widget stopped working" and the SDK's alerts are English only, in
-  widgets that are English and French. Done when the chrome follows the
-  widget's language (French at least), with a test.
+- [ ] **The catalog's widgets declare `languages: ["en", "fr"]`** once the
+  SDK release with it is out ([ADR 0021](./docs/decisions/0021-chrome-language.md)),
+  so their chrome matches their messages: a patch release of each.
 - [ ] **One click on "Report a problem" inside Grist** on `/widgets/<slug>/dev/`
   before the next widget release: whether Grist's iframe sandbox lets the
   link open its tab. Done when checked, or the link works around it.

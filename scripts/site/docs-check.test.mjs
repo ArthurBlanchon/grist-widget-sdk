@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 
-import { ALLOWED_PAGES, DOCS_DIR, listPages, oldForms, proseWords } from "./docs-check.mjs"
+import { ALLOWED_PAGES, DOCS_DIR, listPages, oldForms, proseWords, referenceOldForms } from "./docs-check.mjs"
 
 test("the old forms are found, with their line", () => {
   const text = "# Page\n\nexport const GRIST_OPTIONS = {}\nconst w = useGrist<Row>()\nrenderWithGrist(<App />)\nrenderWithGrist(<App />, { widget, rows })\nfetchTable(\"T\")"
@@ -49,4 +49,9 @@ test("a page can't allow old forms itself: only ALLOWED_PAGES, each with a reaso
     assert.ok(pages.includes(page), page)
     assert.ok(why.length > 20, page)
   }
+})
+
+test("the generated reference's summaries get the check too", () => {
+  const reference = { "grist-widget-sdk/app": [{ name: "A", summary: "Export GRIST_OPTIONS." }, { name: "B", summary: "Fine." }] }
+  assert.deepEqual(referenceOldForms(reference).map(([name]) => name), ["grist-widget-sdk/app A"])
 })

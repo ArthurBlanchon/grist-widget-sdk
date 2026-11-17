@@ -11,6 +11,7 @@ import { WidgetAlerts } from "./chrome/widget-alerts"
 import { parseDeployPath, type DeployChannel } from "./deploy-path"
 import { EmbeddedThemeProvider, StandaloneThemeProvider } from "./widget-theme"
 
+/** What renders a widget: the component, what it asks Grist for, and the pages and alerts around it. */
 export type GristWidgetAppProps = {
   /** The widget. A `React.lazy()` component works too: its code then loads only inside Grist. */
   App: ComponentType
@@ -43,6 +44,7 @@ export type GristWidgetAppProps = {
   ReleasePage?: ComponentType<{ channel: DeployChannel }>
 }
 
+/** `mountGristWidget()`'s older form: the widget's props, and where to render. */
 export type MountGristWidgetConfig = GristWidgetAppProps & {
   /** The element to render into, or its CSS selector. Defaults to `#root`. */
   root?: Element | string
@@ -50,12 +52,14 @@ export type MountGristWidgetConfig = GristWidgetAppProps & {
 
 /**
  * A widget's entry module, `src/app/App.tsx`, as `import * as entry` gives
- * it: the widget as its default export, its declaration as `widget` (or, in
- * a widget made before `defineGristWidget`, `GRIST_OPTIONS` and
- * `WIDGET_METADATA`), and optionally its own `Alerts`, `LocalDevPage` and
- * `ReleasePage`. Everything a widget customises lives there, in its own
- * file: the template's `src/main.tsx` stays the same in every widget, and
- * `create-grist-widget upgrade` can rewrite it without losing anything.
+ * it: the widget as its default export, its declaration as `widget`, and
+ * optionally its own `Alerts`, `LocalDevPage` and `ReleasePage`.
+ *
+ * Everything a widget customises lives there, in its own file: the
+ * template's `src/main.tsx` stays the same in every widget, and
+ * `create-grist-widget upgrade` can rewrite it without losing anything. A
+ * widget made before `defineGristWidget` exports `GRIST_OPTIONS` and
+ * `WIDGET_METADATA` instead, which still works.
  */
 export type GristWidgetEntry = {
   default: ComponentType
@@ -97,6 +101,7 @@ export function entryProps(entry: GristWidgetEntry, dev = false): GristWidgetApp
   return props
 }
 
+/** A mounted widget: `unmount()` removes it and its React root. */
 export type MountedGristWidget = {
   unmount: () => void
 }
@@ -124,6 +129,7 @@ export type MountedGristWidget = {
  * `ReleasePage` on a deployed URL.
  */
 export function mountGristWidget(entry: GristWidgetEntry, options?: { dev?: boolean; root?: Element | string }): MountedGristWidget
+/** The older form: the widget's props, as an object. Prefer `mountGristWidget(entry, { dev })`. */
 export function mountGristWidget(config: MountGristWidgetConfig): MountedGristWidget
 export function mountGristWidget(
   config: MountGristWidgetConfig | GristWidgetEntry,

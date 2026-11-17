@@ -1,5 +1,6 @@
 import type { GristColumnsToMap, GristColumnToMap, GristWidgetColumnMap } from "../types"
 
+/** Whether the declared columns are mapped: what is missing, and whether Grist has sent the mappings yet. */
 export type ValidateColumnMappingsResult = {
   ok: boolean
   /**

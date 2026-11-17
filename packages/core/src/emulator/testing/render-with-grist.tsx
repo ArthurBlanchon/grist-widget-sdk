@@ -43,10 +43,17 @@ export type RenderWithGristOptions = RenderOptions & {
   readOnly?: boolean
 }
 
+/** Testing Library's render result, with the emulator the widget runs against. */
 export type RenderWithGristResult = RenderResult & {
   emulator: GristEmulator
 }
 
+/**
+ * Renders a component against an in-memory Grist (the emulator), behind the
+ * same `grist` global a widget reads in Grist. With `widget`, it renders the
+ * widget in its provider, boundary and alerts, every declared column mapped
+ * to a table of `rows`: `renderWithGrist(<App />, { widget, rows })`.
+ */
 export function renderWithGrist(
   ui: ReactElement,
   options: RenderWithGristOptions = {}

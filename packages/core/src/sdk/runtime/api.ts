@@ -32,11 +32,13 @@ export type ListTablesOptions = {
   includeSystem?: boolean
 }
 
+/** `listColumns()`'s options: which columns to leave out. */
 export type ListColumnsOptions = GristNoiseColumnsOptions & {
   /** Include every column, Grist's helper and bookkeeping ones too. */
   includeSystem?: boolean
 }
 
+/** One column of a table, as `listColumns()` gives it. */
 export type GristColumnInfo = {
   colId: string
   /** Grist's type: `Text`, `Choice`, `Ref:People`, `RefList:Tags`, `Date`, `DateTime:Europe/Paris`… */

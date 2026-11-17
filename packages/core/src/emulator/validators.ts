@@ -91,10 +91,12 @@ function formatZodError(prefix: string, error: z.ZodError): Error {
   return new Error(`${prefix}: ${details}`)
 }
 
+/** Checks a replica document, returning zod's result instead of throwing. */
 export function safeParseDocument(input: unknown) {
   return replicaDocumentSchema.safeParse(input)
 }
 
+/** Checks a replica document and returns it, or throws naming each problem's path. */
 export function parseDocument(input: unknown): GristReplicaDocument {
   const result = safeParseDocument(input)
   if (!result.success) {

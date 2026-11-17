@@ -18,39 +18,45 @@ added or removed without changing it.
 | `grist-widget-sdk/emulator/testing` | `renderWithGrist`, `smokeTestWidget`, `presets` and Testing Library. |
 | `grist-widget-sdk/tsconfig/app.json`, `grist-widget-sdk/tsconfig/node.json` | TypeScript settings for a widget's `tsconfig.app.json` and `tsconfig.node.json` to `extends` (TypeScript 5.8 or later). A stricter check only ships in a minor release. |
 
-## Hooks and components
+## By entry point
 
-| Symbol | Purpose | Reference |
-| --- | --- | --- |
-| `defineGristWidget(definition)` | The widget's declaration (access, columns, title). `widget.useGrist()` is `useGrist()` typed from it, with no generics. | [Typed reads](/docs/sdk/guide/typing#declare-once) |
-| `useGrist()` | The widget's one object for Grist, untyped (`widget.useGrist()` is the typed one): status, records, mapping, writes, options, linking, REST. | [useGrist](/docs/sdk/api/use-grist) |
-| `useGristOptional()` | `useGrist()` inside a provider, `null` outside one. | [useGrist](/docs/sdk/api/use-grist#outside-a-provider) |
-| `useGristSchema(options?)` | The document's schema and sample rows (full access). | [useGristSchema](/docs/sdk/api/use-grist-schema) |
-| `useWidgetMetadata(meta)` | The page's title and meta tags. | [Helpers](/docs/sdk/api/helpers#widget-metadata) |
-| `GristWidgetProvider` | Connects to Grist for the components below it. | [Provider & boundary](/docs/sdk/api/provider-boundary) |
-| `GristBoundary` | Renders the widget once connected, granted and mapped. | [Provider & boundary](/docs/sdk/api/provider-boundary) |
+Each table is generated from the SDK's own documentation comments, the
+ones your editor shows on hover, so it lists every public name and nothing
+else. The pages linked from each section explain them.
 
-`mountGristWidget()` renders the provider and the boundary: a scaffolded
-widget never renders them itself.
+### `grist-widget-sdk`
 
-## Helpers
+The hooks ([useGrist](/docs/sdk/api/use-grist),
+[useGristSchema](/docs/sdk/api/use-grist-schema)), the
+[provider and boundary](/docs/sdk/api/provider-boundary), the cell and
+attachment [helpers](/docs/sdk/api/helpers), and the [types](/docs/sdk/api/types).
+`defineGristWidget()` is explained in [Typed reads](/docs/sdk/guide/typing).
 
-| Symbols | Reference |
-| --- | --- |
-| `tableDataToRows`, `decodeGristValue`, `encodeGristValue`, `isGristCellError`, `normalizeGristChoiceListEntries`, `resolveGristFormulaKind` | [Cells](/docs/sdk/api/helpers#cells) |
-| `extractGristAttachmentId`, `extractGristAttachmentIdsFromCell`, `gristAttachmentCellValue`, `gristAttachmentCellValues`, `mergeGristAttachmentCellValue` | [Attachments](/docs/sdk/api/helpers#attachments) |
-| From `grist-widget-sdk/actions`: `gristAddRecordAction`, `gristUpdateRecordAction`, `gristRemoveRecordAction`, `gristBulkAddRecordAction`, `gristBulkUpdateRecordAction`, `gristBulkRemoveRecordAction`, `gristAddTableAction`, `gristAddColumnAction`, `gristAddVisibleColumnAction`, `gristModifyColumnAction`, `gristRenameColumnAction`, `gristRemoveColumnAction` | [User actions](/docs/sdk/api/helpers#user-actions) |
-| `checkGristCell`, `encodeGristCell`, and the types `GristMappedRow`, `GristCellIssue`, `StandardSchema` | [Typed reads](/docs/sdk/guide/typing), [Write data](/docs/sdk/guide/writing-data#any-table-under-its-own-column-ids) |
+<ApiReference entry="grist-widget-sdk" />
+
+### `grist-widget-sdk/app`
+
+[Mounting a widget](/docs/sdk/api/app): `mountGristWidget()`, the theme and
+the deploy channels.
+
+<ApiReference entry="grist-widget-sdk/app" />
+
+### `grist-widget-sdk/actions`
+
+[User actions](/docs/sdk/api/helpers#user-actions) for `applyActions()`.
+
+<ApiReference entry="grist-widget-sdk/actions" />
+
+### `grist-widget-sdk/emulator`
+
+The [emulator](/docs/emulator/api), the engine of the testing helpers.
+
+<ApiReference entry="grist-widget-sdk/emulator" />
+
+### `grist-widget-sdk/emulator/testing`
+
+[Testing](/docs/emulator/testing) a widget without a Grist document.
+
+<ApiReference entry="grist-widget-sdk/emulator/testing" />
 
 How names are retired, and what each version promises: [Versioning policy](/docs/sdk/api/versioning).
-
-## Types
-
-Every exported type, with a line each: [Types](/docs/sdk/api/types).
-
-## Emulator & testing
-
-| Symbol | Reference |
-| --- | --- |
-| `createGristEmulator`, `presets`, `parseDocument`, `safeParseDocument` | [Emulator API](/docs/emulator/api) |
-| `renderWithGrist`, `smokeTestWidget`, `actionsOf`, `eventsOf`, `waitForEvent` | [Testing](/docs/emulator/testing) |

@@ -2,6 +2,7 @@ import { loader } from 'fumadocs-core/source';
 import { docsContentRoute, docsImageRoute, docsRoute } from './shared';
 import { defineDocs } from 'fumadocs-mdx/macro';
 import { metaSchema, pageSchema } from 'fumadocs-core/source/schema';
+import { expandGeneratedComponents } from '@/lib/llm-components';
 
 /**
  * Approximates the page's first prose paragraph from its raw .mdx source --
@@ -135,7 +136,7 @@ export function getPageMarkdownUrl(page: (typeof source)['$inferPage']) {
 }
 
 export async function getLLMText(page: (typeof source)['$inferPage']) {
-  const processed = await page.data.getText('processed');
+  const processed = expandGeneratedComponents(await page.data.getText('processed'));
 
   return `# ${page.data.title} (${page.url})
 

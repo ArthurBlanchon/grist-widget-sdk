@@ -1,7 +1,7 @@
 import type { GristDocApi, GristReplicaColumn, GristRowRecord } from "../types"
 import { decodeGristValue } from "./grist-value-codec"
 
-/** Column-oriented table payload (`fetchTable`, `fetchSelectedTable`): `{ id: [...], Name: [...] }`. */
+/** Column-oriented table payload, as Grist's `grist.docApi.fetchTable` and `grist.fetchSelectedTable` send it: `{ id: [...], Name: [...] }`. */
 export type GristColumnarTable = Record<string, unknown[]>
 export type GristTableRowsOrder = "none" | "id" | "grist"
 export type FetchGristTableRowsOptions = {

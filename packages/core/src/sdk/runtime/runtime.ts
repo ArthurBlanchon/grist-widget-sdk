@@ -28,6 +28,7 @@ import { ensureGristReady, resetGristReady } from "./ready"
 
 export type GristConnection = "connecting" | "ready" | "not-embedded" | "unavailable" | "error"
 export type GristTheme = "light" | "dark"
+/** A write's status: none running, one running, or the last one failed (`actionError` says why). */
 export type GristWidgetActionStatus = "idle" | "running" | "error"
 
 export type GristRuntimeState = {

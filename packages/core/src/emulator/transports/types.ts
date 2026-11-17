@@ -3,6 +3,7 @@ import type { EmulatorApiBundle } from "../api"
 import type { EventBus } from "../core/event-bus"
 import type { EmulatorDocumentState } from "../core/types"
 
+/** How the emulator reaches the widget: pushes Grist's events to it. */
 export type EmulatorTransport = {
   /** Tear the transport down. Idempotent. */
   dispose: () => void

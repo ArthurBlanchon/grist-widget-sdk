@@ -30,8 +30,10 @@ import {
 import type { EventBus } from "./event-bus"
 import type { EmulatorColumn, EmulatorDocumentState, EmulatorTable } from "./types"
 
+/** A user action the emulator could not apply (a missing row, an action it does not support): the action, and why. */
 export class EmulatorActionError extends Error {
   constructor(
+    /** The failing user action, or the part of it naming what failed; `null` for an unknown column. */
     public readonly action: unknown,
     message: string
   ) {

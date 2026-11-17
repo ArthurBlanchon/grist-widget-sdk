@@ -5,6 +5,7 @@ export type GristFetchedAttachment = {
   contentType: string
 }
 
+/** An attachment's bytes, and their content type. */
 export type GristFetchedAttachmentBlob = {
   blob: Blob
   contentType: string

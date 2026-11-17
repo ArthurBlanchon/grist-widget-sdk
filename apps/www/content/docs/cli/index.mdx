@@ -151,9 +151,10 @@ npx create-grist-widget init --example form-edit
 ```
 
 Files that already exist and are identical to the template are left
-untouched; the four identity-bearing files (`package.json`, `README.md`,
-`index.html`, `src/app/App.tsx`) get the usual name/title substitution even if
-present. Anything else that already exists **and** differs from the
+untouched; the five identity-bearing files (`package.json`, `README.md`,
+`CHANGELOG.md`, `index.html`, `src/app/App.tsx`) get the usual name/title
+substitution even if present, and the README loses the template's own
+maintainer notes. Anything else that already exists **and** differs from the
 template's own copy stops the run and lists the conflicting paths — pass
 `--force` to overwrite anyway. If `.git` already exists, `init` never
 auto-commits; review and commit the result yourself. If it doesn't, `init`

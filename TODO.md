@@ -63,14 +63,18 @@ Each item is one pull request; the plan says when each milestone is done.
   an identical build (the timeline scrolls to "today" on mount, by layout
   timing): make that scroll deterministic in the next Gantt change, so
   `--baseline` reads "unchanged" for it as for the 15 others.
-- [ ] **The scaffold, as a newcomer meets it** (found following "Your
-  first widget" word for word, 2026-11-16): its README carries the
-  template's maintainer sections ("This is the source template", "Monorepo
-  dev", "How this template is distributed"); its `CHANGELOG.md` is headed
-  `grist-widget-template-vite` and its demo's widget section "Grist Widget
-  Template", not the widget's name; `pnpm dev` and `pnpm test` warn about
-  `__dirname` in `vite.config.ts`. Done when a fresh scaffold names itself
-  everywhere and starts without a warning.
+- [ ] **The scaffold's demo names its widget section "Grist Widget Template"**
+  (found following "Your first widget", 2026-11-16): the title is inside
+  the template's `public/demo/demo.grist`, which the scaffold copies as is.
+  Done when a fresh scaffold's demo names the section after the widget
+  (the document regenerated with a neutral title, or the title set when
+  the page opens it), which needs Docker to check.
+- [ ] **A "Use this template" copy keeps the distribution repo's name**:
+  the deploy's first release renames `grist-widget-template-vite`, but a
+  copy of `grist-widget-template` (scaffolded under that name) reads
+  `grist-widget-template` in its `package.json`, README and CHANGELOG, which
+  the deploy's identity edits don't match (found reviewing #106). Done when
+  the first release names such a copy after its repository too.
 - [ ] **The typed-reads example shows a Date a day early west of UTC**
   (#85; the docs page is fixed): `examples/typed-reads/WidgetApp.tsx` needs
   `timeZone: "UTC"`. `examples/` isn't in ADR 0012's table, so its fix

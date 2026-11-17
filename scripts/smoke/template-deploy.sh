@@ -297,6 +297,7 @@ echo '{ "name": "grist-widget-template-vite", "version": "0.2.23" }' > "$SOURCE_
 printf '%s\n' "# grist-widget-template-vite" "" "Starter template." "" \
   "<!-- install-url:start -->" "**Install URL**: written here by this widget's first release." "<!-- install-url:end -->" \
   > "$SOURCE_SEED/README.md"
+printf '%s\n' "# grist-widget-template-vite" > "$SOURCE_SEED/CHANGELOG.md"
 cat > "$SOURCE_SEED/index.html" <<'HTML'
 <!doctype html>
 <html>
@@ -369,6 +370,7 @@ MAIN_NAME="$(node -p "require('$WORK/verify-main/package.json').name")"
 echo "   package.json name after reset: $MAIN_NAME"
 [ "$MAIN_NAME" = "ask-genial-widget" ] || { echo "::error::package.json name was not personalized (got $MAIN_NAME)"; exit 1; }
 grep -q "^# ask-genial-widget" "$WORK/verify-main/README.md" || { echo "::error::README.md heading was not personalized"; exit 1; }
+grep -q "^# ask-genial-widget" "$WORK/verify-main/CHANGELOG.md" || { echo "::error::CHANGELOG.md heading was not personalized"; exit 1; }
 # R1: the install URL, with the owner lowercased as GitHub Pages serves it,
 # so the widget can be registered.
 grep -qF "<https://someowner.github.io/ask-genial-widget/latest/>" "$WORK/verify-main/README.md" || { echo "::error::README.md install URL was not written on the first release"; exit 1; }

@@ -49,6 +49,7 @@ import { BUMPS, runRelease } from "../src/release.mjs"
 import { runProtect } from "../src/protect.mjs"
 import { DEMO_DIR, demoArgs, demoRefusal, runDemo, saveDemo } from "../src/demo.mjs"
 import { MANIFEST_FILE, writeManifest } from "../src/manifest.mjs"
+import { stripTemplateOnly } from "../src/template-only.mjs"
 
 const PKG_ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..")
 const TEMPLATE_DIR = path.join(PKG_ROOT, "template")
@@ -106,6 +107,7 @@ function applyIdentityEdits(target, rawName) {
   const edits = [
     ["package.json", [["grist-widget-template-vite", rawName]]],
     ["README.md", [["grist-widget-template-vite", rawName]]],
+    ["CHANGELOG.md", [["grist-widget-template-vite", rawName]]],
     ["index.html", [["<title>Grist Widget</title>", `<title>${title}</title>`]]],
     ["src/app/App.tsx", [['title: "Grist Widget Template",', `title: "${title}",`]]],
     ["public/demo/index.html", [["Grist Widget Template — demo", `${title} — demo`]]],
@@ -115,6 +117,7 @@ function applyIdentityEdits(target, rawName) {
     if (!existsSync(p)) continue
     let content = readFileSync(p, "utf8")
     for (const [search, replace] of subs) content = content.split(search).join(replace)
+    if (file === "README.md") content = stripTemplateOnly(content)
     writeFileSync(p, content)
   }
   return title
@@ -392,7 +395,7 @@ async function cmdInit(argv) {
   // common case, a pristine "Use this template" clone); anything else that
   // already exists and differs from the template's own pristine copy blocks
   // the run, listed, unless --force.
-  const IDENTITY_FILES = new Set(["package.json", "README.md", "index.html", "src/app/App.tsx"])
+  const IDENTITY_FILES = new Set(["package.json", "README.md", "CHANGELOG.md", "index.html", "src/app/App.tsx"])
   const templateFiles = listFilesRecursive(TEMPLATE_DIR)
   if (!args.force) {
     const conflicts = []

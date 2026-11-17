@@ -11,14 +11,14 @@ import { defineConfig } from "vitest/config"
 // Read here (Node context) rather than importing package.json into src/ --
 // keeps the whole file out of the bundle, exposing only the one field the
 // landing page footer needs.
-const pkg = JSON.parse(readFileSync(path.resolve(__dirname, "package.json"), "utf8"))
+const pkg = JSON.parse(readFileSync(path.resolve(import.meta.dirname, "package.json"), "utf8"))
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src"),
+      "@": path.resolve(import.meta.dirname, "./src"),
     },
   },
   define: {

@@ -1,6 +1,6 @@
 # grist-widget-template-vite
 
-Base template to build a Grist widget with `grist-widget-sdk`.
+A Grist custom widget, built with `grist-widget-sdk`.
 
 <!-- install-url:start -->
 **Install URL**: written here by this widget's first release (its GitHub Pages `/latest/` URL).
@@ -25,6 +25,7 @@ To see the widget in a real Grist on your machine, run `pnpm demo` (it needs Doc
 
 The template ships `public/demo/`, a demo page for its own widget; `pnpm demo --save` rewrites it for yours (do it once your columns differ): the same document as `pnpm demo`, opened by Grist running in the browser from static files. Commit it, and every deployed channel serves it next to the widget (`…/latest/demo/`): a link anyone can open, with no server and nothing saved. To change its data, open `public/demo/demo.grist` in any Grist, edit it, and download it back over the file.
 
+<!-- template-only:start: the template's own maintainer notes; a scaffold doesn't get them -->
 **Monorepo dev:** this template resolves `grist-widget-sdk` from `packages/core/dist` (like the other widgets), not from SDK source. After changing the SDK, run `pnpm prebuild` or `pnpm --filter grist-widget-sdk build` before `pnpm dev`.
 
 ## How this template is distributed
@@ -72,6 +73,7 @@ template; to try one locally, scaffold from your working tree with
 `pnpm --filter create-grist-widget build` (embeds this template verbatim —
 see `scripts/build-template.mjs`) and run the packed CLI against a scratch
 directory, same as `scripts/smoke/create-widget.sh` does.
+<!-- template-only:end -->
 
 ## Deployment
 

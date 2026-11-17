@@ -22,6 +22,11 @@ describe("chromeLocale", () => {
     expect(chromeLocale(["en"], ["fr"])).toBe("en")
   })
 
+  it("takes only strings from an untyped declaration, and underscores in tags", () => {
+    expect(chromeLocale("fr" as unknown as string[], ["fr"])).toBe("en")
+    expect(chromeLocale(["en", 3, "fr_FR"] as unknown as string[], ["fr-CA"])).toBe("fr")
+  })
+
   it("falls back to the widget's first language the SDK speaks", () => {
     expect(chromeLocale(["fr", "en"], ["de"])).toBe("fr")
     expect(chromeLocale(["de"], ["de"])).toBe("en")
@@ -38,7 +43,7 @@ describe("the chrome in French", () => {
     const state = { ...initialRuntimeState(), connection: "ready" as const, declaredAccess: "full" as const, grantedAccess: "read table" as const }
     const screen = boundaryScreen(state, undefined, "fr")
     expect(screen?.title).toBe("Il faut plus d'accès")
-    expect(screen?.message).toContain("« Accès complet au document »")
+    expect(screen?.message).toContain("«\u202fAccès complet au document\u202f»")
 
     const ready = { ...initialRuntimeState(), connection: "ready" as const, grantedAccess: "full" as const, declaredAccess: "full" as const, mappings: {} }
     const [alert] = getGristSdkAlerts({ ...ready, readOnly: true }, {}, { locale: "fr" })
@@ -86,5 +91,22 @@ describe("mountGristWidget's chrome follows the declaration", () => {
     } finally {
       window.removeEventListener("error", onError)
     }
+  })
+
+  it("names the boundary's screen and the alerts in French, with lang for screen readers", async () => {
+    frenchBrowser()
+    const widget = defineGristWidget({ requiredAccess: "full", languages: ["en", "fr"], columns: [{ name: "Title", type: "Text" }] })
+    renderWithGrist(<p>Widget</p>, { widget, rows: [{ Title: "A" }], emulator: { widgetInteraction: { access_level: "read table" } } })
+    const title = await screen.findByText("Il faut plus d'accès")
+    expect(title.closest("[lang]")?.getAttribute("lang")).toBe("fr")
+  })
+
+  it("names an alert above the widget in French", async () => {
+    frenchBrowser()
+    const widget = defineGristWidget({ requiredAccess: "full", languages: ["en", "fr"], columns: [{ name: "Title", type: "Text" }] })
+    renderWithGrist(<p>Widget</p>, { widget, rows: [{ Title: "A" }], readOnly: true })
+    const title = await screen.findByText("Document en lecture seule")
+    expect(title.closest("[lang]")?.getAttribute("lang")).toBe("fr")
+    expect(screen.getByText("Widget")).toBeTruthy()
   })
 })

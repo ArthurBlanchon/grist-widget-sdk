@@ -67,8 +67,6 @@ const SEVERITY: Record<GristSdkAlertKind, GristSdkAlertSeverity> = {
   "read-only": "info",
 }
 
-
-
 /** A widget section Grist says is linked to nothing. */
 export function isWidgetSectionNotLinked(interaction: GristWidgetInteraction | null | undefined): boolean {
   const linking = parseGristWidgetLinkingInfo(interaction?.linking)

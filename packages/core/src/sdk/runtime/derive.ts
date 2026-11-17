@@ -4,6 +4,7 @@
  * functions, so they are tested without React or Grist.
  */
 
+import { chromeAccessLabel } from "../chrome-messages"
 import { validateColumnMappings, type ValidateColumnMappingsResult } from "../helpers/grist-mappings"
 import type { GristColumnsToMap, GristRequiredAccess, GristWidgetColumnMap } from "../types"
 import { encodeGristCell, nameOf, typeOf } from "./cells"
@@ -19,7 +20,7 @@ export function parseAccess(raw: unknown): GristRequiredAccess | null {
 }
 
 export function accessLabel(level: GristRequiredAccess): string {
-  return level === "full" ? "Full document access" : level === "read table" ? "Read selected table" : "No document access"
+  return chromeAccessLabel(level, "en")
 }
 
 /** Grist granted less than the widget declared (Grist reports it with the widget options). */

@@ -74,6 +74,8 @@ type GristBoundaryScreenProps = {
   actions?: GristBoundaryActions
   retryLabel?: string
   retryBusyLabel?: string
+  /** The language of the screen's words, for screen readers. */
+  lang?: string
 }
 
 /** Centered full-viewport chrome for booting / unavailable / error states. */
@@ -85,9 +87,10 @@ export function GristBoundaryScreen({
   actions,
   retryLabel = "Try reconnecting",
   retryBusyLabel = "Reconnecting…",
+  lang,
 }: GristBoundaryScreenProps) {
   return (
-    <div style={shellStyle} role={tone === "error" ? "alert" : "status"}>
+    <div style={shellStyle} role={tone === "error" ? "alert" : "status"} lang={lang}>
       <div style={cardStyle}>
         <h2 style={titleStyle}>{title}</h2>
         <p style={messageStyle}>{message}</p>
@@ -177,6 +180,7 @@ export function GristBoundary({ children }: GristBoundaryProps) {
       actions={{ reload, isReloading }}
       retryLabel={screen.tone === "error" ? t.retry : t.reconnect}
       retryBusyLabel={screen.tone === "error" ? t.retrying : t.reconnecting}
+      lang={locale}
     />
   )
 }

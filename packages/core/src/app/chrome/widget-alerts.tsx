@@ -11,7 +11,7 @@ import { tokens } from "./tokens"
  * section), above the widget. Renders nothing extra when all is well.
  */
 export function WidgetAlerts({ children }: { children: ReactNode }) {
-  const { t } = useChromeMessages()
+  const { locale, t } = useChromeMessages()
   const alerts = useGristSdkAlerts({ sectionNotLinkedHint: t.sectionNotLinkedHint })
   const shown = alerts.length > 0
   // One structure whether or not there are alerts: the widget keeps its place in the tree, so
@@ -20,7 +20,7 @@ export function WidgetAlerts({ children }: { children: ReactNode }) {
   return (
     <div style={shown ? COLUMN : CONTENTS}>
       {shown ? (
-        <div style={{ ...COLUMN, padding: "0.75rem 0.75rem 0" }}>
+        <div lang={locale} style={{ ...COLUMN, padding: "0.75rem 0.75rem 0" }}>
           {alerts.map((alert) => (
             <WidgetAlert key={alert.id} alert={alert} />
           ))}

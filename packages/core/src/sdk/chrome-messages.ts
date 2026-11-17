@@ -4,6 +4,8 @@
  * speaks. A widget says which languages it ships in its declaration
  * (`languages`); the chrome speaks the first of the person's browser
  * languages that both the widget and the SDK have, so it matches the widget.
+ * `mountGristWidget()` (and `GristWidgetApp`) set it; a `GristBoundary`
+ * rendered under a provider of the widget's own speaks English.
  *
  * The French quotes Grist's own French labels ("Accès complet au document",
  * "vue personnalisée"), as Grist's French interface shows them.
@@ -84,11 +86,11 @@ const fr: GristChromeMessages = {
   errorTitle: "Une erreur s'est produite",
   errorMessage: "La connexion à Grist a échoué. Réessayez, ou rechargez la page.",
   accessTitle: "Il faut plus d'accès",
-  accessMessage: "Choisissez au moins « {level} » comme niveau d'accès, dans les réglages de la vue personnalisée.",
+  accessMessage: "Choisissez au moins « {level} » comme niveau d'accès, dans les réglages de la vue personnalisée.",
   mappingPendingMessage: "En attente des colonnes associées, que Grist envoie…",
   mappingTitle: "Associez vos colonnes",
   mappingMessage:
-    "Ouvrez les réglages du widget dans Grist (panneau de droite → vue personnalisée) et associez chaque colonne requise à une colonne de votre table.",
+    "Ouvrez les réglages du widget dans Grist (panneau de création → vue personnalisée) et associez chaque colonne requise à une colonne de votre table.",
   retry: "Réessayer",
   retrying: "Nouvel essai…",
   reconnect: "Se reconnecter",
@@ -106,17 +108,17 @@ const fr: GristChromeMessages = {
   alertReadOnly: "Document en lecture seule",
   mappingPendingAlert: "En attente des colonnes associées, que Grist envoie.",
   mappingIncomplete: "Des colonnes ne sont pas associées.",
-  mappingRequired: "Colonnes requises : {columns}.",
-  mappingEmptyMultiples: "Associez au moins une colonne de la table à : {columns}.",
-  readOnlyAlert: "Ce document est ouvert en lecture seule : le widget montre ses données, mais ne peut pas les modifier.",
+  mappingRequired: "Colonnes requises : {columns}.",
+  mappingEmptyMultiples: "Associez au moins une colonne de la table à : {columns}.",
+  readOnlyAlert: "Ce document est ouvert en lecture seule : le widget montre ses données, mais ne peut pas les modifier.",
   accessInsufficientAlert:
-    "Cette opération demande « Accès complet au document ». Choisissez « Accès complet au document » comme niveau d'accès, dans les réglages de la vue personnalisée.",
-  mapBackSkipOne: "mapBack a ignoré une colonne associée plusieurs fois : {columns}.",
-  mapBackSkipMany: "mapBack a ignoré des colonnes associées plusieurs fois : {columns}.",
+    "Cette opération demande « Accès complet au document ». Choisissez « Accès complet au document » comme niveau d'accès, dans les réglages de la vue personnalisée.",
+  mapBackSkipOne: "mapBack a ignoré une colonne associée plusieurs fois : {columns}.",
+  mapBackSkipMany: "mapBack a ignoré des colonnes associées plusieurs fois : {columns}.",
   cellIssueColumn: "{column}, ligne {row}",
   cellIssueRow: "ligne {row}",
   cellIssueMore: " (et {n} de plus)",
-  cellIssues: "{where} : {message}{more}. Vérifiez le type de la colonne, ou la cellule, dans Grist.",
+  cellIssues: "{where} : {message}{more}. Vérifiez le type de la colonne, ou la cellule, dans Grist.",
   sourceNotWired:
     "Ce widget sert de sélecteur (allowSelectBy), mais aucune autre section ne s'y lie encore. Liez une autre section à ce widget pour qu'elle suive sa sélection.",
   sectionNotLinked:
@@ -126,7 +128,7 @@ const fr: GristChromeMessages = {
 
   reportProblem: "Signaler un problème",
   crashTitle: "Le widget ne fonctionne plus",
-  crashMessage: "Rechargez-le pour réessayer. Si cela se reproduit, signalez le problème : dites ce que vous veniez de faire.",
+  crashMessage: "Rechargez-le pour réessayer. Si cela se reproduit, signalez le problème : dites ce que vous veniez de faire.",
   crashReload: "Recharger le widget",
 }
 
@@ -142,10 +144,13 @@ export function chromeLocale(
   widgetLanguages: readonly string[] | undefined,
   browserLanguages: readonly string[] = typeof navigator === "undefined" ? [] : (navigator.languages ?? [navigator.language])
 ): GristChromeLocale {
-  const base = (tag: string) => tag.toLowerCase().split("-")[0]!
+  // A declaration from untyped code may hold anything: keep the strings, never throw above the crash screen.
+  const tags = (list: unknown): string[] => (Array.isArray(list) ? list.filter((t): t is string => typeof t === "string") : [])
+  const base = (tag: string) => tag.toLowerCase().split(/[-_]/)[0]!
   const spoken = (tag: string): tag is GristChromeLocale => (CHROME_LOCALES as readonly string[]).includes(tag)
-  const widget = (widgetLanguages?.length ? widgetLanguages : ["en"]).map(base)
-  for (const tag of browserLanguages.map(base)) if (widget.includes(tag) && spoken(tag)) return tag
+  const declared = tags(widgetLanguages)
+  const widget = (declared.length ? declared : ["en"]).map(base)
+  for (const tag of tags(browserLanguages).map(base)) if (widget.includes(tag) && spoken(tag)) return tag
   return widget.find(spoken) ?? "en"
 }
 

@@ -17,10 +17,10 @@ export function ReportUrlProvider({ url, children }: { url: string | undefined; 
 /** "Report a problem", to the widget's `reportUrl` in a new tab; nothing when it has none. */
 export function ReportProblemLink({ style }: { style?: CSSProperties }) {
   const url = useContext(ReportUrlContext)
-  const { t } = useChromeMessages()
+  const { locale, t } = useChromeMessages()
   if (!url) return null
   return (
-    <a href={url} target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "underline", ...style }}>
+    <a lang={locale} href={url} target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "underline", ...style }}>
       {t.reportProblem}
     </a>
   )
@@ -57,9 +57,9 @@ export class WidgetCrashBoundary extends Component<{ children: ReactNode }, Cras
 }
 
 function CrashScreen() {
-  const { t } = useChromeMessages()
+  const { locale, t } = useChromeMessages()
   return (
-    <div role="alert" style={{ ...pageStyle, padding: "1.5rem", gap: "0.75rem", color: tokens.foreground }}>
+    <div role="alert" lang={locale} style={{ ...pageStyle, padding: "1.5rem", gap: "0.75rem", color: tokens.foreground }}>
       <h2 style={{ margin: 0, fontSize: "1rem", fontWeight: 600 }}>{t.crashTitle}</h2>
       <p style={{ margin: 0, fontSize: "0.875rem", color: tokens.mutedForeground }}>{t.crashMessage}</p>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "1rem", fontSize: "0.875rem" }}>

@@ -29,16 +29,29 @@ theirs.
 - **The words live in one file,** `packages/core/src/sdk/chrome-messages.ts`,
   every language with the same keys (a test checks it). A new language is a
   new dictionary there, and a new entry in `CHROME_LOCALES`.
+- **Where it applies:** under `mountGristWidget()` and `GristWidgetApp`,
+  which set the language from the declaration. A `GristBoundary` under a
+  provider the widget renders itself speaks English: the language isn't a
+  provider option, so the provider's API stays as it is.
 - **What stays English:** error strings on `useGrist()` (`w.error`,
   `w.actionError`) are values a widget may log or compare, and the
   outside-Grist pages (local dev, release) are for the widget's developer.
 
 ## Consequences
 
-- Every language ships in every widget's bundle (about 1.5 KB gzipped for
-  French): the size budget reads 97.9 KB of 100 KB after it. A third
+- Every language ships in every widget's bundle (about 1.4 KB gzipped for
+  French), a widget that declares none included: the size budget reads
+  97.9 KB of 100 KB after it. A third
   language would need the budget looked at, or dictionaries loaded apart.
 - The catalog widgets declare `languages: ["en", "fr"]` in the release after
   the SDK's, so their chrome matches their messages.
 - `renderWithGrist` passes the declaration's languages to the chrome, so a
   test can check the French screens with the browser's languages mocked.
+- The language follows the browser, read once at mount, not the language a
+  person chose in their Grist account (which a widget can't read). When the
+  two differ, the French quotes Grist labels the person's English Grist
+  doesn't show. The catalog's own messages follow the same rule
+  (`detectLocale`), so the widget and its chrome always agree.
+- The chrome's screens, alerts and report link carry `lang`, so a screen
+  reader reads the French as French in a page whose `<html lang>` is the
+  widget's.

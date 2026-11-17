@@ -5,6 +5,7 @@
  * required columns unmapped) are `<GristBoundary>`'s, not alerts.
  */
 
+import { CHROME_MESSAGES, formatChrome, useChromeMessages, type GristChromeLocale, type GristChromeMessages } from "../chrome-messages"
 import { useNearestGristState } from "../use-grist"
 import { deriveColumnMappingStatus, deriveStatus } from "../runtime/derive"
 import { isAccessInsufficientError } from "../runtime/api"
@@ -38,18 +39,20 @@ export type GristSdkAlertDescriptor = {
 export type GristSdkAlertsOptions = {
   /** Added to the "section not linked" message, e.g. how to link in Grist. */
   sectionNotLinkedHint?: string
+  /** The language of the alerts' titles and messages. Defaults to English. */
+  locale?: GristChromeLocale
 }
 
-const TITLE: Record<GristSdkAlertKind, string> = {
-  "column-mapping": "Column mapping",
-  "mapping-pending": "Column mapping",
-  "section-not-linked": "Widget linking",
-  "source-not-wired": "Widget linking",
-  "action-error": "Action error",
-  "access-insufficient": "Access level",
-  "map-back-skip": "Write skipped",
-  "cell-issues": "Unexpected values",
-  "read-only": "Read-only document",
+const TITLE: Record<GristSdkAlertKind, keyof GristChromeMessages> = {
+  "column-mapping": "alertColumnMapping",
+  "mapping-pending": "alertColumnMapping",
+  "section-not-linked": "alertLinking",
+  "source-not-wired": "alertLinking",
+  "action-error": "alertActionError",
+  "access-insufficient": "alertAccess",
+  "map-back-skip": "alertMapBackSkip",
+  "cell-issues": "alertCellIssues",
+  "read-only": "alertReadOnly",
 }
 
 const SEVERITY: Record<GristSdkAlertKind, GristSdkAlertSeverity> = {
@@ -64,14 +67,7 @@ const SEVERITY: Record<GristSdkAlertKind, GristSdkAlertSeverity> = {
   "read-only": "info",
 }
 
-const alert = (kind: GristSdkAlertKind, message: string, ariaRole: "status" | "alert" = "status"): GristSdkAlertDescriptor => ({
-  id: kind,
-  kind,
-  severity: SEVERITY[kind],
-  title: TITLE[kind],
-  ariaRole,
-  message,
-})
+
 
 /** A widget section Grist says is linked to nothing. */
 export function isWidgetSectionNotLinked(interaction: GristWidgetInteraction | null | undefined): boolean {
@@ -92,67 +88,61 @@ export function getGristSdkAlerts(
 ): GristSdkAlertDescriptor[] {
   if (deriveStatus(state) !== "ready") return []
   const out: GristSdkAlertDescriptor[] = []
+  const t = CHROME_MESSAGES[options.locale ?? "en"]
+  const alert = (kind: GristSdkAlertKind, message: string, ariaRole: "status" | "alert" = "status"): GristSdkAlertDescriptor => ({
+    id: kind,
+    kind,
+    severity: SEVERITY[kind],
+    title: t[TITLE[kind]],
+    ariaRole,
+    message,
+  })
 
   const mapping = deriveColumnMappingStatus(widget.columns, state.mappings)
-  if (mapping.pending) out.push(alert("mapping-pending", "Waiting for Grist to report column mappings."))
+  if (mapping.pending) out.push(alert("mapping-pending", t.mappingPendingAlert))
   else if (!mapping.ok) {
-    const parts = ["Column mapping is incomplete."]
-    if (mapping.missing.length) parts.push(`Required columns: ${mapping.missing.join(", ")}.`)
-    if (mapping.emptyMultiples.length) parts.push(`Assign at least one sheet column for: ${mapping.emptyMultiples.join(", ")}.`)
+    const parts = [t.mappingIncomplete]
+    if (mapping.missing.length) parts.push(formatChrome(t.mappingRequired, { columns: mapping.missing.join(", ") }))
+    if (mapping.emptyMultiples.length) parts.push(formatChrome(t.mappingEmptyMultiples, { columns: mapping.emptyMultiples.join(", ") }))
     out.push(alert("column-mapping", parts.join(" ")))
   }
 
   // A widget that writes (full access, or a write it tried), on a document
   // open read-only: why nothing it does changes it.
   if (state.readOnly && (state.declaredAccess === "full" || state.readOnlyRefused)) {
-    out.push(alert("read-only", "This document is open read-only: the widget shows its data, but can't change it."))
+    out.push(alert("read-only", t.readOnlyAlert))
   }
 
   const failure = state.actionError ?? state.readError
   if (failure && isAccessInsufficientError(failure)) {
-    out.push(
-      alert(
-        "access-insufficient",
-        'This operation requires "Full document access". Set the Access level to "Full document access" in the Custom widget configuration panel.',
-        "alert"
-      )
-    )
+    out.push(alert("access-insufficient", t.accessInsufficientAlert, "alert"))
   } else if (state.actionError) {
     out.push(alert("action-error", state.actionError, "alert"))
   }
 
   if (state.mapBackSkipped.length) {
     const list = state.mapBackSkipped.join(", ")
-    out.push(alert("map-back-skip", `mapBack skipped multi-mapped column${state.mapBackSkipped.length === 1 ? "" : "s"}: ${list}.`))
+    out.push(alert("map-back-skip", formatChrome(state.mapBackSkipped.length === 1 ? t.mapBackSkipOne : t.mapBackSkipMany, { columns: list })))
   }
 
   const cellIssues = widget.cellIssues ?? []
   if (cellIssues.length) {
     const first = cellIssues[0]!
-    const where = first.column ? `${first.column} in row ${first.rowId}` : `row ${first.rowId}`
-    const more = cellIssues.length > 1 ? ` (and ${cellIssues.length - 1} more)` : ""
-    out.push(alert("cell-issues", `${where}: ${first.message}${more}. Check the column's type, or the cell, in Grist.`))
+    const where = first.column
+      ? formatChrome(t.cellIssueColumn, { column: first.column, row: first.rowId })
+      : formatChrome(t.cellIssueRow, { row: first.rowId })
+    const more = cellIssues.length > 1 ? formatChrome(t.cellIssueMore, { n: cellIssues.length - 1 }) : ""
+    out.push(alert("cell-issues", formatChrome(t.cellIssues, { where, message: first.message, more })))
   }
 
   const linking = parseGristWidgetLinkingInfo(state.interaction?.linking)
   if (widget.allowSelectBy) {
     if (linking && !linking.asSource) {
-      out.push(
-        alert(
-          "source-not-wired",
-          "This widget is configured as a selector (allowSelectBy) but no other section is using it as a link source yet. Link another section to read from this widget."
-        )
-      )
+      out.push(alert("source-not-wired", t.sourceNotWired))
     }
   } else if (isWidgetSectionNotLinked(state.interaction)) {
     const hint = options.sectionNotLinkedHint?.trim()
-    out.push(
-      alert(
-        "section-not-linked",
-        "This widget section is not linked to a table or selector. Link it from the page settings so the selected row is sent to the widget." +
-          (hint ? ` ${hint}` : "")
-      )
-    )
+    out.push(alert("section-not-linked", t.sectionNotLinked + (hint ? ` ${hint}` : "")))
   }
 
   const suppressed = widget.suppressAlerts ?? []
@@ -162,7 +152,8 @@ export function getGristSdkAlerts(
 /** @internal The alerts for the widget under the nearest `<GristWidgetProvider>`; [] outside one. */
 export function useGristSdkAlerts(options?: GristSdkAlertsOptions): GristSdkAlertDescriptor[] {
   const { connection, state, cellIssues } = useNearestGristState()
+  const { locale } = useChromeMessages()
   if (!connection) return []
   const { columns, allowSelectBy, suppressAlerts } = connection.runtime.options
-  return getGristSdkAlerts(state, { columns, allowSelectBy, suppressAlerts, cellIssues }, options)
+  return getGristSdkAlerts(state, { columns, allowSelectBy, suppressAlerts, cellIssues }, { locale, ...options })
 }

@@ -34,10 +34,18 @@ export type GristWidgetDefinition = UseGristOptions & {
    * the person opens the link, and writes what they choose.
    */
   reportUrl?: string
+  /**
+   * The languages the widget is written in, as language tags (`["en", "fr"]`),
+   * the one it falls back to first. The SDK's own screens and alerts speak
+   * the first of the person's browser languages listed here that the SDK
+   * speaks (English and French), so they match the widget. Defaults to
+   * `["en"]`.
+   */
+  languages?: readonly string[]
 }
 
-/** What describes a widget rather than configures it: its title, description and report URL. */
-export type GristWidgetMetadata = { title?: string; description?: string; reportUrl?: string }
+/** What describes a widget rather than configures it: its title, description, report URL and languages. */
+export type GristWidgetMetadata = { title?: string; description?: string; reportUrl?: string; languages?: readonly string[] }
 
 /** The widget's mapped record type, from its declaration. */
 export type GristWidgetRow<W> = W extends GristWidget<infer D> ? GristMappedRow<D> : never
@@ -63,12 +71,15 @@ export type GristWidget<D extends GristWidgetDefinition = GristWidgetDefinition>
  * `as const` and no generics.
  */
 export function defineGristWidget<const D extends GristWidgetDefinition>(definition: D): GristWidget<D> {
-  const { title, description, reportUrl, ...options } = definition
+  const { title, description, reportUrl, languages, ...options } = definition
   checkOptionsVersioning(options)
+  const metadata: GristWidgetMetadata = { title, description }
+  if (reportUrl !== undefined) metadata.reportUrl = reportUrl
+  if (languages !== undefined) metadata.languages = languages
   return {
     definition,
     options,
-    metadata: reportUrl === undefined ? { title, description } : { title, description, reportUrl },
+    metadata,
     useGrist: () => useGrist<GristRowRecord, GristMappedRow<D>>(),
   }
 }

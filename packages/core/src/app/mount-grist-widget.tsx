@@ -7,6 +7,7 @@ import { isGristWidget } from "../sdk/define-widget"
 import { LocalDevPage as DefaultLocalDevPage } from "./chrome/local-dev-page"
 import { ReleasePage as DefaultReleasePage } from "./chrome/release-page"
 import { ReportUrlProvider, WidgetCrashBoundary } from "./chrome/report-problem"
+import { GristChromeLocaleProvider } from "../sdk/chrome-messages"
 import { WidgetAlerts } from "./chrome/widget-alerts"
 import { parseDeployPath, type DeployChannel } from "./deploy-path"
 import { EmbeddedThemeProvider, StandaloneThemeProvider } from "./widget-theme"
@@ -163,21 +164,23 @@ export function GristWidgetApp({
     return (
       <GristWidgetProvider options={options}>
         <PageMetadata metadata={metadata} />
-        <EmbeddedThemeProvider>
-          <GristBoundary>
-            <ReportUrlProvider url={metadata?.reportUrl}>
-              <div style={FILL}>
-                <Wrap>
-                  <WidgetCrashBoundary>
-                    <Suspense fallback={null}>
-                      <App />
-                    </Suspense>
-                  </WidgetCrashBoundary>
-                </Wrap>
-              </div>
-            </ReportUrlProvider>
-          </GristBoundary>
-        </EmbeddedThemeProvider>
+        <GristChromeLocaleProvider languages={metadata?.languages}>
+          <EmbeddedThemeProvider>
+            <GristBoundary>
+              <ReportUrlProvider url={metadata?.reportUrl}>
+                <div style={FILL}>
+                  <Wrap>
+                    <WidgetCrashBoundary>
+                      <Suspense fallback={null}>
+                        <App />
+                      </Suspense>
+                    </WidgetCrashBoundary>
+                  </Wrap>
+                </div>
+              </ReportUrlProvider>
+            </GristBoundary>
+          </EmbeddedThemeProvider>
+        </GristChromeLocaleProvider>
       </GristWidgetProvider>
     )
   }

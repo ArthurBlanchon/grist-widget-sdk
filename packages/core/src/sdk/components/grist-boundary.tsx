@@ -1,6 +1,7 @@
 import { useCallback, useState, type CSSProperties, type ReactNode } from "react"
 
-import { accessDenied, accessLabel, deriveColumnMappingStatus } from "../runtime/derive"
+import { CHROME_MESSAGES, chromeAccessLabel, formatChrome, useChromeMessages, type GristChromeLocale } from "../chrome-messages"
+import { accessDenied, deriveColumnMappingStatus } from "../runtime/derive"
 import type { GristRuntimeState } from "../runtime/runtime"
 import { useGristRuntime, useGristState } from "../use-grist"
 
@@ -112,47 +113,33 @@ export function GristBoundaryScreen({
 type Screen = { title: string; message: string; tone?: "default" | "error"; retry?: boolean }
 
 /** What the boundary shows instead of the widget, or null to render it. */
-export function boundaryScreen(state: GristRuntimeState, columns: Parameters<typeof deriveColumnMappingStatus>[0]): Screen | null {
+export function boundaryScreen(
+  state: GristRuntimeState,
+  columns: Parameters<typeof deriveColumnMappingStatus>[0],
+  locale: GristChromeLocale = "en"
+): Screen | null {
+  const t = CHROME_MESSAGES[locale]
   switch (state.connection) {
     case "connecting":
-      return { title: "Connecting to Grist", message: "Asking Grist for the access this widget needs…" }
+      return { title: t.connectingTitle, message: t.connectingMessage }
     case "not-embedded":
-      return {
-        title: "Open inside Grist",
-        message: "Open this page as a custom widget inside a Grist document (it runs in an embedded panel, not on its own).",
-        retry: true,
-      }
+      return { title: t.openInGristTitle, message: t.notEmbeddedMessage, retry: true }
     case "unavailable":
-      return {
-        title: "Open inside Grist",
-        message: "The Grist plugin did not load. Reload the page, or open this URL as a custom widget inside a Grist document.",
-        retry: true,
-      }
+      return { title: t.openInGristTitle, message: t.unavailableMessage, retry: true }
     case "error":
-      return {
-        title: "Something went wrong",
-        message: state.connectionError ?? "Something went wrong connecting to Grist. Try again, or reload the page.",
-        tone: "error",
-        retry: true,
-      }
+      return { title: t.errorTitle, message: state.connectionError ?? t.errorMessage, tone: "error", retry: true }
   }
   if (accessDenied(state)) {
     return {
-      title: "More access needed",
-      message: `Set Access level to at least "${accessLabel(state.declaredAccess)}" in the Custom widget settings.`,
+      title: t.accessTitle,
+      message: formatChrome(t.accessMessage, { level: chromeAccessLabel(state.declaredAccess, locale) }),
       tone: "error",
       retry: true,
     }
   }
   const mapping = deriveColumnMappingStatus(columns, state.mappings)
-  if (mapping.pending) return { title: "Connecting to Grist", message: "Waiting for Grist to report the column mapping…" }
-  if (!mapping.ok) {
-    return {
-      title: "Map your columns",
-      message:
-        "Open the widget settings in Grist (Creator Panel → Custom widget) and connect each required column to your table.",
-    }
-  }
+  if (mapping.pending) return { title: t.connectingTitle, message: t.mappingPendingMessage }
+  if (!mapping.ok) return { title: t.mappingTitle, message: t.mappingMessage }
   return null
 }
 
@@ -166,6 +153,7 @@ export function GristBoundary({ children }: GristBoundaryProps) {
   const connection = useGristRuntime()
   if (!connection) throw new Error("<GristBoundary> must be used inside <GristWidgetProvider> (mountGristWidget renders both).")
   const state = useGristState(connection)
+  const { locale, t } = useChromeMessages()
   const [isReloading, setIsReloading] = useState(false)
   const reload = useCallback(async () => {
     setIsReloading(true)
@@ -178,7 +166,7 @@ export function GristBoundary({ children }: GristBoundaryProps) {
     }
   }, [connection])
 
-  const screen = boundaryScreen(state, connection.runtime.options.columns)
+  const screen = boundaryScreen(state, connection.runtime.options.columns, locale)
   if (!screen) return <>{children}</>
   return (
     <GristBoundaryScreen
@@ -187,8 +175,8 @@ export function GristBoundary({ children }: GristBoundaryProps) {
       tone={screen.tone}
       showRetry={screen.retry}
       actions={{ reload, isReloading }}
-      retryLabel={screen.tone === "error" ? "Try again" : "Try reconnecting"}
-      retryBusyLabel={screen.tone === "error" ? "Retrying…" : "Reconnecting…"}
+      retryLabel={screen.tone === "error" ? t.retry : t.reconnect}
+      retryBusyLabel={screen.tone === "error" ? t.retrying : t.reconnecting}
     />
   )
 }

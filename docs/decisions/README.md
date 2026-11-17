@@ -30,6 +30,7 @@ link it from where the decision is applied.
 | [0018](./0018-standard-criteria.md) | Every catalog widget meets four standard criteria |
 | [0019](./0019-report-a-problem.md) | "Report a problem" is a link the person opens, never telemetry |
 | [0020](./0020-agents-on-issues.md) | What agents do to issues on their own |
+| [0021](./0021-chrome-language.md) | The SDK's chrome speaks the languages the widget declares |
 
 The plans in [`docs/planning/`](../planning/) and
 [`docs/history/`](../history/) hold the reasoning in full. The design

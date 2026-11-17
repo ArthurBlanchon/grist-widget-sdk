@@ -389,6 +389,7 @@ export type GristWidgetDefinition = UseGristOptions & {
     title?: string;
     description?: string;
     reportUrl?: string;
+    languages?: readonly string[];
 };
 
 // @public
@@ -428,6 +429,7 @@ export type GristWidgetMetadata = {
     title?: string;
     description?: string;
     reportUrl?: string;
+    languages?: readonly string[];
 };
 
 // @public

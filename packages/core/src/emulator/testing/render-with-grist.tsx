@@ -88,7 +88,10 @@ export function renderWithGrist(
       {Outer ? <Outer>{children}</Outer> : children}
     </ReadOnlyUrlScope>
   )
-  const result = render(widgetOptions ? <GristWidgetApp App={Widget} options={widgetOptions} /> : ui, { ...options, wrapper })
+  // The declaration's languages, so the SDK's chrome speaks as it would in Grist.
+  const languages = options.widget && isGristWidget(options.widget) ? options.widget.metadata.languages : undefined
+  const app = widgetOptions ? <GristWidgetApp App={Widget} options={widgetOptions} metadata={languages ? { languages } : undefined} /> : ui
+  const result = render(app, { ...options, wrapper })
   const originalUnmount = result.unmount
   result.unmount = () => {
     originalUnmount()

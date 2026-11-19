@@ -57,7 +57,7 @@ const ACTIONS = [
   "gristUpdateRecordAction",
 ]
 
-const APP = ["mountGristWidget", "GristWidgetApp", "entryProps", "useTheme", "parseDeployPath", "deployChannelLabel", "useReleasedVersions"]
+const APP = ["mountGristWidget", "GristWidgetApp", "useTheme", "parseDeployPath", "deployChannelLabel", "useReleasedVersions"]
 
 const EMULATOR = [
   "createGristEmulator",
@@ -65,8 +65,6 @@ const EMULATOR = [
   "safeParseDocument",
   "presets",
   "EmulatorActionError",
-  "enrichEmulatorColumnMetadata",
-  "resolveMappings",
 ]
 
 const EMULATOR_TESTING = [

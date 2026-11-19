@@ -1,7 +1,8 @@
 import { StrictMode, Suspense, type ComponentType, type ReactNode } from "react"
 import { createRoot } from "react-dom/client"
 
-import { GristBoundary, GristWidgetProvider, useWidgetMetadata } from "../sdk"
+import { GristBoundary, GristWidgetProvider } from "../sdk"
+import { usePageMetadata } from "../sdk/use-widget-metadata"
 import type { GristWidget, GristWidgetMetadata, UseGristOptions } from "../sdk"
 import { isGristWidget } from "../sdk/define-widget"
 import { LocalDevPage as DefaultLocalDevPage } from "./chrome/local-dev-page"
@@ -209,7 +210,7 @@ function isEmbedded(): boolean {
 
 /** The page's title and description, from the widget's declaration. */
 function PageMetadata({ metadata }: { metadata: GristWidgetAppProps["metadata"] }) {
-  useWidgetMetadata(metadata?.title ? { title: metadata.title, description: metadata.description ?? "" } : null)
+  usePageMetadata(metadata?.title ? { title: metadata.title, description: metadata.description ?? "" } : null)
   return null
 }
 

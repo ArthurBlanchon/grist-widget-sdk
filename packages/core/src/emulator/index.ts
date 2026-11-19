@@ -20,6 +20,6 @@ export type {
   EmulatorRowId,
   EmulatorTable,
 } from "./core"
-export { EmulatorActionError, enrichEmulatorColumnMetadata, resolveMappings } from "./core"
+export { EmulatorActionError } from "./core"
 export type { EmulatorApiBundle } from "./api"
 export type { EmulatorTransport, InlineGristGlobal } from "./transports"

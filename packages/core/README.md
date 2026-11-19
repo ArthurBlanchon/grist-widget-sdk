@@ -75,7 +75,7 @@ the SDK's alerts, in Grist's light or dark theme.
 
 - **`grist-widget-sdk`**: `defineGristWidget`, `useGrist`, `useGristOptional`,
   `GristWidgetProvider`, `GristBoundary`, `useGristSchema`,
-  `useWidgetMetadata`, `checkGristCell`, `encodeGristCell`, the value codec, the attachment
+  `checkGristCell`, `encodeGristCell`, the value codec, the attachment
   helpers, and Grist's types.
   [API reference](https://gristwidgets.com/docs/sdk/api).
 - **`grist-widget-sdk/actions`**: the user-action builders for `applyActions`.

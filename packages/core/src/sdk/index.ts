@@ -62,7 +62,7 @@ export {
   type UseGristSchemaResult,
 } from "./use-grist-schema"
 
-// The page's title and meta tags
+// The page's title and meta tags (deprecated: mountGristWidget() sets them)
 export { useWidgetMetadata, type UseWidgetMetadataInput } from "./use-widget-metadata"
 
 // Cells

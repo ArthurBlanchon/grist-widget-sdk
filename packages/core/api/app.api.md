@@ -31,9 +31,6 @@ export type DeployPath = {
 };
 
 // @public
-export function entryProps(entry: GristWidgetEntry, dev?: boolean): GristWidgetAppProps;
-
-// @public
 export function GristWidgetApp(input: GristWidgetAppProps): react.JSX.Element;
 
 // @public

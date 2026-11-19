@@ -14,7 +14,6 @@
 
 export {
   GristWidgetApp,
-  entryProps,
   mountGristWidget,
   type GristWidgetAppProps,
   type GristWidgetEntry,

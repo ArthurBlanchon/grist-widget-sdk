@@ -12,7 +12,7 @@ export type UseWidgetMetadataInput = {
  * nothing is restored on unmount. `mountGristWidget()` does this from the
  * declaration's title and description.
  */
-export function useWidgetMetadata(input?: UseWidgetMetadataInput | null) {
+export function usePageMetadata(input?: UseWidgetMetadataInput | null) {
   useEffect(() => {
     if (!input) return
 
@@ -43,4 +43,42 @@ function setMetaTag(key: "name" | "property", value: string, content: string) {
     document.head.appendChild(meta)
   }
   meta.setAttribute("content", content)
+}
+
+const warned = { useWidgetMetadata: false }
+
+function warnDeprecated(): void {
+  if (warned.useWidgetMetadata || !isDevelopment()) return
+  warned.useWidgetMetadata = true
+  console.warn(
+    "grist-widget-sdk: useWidgetMetadata() is deprecated: mountGristWidget() sets the page's title and meta tags from the declaration's title and description. Remove the call."
+  )
+}
+
+/**
+ * Deprecated: `mountGristWidget()` sets the page's title and meta tags from
+ * the declaration. Sets the page's title and its description meta tags.
+ *
+ * @deprecated `mountGristWidget()` sets them from the declaration's `title`
+ * and `description`: remove the call. Removed in a later release.
+ */
+export function useWidgetMetadata(input?: UseWidgetMetadataInput | null) {
+  useEffect(warnDeprecated, [])
+  usePageMetadata(input)
+}
+
+// Typed here: the SDK doesn't depend on Node's types.
+declare const process: { env: Record<string, string | undefined> }
+
+/**
+ * Development, as the bundler sees it. Bundlers replace the literal
+ * `process.env.NODE_ENV`; where nothing does, `process` is undefined and
+ * nothing is logged.
+ */
+function isDevelopment(): boolean {
+  try {
+    return process.env.NODE_ENV !== "production"
+  } catch {
+    return false
+  }
 }

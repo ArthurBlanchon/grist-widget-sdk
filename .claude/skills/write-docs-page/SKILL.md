@@ -21,10 +21,12 @@ The target structure is in the
    `widget.useGrist()`, `mappedRecord`, `updateRecord`/`addRecord` and
    `renderWithGrist(<App />, { widget, rows })`. No deprecated names and no
    migration tables: the changelog is the history.
-3. **Code compiles.** Every `tsx`/`ts` block becomes a test
+3. **Code compiles.** Every `tsx` block becomes a test
    (`scripts/extract-doc-snippets.mjs`), run by
-   `pnpm --filter grist-widget-sdk test`. Mark a fragment that can't
-   compile with `no-check`, and use that sparingly. To show a whole
+   `pnpm --filter grist-widget-sdk test`; a `ts` block is shown, never
+   checked, so keep it to signatures and shapes. Code that calls the SDK
+   goes in `tsx`: only that counts for the API coverage check. Mark a
+   fragment that can't compile with `no-check`, and use that sparingly. To show a whole
    widget, link to its catalog folder (`widgets/<slug>/`) rather than
    pasting it.
 4. **Navigation.** List the page under its section (Get started, Guides,

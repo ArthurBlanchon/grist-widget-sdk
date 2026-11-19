@@ -35,5 +35,11 @@ checked in grist-static 0.1.6, built from grist-core).
   name, from the raw records, gets that one's id too: it reads the name from
   the referenced table (`fetchRows(tableId)`, full access), or declares the
   column `"Text,Ref"`.
-- The emulator refuses `fetchTable` below full access, as Grist does, so a
-  test can't read a whole table a widget couldn't.
+- A `"Text,Ref"` column declared next to a pure `Ref` one reads the id too:
+  `expandRefs` is all or nothing. The SDK warns in the console when a
+  declaration mixes them.
+- `w.fetchRows()` reads the section with the same options as the records,
+  so the two agree.
+- Like Grist, the emulator answers every `docApi` call but `getDocName` only
+  with full access (`fetchTable`, `listTables`, `applyUserActions`,
+  `getAccessToken`), so a test can't do what the widget couldn't.

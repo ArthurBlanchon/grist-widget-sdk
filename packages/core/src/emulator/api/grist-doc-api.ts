@@ -15,19 +15,23 @@ import type { GristDocApiImpl } from "./types"
  * assert exactly which actions a UI flow generated.
  */
 export function createGristDocApiImpl(state: EmulatorDocumentState, bus: EventBus): GristDocApiImpl {
+  // Grist answers every docApi call but getDocName only with full access, whatever the table.
+  const requireFull = () => {
+    const granted = state.widgetInteraction?.access_level ?? state.configuration?.requiredAccess ?? "read table"
+    if (granted !== "full") throw new Error("Access not granted")
+  }
   return {
     async getDocName() {
       return state.docName
     },
 
     async listTables() {
+      requireFull()
       return [...state.tables.keys()]
     },
 
     async fetchTable(tableId) {
-      // Grist answers a whole-table read only with full access, whatever the table.
-      const granted = state.widgetInteraction?.access_level ?? state.configuration?.requiredAccess ?? "read table"
-      if (granted !== "full") throw new Error("Access not granted")
+      requireFull()
       if (tableId === "_grist_Tables") {
         return synthesizeTablesMeta(state)
       }
@@ -40,12 +44,14 @@ export function createGristDocApiImpl(state: EmulatorDocumentState, bus: EventBu
 
     async applyUserActions(actions) {
       // Grist's answer on a document open read-only (view mode, a viewer).
+      requireFull()
       if (state.readOnly) throw new Error("No write access")
       const result = applyUserActions(state, bus, actions)
       return { retValues: result.retValues }
     },
 
     async getAccessToken() {
+      requireFull()
       if (!state.accessToken) {
         const err = new Error("getAccessToken not available (no token configured on emulator)")
         // Mirror Grist's protocol: rejected stub call.

@@ -22,7 +22,16 @@ import type {
   GristWidgetInteraction,
 } from "../types"
 import { parseAccess } from "./derive"
-import { declaresReferences, messageStream, newRecordStream, optionsStream, recordsStream, recordStream, setReferenceIds } from "./host"
+import {
+  declaresReferences,
+  messageStream,
+  mixesReferenceKinds,
+  newRecordStream,
+  optionsStream,
+  recordsStream,
+  recordStream,
+  setReferenceIds,
+} from "./host"
 import { checkOptionsVersioning, readWidgetOptions, type OptionsVersioning } from "./options-version"
 import { ensureGristReady, resetGristReady } from "./ready"
 
@@ -244,6 +253,11 @@ export function createGristRuntime(options: GristRuntimeOptions = {}): GristRunt
     // Bound before ready(): Grist may push the first record during it. A
     // declared reference column asks for row ids (host.ts).
     setReferenceIds(declaresReferences(options.columns))
+    if (mixesReferenceKinds(options.columns)) {
+      console.warn(
+        "grist-widget-sdk: this widget declares a Ref column and a Text,Ref one. Grist then sends row ids for every reference, so the Text,Ref column reads the id, not the name."
+      )
+    }
     stopStreams ??= listen()
     void connect()
   }

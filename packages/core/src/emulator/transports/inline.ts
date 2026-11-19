@@ -343,7 +343,9 @@ export function createInlineTransport(
         const own = readOptionsOf(coerceFetchOptions(opts))
         const rowId = record && typeof record.id === "number" ? record.id : null
         if (own && rowId !== null) {
-          void api.GristView.fetchSelectedRecord(rowId, own).then((r) => cb(r, mappings), logErr)
+          void api.GristView.fetchSelectedRecord(rowId, own).then((r) => {
+            try { cb(r, mappings) } catch (err) { logErr(err) }
+          }, logErr)
         } else {
           try { cb(record, mappings) } catch (err) { logErr(err) }
         }
@@ -354,7 +356,11 @@ export function createInlineTransport(
       if (lastRecords) {
         const { records, mappings } = lastRecords
         const own = readOptionsOf(coerceFetchOptions(opts))
-        if (own) void api.GristView.fetchSelectedTable(own).then((c) => cb(columnsToRows(c), mappings), logErr)
+        if (own) {
+          void api.GristView.fetchSelectedTable(own).then((c) => {
+            try { cb(columnsToRows(c), mappings) } catch (err) { logErr(err) }
+          }, logErr)
+        }
         else {
           try { cb(records, mappings) } catch (err) { logErr(err) }
         }

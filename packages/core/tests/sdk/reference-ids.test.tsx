@@ -2,7 +2,8 @@
 // shows: the SDK asks Grist for ids (expandRefs: false) when the widget
 // declares a column that accepts a reference and not text.
 import { screen } from "@testing-library/react"
-import { describe, expect, it } from "vitest"
+import { useEffect, useState } from "react"
+import { describe, expect, it, vi } from "vitest"
 
 import { defineGristWidget, type GristReplicaDocument } from "../../src/sdk"
 import { renderWithGrist } from "../../src/emulator/testing"
@@ -70,5 +71,38 @@ describe("a declared reference column", () => {
     }
     renderWithGrist(<App />, { widget, emulator: { document } })
     expect(await screen.findByText("owner Marc")).toBeTruthy()
+  })
+
+  it("fetchRows() gives the same ids as w.records", async () => {
+    const widget = defineGristWidget({ requiredAccess: "read table", columns: [{ name: "Owner", type: "Ref:People" }] })
+    function App() {
+      const w = widget.useGrist()
+      const [rows, setRows] = useState<string>("…")
+      useEffect(() => {
+        void w.fetchRows().then((r) => setRows(r.map((row) => String(row.Owner)).join(",")))
+      }, [w.fetchRows])
+      return <p>{`rows ${rows} records ${w.records?.map((r) => String(r.Owner)).join(",")}`}</p>
+    }
+    renderWithGrist(<App />, { widget, emulator: { document } })
+    expect(await screen.findByText("rows 2 records 2")).toBeTruthy()
+  })
+
+  it("mixed with a Text,Ref column, that one reads the id too, and the SDK says so", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {})
+    const widget = defineGristWidget({
+      requiredAccess: "read table",
+      columns: [
+        { name: "Owner", type: "Ref:People" },
+        { name: "Badge", type: "Text,Ref" },
+      ],
+    })
+    function App() {
+      const w = widget.useGrist()
+      return <p>{w.mappedRecord ? `${w.mappedRecord.Owner}|${w.mappedRecord.Badge}` : "none"}</p>
+    }
+    renderWithGrist(<App />, { widget, emulator: { document } })
+    expect(await screen.findByText("2|1")).toBeTruthy()
+    expect(warn.mock.calls.some(([m]) => String(m).includes("Text,Ref column reads the id"))).toBe(true)
+    warn.mockRestore()
   })
 })

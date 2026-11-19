@@ -28,6 +28,12 @@ Each item is one pull request; the plan says when each milestone is done.
   Signature pad open with their attachments cells empty (`pnpm demo` and
   the real-Grist check have the files). Done when grist-static serves them,
   or the demo page hands them to it.
+- [ ] **A declared Ref column, read in a real Grist** (ADR 0022): the
+  ids come from Grist's own code read (grist-static 0.1.6, Grist 1.7.22),
+  and from the emulator; no catalog widget declares a Ref, so the Real
+  widgets job doesn't run it. Done when a real-Grist check (next to
+  `scripts/real-widgets/write-round-trip.mjs`) reads a pure Ref column as
+  its row id.
 - [ ] **M5. The loop, from issue to release.** Left: three real issues
   from report to release through the skills, with only the maintainer's
   approvals (the plan's "done when"), and the scheduled runs set up as

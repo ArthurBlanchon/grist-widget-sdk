@@ -91,6 +91,25 @@ export function declaresReferences(columns: GristColumnsToMap | undefined): bool
   })
 }
 
+/**
+ * @internal A declaration that mixes a reference column with a `Text,Ref`
+ * one: the ids apply to the whole read, so the `Text,Ref` column reads the
+ * id, not the name.
+ */
+export function mixesReferenceKinds(columns: GristColumnsToMap | undefined): boolean {
+  const textRef = (columns ?? []).some((c) => {
+    if (typeof c === "string" || !c.type) return false
+    const bases = c.type.split(",").map((t) => t.trim().split(":")[0])
+    return bases.some((b) => b === "Ref" || b === "RefList") && bases.includes("Text")
+  })
+  return textRef && declaresReferences(columns)
+}
+
+/** @internal The read options every section read uses, so fetchRows() agrees with w.records. */
+export function sectionReadOptions(): { expandRefs?: false } {
+  return referenceIds ? { expandRefs: false } : {}
+}
+
 /** @internal Tests: back to Grist's default. */
 export function resetReferenceIds(): void {
   referenceIds = false

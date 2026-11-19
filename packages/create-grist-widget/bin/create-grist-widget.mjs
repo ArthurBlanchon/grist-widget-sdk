@@ -51,9 +51,14 @@ const CATALOG_NOTE =
   "create-grist-widget starts every widget from its template. For a starting point close to yours, read a catalog" +
   " widget's spec, code and tests: https://gristwidgets.com/widgets/ (sources: https://github.com/ArthurBlanchon/grist-widget-sdk/tree/main/widgets)."
 
-function retired(what) {
-  console.error(`${what} was retired in create-grist-widget 0.8. ${CATALOG_NOTE}`)
+function retired(what, hint = "") {
+  console.error(`${what} was retired in create-grist-widget 0.8. ${CATALOG_NOTE}${hint}`)
   process.exit(1)
+}
+
+/** `--example` is retired; `--example blank`, which always meant the template, still does. */
+function refuseExample(args) {
+  if (args.example !== undefined && args.example !== "blank") retired("--example")
 }
 
 // Mirrors npm's own unscoped package name rule, kept intentionally loose.
@@ -73,7 +78,10 @@ function parseArgs(argv) {
   const out = { _: [] }
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i]
-    if (a.startsWith("--")) {
+    if (a.startsWith("--") && a.includes("=")) {
+      const at = a.indexOf("=")
+      out[a.slice(2, at)] = a.slice(at + 1)
+    } else if (a.startsWith("--")) {
       const key = a.slice(2)
       const next = argv[i + 1]
       if (next === undefined || next.startsWith("--")) out[key] = true
@@ -234,7 +242,7 @@ function listFilesRecursive(dir, base = dir) {
 
 async function cmdCreate(argv) {
   const args = parseArgs(argv)
-  if (args.example !== undefined) retired("--example")
+  refuseExample(args)
   const interactive = Boolean(process.stdout.isTTY) && !args.yes && !args._[0]
 
   let rawName = args._[0]
@@ -308,7 +316,7 @@ async function cmdCreate(argv) {
 
 async function cmdInit(argv) {
   const args = parseArgs(argv)
-  if (args.example !== undefined) retired("--example")
+  refuseExample(args)
   const cwd = process.cwd()
 
   const interactive = Boolean(process.stdout.isTTY) && !args.yes
@@ -624,8 +632,8 @@ async function main() {
     console.log(cliPkg.version)
     return
   }
-  if (first === "list") return retired("create-grist-widget list")
-  if (first === "use") return retired("create-grist-widget use")
+  if (first === "list" || first === "use")
+    return retired(`create-grist-widget ${first}`, ` For a widget named "${first}", run: create-grist-widget create ${first}`)
   if (first === "upgrade") return cmdUpgrade(rest)
   if (first === "demo") return cmdDemo(rest)
   if (first === "release") return cmdRelease(rest)

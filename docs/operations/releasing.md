@@ -287,7 +287,7 @@ above). `LICENSE` is copied in from the repo root by the `prepack` hook
 - **`updateInternalDependencies: "patch"` bumps every workspace package
   that depends on a bumped one, private or not.** The template's `version`
   must stay `0.0.1` (a fresh scaffold's version belongs to its author), so
-  the template and `examples` are in `.changeset/config.json`'s `ignore`,
+  the template is in `.changeset/config.json`'s `ignore`,
   and `build-template.mjs` sets the embedded template's version to `0.0.1`
   whatever its source says.
 

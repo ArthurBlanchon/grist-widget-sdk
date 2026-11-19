@@ -16,7 +16,7 @@
 
 <!-- Tick what applies; say why for anything left out. -->
 
-- [ ] `pnpm test` (SDK, examples' typecheck, site), or the parts this touches
+- [ ] `pnpm test` (SDK, site), or the parts this touches
 - [ ] A changeset, if a published package or the template changes for its users
 - [ ] Docs updated with the behaviour (`apps/www/content/docs/`)
 - [ ] Public API changed: `pnpm --filter grist-widget-sdk api:report` regenerated, `packages/core/api/` committed

@@ -246,10 +246,11 @@ read: the widget's version and license, and the SDK and CLI versions it was
 built with. The [widget registry](https://github.com/ArthurBlanchon/awesome-grist-widgets)
 reads it from a widget's install URL.
 
-> `create`, `init`, `use`, `upgrade`, `demo`, `release`, `manifest`, and `list` are themselves valid widget names —
-> `create-grist-widget list` runs the list command, not "scaffold a widget
-> named list." Use the explicit form (`create-grist-widget create list`)
-> for a widget with one of these names.
+> `create`, `init`, `upgrade`, `demo`, `release`, `protect`, `manifest`,
+> `list` and `use` are themselves valid widget names, but
+> `create-grist-widget <one of them>` runs that command (`list` and `use`
+> are retired, and say so). Use the explicit form
+> (`create-grist-widget create list`) for a widget with one of these names.
 
 ## The bundled deploy pipeline
 

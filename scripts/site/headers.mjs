@@ -4,8 +4,9 @@
 // Every page gets the usual hardening. The docs may only be framed by the
 // site itself; what Grist (or another origin) embeds or loads is exempt:
 //
-// - /examples/*, a catalog widget's folders and /template-preview/*: widgets, added to any Grist
-//   document as a custom widget URL, so any origin frames them.
+// - a catalog widget's folders and /template-preview/*: widgets, added to any Grist
+//   document as a custom widget URL, so any origin frames them; and /examples/*, the
+//   retired examples' pages, which a document may still embed (ADR 0023).
 // - /grist-static/*: grist-static, which widgets' own demo pages on other
 //   origins load and fetch (Pyodide, wheels, wasm), hence the CORS header.
 //

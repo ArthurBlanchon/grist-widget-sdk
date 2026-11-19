@@ -104,7 +104,11 @@ demo: <https://gristwidgets.com/widgets/>). For example: drag and drop between c
 (`kanban-board`), a form that writes a record (`record-editor`), many rows at once
 (`bulk-editor`), attachments (`attachment-viewer`, `file-uploader`), a map (`map`), a
 chart (`chart-builder`). Copy code, never a dependency on `widgets/_shared/`: it exists only
-in that repository.
+in that repository. `main` builds against the SDK in development: before copying a
+`grist-widget-sdk` name, check that this widget's version exports it
+(`node_modules/grist-widget-sdk/dist/`), or read the catalog at the tag
+`grist-widget-sdk@<that version>`. A missing name means upgrading the SDK, never importing
+from `grist-widget-sdk/src/`.
 
 ## Commands
 

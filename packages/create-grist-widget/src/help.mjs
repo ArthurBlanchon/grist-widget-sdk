@@ -45,6 +45,6 @@ Every widget starts from the template. For patterns (drag and drop, writes,
 attachments, maps…), read a catalog widget's spec, code and tests:
 https://gristwidgets.com/widgets/
 
-Note: "create", "init", "upgrade", "demo", "release", "protect" and "manifest"
-are themselves valid widget names: use "create-grist-widget create <name>" for
-one of those.`
+Note: "create", "init", "upgrade", "demo", "release", "protect", "manifest",
+"list" and "use" are themselves valid widget names: use
+"create-grist-widget create <name>" for one of those.`

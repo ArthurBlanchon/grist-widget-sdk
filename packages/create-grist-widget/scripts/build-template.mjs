@@ -9,7 +9,6 @@ import {
 import path from "node:path"
 import { fileURLToPath } from "node:url"
 
-
 const PKG_ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..")
 const REPO_ROOT = path.join(PKG_ROOT, "..", "..")
 const SOURCE = path.join(REPO_ROOT, "templates", "grist-widget-template-vite")

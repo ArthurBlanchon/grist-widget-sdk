@@ -34,7 +34,7 @@ Both origins run `scripts/build-site.mjs`, which assembles `./site`:
 | Path | What |
 | --- | --- |
 | `/` | `apps/www`: the landing page and `/docs/*` |
-| `/examples/<id>/latest/`, `/examples/<id>/demo/` | redirect pages to `/widgets/`: the example widgets were retired (ADR 0023) |
+| `/examples/<id>/latest/`, `/examples/<id>/demo/` | the example widgets were retired (ADR 0023): `/demo/` redirects to `/widgets/`, `/latest/` (embedded in Grist documents) says so and links there |
 | `/grist-static/<version>/` | the pinned grist-static, used by the site's and every widget's demo pages |
 | `/widgets/<slug>/<version>/`, `/v<major>/`, `/latest/`, `/dev/` | the catalog widgets' released versions, the newest of each major (the install URL), the newest of all, and the source being built (below, ADR 0013) |
 | `/widgets/<slug>/` | the widget's page, by `apps/www` from its `SPEC.md`, `package.json` and `CHANGELOG.md`: what it does, its columns, access, install URL and demo. Its channels and versions are the folders beside it, which keep Grist's framing headers; the page itself keeps the docs' (`scripts/site/headers.mjs`) |
@@ -59,7 +59,7 @@ It also writes:
     referrer policy;
   - **docs pages:** framed by the site only, and no camera, microphone or
     location;
-  - **`/examples/*` (the retired examples' redirect pages) and
+  - **`/examples/*` (the retired examples' pages) and
     `/template-preview/*`:** without those two, since Grist documents
     embed them;
   - **`/grist-static/*`:** readable cross-origin.

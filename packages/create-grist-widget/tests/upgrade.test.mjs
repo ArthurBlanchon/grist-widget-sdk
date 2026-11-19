@@ -1,7 +1,7 @@
 // `create-grist-widget upgrade` (plan T2): what it may touch, how it merges
 // package.json and prunes pnpm age exceptions, when it refuses, and a full
 // run against a widget made from the real template source. Real git in real
-// tmpdirs, like tests/git-gate.test.mjs. The packed CLI's end to end run is
+// tmpdirs. The packed CLI's end to end run is
 // in scripts/smoke/create-widget.sh.
 
 import { execFileSync } from "node:child_process"

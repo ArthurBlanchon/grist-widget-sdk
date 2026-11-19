@@ -308,7 +308,8 @@ describe("outside Grist", () => {
     render(<GristWidgetApp App={Widget} options={{ requiredAccess: "read table" }} dev />)
     expect(screen.getByText("My Widget · local dev")).toBeInTheDocument()
     expect(screen.getByRole("heading", { name: "Not embedded in Grist" })).toBeInTheDocument()
-    expect(screen.getByText("npx create-grist-widget list")).toBeInTheDocument()
+    expect(screen.getByRole("link", { name: "widget catalog" })).toHaveAttribute("href", "https://gristwidgets.com/widgets/")
+    expect(document.body.textContent).not.toMatch(/create-grist-widget (list|use)/)
   })
 
   it("defaults to a release page linking every channel and version, with the URL to paste", async () => {

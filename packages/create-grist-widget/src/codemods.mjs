@@ -36,9 +36,33 @@ const MANUAL_HINTS = {
   fetchTableRows: "use fetchRows(tableId, options)",
   useGristContext: "use widget.useGrist() or useGrist()",
   useWidgetMetadata: "remove it: mountGristWidget() sets the page's title and meta tags from the declaration's title and description",
-  entryProps: "remove it: pass the entry module to mountGristWidget(entry) or smokeTestWidget(entry)",
-  resolveMappings: "remove it: read the mappings with emulator.grist.sectionApi.mappings(), or w.mappings",
-  enrichEmulatorColumnMetadata: "remove it: createGristEmulator() completes each column's metadata itself",
+}
+
+/**
+ * Names 0.8 removed from a subpath entry: reported in a file that imports
+ * that entry, once each, at its first use.
+ */
+const ENTRY_HINTS = {
+  "grist-widget-sdk/app": {
+    entryProps: "removed in 0.8: pass the entry module to mountGristWidget(entry) or smokeTestWidget(entry)",
+  },
+  "grist-widget-sdk/emulator": {
+    resolveMappings: "removed in 0.8: read the widget's mappings with w.mappings",
+    enrichEmulatorColumnMetadata: "removed in 0.8: createGristEmulator() completes each column's metadata itself",
+  },
+}
+
+function entryHints(source, isComment) {
+  const lines = source.split("\n")
+  const found = []
+  for (const [entry, hints] of Object.entries(ENTRY_HINTS)) {
+    if (!new RegExp(`from\\s*["']${entry}["']`).test(source)) continue
+    for (const [name, hint] of Object.entries(hints)) {
+      const index = lines.findIndex((l) => !isComment(l) && new RegExp(`\\b${name}\\b`).test(l))
+      if (index >= 0) found.push({ line: index + 1, name, hint })
+    }
+  }
+  return found
 }
 
 const PLACEHOLDER = "\u0000grist-widget-sdk/actions\u0000"
@@ -172,7 +196,10 @@ export function migrateSource(source) {
   if (!/from\s*["']grist-widget-sdk(?:\/[\w/]+)?["']/.test(source)) return { text: source, changes, manual: [] }
   // Code only: a comment that names an old API keeps its wording (the author rewrites it).
   const isComment = (line) => /^\s*(\/\/|\/?\*)/.test(line)
-  if (!/from\s*["']grist-widget-sdk["']/.test(source)) return { text: source, changes, manual: callHints(source, isComment) }
+  if (!/from\s*["']grist-widget-sdk["']/.test(source)) {
+    const manual = [...callHints(source, isComment), ...entryHints(source, isComment)].sort((a, b) => a.line - b.line)
+    return { text: source, changes, manual }
+  }
   let text = rewriteImports(source, changes)
 
   const rename = (pattern, replacement, change) => {
@@ -217,7 +244,7 @@ export function migrateSource(source) {
       manual.push({ line, name, hint: 'import it from "grist-widget-sdk/actions"' })
     }
   }
-  manual.push(...callHints(text, isComment))
+  manual.push(...callHints(text, isComment), ...entryHints(text, isComment))
   manual.sort((a, b) => a.line - b.line)
   return { text, changes, manual }
 }

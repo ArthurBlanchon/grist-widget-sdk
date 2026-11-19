@@ -63,7 +63,7 @@ function warnDeprecated(): void {
  * and `description`: remove the call. Removed in a later release.
  */
 export function useWidgetMetadata(input?: UseWidgetMetadataInput | null) {
-  warnDeprecated()
+  useEffect(warnDeprecated, [])
   usePageMetadata(input)
 }
 

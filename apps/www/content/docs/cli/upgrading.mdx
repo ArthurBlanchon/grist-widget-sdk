@@ -188,6 +188,15 @@ What it can't rewrite safely it lists by file and line, to change by hand:
 (declare the options with `defineGristWidget()` and call `widget.useGrist()`),
 `useGristSchema()` given connection options, and `renderWithGrist(ui)`
 without `widget` (in any file importing the SDK, test files included).
+It also lists the names 0.8 took out of the public API, with what to do:
+
+| Name | Instead |
+| --- | --- |
+| `useWidgetMetadata(…)` (deprecated: still works, and warns once) | Remove the call: `mountGristWidget()` sets the page's title and meta tags from the declaration |
+| `entryProps` (`grist-widget-sdk/app`) | Pass the entry module to `mountGristWidget(entry)` or `smokeTestWidget(entry)` |
+| `resolveMappings` (`grist-widget-sdk/emulator`) | Read the widget's mappings with `w.mappings` |
+| `enrichEmulatorColumnMetadata` (`grist-widget-sdk/emulator`) | Nothing: `createGristEmulator()` completes each column's metadata |
+
 `pnpm typecheck` afterwards checks the result.
 
 ### Widgets declared with `GRIST_OPTIONS`

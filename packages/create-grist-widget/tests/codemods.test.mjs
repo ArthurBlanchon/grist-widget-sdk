@@ -16,12 +16,23 @@ const migrate = (source) => {
 }
 
 describe("migrateSource", () => {
-  it("lists uses of the names 0.8 removed or deprecated, with what to do", () => {
-    const { manual } = migrate(
-      'import { useWidgetMetadata } from "grist-widget-sdk"\nimport { entryProps } from "grist-widget-sdk/app"\nimport { resolveMappings } from "grist-widget-sdk/emulator"\n'
-    )
-    expect(manual.map((m) => m.name)).toEqual(["useWidgetMetadata", "entryProps", "resolveMappings"])
+  it("lists the deprecated useWidgetMetadata, from the root entry", () => {
+    const { manual } = migrate('import { useWidgetMetadata } from "grist-widget-sdk"\nuseWidgetMetadata(META)\n')
+    expect(manual.map((m) => m.name)).toContain("useWidgetMetadata")
     expect(manual[0].hint).toMatch(/mountGristWidget\(\) sets the page's title/)
+  })
+
+  it("lists each name 0.8 removed from a subpath, in a file that imports only that subpath, once", () => {
+    const app = migrate('import { entryProps } from "grist-widget-sdk/app"\nconst p = entryProps(entry)\n')
+    expect(app.manual.map((m) => [m.line, m.name])).toEqual([[1, "entryProps"]])
+    const emulator = migrate(
+      'import { resolveMappings, enrichEmulatorColumnMetadata } from "grist-widget-sdk/emulator"\nresolveMappings(state)\n'
+    )
+    expect(emulator.manual.map((m) => m.name)).toEqual(["resolveMappings", "enrichEmulatorColumnMetadata"])
+  })
+
+  it("doesn't report a subpath name in a file that doesn't import that subpath", () => {
+    expect(migrate('import { useGrist } from "grist-widget-sdk"\nconst entryProps = {}\n').manual).toEqual([])
   })
 
   it("leaves a file that doesn't import grist-widget-sdk alone", () => {

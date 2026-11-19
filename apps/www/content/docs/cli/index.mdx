@@ -76,8 +76,7 @@ example.
 - `src/app/` is the widget, and everything in it is yours. `src/app/App.tsx`
   declares the widget with `defineGristWidget()` (access, columns, title) and
   shows a typed read and write, with UI you can immediately
-  replace — or, with `--example`, a real starting widget instead of the
-  placeholder. Put the widget's other files (components, hooks, helpers,
+  replace. Put the widget's other files (components, hooks, helpers,
   assets) next to it.
 - `src/app/App.test.tsx` is a working test of that widget, using
   `renderWithGrist(<App />, { widget, rows })` — run it, then edit it
@@ -101,10 +100,10 @@ example.
   by pnpm itself (see the template README).
 
 After scaffolding, the first edit is typically `src/app/App.tsx` — replace the
-placeholder with the widget you want. The
-[Examples](/docs/quickstart/examples) are working starting points for
-common shapes, and `create-grist-widget list` shows every example the CLI
-itself can start you from directly (see below).
+placeholder with the widget you want. For a pattern close to yours (drag and
+drop, writes, attachments, a map), read a [catalog widget](/widgets/): each
+has its spec, its code and its tests in
+[`widgets/<slug>/`](https://github.com/ArthurBlanchon/grist-widget-sdk/tree/main/widgets).
 
 ## The commands
 
@@ -121,22 +120,6 @@ to, and the widget's options. An attachments cell names files of
 `src/app/demo/`, which `pnpm demo`'s document gets as attachments (the
 demo page's doesn't: grist-static has none).
 
-### Starting from a real example
-
-```bash
-npm create grist-widget my-widget --example form-edit
-# or interactively:
-npm create grist-widget
-```
-
-`create-grist-widget list` prints every available id with a short
-description; `list --json` gives the same as machine-readable JSON. Every
-row below is exactly what `list` returns, generated from the same manifest
-the CLI itself embeds — the id is what `--example <id>` / `use <id>` take,
-and the same slug as in its demo URL (`/examples/<id>/demo/`).
-
-<ExamplesCatalog />
-
 ### `init` — scaffolding into an already-initialized directory
 
 `create` refuses a non-empty target directory. `init` is the fix for the
@@ -147,7 +130,7 @@ empty one:
 ```bash
 mkdir my-widget && cd my-widget
 git init   # or: this is already a repo clone
-npx create-grist-widget init --example form-edit
+npx create-grist-widget init
 ```
 
 Files that already exist and are identical to the template are left
@@ -159,21 +142,6 @@ template's own copy stops the run and lists the conflicting paths — pass
 `--force` to overwrite anyway. If `.git` already exists, `init` never
 auto-commits; review and commit the result yourself. If it doesn't, `init`
 sets up `main` + `dev` and an initial commit exactly like `create` does.
-
-### `use` — swapping to a different example later
-
-```bash
-create-grist-widget use task-board
-```
-
-Replaces the widget, `src/app/`, with a different example, adding any
-`src/components/ui/` primitive or dependency it needs. It touches nothing
-else — never `main.tsx`, `vite.config.ts`, or the deploy workflow — and it
-requires a clean git working tree first, so the swap is always a single
-reviewable, revertible diff. Commit or stash first if you have uncommitted
-changes; `use` refuses to run otherwise. It also refuses a widget scaffolded
-before the `src/app/` layout, still in `src/App.tsx`, until it is
-[moved](/docs/cli/upgrading#widgets-scaffolded-before-srcapp).
 
 ### `upgrade` — picking up template changes
 
@@ -388,6 +356,6 @@ pnpm add -D typescript @types/react @types/react-dom vite @vitejs/plugin-react
 
 Then create `index.html` (with the plugin-api script tag), `src/main.tsx`
 (React root), and `src/App.tsx` (your widget) — see the
-[SDK page](/docs/sdk) for the smallest possible code, or the
-[Examples](/docs/quickstart/examples) for working starting points. The template path saves about ten minutes of boilerplate and one
+[SDK page](/docs/sdk) for the smallest possible code, or a
+[catalog widget](/widgets/) for a working one. The template path saves about ten minutes of boilerplate and one
 or two configuration gotchas, but the SDK works fine without it.

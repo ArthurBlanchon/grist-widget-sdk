@@ -7,8 +7,9 @@
 # treated as executable by npx — it needs the explicit --package form to
 # install it and resolve the `bin` entry), then rewrite the scaffolded
 # project's SDK dependency to the packed SDK tarball and build it standalone.
-# Also exercises the CLI's other three verbs — `list`, `use`, `init` (batch
-# H) — straight off the same tarball, proving they too work fully offline.
+# Also exercises `init` and `upgrade` straight off the same tarball, and
+# checks that the retired `list`, `use` and `--example` (ADR 0023) point to
+# the catalog.
 #
 # Run from the repo root:  bash scripts/smoke/create-widget.sh
 set -euo pipefail
@@ -26,25 +27,17 @@ trap cleanup EXIT
 export GIT_AUTHOR_NAME="smoke-test" GIT_AUTHOR_EMAIL="smoke-test@localhost"
 export GIT_COMMITTER_NAME="smoke-test" GIT_COMMITTER_EMAIL="smoke-test@localhost"
 
-# Both step 2 (build-template.mjs embeds it as manifest.json) and step 6
-# (compose-example.mjs reads it for usesUi) need widgets.json -- regenerate
-# it up front rather than assuming a caller already did, so this script is
-# correct standalone too, not just when chained after another step that
-# happens to produce it (e.g. playground's own prebuild, which
-# build-site.mjs relies on). A fresh CI checkout never has one on disk.
-node "$REPO_ROOT/scripts/build-widgets-manifest.mjs"
-
-echo "== 1/7 build + pack the SDK"
+echo "== 1/6 build + pack the SDK"
 pnpm --filter grist-widget-sdk run build >/dev/null
 SDK_TARBALL="$(cd "$REPO_ROOT/packages/core" && pnpm pack --pack-destination "$WORK" | tail -1)"
 test -f "$SDK_TARBALL" || { echo "::error::SDK pack did not produce a tarball"; exit 1; }
 
-echo "== 2/7 build + pack the CLI (embeds the template + stamps the SDK version)"
+echo "== 2/6 build + pack the CLI (embeds the template + stamps the SDK version)"
 pnpm --filter create-grist-widget run build >/dev/null
 CLI_TARBALL="$(cd "$REPO_ROOT/packages/create-grist-widget" && pnpm pack --pack-destination "$WORK" | tail -1)"
 test -f "$CLI_TARBALL" || { echo "::error::CLI pack did not produce a tarball"; exit 1; }
 
-echo "== 3/7 scaffold via the packed CLI tarball, outside the workspace"
+echo "== 3/6 scaffold via the packed CLI tarball, outside the workspace"
 # --no-install: `create`'s own post-scaffold install (batch H, closes C-03)
 # would otherwise try to fetch grist-widget-sdk's real registry version
 # before step 4 below has a chance to rewrite the dependency to the packed
@@ -165,7 +158,7 @@ COMMITS="$(git -C "$PROJECT" rev-list --count HEAD)"
 [ "$COMMITS" = "1" ] || { echo "::error::expected exactly 1 commit on main, got $COMMITS"; exit 1; }
 [ -z "$(git -C "$PROJECT" status --porcelain)" ] || { echo "::error::scaffold left an unclean working tree"; exit 1; }
 
-echo "== 4/7 rewrite the scaffolded SDK and CLI dependencies to the packed tarballs"
+echo "== 4/6 rewrite the scaffolded SDK and CLI dependencies to the packed tarballs"
 node -e '
   const fs = require("fs");
   const p = process.argv[1];
@@ -181,7 +174,7 @@ node -e '
   fs.writeFileSync(p, JSON.stringify(pkg, null, 2) + "\n");
 ' "$PROJECT/package.json" "$SDK_TARBALL" "$CLI_TARBALL"
 
-echo "== 5/7 install + lint + build + test the scaffolded project standalone"
+echo "== 5/6 install + lint + build + test the scaffolded project standalone"
 ( cd "$PROJECT" && pnpm install )
 # The bundled ci.yml lints every pull request: a fresh scaffold must start green.
 ( cd "$PROJECT" && pnpm run lint )
@@ -193,152 +186,23 @@ PLAN="$( cd "$PROJECT" && node_modules/.bin/grist-widget-deploy plan --site "$WO
 echo "   deploy plan for dev: $PLAN"
 echo "$PLAN" | grep -q '"context":"dev"' || { echo "::error::the scaffold's grist-widget-deploy didn't plan a dev deploy: $PLAN"; exit 1; }
 
-echo "== 6/7 compose + lint + build + smoke-test every example against the packed SDK tarball"
-# The guarantee the whole examples story rests on (§4 of
-# docs/history/2026-08-08-execution-plan.md): every example must build
-# against the *published* SDK, not workspace source. Neither the monorepo
-# itself (workspace:^ resolution) nor scripts/build-site.mjs's deploy build
-# (workspace-source-resolved, same DX reasons as playground/www's own
-# builds) can prove that -- this is the one place that does. Shares one
-# `pnpm install` across all examples (scripts/compose-example.mjs), same
-# as build-site.mjs, rather than one per example. widgets.json was already
-# regenerated up top (step 2 needs it too, before this step even runs).
+echo "== 6/6 exercise upgrade/init, and the retired list/use/--example, against the packed CLI tarball"
 
-EXAMPLES_PROJECT="$WORK/examples-project"
-cat > "$WORK/build-examples.mjs" <<'NODE'
-import { execFileSync } from "node:child_process"
-import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs"
-import { join } from "node:path"
-import { pathToFileURL } from "node:url"
+echo "   list, use and --example are retired, pointing to the catalog"
+for retired in "list" "use hello-world" "create from-example --example hello-world --yes --no-install"; do
+  # shellcheck disable=SC2086
+  if OUT="$(cd "$PROJECT_PARENT" && npx --yes --package="$CLI_TARBALL" create-grist-widget $retired 2>&1)"; then
+    echo "::error::create-grist-widget $retired should have failed"; exit 1
+  fi
+  echo "$OUT" | grep -q "gristwidgets.com/widgets/" || { echo "::error::create-grist-widget $retired did not point to the catalog: $OUT"; exit 1; }
+done
+[ ! -e "$PROJECT_PARENT/from-example" ] || { echo "::error::--example created a project"; exit 1; }
 
-const [, , repoRoot, sdkTarball, projectDir] = process.argv
-const { allExtraDependencies, composeExample, overlayExampleSrc } = await import(
-  pathToFileURL(join(repoRoot, "scripts/compose-example.mjs")).href
-)
-
-const exampleIds = readdirSync(join(repoRoot, "examples"), { withFileTypes: true })
-  .filter((entry) => entry.isDirectory() && existsSync(join(repoRoot, "examples", entry.name, "WidgetApp.tsx")))
-  .map((entry) => entry.name)
-  .sort()
-
-composeExample({
-  exampleId: exampleIds[0],
-  destDir: projectDir,
-  sdkDependency: `file:${sdkTarball}`,
-})
-const pkgPath = join(projectDir, "package.json")
-const pkg = JSON.parse(readFileSync(pkgPath, "utf8"))
-Object.assign(pkg.dependencies, allExtraDependencies())
-writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`)
-execFileSync("pnpm", ["install"], { cwd: projectDir, stdio: "inherit" })
-
-for (const id of exampleIds) {
-  overlayExampleSrc({ exampleId: id, destDir: projectDir })
-  // A widget started from an example must pass the bundled ci.yml's lint
-  // step too, not just build.
-  console.log(`\n-- linting ${id}`)
-  execFileSync("pnpm", ["exec", "eslint", "src"], { cwd: projectDir, stdio: "inherit" })
-  console.log(`\n-- building ${id}`)
-  execFileSync("pnpm", ["exec", "vite", "build", "--outDir", join(projectDir, "dist", id)], {
-    cwd: projectDir,
-    stdio: "inherit",
-  })
-  // The template's src/app/App.smoke.test.tsx comes back when an example
-  // is swapped in, so a widget started from one gets it too: it has to pass
-  // (found this way: two examples called full-access APIs while asking for
-  // "read table").
-  console.log(`\n-- smoke-testing ${id}`)
-  execFileSync("pnpm", ["exec", "vitest", "run", "src/app/App.smoke.test.tsx"], { cwd: projectDir, stdio: "inherit" })
-}
-console.log(`\nlinted, built and smoke-tested ${exampleIds.length} examples against ${sdkTarball}`)
-NODE
-node "$WORK/build-examples.mjs" "$REPO_ROOT" "$SDK_TARBALL" "$EXAMPLES_PROJECT"
-
-echo "== 7/7 exercise list/use/upgrade/init against the packed CLI tarball"
-# Separate scaffolds from $PROJECT (steps 4-6 above still need it in its
-# original state) -- batch H's other three verbs, all offline, all straight
-# off the same tarball already packed in step 2.
-
-echo "   list"
-LIST_OUTPUT="$(cd "$PROJECT_PARENT" && npx --yes --package="$CLI_TARBALL" create-grist-widget list)"
-echo "$LIST_OUTPUT" | grep -q '^hello-world' || { echo "::error::list did not include hello-world"; exit 1; }
-LIST_JSON="$(cd "$PROJECT_PARENT" && npx --yes --package="$CLI_TARBALL" create-grist-widget list --json)"
-node -e '
-  const list = JSON.parse(process.argv[1]);
-  if (!Array.isArray(list) || !list.some((e) => e.id === "hello-world" && e.title && e.description !== undefined)) {
-    console.error("list --json missing a well-formed hello-world entry");
-    process.exit(1);
-  }
-' "$LIST_JSON"
-
-echo "   use"
-USE_PARENT="$WORK/use-consumer"
+echo "   a scaffold on the packed SDK and CLI lints, builds and tests green"
+USE_PARENT="$WORK/upgrade-consumer"
 mkdir -p "$USE_PARENT"
-( cd "$USE_PARENT" && npx --yes --package="$CLI_TARBALL" create-grist-widget create use-target --yes --no-install )
-USE_PROJECT="$USE_PARENT/use-target"
-BEFORE_APP="$(cat "$USE_PROJECT/src/app/App.tsx")"
-( cd "$USE_PROJECT" && npx --yes --package="$CLI_TARBALL" create-grist-widget use hello-world )
-AFTER_APP="$(cat "$USE_PROJECT/src/app/App.tsx")"
-[ "$BEFORE_APP" != "$AFTER_APP" ] || { echo "::error::use did not change src/app/App.tsx"; exit 1; }
-grep -q "requiredAccess" "$USE_PROJECT/src/app/App.tsx" || { echo "::error::use did not overlay hello-world's GRIST_OPTIONS"; exit 1; }
-# src/app/ is replaced whole: hello-world has no test, so the template's goes,
-# and the template's smoke test comes back with it.
-[ ! -e "$USE_PROJECT/src/app/App.test.tsx" ] || { echo "::error::use left the previous widget's src/app/App.test.tsx behind"; exit 1; }
-test -f "$USE_PROJECT/src/app/App.smoke.test.tsx" || { echo "::error::use did not put the template's smoke test back in src/app/"; exit 1; }
-# The template's files around src/app/ stay.
-test -f "$USE_PROJECT/src/main.tsx" || { echo "::error::use removed a template file outside src/app/"; exit 1; }
-git -C "$USE_PROJECT" add -A && git -C "$USE_PROJECT" commit -qm "use hello-world"
-
-echo "   use refuses a dirty working tree"
-echo "// dirty" >> "$USE_PROJECT/src/app/App.tsx"
-if ( cd "$USE_PROJECT" && npx --yes --package="$CLI_TARBALL" create-grist-widget use mark-done ) >/dev/null 2>&1; then
-  echo "::error::use should have refused a dirty working tree"
-  exit 1
-fi
-git -C "$USE_PROJECT" checkout -q -- src
-git -C "$USE_PROJECT" clean -fdq -- src
-
-echo "   use refuses a project from before the src/app/ layout"
-# Its main.tsx imports ./App.tsx, so an example written to src/app/ would never show.
-git -C "$USE_PROJECT" mv src/app/App.tsx src/App.tsx
-git -C "$USE_PROJECT" commit -qm "old layout"
-if ( cd "$USE_PROJECT" && npx --yes --package="$CLI_TARBALL" create-grist-widget use mark-done ) >/dev/null 2>&1; then
-  echo "::error::use should have refused a project whose widget is still in src/App.tsx"
-  exit 1
-fi
-git -C "$USE_PROJECT" reset -q --hard HEAD~1
-
-echo "   use rejects an unknown example id"
-if ( cd "$USE_PROJECT" && npx --yes --package="$CLI_TARBALL" create-grist-widget use not-a-real-example ) >/dev/null 2>&1; then
-  echo "::error::use should have rejected an unknown example id"
-  exit 1
-fi
-
-echo "   use with no argument prints usage and exits non-zero"
-if ( cd "$USE_PROJECT" && npx --yes --package="$CLI_TARBALL" create-grist-widget use ) >/dev/null 2>&1; then
-  echo "::error::use with no argument should have failed"
-  exit 1
-fi
-
-echo "   use merges an example's extra npm dependency"
-# spreadsheet-grid is the one example needing a dependency beyond what ui-file
-# copying covers (EXTRA_DEPENDENCIES in scripts/compose-example.mjs) --
-# every other 'use' exercised above swaps examples with none, so this is the
-# only check that actually exercises mergeExtraDependencies's real branch.
-( cd "$USE_PROJECT" && npx --yes --package="$CLI_TARBALL" create-grist-widget use spreadsheet-grid )
-grep -q '"react-datasheet-grid"' "$USE_PROJECT/package.json" || { echo "::error::use did not merge spreadsheet-grid's extra dependency into package.json"; exit 1; }
-test -f "$USE_PROJECT/src/app/GristRdgGrid.tsx" || { echo "::error::use did not copy spreadsheet-grid's sibling files into src/app/"; exit 1; }
-
-echo "   an example-scaffolded project actually lints, builds and tests green"
-# No example ships its own WidgetApp.test.tsx yet (optional, per the plan),
-# so overlayExampleSrc deletes the template's own inherited app/App.test.tsx --
-# every 'use'/'create --example' project has zero test files. Found live,
-# testing the real published create-grist-widget@0.3.9: `pnpm test` failed
-# outright ("No test files found", vitest's default is to treat that as a
-# failure) even though nothing was actually broken. Fixed via
-# passWithNoTests in the template's own vite.config.ts; this is the
-# regression guard so it can't come back unnoticed -- none of the checks
-# above actually run `pnpm test` against an example-bearing project.
+( cd "$USE_PARENT" && npx --yes --package="$CLI_TARBALL" create-grist-widget create upgrade-target --yes --no-install )
+USE_PROJECT="$USE_PARENT/upgrade-target"
 node -e '
   const fs = require("fs");
   const p = process.argv[1];
@@ -401,7 +265,7 @@ git -C "$USE_PROJECT" reset -q --hard HEAD~1
 echo "   init"
 INIT_TARGET="$WORK/init-target"
 mkdir -p "$INIT_TARGET"
-( cd "$INIT_TARGET" && npx --yes --package="$CLI_TARBALL" create-grist-widget init --example mark-done --yes --no-install )
+( cd "$INIT_TARGET" && npx --yes --package="$CLI_TARBALL" create-grist-widget init --yes --no-install )
 test -f "$INIT_TARGET/src/app/App.tsx" || { echo "::error::init did not scaffold into the current directory"; exit 1; }
 test -d "$INIT_TARGET/.git" || { echo "::error::init did not initialize git in a fresh (non-git) directory"; exit 1; }
 [ -z "$(git -C "$INIT_TARGET" status --porcelain)" ] || { echo "::error::init left an unclean working tree"; exit 1; }
@@ -437,4 +301,4 @@ COMMIT_COUNT="$(git -C "$EXISTING_GIT_TARGET" rev-list --count HEAD)"
 [ "$COMMIT_COUNT" = "1" ] || { echo "::error::init should not have committed into a repo that already had history (expected 1 commit, got $COMMIT_COUNT)"; exit 1; }
 [ -n "$(git -C "$EXISTING_GIT_TARGET" status --porcelain)" ] || { echo "::error::init should have left the scaffold uncommitted (working tree unexpectedly clean)"; exit 1; }
 
-echo "== OK: npm create grist-widget scaffolds a project that installs, lints, builds, and tests green against the packed SDK tarball, every example lints, builds and passes its smoke test against it too, list/use/init work offline from the same tarball, and upgrade brings an older widget's template files back in line"
+echo "== OK: npm create grist-widget scaffolds a project that installs, lints, builds, and tests green against the packed SDK tarball, init works offline from the same tarball, the retired list/use/--example point to the catalog, and upgrade brings an older widget's template files back in line"

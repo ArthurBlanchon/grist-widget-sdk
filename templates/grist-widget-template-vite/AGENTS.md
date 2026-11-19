@@ -94,6 +94,18 @@ mapping, and rendering all live in `src/app/App.tsx`: that's the file to edit.
    `grist-widget-sdk` names a release removed, and says what it changed and what is left
    to change by hand.
 
+## Patterns to start from
+
+The template is the one starting point. For a pattern close to the widget you need, read a
+catalog widget built with the same SDK, its `SPEC.md` (the acceptance criteria), its code
+and its tests, and adapt what fits into `src/app/`:
+<https://github.com/ArthurBlanchon/grist-widget-sdk/tree/main/widgets> (live, each with a
+demo: <https://gristwidgets.com/widgets/>). For example: drag and drop between columns
+(`kanban-board`), a form that writes a record (`record-editor`), many rows at once
+(`bulk-editor`), attachments (`attachment-viewer`, `file-uploader`), a map (`map`), a
+chart (`chart-builder`). Copy code, never a dependency on `widgets/_shared/`: it exists only
+in that repository.
+
 ## Commands
 
 | Intent | Command |

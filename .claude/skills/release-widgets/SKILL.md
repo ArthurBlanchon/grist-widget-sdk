@@ -50,7 +50,7 @@ version `widgets-dist` doesn't have, once, for good
    say for every change on screen whether it is intended.
 5. **After the merge, check each release is served** on both origins:
    `/widgets/<slug>/<version>/` answers 200, `/widgets/<slug>/v<major>/`
-   and `/latest/` serve it, the catalog (`widgets.json`) lists the version,
+   and `/latest/` serve it, the catalog (`/widgets/catalog.json`) lists the version,
    and the widget's page shows its changelog entry. A version that isn't
    there after the deploy is a red release: read `docs/operations/site-deploy.md`.
 6. **Log the run** in [the upkeep log](../../../docs/operations/upkeep-log.md),

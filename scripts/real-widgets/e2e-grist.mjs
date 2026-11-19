@@ -4,8 +4,8 @@
 //
 // For each widget:
 //   1. its GRIST_OPTIONS are read off the real module export, loaded through
-//      the widget's own Vite config in Node (as build-widgets-manifest.mjs
-//      does for the examples): no source parsing, no per-widget config;
+//      the widget's own Vite config in Node: no source parsing, no
+//      per-widget config;
 //   2. a document is generated from them in a local Grist (a pinned Docker
 //      image, started here unless --grist-url points at one): the widget's
 //      demo data (src/app/demo.ts) when it has some, otherwise a table with

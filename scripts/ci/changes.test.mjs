@@ -64,7 +64,7 @@ test("a workflow change, a CI-script change or an unknown diff runs everything",
 })
 
 test("a file rule matches that file only, not a prefix of it", () => {
-  assert.equal(changedJobs(["scripts/compose-example.mjs.bak"]).create_widget, false)
+  assert.equal(changedJobs(["packages/create-grist-widget/src/deploy.mjs.bak"]).template_deploy, false)
 })
 
 test("ci.yml: gate needs every job, and changes outputs every rule", async () => {

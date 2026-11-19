@@ -8,6 +8,13 @@
 const REPO = "https://github.com/ArthurBlanchon/grist-widget-sdk/blob/main"
 
 /** Old path (no base, trailing slash) → new location: a site path starting with "/", or a full URL. */
+/** The example widgets the site served at /examples/<id>/ until 0.8 (ADR 0023). */
+const RETIRED_EXAMPLES = [
+  "attachment-gallery", "bulk-mark-done", "declared-columns", "form-edit", "hello-world", "mark-done",
+  "reads-demo", "rest-fetch", "schema-migration", "schema-preview", "spreadsheet-grid", "task-board",
+  "theme-demo", "typed-reads", "widget-options", "writes-demo",
+]
+
 export const REDIRECTS = {
   // Maintainer docs moved into the repository (docs rewrite plan, M1).
   "/docs/contributing/": `${REPO}/AGENTS.md`,
@@ -21,7 +28,16 @@ export const REDIRECTS = {
   "/docs/sdk/guide/raw-plugin-api-vs-sdk/": "/docs/",
   // Merged into the guides, the reference and the examples (docs rewrite plan, R6).
   "/docs/sdk/guide/cheatsheet/": "/docs/sdk/api/",
-  "/docs/sdk/guide/cookbook/": "/docs/quickstart/examples/",
+  "/docs/sdk/guide/cookbook/": "/widgets/",
+  // examples/ retired for the catalog (ADR 0023): its page, and each
+  // example's widget and demo, send the reader to the catalog.
+  "/docs/quickstart/examples/": "/widgets/",
+  ...Object.fromEntries(
+    RETIRED_EXAMPLES.flatMap((id) => [
+      [`/examples/${id}/latest/`, "/widgets/"],
+      [`/examples/${id}/demo/`, "/widgets/"],
+    ])
+  ),
 }
 
 const escapeHtml = (s) => s.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;")

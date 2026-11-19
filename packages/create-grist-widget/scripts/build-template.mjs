@@ -1,7 +1,5 @@
 import {
   cpSync,
-  mkdirSync,
-  readdirSync,
   readFileSync,
   renameSync,
   rmSync,
@@ -11,7 +9,6 @@ import {
 import path from "node:path"
 import { fileURLToPath } from "node:url"
 
-import { ensureWidgetsManifest } from "../../../scripts/build-widgets-manifest.mjs"
 
 const PKG_ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..")
 const REPO_ROOT = path.join(PKG_ROOT, "..", "..")
@@ -72,78 +69,13 @@ delete pkg.scripts.prebuild
 pkg.version = "0.0.1"
 writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + "\n")
 
-// -----------------------------------------------------------------------
-// Batch H: embed everything `list`/`use`/`create --example` need to run
-// fully offline from the published tarball — packages/create-grist-widget's
-// own "files" only ships bin/template/LICENSE otherwise (see package.json).
-// -----------------------------------------------------------------------
-
-// scripts/compose-example.mjs's compose/overlay logic, copied verbatim.
-// Safe because it's parameterized (createComposer({ templateDir, examplesDir,
-// uiDir, manifestPath })) rather than hardcoding this monorepo's own
-// layout — a byte-for-byte copy can never diverge in behavior from the
-// monorepo original, only in which directories it's bound to. See that
-// file's own header comment for the two-binding design.
-const VENDOR_DEST = path.join(PKG_ROOT, "vendor")
-rmSync(VENDOR_DEST, { recursive: true, force: true })
-mkdirSync(VENDOR_DEST, { recursive: true })
-cpSync(
-  path.join(REPO_ROOT, "scripts", "compose-example.mjs"),
-  path.join(VENDOR_DEST, "compose-example.mjs")
-)
-
-// Every example, verbatim: each examples/<id>/ with a WidgetApp.tsx. The
-// rest of examples/ (its package.json, node_modules, _ui/, _demos/) is the
-// monorepo's host for them, not content.
-const EXAMPLES_DEST = path.join(PKG_ROOT, "examples")
-rmSync(EXAMPLES_DEST, { recursive: true, force: true })
-for (const id of readdirSync(path.join(REPO_ROOT, "examples"))) {
-  if (!existsSync(path.join(REPO_ROOT, "examples", id, "WidgetApp.tsx"))) continue
-  cpSync(path.join(REPO_ROOT, "examples", id), path.join(EXAMPLES_DEST, id), { recursive: true })
-}
-
-// widgets.json becomes this package's manifest.json: the offline catalog
-// `list` reads and `create`'s interactive example-picker prompts from.
-// Generated on demand if a caller didn't already build it (found live,
-// repeatedly, before this existed: batch H's own smoke test, then the real
-// npm release pipeline, both failing on a missing widgets.json this build
-// script needs but never generated itself) — see ensureWidgetsManifest's
-// own doc comment for the full story.
-const rootManifestPath = path.join(REPO_ROOT, "widgets.json")
-await ensureWidgetsManifest()
-const manifest = JSON.parse(readFileSync(rootManifestPath, "utf8"))
-writeFileSync(
-  path.join(PKG_ROOT, "manifest.json"),
-  JSON.stringify(manifest, null, 2) + "\n"
-)
-
-// `@/components/ui/*` files examples need that the template doesn't already
-// vendor — derived from the manifest's usesUi (never hardcoded, same "derive
-// don't guess" spirit as build-widgets-manifest.mjs itself), so a future
-// example needing a new primitive is picked up automatically on the next
-// build rather than silently missing from a published CLI's compose step.
-const exampleUiDir = path.join(REPO_ROOT, "examples", "_ui")
-const templateUiNames = new Set(
-  readdirSync(path.join(DEST, "src", "components", "ui"))
-    .filter((f) => f.endsWith(".tsx"))
-    .map((f) => f.replace(/\.tsx$/, ""))
-)
-const usedUiNames = new Set(manifest.flatMap((entry) => entry.usesUi ?? []))
-const UI_SOURCE_DEST = path.join(PKG_ROOT, "ui-source")
-rmSync(UI_SOURCE_DEST, { recursive: true, force: true })
-mkdirSync(UI_SOURCE_DEST, { recursive: true })
-let uiFilesCopied = 0
-for (const name of usedUiNames) {
-  if (templateUiNames.has(name)) continue
-  const tsxPath = path.join(exampleUiDir, `${name}.tsx`)
-  if (!existsSync(tsxPath)) continue
-  cpSync(tsxPath, path.join(UI_SOURCE_DEST, `${name}.tsx`))
-  uiFilesCopied++
-  const cssPath = path.join(exampleUiDir, `${name}.css`)
-  if (existsSync(cssPath)) cpSync(cssPath, path.join(UI_SOURCE_DEST, `${name}.css`))
+// What earlier versions also embedded for `list`, `use` and
+// `create --example` (examples, their ui components, the compose engine)
+// was retired with examples/ (ADR 0023): remove what an older build left.
+for (const stale of ["vendor", "examples", "ui-source", "manifest.json"]) {
+  rmSync(path.join(PKG_ROOT, stale), { recursive: true, force: true })
 }
 
 console.log(
-  `Embedded template with grist-widget-sdk@^${coreVersion}, create-grist-widget@^${cliVersion}, packageManager ${rootPkg.packageManager}\n` +
-    `Embedded ${manifest.length} examples, ${uiFilesCopied} extra ui component(s), and the compose engine for offline list/use/create --example.`
+  `Embedded template with grist-widget-sdk@^${coreVersion}, create-grist-widget@^${cliVersion}, packageManager ${rootPkg.packageManager}`
 )

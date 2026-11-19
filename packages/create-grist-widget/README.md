@@ -9,36 +9,22 @@ cd my-widget
 pnpm dev
 ```
 
-The template — plus every starting example and the logic that composes them — ships
-embedded in this package. Nothing is fetched from GitHub or npm at scaffold time; the SDK
-install right after is the only network access any of these commands make. See
-[Quickstart](https://gristwidgets.com/docs/quickstart) for the full
+The template ships embedded in this package: nothing is fetched from GitHub
+or npm at scaffold time, and the install right after is the only network
+access. See [Quickstart](https://gristwidgets.com/docs/quickstart) for the full
 walkthrough (dev loop, deploying, embedding in Grist).
 
-By default the scaffold starts blank (a two-field editor) and installs its own
-dependencies automatically, detecting whichever package manager you invoked this with. Add
-`--example <id>` to start from a real widget instead — `create-grist-widget list` shows
-what's available — or just run `npm create grist-widget` with no name for an interactive
-prompt that asks for both.
+Every widget starts from the template, a two-field editor, and the scaffold
+installs its own dependencies. For a pattern close to yours (drag and drop,
+writes, attachments, a map), read a [catalog widget](https://gristwidgets.com/widgets/):
+each has its spec, code and tests in
+[`widgets/<slug>/`](https://github.com/ArthurBlanchon/grist-widget-sdk/tree/main/widgets).
 
-## The five commands
+## The commands
 
-| Command | What it does |
-| --- | --- |
-| `create <name> [--example <id>]` | Scaffold a new widget into `./<name>` (the command above, or run explicitly) |
-| `init [--example <id>]` | Scaffold into the **current** directory instead of a new one — for an already-cloned or agent-initialized repo |
-| `use <example-id>` | Swap the current project's widget for a different example |
-| `upgrade` | Bring an existing widget's template files up to this version's template |
-| `list [--json]` | Print the available starting examples |
-
-Common flags for `create`/`init`: `--yes` skips interactive prompts and uses
-flags/defaults only; `--no-install` skips the automatic dependency install
-(which uses pnpm, whichever package manager runs the CLI: the widget's
-workflows only read `pnpm-lock.yaml`); `--pm <name>` installs with another
-package manager instead.
-`init` additionally takes `--name <name>` (default: the current directory's
-name) and `--force` (overwrite files that already exist and differ from the
-template — see below).
+`create-grist-widget --help` lists them all, with their options:
+`create`, `init`, `upgrade`, `demo`, `release`, `protect` and `manifest`.
+The [CLI reference](https://gristwidgets.com/docs/cli) shows the same text.
 
 ### `init` — starting from an already-initialized directory
 
@@ -49,30 +35,16 @@ already-`git init`'d repo rather than an empty one:
 ```bash
 mkdir my-widget && cd my-widget
 git init   # or: this is already a fresh GitHub Pages / template clone
-npx create-grist-widget init --example form-edit
+npx create-grist-widget init
 ```
 
-Files that already exist and are identical to the template are left untouched; the four
-identity-bearing files (`package.json`, `README.md`, `index.html`, `src/app/App.tsx`) get the
-usual name/title substitution even if present. Anything else that already exists **and**
-differs from the template's own copy stops the run with a list of the conflicting paths —
-pass `--force` to overwrite anyway. If `.git` already exists, `init` never auto-commits;
-review and commit the result yourself. If it doesn't, `init` sets up `main` + `dev` and an
-initial commit exactly like `create` does.
-
-### `use` — swapping to a different example later
-
-Changed your mind about which example to start from, or want to compare two? `use`
-replaces the widget, `src/app/`, with a different example:
-
-```bash
-create-grist-widget use task-board
-```
-
-It touches nothing else but the `src/components/ui/` primitives and dependencies the example
-needs — never `main.tsx`, `vite.config.ts`, or the deploy workflow — and it requires a clean git working tree first (`git status --porcelain`
-empty), so the swap is always a single reviewable, revertible diff. Commit or stash first
-if you have uncommitted changes; `use` refuses to run otherwise.
+Files that already exist and are identical to the template are left untouched; the five
+identity-bearing files (`package.json`, `README.md`, `CHANGELOG.md`, `index.html`,
+`src/app/App.tsx`) get the usual name/title substitution even if present. Anything else that
+already exists **and** differs from the template's own copy stops the run with a list of the
+conflicting paths — pass `--force` to overwrite anyway. If `.git` already exists, `init`
+never auto-commits; review and commit the result yourself. If it doesn't, `init` sets up
+`main` + `dev` and an initial commit exactly like `create` does.
 
 ### `upgrade` — picking up template changes
 
@@ -91,17 +63,7 @@ smoke test, `src/components/ui/`, `src/index.css`, `README.md`…). It refuses t
 run on `main`, with uncommitted changes, or on a widget still in `src/App.tsx`. Details:
 [Upgrading a widget](https://gristwidgets.com/docs/cli/upgrading).
 
-### `list` — what's available
-
-```bash
-create-grist-widget list          # id / title / description, one per line
-create-grist-widget list --json   # the same, as JSON
-```
-
-> **Note:** `create`, `init`, `use`, `upgrade`, and `list` are themselves valid widget names — a bare
-> `create-grist-widget list` runs the `list` command, not "scaffold a widget named list."
-> Use the explicit form (`create-grist-widget create list`) for a widget with one of these
-> names.
+`list`, `use` and `--example` were retired in 0.8: they point to the catalog.
 
 ## Using Claude Code?
 

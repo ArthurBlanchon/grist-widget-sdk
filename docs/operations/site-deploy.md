@@ -9,7 +9,7 @@
 ## Two origins, on purpose
 
 The site is published at two independent origins, each with a complete
-copy: the docs, the example widgets and their demo pages. The decision and
+copy: the docs, the catalog widgets and their demo pages. The decision and
 its reasons are [ADR 0001](../decisions/0001-two-site-origins.md).
 
 | Origin | Host | `SITE_BASE` |
@@ -34,8 +34,7 @@ Both origins run `scripts/build-site.mjs`, which assembles `./site`:
 | Path | What |
 | --- | --- |
 | `/` | `apps/www`: the landing page and `/docs/*` |
-| `/examples/<id>/latest/` | the example widget |
-| `/examples/<id>/demo/` | the example in a real Grist, from static files: grist-static and the committed `examples/_demos/<id>.grist` |
+| `/examples/<id>/latest/`, `/examples/<id>/demo/` | redirect pages to `/widgets/`: the example widgets were retired (ADR 0023) |
 | `/grist-static/<version>/` | the pinned grist-static, used by the site's and every widget's demo pages |
 | `/widgets/<slug>/<version>/`, `/v<major>/`, `/latest/`, `/dev/` | the catalog widgets' released versions, the newest of each major (the install URL), the newest of all, and the source being built (below, ADR 0013) |
 | `/widgets/<slug>/` | the widget's page, by `apps/www` from its `SPEC.md`, `package.json` and `CHANGELOG.md`: what it does, its columns, access, install URL and demo. Its channels and versions are the folders beside it, which keep Grist's framing headers; the page itself keeps the docs' (`scripts/site/headers.mjs`) |
@@ -60,8 +59,9 @@ It also writes:
     referrer policy;
   - **docs pages:** framed by the site only, and no camera, microphone or
     location;
-  - **`/examples/*` and `/template-preview/*`:** without those two, since
-    Grist documents embed them;
+  - **`/examples/*` (the retired examples' redirect pages) and
+    `/template-preview/*`:** without those two, since Grist documents
+    embed them;
   - **`/grist-static/*`:** readable cross-origin.
 
   `.github/workflows/site-headers.yml` checks what gristwidgets.com
@@ -76,15 +76,6 @@ npm tarball, checks it against the integrity pinned in
 (about 90 MB, 1,500 files). It is not a workspace dependency: at 188 MB it
 would weigh on every install. A new version is a change to
 `GRIST_STATIC_VERSION` and a new line in `GRIST_STATIC_INTEGRITY`.
-
-### The examples' demo documents
-
-They are committed under `examples/_demos/`, because the Cloudflare build
-has no Docker to generate them:
-- `node scripts/example-demos.mjs build` regenerates them in a real Grist
-  (Docker);
-- CI's `node scripts/example-demos.mjs check` fails when an example's
-  columns, access or title changed since its document was made.
 
 ## Catalog widgets: releases
 
@@ -135,7 +126,7 @@ every build. It warns at 60 % of GitHub Pages' 1 GB or of Cloudflare's
 
 `.github/workflows/deploy-apps.yml` runs the script with
 `SITE_BASE=/<repo>/` on every push to `main` that touches `apps/www/**`,
-`packages/core/**`, `examples/**` or `scripts/**`, and on demand. It
+`packages/core/**`, `widgets/**` or `scripts/**`, and on demand. It
 publishes with `actions/upload-pages-artifact` and `actions/deploy-pages`.
 
 The repository's settings must stay as they are:

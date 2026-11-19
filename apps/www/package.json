@@ -3,9 +3,9 @@
   "version": "0.0.10",
   "private": true,
   "scripts": {
-    "prebuild": "node ../../scripts/build-widgets-manifest.mjs && node ../../scripts/widgets/catalog.mjs --www .generated/catalog.json",
+    "prebuild": "node ../../scripts/widgets/catalog.mjs --www .generated/catalog.json",
     "build": "next build",
-    "predev": "node ../../scripts/build-widgets-manifest.mjs && node ../../scripts/widgets/catalog.mjs --www .generated/catalog.json",
+    "predev": "node ../../scripts/widgets/catalog.mjs --www .generated/catalog.json",
     "dev": "next dev",
     "start": "serve out",
     "types:check": "next typegen && tsc --noEmit",

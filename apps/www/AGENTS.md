@@ -1,7 +1,7 @@
 # Agent guide: the docs site (`apps/www`)
 
 The landing page and the user documentation, a static Next.js + fumadocs
-export, assembled with the example widgets by `scripts/build-site.mjs` and
+export, assembled with the catalog widgets by `scripts/build-site.mjs` and
 published at two origins ([site deploy](../../docs/operations/site-deploy.md)).
 It does not depend on `grist-widget-sdk`'s build, so an SDK change cannot
 break its deploy. It reads two committed files: the SDK's reference
@@ -21,8 +21,9 @@ sets them; in short:
 - **Short pages,** about 800 words at most. One that needs more is two.
 - **Code is quoted, not pasted.** A `tsx` or `ts` block is compiled as a
   test (`scripts/extract-doc-snippets.mjs` → `packages/core/tests/docs/`).
-  Mark a fragment that can't compile with `no-check`. Show an example's
-  code by including it from `examples/`.
+  Mark a fragment that can't compile with `no-check`: it proves nothing,
+  and the API coverage check (`scripts/ci/api-coverage.mjs`) doesn't count
+  it. For a whole widget, link to its catalog folder (`widgets/<slug>/`).
 - **Users only.** Maintainer material goes in the repository
   ([`docs/`](../../docs/)), never on the site.
 - **A retired or moved page gets a redirect** in `scripts/site/redirects.mjs`.

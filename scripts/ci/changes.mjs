@@ -40,9 +40,7 @@ export const RULES = {
     "packages/core/",
     "packages/create-grist-widget/",
     "templates/grist-widget-template-vite/",
-    "examples/",
     "scripts/smoke/",
-    "scripts/compose-example.mjs",
     LOCKFILE,
   ],
   template_deploy: [

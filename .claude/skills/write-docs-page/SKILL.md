@@ -24,8 +24,9 @@ The target structure is in the
 3. **Code compiles.** Every `tsx`/`ts` block becomes a test
    (`scripts/extract-doc-snippets.mjs`), run by
    `pnpm --filter grist-widget-sdk test`. Mark a fragment that can't
-   compile with `no-check`, and use that sparingly. To show an example's
-   code, include it from `examples/` rather than pasting it.
+   compile with `no-check`, and use that sparingly. To show a whole
+   widget, link to its catalog folder (`widgets/<slug>/`) rather than
+   pasting it.
 4. **Navigation.** List the page under its section (Get started, Guides,
    Reference, Concepts) in `content/docs/meta.json`, by its path without
    `.mdx` (`sdk/guide/reading-data`). Folders have no `meta.json`.

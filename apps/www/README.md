@@ -24,8 +24,8 @@ see Deploy notes for the difference.
 
 ## Generated at build time, not checked in
 
-- `widgets.json` (repo root) — via `prebuild`/`predev`, from
-  `scripts/build-widgets-manifest.mjs`, reading `examples/**`.
+- `.generated/catalog.json` — via `prebuild`/`predev`, from
+  `scripts/widgets/catalog.mjs`, reading `widgets/*/SPEC.md`.
 - `sitemap.xml`, `robots.txt`, `icon`, `opengraph-image`, `/llms.txt`,
   `/llms-full.txt`, per-page `/llms.mdx/**/content.md` — Next.js file
   conventions + Fumadocs, all in `app/`.
@@ -35,7 +35,7 @@ see Deploy notes for the difference.
 - Every page needs frontmatter `description`, 40–160 chars, not a repeat of
   the page's own opening paragraph, unique across the whole corpus —
   enforced by a zod refinement in `lib/source.ts`, not just a convention.
-- Widget source shown on a page is transcluded from `examples/**` via
-  `<include>`, never hand-copied.
+- A whole widget is linked to in its catalog folder (`widgets/<slug>/`),
+  never pasted; a `tsx`/`ts` snippet is compiled as a test.
 - API reference tables use `<AutoTypeTable>` against real SDK types, not
   hand-written tables.

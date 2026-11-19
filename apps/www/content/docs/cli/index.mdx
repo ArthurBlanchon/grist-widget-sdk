@@ -230,11 +230,13 @@ Commit both files. Vite copies `public/` into every build, so each deployed
 channel serves its own demo next to the widget: `…/latest/demo/`,
 `…/v1.2.0/demo/`, `…/dev/demo/`. The document holds a placeholder widget URL
 that the page points at the build beside it (`../`) before Grist opens it,
-so one document serves every channel and host.
+so one document serves every channel and host. Its widget section's title
+is a placeholder too, which the page replaces with the widget's title (the
+one in `index.html`).
 
 To change the demo data, open `public/demo/demo.grist` in any Grist (import
 it as a document), edit it, and download it back over the file; leave the
-widget section's URL as it is. Attachments and imports aren't available in
+widget section's URL and title as they are. Attachments and imports aren't available in
 grist-static.
 
 ### `manifest` — the widget's Grist manifest

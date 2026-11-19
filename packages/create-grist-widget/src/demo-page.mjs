@@ -2,17 +2,24 @@
 // files (grist-static), with the widget's demo.grist document open.
 //
 // demo.grist is generated once (`create-grist-widget demo --save`) and holds
-// a placeholder widget URL of fixed length. The page swaps it for the widget
-// next to it before Grist opens the document, so one document serves every
+// a placeholder widget URL and a placeholder section title, each of fixed
+// length. The page swaps them for the widget next to it and the widget's
+// title before Grist opens the document, so one document serves every
 // channel (v<version>/demo/ shows that version, dev/demo/ the dev build) and
-// every host, with nothing regenerated. Same length matters: the document is
-// an SQLite file, and a string of the same byte length leaves every record
-// and page of it valid.
+// every host, and a scaffold's copy names its section after the new widget,
+// with nothing regenerated. Same length matters: the document is an SQLite
+// file, and a string of the same byte length leaves every record and page
+// of it valid.
 
 /** The widget URL a demo document is generated with. */
 export const DEMO_URL_PLACEHOLDER_PREFIX = "https://grist-widget-demo.invalid/?"
 export const DEMO_URL_LENGTH = 400
 export const DEMO_URL_PLACEHOLDER = DEMO_URL_PLACEHOLDER_PREFIX + "x".repeat(DEMO_URL_LENGTH - DEMO_URL_PLACEHOLDER_PREFIX.length)
+
+/** The widget section's title a demo document is generated with: the page writes the widget's title over it, space-padded. */
+export const DEMO_TITLE_PLACEHOLDER_PREFIX = "grist-widget-demo-title:"
+export const DEMO_TITLE_LENGTH = 120
+export const DEMO_TITLE_PLACEHOLDER = DEMO_TITLE_PLACEHOLDER_PREFIX + " ".repeat(DEMO_TITLE_LENGTH - DEMO_TITLE_PLACEHOLDER_PREFIX.length)
 
 /**
  * grist-static, pinned. gristwidgets.com hosts this exact version (the site
@@ -50,6 +57,37 @@ export function patchDemoDocument(bytes, widgetUrl) {
   return found
 }
 
+/**
+ * Name the demo document's widget section `title`: replaces every whole copy
+ * of the title placeholder in the document's bytes, in place, keeping its
+ * length (the rest is spaces; a title longer than the placeholder is cut at
+ * a character). Embedded verbatim in the demo page, so it must stay
+ * self-contained (120 is DEMO_TITLE_LENGTH). Returns false when the
+ * document holds no placeholder: a document generated before it keeps the
+ * title it was generated with.
+ */
+export function patchDemoTitle(bytes, title) {
+  var length = 120
+  var prefix = new TextEncoder().encode("grist-widget-demo-title:")
+  var text = new TextEncoder().encode(title)
+  if (text.length > length) {
+    var cut = length
+    while (cut > 0 && (text[cut] & 0xc0) === 0x80) cut--
+    text = text.slice(0, cut)
+  }
+  var next = new Uint8Array(length).fill(0x20)
+  next.set(text)
+  var found = false
+  search: for (var i = 0; i <= bytes.length - length; i++) {
+    for (var j = 0; j < prefix.length; j++) if (bytes[i + j] !== prefix[j]) continue search
+    for (j = prefix.length; j < length; j++) if (bytes[i + j] !== 0x20) continue search
+    bytes.set(next, i)
+    found = true
+    i += length - 1
+  }
+  return found
+}
+
 const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`)
 
 /**
@@ -58,7 +96,7 @@ const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt
  * served from.
  */
 export function demoPageHtml({ title, widget = "../", gristStatic = GRIST_STATIC_BASE }) {
-  const config = JSON.stringify({ title: `${title} — demo`, widget }).replace(/</g, "\\u003c")
+  const config = JSON.stringify({ title: `${title} — demo`, section: title, widget }).replace(/</g, "\\u003c")
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -71,10 +109,12 @@ export function demoPageHtml({ title, widget = "../", gristStatic = GRIST_STATIC
 <body>
 <script>
 ${patchDemoDocument.toString()}
+${patchDemoTitle.toString()}
 (async function () {
   var config = ${config}
   var bytes = new Uint8Array(await (await fetch("demo.grist")).arrayBuffer())
   patchDemoDocument(bytes, new URL(config.widget, location.href).href)
+  patchDemoTitle(bytes, config.section)
   bootstrapGrist({ initialFile: URL.createObjectURL(new Blob([bytes])), name: config.title, singlePage: true })
 })()
 </script>

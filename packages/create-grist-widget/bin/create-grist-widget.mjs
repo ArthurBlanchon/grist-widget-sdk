@@ -110,7 +110,8 @@ function applyIdentityEdits(target, rawName) {
     ["CHANGELOG.md", [["grist-widget-template-vite", rawName]]],
     ["index.html", [["<title>Grist Widget</title>", `<title>${title}</title>`]]],
     ["src/app/App.tsx", [['title: "Grist Widget Template",', `title: "${title}",`]]],
-    ["public/demo/index.html", [["Grist Widget Template — demo", `${title} — demo`]]],
+    // The page's title and the demo section's (which the page writes into the document).
+    ["public/demo/index.html", [["Grist Widget Template", title]]],
   ]
   for (const [file, subs] of edits) {
     const p = path.join(target, file)

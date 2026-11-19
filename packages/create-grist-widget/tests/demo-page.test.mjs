@@ -1,11 +1,14 @@
 import { describe, expect, it } from "vitest"
 
 import {
+  DEMO_TITLE_LENGTH,
+  DEMO_TITLE_PLACEHOLDER,
   DEMO_URL_LENGTH,
   DEMO_URL_PLACEHOLDER,
   demoPageHtml,
   GRIST_STATIC_BASE,
   patchDemoDocument,
+  patchDemoTitle,
 } from "../src/demo-page.mjs"
 
 const enc = new TextEncoder()
@@ -78,12 +81,55 @@ describe("patchDemoDocument", () => {
   })
 })
 
+describe("patchDemoTitle", () => {
+  /** The section's title cell between binary bytes, as SQLite stores it. */
+  const titled = (title = DEMO_TITLE_PLACEHOLDER) => {
+    const cell = enc.encode(title)
+    const bytes = new Uint8Array(cell.length + 6)
+    bytes.set([1, 2, 0x20], 0)
+    bytes.set(cell, 3)
+    bytes.set([0x20, 4, 5], cell.length + 3)
+    return bytes
+  }
+
+  it("names the section after the widget, keeping every byte around it and the length", () => {
+    const bytes = titled()
+    expect(patchDemoTitle(bytes, "My Tasks")).toBe(true)
+    expect(bytes.length).toBe(DEMO_TITLE_LENGTH + 6)
+    expect([...bytes.slice(0, 3)]).toEqual([1, 2, 0x20])
+    expect([...bytes.slice(-3)]).toEqual([0x20, 4, 5])
+    expect(dec.decode(bytes.slice(3, -3))).toBe("My Tasks".padEnd(DEMO_TITLE_LENGTH, " "))
+  })
+
+  it("cuts a title longer than the placeholder at a character, never inside one", () => {
+    const bytes = titled()
+    patchDemoTitle(bytes, "é".repeat(DEMO_TITLE_LENGTH))
+    const cell = dec.decode(bytes.slice(3, -3))
+    expect(cell).toBe("é".repeat(DEMO_TITLE_LENGTH / 2))
+    expect(cell).not.toContain("\uFFFD")
+  })
+
+  it("leaves a document without the placeholder alone: it keeps the title it was made with", () => {
+    const bytes = titled("Grist Widget Template")
+    const before = [...bytes]
+    expect(patchDemoTitle(bytes, "My Tasks")).toBe(false)
+    expect([...bytes]).toEqual(before)
+  })
+
+  it("embeds the placeholder's length, since the page carries the function on its own", () => {
+    expect(patchDemoTitle.toString()).toContain(`var length = ${DEMO_TITLE_LENGTH}`)
+    expect(DEMO_TITLE_PLACEHOLDER).toHaveLength(DEMO_TITLE_LENGTH)
+  })
+})
+
 describe("demoPageHtml", () => {
   it("loads pinned grist-static and runs the same patch function", () => {
     const html = demoPageHtml({ title: "World map" })
     expect(html).toContain(`<script src="${GRIST_STATIC_BASE}latest.js"></script>`)
     expect(GRIST_STATIC_BASE).toMatch(/\/grist-static\/\d+\.\d+\.\d+\/$/)
     expect(html).toContain(patchDemoDocument.toString())
+    expect(html).toContain(patchDemoTitle.toString())
+    expect(html).toContain('"section":"World map"')
     expect(html).toContain('"widget":"../"')
     expect(html).toContain("<title>World map — demo</title>")
   })

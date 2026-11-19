@@ -47,13 +47,15 @@ async function declaration() {
 async function build() {
   const { withLocalGrist } = await cli("demo.mjs")
   const { createDocument, firstWorkspace, gristApi } = await cli("grist-local.mjs")
-  const { DEMO_URL_PLACEHOLDER, demoPageHtml } = await cli("demo-page.mjs")
+  const { DEMO_TITLE_PLACEHOLDER, DEMO_URL_PLACEHOLDER, demoPageHtml } = await cli("demo-page.mjs")
   const found = await declaration()
   const title = found.metadata?.title ?? "Grist Widget Template"
   const bytes = await withLocalGrist(
     async ({ gristUrl, key }) => {
       const api = gristApi(gristUrl, key)
-      const { docId } = await createDocument(api, await firstWorkspace(api), title, found.options, DEMO_URL_PLACEHOLDER)
+      const { docId } = await createDocument(api, await firstWorkspace(api), title, found.options, DEMO_URL_PLACEHOLDER, null, {
+        sectionTitle: DEMO_TITLE_PLACEHOLDER,
+      })
       const apply = (actions) => api("POST", `/api/docs/${docId}/apply`, actions)
       const { records } = await api("GET", `/api/docs/${docId}/tables/Data/records`)
       await apply([["BulkRemoveRecord", "Data", records.map((r) => r.id)]])
@@ -90,6 +92,11 @@ async function check() {
   const html = join(DEMO_DIR, "index.html")
   if (existsSync(html) && readFileSync(html, "utf8") !== (await pageHtml(found)))
     problems.push("public/demo/index.html isn't the page create-grist-widget generates (run `node scripts/template-demo.mjs page`)")
+  // A scaffold renames the widget: its demo's section takes the new title only from the placeholder (create-grist-widget 0.8).
+  const { DEMO_TITLE_PLACEHOLDER } = await cli("demo-page.mjs")
+  const doc = join(DEMO_DIR, "demo.grist")
+  if (existsSync(doc) && !readFileSync(doc).includes(Buffer.from(DEMO_TITLE_PLACEHOLDER)))
+    problems.push("public/demo/demo.grist names its section with a fixed title, not the placeholder the page replaces")
   const recorded = existsSync(RECORD) ? JSON.parse(readFileSync(RECORD, "utf8")).hash : null
   if (recorded !== demoHash(found)) problems.push("the template's declaration (access, columns or title) changed since the document was generated")
   if (problems.length) {

@@ -59,12 +59,6 @@ Each item is one pull request; the plan says when each milestone is done.
   an identical build (the timeline scrolls to "today" on mount, by layout
   timing): make that scroll deterministic in the next Gantt change, so
   `--baseline` reads "unchanged" for it as for the 15 others.
-- [ ] **The scaffold's demo names its widget section "Grist Widget Template"**
-  (found following "Your first widget", 2026-11-16): the title is inside
-  the template's `public/demo/demo.grist`, which the scaffold copies as is.
-  Done when a fresh scaffold's demo names the section after the widget
-  (the document regenerated with a neutral title, or the title set when
-  the page opens it), which needs Docker to check.
 - [ ] **A "Use this template" copy keeps the distribution repo's name**:
   the deploy's first release renames `grist-widget-template-vite`, but a
   copy of `grist-widget-template` (scaffolded under that name) reads

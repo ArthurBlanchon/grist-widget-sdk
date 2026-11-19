@@ -1,4 +1,3 @@
-import { createGristEmulator, presets } from "../../src/emulator"
 /**
  * Action builders — see /api/helpers#action-builders
  *
@@ -8,6 +7,7 @@ import { createGristEmulator, presets } from "../../src/emulator"
 
 import { describe, expect, it } from "vitest"
 
+import { createGristEmulator, presets } from "../../src/emulator"
 import {
   gristAddColumnAction,
   gristAddRecordAction,

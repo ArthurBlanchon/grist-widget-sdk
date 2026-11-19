@@ -26,14 +26,16 @@ console.log(rows[0]?.Name)
 
 Decode a single cell from its wire format into a JS value.
 
-```ts
+```tsx
+import { decodeGristValue } from "grist-widget-sdk"
+
 decodeGristValue(1717599600, { type: "DateTime:UTC" })
 // → Date
 
 decodeGristValue(["L", 1, 2], { type: "RefList:Tasks" })
 // → marshalled list
 
-decodeGristValue(["E", "TypeError", "expected number"], col)
+decodeGristValue(["E", "TypeError", "expected number"], { type: "Numeric" })
 // → { kind: "error", type: "TypeError", message: "expected number" }
 ```
 
@@ -43,7 +45,9 @@ If `column` is omitted, the codec applies type-inference based on the tag.
 
 Inverse — turn a JS value into the wire format Grist expects.
 
-```ts
+```tsx
+import { encodeGristValue } from "grist-widget-sdk"
+
 encodeGristValue(new Date(), { type: "DateTime:UTC" }) // → epoch seconds
 encodeGristValue([1, 2], { type: "RefList:Tasks" })    // → ["L", 1, 2]
 ```
@@ -93,7 +97,9 @@ and other schemes, relative URLs, and credentials
 <a href={httpUrl(row.Website)}>{row.Name}</a>
 ```
 
-```ts
+```tsx
+import { httpUrl } from "grist-widget-sdk"
+
 httpUrl(" https://example.com/a b ") // "https://example.com/a%20b"
 httpUrl("javascript:alert(1)")       // undefined
 ```
@@ -109,11 +115,21 @@ httpUrl("javascript:alert(1)")       // undefined
 | `mergeGristAttachmentCellValue(cell, newIds)` | The cell with `newIds` added, without duplicates. |
 
 ```tsx
-import { extractGristAttachmentId, gristAttachmentCellValues } from "grist-widget-sdk"
+import {
+  extractGristAttachmentId,
+  extractGristAttachmentIdsFromCell,
+  gristAttachmentCellValue,
+  gristAttachmentCellValues,
+  mergeGristAttachmentCellValue,
+} from "grist-widget-sdk"
 
-const cover = extractGristAttachmentId(["L", 12, 13]) // "12": the first file
-const both = gristAttachmentCellValues([12, 13])     // ["L", 12, 13], ready to write
-console.log(cover, both)
+const cell = ["L", 12, 13]
+const ids = extractGristAttachmentIdsFromCell(cell)  // ["12", "13"]
+const cover = extractGristAttachmentId(cell)          // "12": the first file
+const one = gristAttachmentCellValue(14)              // ["L", 14]
+const both = gristAttachmentCellValues([12, 13])      // ["L", 12, 13], ready to write
+const more = mergeGristAttachmentCellValue(cell, [13, 14]) // ["L", 12, 13, 14]
+console.log(ids, cover, one, both, more)
 ```
 
 Downloading and uploading need the document's REST API: `useGrist()`'s

@@ -166,28 +166,22 @@ After each call, React state updates automatically through the normal subscripti
 
 ## Custom matchers
 
-```ts
+```tsx
+import { createGristEmulator, presets } from "grist-widget-sdk/emulator"
 import { actionsOf, eventsOf, waitForEvent } from "grist-widget-sdk/emulator/testing"
 
-// All user actions Grist saw during the test
-expect(actionsOf(emulator)).toContainEqual([
-  "UpdateRecord",
-  "Tasks",
-  1,
-  { Done: true },
-])
+const emulator = createGristEmulator({ document: presets.todoList() })
 
-// Every event Grist emitted to the widget
-expect(eventsOf(emulator)).toEqual([
-  { kind: "ready" },
-  { kind: "record", record: { id: 1, ... } },
-  ...
-])
+// Wait for the *next* bus event of a kind (ignores history: start the waiter first)
+const optionsSaved = waitForEvent(emulator, "options")
+await emulator.setOptions({ color: "blue" })
+await optionsSaved
 
-// Wait for the *next* bus event of a kind (ignores history — start the waiter first)
-const optionsEvent = waitForEvent(emulator, "options")
-await userEvent.click(screen.getByText("Save"))
-await optionsEvent
+// Every user action the widget sent, and every event, in order
+emulator.apply([["UpdateRecord", "Tasks", 1, { done: true }]])
+console.log(actionsOf(emulator)) // [["UpdateRecord", "Tasks", 1, { done: true }]]
+console.log(eventsOf(emulator).map((event) => event.type)) // ["options-change", "user-action", "data-change"]
+emulator.dispose()
 ```
 
 ### `useGristSchema` snapshots

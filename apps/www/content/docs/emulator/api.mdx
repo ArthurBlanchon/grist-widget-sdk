@@ -31,20 +31,23 @@ emulator.dispose()
 `document` must be a complete `GristReplicaDocument` (see
 [Replica document](/docs/sdk/design/replica-document)). Validate untrusted
 input first with `parseDocument(json)` (throws) or `safeParseDocument(json)`.
-An action the emulator can't apply (a missing row, an action it doesn't
-support) throws an `EmulatorActionError`, with the action:
+An action on a row that doesn't exist, or one the emulator doesn't support,
+throws an `EmulatorActionError` carrying the action. An unknown table or
+malformed arguments throw a plain `Error`.
 
 ```tsx
-import { createGristEmulator, EmulatorActionError, presets, safeParseDocument } from "grist-widget-sdk/emulator"
+import { createGristEmulator, EmulatorActionError, parseDocument, presets, safeParseDocument } from "grist-widget-sdk/emulator"
 
 const checked = safeParseDocument(JSON.parse("{}"))
 if (!checked.success) console.log(checked.error.issues.length, "problems")
+const document = parseDocument(JSON.parse(JSON.stringify(presets.todoList()))) // throws on a bad one
 
-const emulator = createGristEmulator({ document: presets.todoList() })
+const emulator = createGristEmulator({ document })
 try {
   emulator.apply([["UpdateRecord", "Tasks", 99, { done: true }]])
 } catch (err) {
   if (err instanceof EmulatorActionError) console.log(err.message, err.action)
+  else throw err
 }
 emulator.dispose()
 ```

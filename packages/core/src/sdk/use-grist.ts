@@ -20,7 +20,7 @@ import {
   type GristWidgetStatus,
 } from "./runtime/derive"
 import { mapAndCheck, type GristCellIssue } from "./runtime/cells"
-import { ALL_STREAMS } from "./runtime/host"
+import { ALL_STREAMS, resetReferenceIds } from "./runtime/host"
 import { resetGristReady } from "./runtime/ready"
 import {
   createGristRuntime,
@@ -136,6 +136,7 @@ function newConnection(options: UseGristOptions | undefined): GristContextValue 
 export function resetGristForTests(): void {
   resetGristReady()
   for (const s of ALL_STREAMS) s.reset()
+  resetReferenceIds()
 }
 
 export const GristContextProvider = GristContext.Provider

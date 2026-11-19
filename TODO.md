@@ -28,16 +28,12 @@ Each item is one pull request; the plan says when each milestone is done.
   Signature pad open with their attachments cells empty (`pnpm demo` and
   the real-Grist check have the files). Done when grist-static serves them,
   or the demo page hands them to it.
-- [ ] **A declared Ref column in typed reads.** Grist sends a reference as
-  the text its column shows (`expandRefs`, seen in Grist 1.7.22 and now in
-  the emulator), so `mappedRecord` reports a column declared `Ref:<table>`
-  as "not a reference". Give typed reads the row id (a fetch of the
-  section's ids, or `expandRefs: false` where the plugin API takes it), or
-  document the text. A reference showing a Numeric or Int column arrives
-  as a `Reference` whose id is the shown number: typed reads would take it
-  for the row id, silently. Done when a declared Ref column reads as its
-  row id in real Grist and in the emulator, whatever column it shows. The
-  emulator should also refuse `fetchTable` below full access, as Grist does.
+- [ ] **A declared Ref column, read in a real Grist** (ADR 0022): the
+  ids come from Grist's own code read (grist-static 0.1.6, Grist 1.7.22),
+  and from the emulator; no catalog widget declares a Ref, so the Real
+  widgets job doesn't run it. Done when a real-Grist check (next to
+  `scripts/real-widgets/write-round-trip.mjs`) reads a pure Ref column as
+  its row id.
 - [ ] **M5. The loop, from issue to release.** Left: three real issues
   from report to release through the skills, with only the maintainer's
   approvals (the plan's "done when"), and the scheduled runs set up as

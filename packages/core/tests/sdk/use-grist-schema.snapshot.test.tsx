@@ -75,7 +75,7 @@ describe("useGristSchema() replica snapshots", () => {
         let captured: GristReplicaDocument | null = null
 
         const { emulator } = renderWithGrist(
-          <GristWidgetProvider options={{ requiredAccess: "read table" }}>
+          <GristWidgetProvider options={{ requiredAccess: "full" }}>
             <SchemaCapture
               replicaRowMode={mode}
               onDocument={(doc) => {

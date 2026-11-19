@@ -12,7 +12,7 @@
  */
 
 import { normalizeWidgetInteraction } from "../helpers/grist-widget-interaction"
-import type { GristWidgetColumnMap, GristWidgetInteraction } from "../types"
+import type { GristColumnsToMap, GristWidgetColumnMap, GristWidgetInteraction } from "../types"
 
 type Listener<T> = (value: T) => void
 
@@ -44,6 +44,10 @@ export class HostStream<T> {
     return this.last
   }
 
+  isBound(): boolean {
+    return this.bound
+  }
+
   /** Tests: deliver a value as if Grist had sent it. */
   emit(value: T): void {
     this.has = true
@@ -67,8 +71,59 @@ export type NewRecordPayload = { mappings: GristWidgetColumnMap | null }
 
 const asMappings = (m: unknown) => (m && typeof m === "object" ? (m as GristWidgetColumnMap) : null)
 
+/**
+ * Grist sends a reference as the value its column shows (`expandRefs`, its
+ * default): a name, or a number that looks like a row id and isn't one. A
+ * widget that declares a column as a reference (`Ref:<table>`, `RefList:…`,
+ * with no `Text` alternative) asks for references, so the records come with
+ * row ids (`expandRefs: false`), `w.record` included. Any other widget gets
+ * what its columns show, as before. The page's first provider decides: the
+ * streams are bound once.
+ */
+let referenceIds = false
+
+/** @internal Whether a declaration asks for row ids: a column that accepts a reference and not text. */
+export function declaresReferences(columns: GristColumnsToMap | undefined): boolean {
+  return (columns ?? []).some((c) => {
+    if (typeof c === "string" || !c.type) return false
+    const bases = c.type.split(",").map((t) => t.trim().split(":")[0])
+    return bases.some((b) => b === "Ref" || b === "RefList") && !bases.includes("Text")
+  })
+}
+
+/**
+ * @internal A declaration that mixes a reference column with a `Text,Ref`
+ * one: the ids apply to the whole read, so the `Text,Ref` column reads the
+ * id, not the name.
+ */
+export function mixesReferenceKinds(columns: GristColumnsToMap | undefined): boolean {
+  const textRef = (columns ?? []).some((c) => {
+    if (typeof c === "string" || !c.type) return false
+    const bases = c.type.split(",").map((t) => t.trim().split(":")[0])
+    return bases.some((b) => b === "Ref" || b === "RefList") && bases.includes("Text")
+  })
+  return textRef && declaresReferences(columns)
+}
+
+/** @internal The read options every section read uses, so fetchRows() agrees with w.records. */
+export function sectionReadOptions(): { expandRefs?: false } {
+  return referenceIds ? { expandRefs: false } : {}
+}
+
+/** @internal Tests: back to Grist's default. */
+export function resetReferenceIds(): void {
+  referenceIds = false
+}
+
+/** @internal Before the streams bind: records with row ids for references. */
+export function setReferenceIds(on: boolean): void {
+  if (!recordStream.isBound() && !recordsStream.isBound()) referenceIds = on
+}
+
+const readOptions = () => (referenceIds ? { keepEncoded: false, expandRefs: false } : { keepEncoded: false })
+
 export const recordStream = new HostStream<RecordPayload>((emit) => {
-  grist.onRecord((record, mappings) => emit({ record, mappings: asMappings(mappings) }), { keepEncoded: false })
+  grist.onRecord((record, mappings) => emit({ record, mappings: asMappings(mappings) }), readOptions())
 
   // Grist's RecordNotifier posts `{ tableId, rowId }` on a cursor move. The
   // plugin API's onRecord handles it, but refetching here when the row
@@ -82,7 +137,7 @@ export const recordStream = new HostStream<RecordPayload>((emit) => {
     if (!host?.tableId || typeof host.rowId !== "number" || host.rowId === lastRowId) return
     lastRowId = host.rowId
     try {
-      const record = await fetchSelectedRecord(host.rowId, { keepEncoded: false })
+      const record = await fetchSelectedRecord(host.rowId, readOptions())
       emit({ record, mappings: recordStream.peek()?.mappings ?? null })
     } catch (err) {
       console.error("[grist-widget-sdk] fetchSelectedRecord on a cursor move failed:", err)
@@ -91,10 +146,7 @@ export const recordStream = new HostStream<RecordPayload>((emit) => {
 })
 
 export const recordsStream = new HostStream<RecordsPayload>((emit) => {
-  grist.onRecords((records, mappings) => emit({ records, mappings: asMappings(mappings) }), {
-    keepEncoded: false,
-    format: "rows",
-  })
+  grist.onRecords((records, mappings) => emit({ records, mappings: asMappings(mappings) }), { ...readOptions(), format: "rows" })
 })
 
 export const optionsStream = new HostStream<OptionsPayload>((emit) => {

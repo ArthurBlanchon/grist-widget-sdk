@@ -4,6 +4,7 @@
  * called (the emulator installs and removes it in tests).
  */
 
+import { sectionReadOptions } from "./host"
 import { loadColumnMetadataByTable } from "../helpers/build-replica-document"
 import { isGristNoiseColumn, type GristNoiseColumnsOptions } from "../helpers/grist-columns-filters"
 import { fetchAttachmentBlob, getAttachmentDownloadUrl, type GristFetchedAttachmentBlob } from "../helpers/grist-attachment-download"
@@ -176,7 +177,8 @@ export function createGristApi(runtime: GristRuntime): GristApi {
     read(async () => {
       const impl = docApi().fetchSelectedTable ?? grist.fetchSelectedTable
       if (!impl) throw new Error("fetchSelectedTable is not available in this Grist version")
-      return (await impl({ keepEncoded: false, ...options })) as GristColumnarTable
+      // The same references as w.records: ids when the widget declares one (host.ts).
+      return (await impl({ keepEncoded: false, ...sectionReadOptions(), ...options })) as GristColumnarTable
     })
   const tableColumns = (tableId: string): Promise<GristColumnarTable> =>
     read(async () => (await docApi().fetchTable(tableId)) as GristColumnarTable)

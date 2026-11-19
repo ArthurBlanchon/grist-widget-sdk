@@ -166,9 +166,9 @@ export function createInlineTransport(
     lastRecord = { record, mappings }
     for (const [cb, opts] of recordCbs) {
       try {
-        const r = opts?.keepEncoded
-          ? await api.GristView.fetchSelectedRecord(rowId, { keepEncoded: true })
-          : record
+        // A subscriber's own options (keepEncoded, expandRefs: false) shape what it gets, as in Grist.
+        const own = readOptionsOf(opts)
+        const r = own ? await api.GristView.fetchSelectedRecord(rowId, own) : record
         cb(r, mappings)
       } catch (err) {
         logErr(err)
@@ -193,9 +193,8 @@ export function createInlineTransport(
         // (e.g. `keepEncoded: true`). Otherwise reuse the decoded rows we
         // already have to avoid extra work and to match production where
         // the same fetch is broadcast to every listener.
-        const rows = fetchOptions?.keepEncoded
-          ? columnsToRows(await api.GristView.fetchSelectedTable({ keepEncoded: true }))
-          : baseRows
+        const own = readOptionsOf(fetchOptions)
+        const rows = own ? columnsToRows(await api.GristView.fetchSelectedTable(own)) : baseRows
         cb(rows, mappings)
       } catch (err) {
         logErr(err)
@@ -337,15 +336,34 @@ export function createInlineTransport(
 
     onRecord(cb, opts) {
       recordCbs.set(cb, opts)
-      // Replay last value so late subscribers don't miss the initial event.
+      // Replay last value so late subscribers don't miss the initial event,
+      // read with the subscriber's own options when it has any.
       if (lastRecord) {
-        try { cb(lastRecord.record, lastRecord.mappings) } catch (err) { logErr(err) }
+        const { record, mappings } = lastRecord
+        const own = readOptionsOf(coerceFetchOptions(opts))
+        const rowId = record && typeof record.id === "number" ? record.id : null
+        if (own && rowId !== null) {
+          void api.GristView.fetchSelectedRecord(rowId, own).then((r) => {
+            try { cb(r, mappings) } catch (err) { logErr(err) }
+          }, logErr)
+        } else {
+          try { cb(record, mappings) } catch (err) { logErr(err) }
+        }
       }
     },
     onRecords(cb, opts) {
       recordsCbs.set(cb, opts)
       if (lastRecords) {
-        try { cb(lastRecords.records, lastRecords.mappings) } catch (err) { logErr(err) }
+        const { records, mappings } = lastRecords
+        const own = readOptionsOf(coerceFetchOptions(opts))
+        if (own) {
+          void api.GristView.fetchSelectedTable(own).then((c) => {
+            try { cb(columnsToRows(c), mappings) } catch (err) { logErr(err) }
+          }, logErr)
+        }
+        else {
+          try { cb(records, mappings) } catch (err) { logErr(err) }
+        }
       }
     },
     onOptions(cb) {
@@ -490,6 +508,14 @@ function parseFields(fields: Record<string, unknown>, _options?: GristTableOpOpt
   // The emulator currently doesn't implement string-parsing; pass-through.
   // Hook into here to add date/number parsing when we surface that toggle.
   return { ...fields }
+}
+
+/** The read options that change what a subscriber gets, or undefined for the default (decoded, references shown). */
+function readOptionsOf(
+  opts: { keepEncoded?: boolean; expandRefs?: boolean; cellFormat?: string } | undefined
+): { keepEncoded?: boolean; expandRefs?: boolean; cellFormat?: string } | undefined {
+  if (!opts || !(opts.keepEncoded || opts.expandRefs === false || opts.cellFormat === "typed")) return undefined
+  return { keepEncoded: opts.keepEncoded, expandRefs: opts.expandRefs, cellFormat: opts.cellFormat }
 }
 
 function coerceFetchOptions(

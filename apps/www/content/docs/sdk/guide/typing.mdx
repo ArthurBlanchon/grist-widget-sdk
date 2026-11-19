@@ -64,12 +64,17 @@ A `Date` cell is its day at midnight UTC: show it in UTC
 UTC sees the day before. A `DateTime` is an instant: show it in the
 person's time zone, or the column's.
 
-A `Ref` or `RefList` column gives row ids only where its column shows the
-row id. Grist sends a reference as the text its column shows (a person's
-name), so a declared `Ref` column that shows a name reads as `null`, with a
-"not a reference" issue. Until typed reads fetch the ids, declare such a
-column `"Text,Ref"` to read the name, or read the ids from the table with
-`w.fetchRows(tableId)` (full access).
+A declared `Ref` or `RefList` column reads as row ids, whatever its column
+shows. Grist sends a reference as the text its column shows (a person's
+name, or a number that isn't the row id), so a widget that declares one asks
+Grist for the ids instead: `w.record` and `w.records` then hold row ids for
+every reference, not only the declared one, and an empty reference is `0`
+there (`null` in the mapped records); `w.fetchRows()` gives the same ids. To
+read the name, declare the column `"Text,Ref"`, and no column a pure `Ref`:
+Grist sends either the ids or the names, for every column at once, so next to
+a `Ref` column a `"Text,Ref"` one reads the id too (the SDK warns about it in
+the console). To show a referenced row's name next to its id, read its table
+with `w.fetchRows(tableId)` (full access).
 
 A column that accepts several types (`"Text,Ref"`) takes the first that
 matches. An `allowMultiple` column is a list, one value per mapped column.

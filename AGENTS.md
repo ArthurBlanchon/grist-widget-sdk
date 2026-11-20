@@ -104,7 +104,7 @@ each says what it may merge.
 | Build the SDK | `pnpm --filter grist-widget-sdk build` |
 | Test the SDK | `pnpm --filter grist-widget-sdk test` |
 | Full suite (SDK, site) | `pnpm test` |
-| Type-check the SDK | `pnpm --filter grist-widget-sdk exec tsc --noEmit` |
+| Type-check the SDK, source and tests | `pnpm --filter grist-widget-sdk typecheck` |
 | Regenerate the SDK's API report (after `build`; commit `packages/core/api/`) | `pnpm --filter grist-widget-sdk api:report` |
 | Site dev / build | `pnpm --filter www dev` / `pnpm build:www` |
 | Scaffold a new widget repository | `npm create grist-widget <name>` |
@@ -151,7 +151,7 @@ each says what it may merge.
 ## Hand-off checklist
 
 - [ ] `pnpm --filter grist-widget-sdk test` green
-- [ ] `tsc --noEmit` and `build` green
+- [ ] `typecheck` (source and tests) and `build` green
 - [ ] `api:report` regenerated and committed if the public API changed
 - [ ] `pnpm --filter www build` when docs changed
 - [ ] `pnpm check:agents-md` when an `AGENTS.md` changed

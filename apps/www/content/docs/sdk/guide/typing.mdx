@@ -78,6 +78,10 @@ with `w.fetchRows(tableId)` (full access).
 
 A column that accepts several types (`"Text,Ref"`) takes the first that
 matches. An `allowMultiple` column is a list, one value per mapped column.
+Grist offers a column for mapping by its base type: a declared `Ref:People`
+accepts any reference column, `DateTime:Europe/Paris` any date and time
+column. What follows the colon is for the widget's code; Grist doesn't check
+it.
 
 ## Cells that don't match
 

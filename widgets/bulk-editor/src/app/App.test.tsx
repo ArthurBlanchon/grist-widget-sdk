@@ -117,9 +117,14 @@ describe("Bulk editor", () => {
   })
 
   it("AC-8 shows the error when Grist refuses the change", async () => {
-    // A column the table doesn't have: Grist, and the emulator, refuse the write ("Invalid column").
-    const { emulator } = setup("Ghost")
+    // The mapped column is removed by someone else, and the change goes out before Grist says so:
+    // Grist, and the emulator, refuse the write ("Invalid column").
+    const withGhost = doc()
+    withGhost.tables.Table1.columns.Ghost = { type: "Text", label: "Ghost" }
+    const { emulator } = renderWithGrist(<App />, { widget, emulator: { document: withGhost, widgetInteraction: { access_level: "full" } } })
+    emulator.setColumnMappings({ Target: "Ghost" })
     fireEvent.change(await screen.findByLabelText("New value for Ghost"), { target: { value: "boo" } })
+    delete emulator.state.tables.get("Table1")!.columns.Ghost
     fireEvent.click(screen.getByRole("button", { name: "Set it on 3 rows…" }))
     fireEvent.click(screen.getByRole("button", { name: "Yes, set it" }))
     expect(await screen.findByText(/Grist did not apply the change/)).toBeInTheDocument()

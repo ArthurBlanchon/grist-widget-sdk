@@ -205,9 +205,15 @@ describe("cellIssues", () => {
       columns: [{ name: "Label", type: "Text" }, { name: "Count", type: "Numeric" }],
     })
     await untilReady(w)
-    // A Numeric declaration mapped to a Text column (Grist's panel wouldn't offer it; a type changed later would).
-    await settle(() => emulator.setColumnMappings({ Label: "title", Count: "title" }))
-    await waitFor(() => expect(w().cellIssues).toHaveLength(3))
+    // An Any column (a formula's, say) holding text: Grist maps it to any declaration, whatever its values.
+    await settle(() =>
+      emulator.apply([
+        ["AddColumn", "Tasks", "count", { type: "Any" }],
+        ["BulkUpdateRecord", "Tasks", [1, 2, 3], { count: ["Buy milk", 2, 3] }],
+      ])
+    )
+    await settle(() => emulator.setColumnMappings({ Label: "title", Count: "count" }))
+    await waitFor(() => expect(w().cellIssues).toHaveLength(1))
     expect(w().cellIssues[0]).toEqual({ rowId: 1, column: "Count", message: "not a number", value: "Buy milk" })
     expect(w().mappedRecord).toMatchObject({ Label: "Buy milk", Count: null })
     await settle(() => emulator.setColumnMappings({ Label: "title", Count: undefined as never }))

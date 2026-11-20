@@ -130,3 +130,26 @@ jobs:
       - run: pnpm --filter grist-widget-sdk build
       - name: Write every declared type into a real Grist and read it back
         run: node scripts/real-widgets/write-round-trip.mjs
+
+  # Weekly and on demand: a widget declaring Ref:People, RefList:People and a
+  # Ref to a table showing numbers, mapped in a real Grist, reads each as the
+  # row id it points to (ADR 0022). Grist maps a column by its base type, so
+  # only a real Grist shows whether the declaration can be mapped at all.
+  ref-read:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter grist-widget-sdk build
+      - run: pnpm exec playwright install --with-deps chromium
+      - name: Read declared references in a real Grist
+        run: node scripts/real-widgets/ref-read.mjs

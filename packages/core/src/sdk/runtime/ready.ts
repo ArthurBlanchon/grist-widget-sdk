@@ -21,6 +21,31 @@ let inFlight: Promise<void> | null = null
 let lastAccess: GristRequiredAccess | null = null
 let lastColumnNames: ReadonlySet<string> | null = null
 
+/**
+ * The declaration as Grist reads it. Grist offers a column for a declared
+ * column when the column's base type is one of the declared types
+ * (`ColumnToMapImpl.canByMapped`, grist-core): a `Ref:People` column's base
+ * type is `Ref`, so a declared `"Ref:People"` would match no column at all,
+ * and a mapping made before is dropped. The SDK keeps the full type for its
+ * own reads and checks, and hands Grist each type's base: `"Ref:People"` →
+ * `"Ref"`, `"Text,Ref:People"` → `"Text,Ref"`, `"DateTime:UTC"` → `"DateTime"`.
+ */
+export function gristColumnsToMap(columns: GristColumnsToMap | undefined): GristColumnsToMap | undefined {
+  if (!columns) return columns
+  return columns.map((c) =>
+    typeof c === "string" || !c.type
+      ? c
+      : {
+          ...c,
+          type: c.type
+            .split(",")
+            .map((t) => t.trim().split(":")[0])
+            .filter(Boolean)
+            .join(","),
+        }
+  )
+}
+
 function columnNamesOf(columns: GristColumnsToMap | undefined): Set<string> {
   return new Set((columns ?? []).map((c) => (typeof c === "string" ? c : c.name)))
 }
@@ -54,7 +79,7 @@ export function ensureGristReady(payload: GristReadyOptions): Promise<void> {
   lastAccess = access
   lastColumnNames = columns
   const next = Promise.resolve().then(() => {
-    const result = grist.ready(payload)
+    const result = grist.ready(payload.columns ? { ...payload, columns: gristColumnsToMap(payload.columns) } : payload)
     return result instanceof Promise ? result : Promise.resolve()
   })
 

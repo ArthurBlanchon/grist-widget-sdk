@@ -65,7 +65,8 @@ function applyMappings(emulator: ReturnType<typeof renderWithGrist>["emulator"])
   emulator.setColumnMappings({
     Title: "title",
     Done: "done",
-    Tags: ["tag_a", "tag_b"],
+    // Columns of the document, of a type the declaration accepts: Grist leaves out any other.
+    Tags: ["title", "priority"],
   })
 }
 
@@ -78,7 +79,7 @@ describe("mapBack() + allowMultiple", () => {
           columns: [
             { name: "Title", type: "Text" },
             { name: "Done", type: "Bool" },
-            { name: "Tags", type: "ChoiceList", allowMultiple: true },
+            { name: "Tags", type: "Text,Choice", allowMultiple: true },
           ],
         }}
       >
@@ -95,7 +96,7 @@ describe("mapBack() + allowMultiple", () => {
 
     // Wait for the mappings event to propagate into React state.
     await waitFor(() =>
-      expect(screen.getByTestId("tags-mapping")).toHaveTextContent('["tag_a","tag_b"]')
+      expect(screen.getByTestId("tags-mapping")).toHaveTextContent('["title","priority"]')
     )
 
     // Initially no skip, no alert (mapBack hasn't run yet).
@@ -128,7 +129,7 @@ describe("mapBack() + allowMultiple", () => {
           columns: [
             { name: "Title", type: "Text" },
             { name: "Done", type: "Bool" },
-            { name: "Tags", type: "ChoiceList", allowMultiple: true },
+            { name: "Tags", type: "Text,Choice", allowMultiple: true },
           ],
         }}
       >
@@ -140,7 +141,7 @@ describe("mapBack() + allowMultiple", () => {
     await waitFor(() => expect(screen.getByTestId("status")).toHaveTextContent("ready"))
     await act(async () => applyMappings(emulator))
     await waitFor(() =>
-      expect(screen.getByTestId("tags-mapping")).toHaveTextContent('["tag_a","tag_b"]')
+      expect(screen.getByTestId("tags-mapping")).toHaveTextContent('["title","priority"]')
     )
 
     await act(async () => screen.getByTestId("run").click())
@@ -156,7 +157,7 @@ describe("mapBack() + allowMultiple", () => {
           columns: [
             { name: "Title", type: "Text" },
             { name: "Done", type: "Bool" },
-            { name: "Tags", type: "ChoiceList", allowMultiple: true },
+            { name: "Tags", type: "Text,Choice", allowMultiple: true },
           ],
         }}
       >

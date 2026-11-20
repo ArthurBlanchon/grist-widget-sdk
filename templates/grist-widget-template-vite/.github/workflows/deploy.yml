@@ -14,10 +14,11 @@ name: Deploy widget to GitHub Pages
 #     first-release state" step below rewrites package.json's version back to
 #     0.0.1 in the repo itself (so the *next* release bumps to 0.0.2 rather
 #     than the inherited number) and, since "Use this template" never runs
-#     the CLI's own rename step, also personalizes the four placeholder-
-#     identity spots (package.json's name, README.md's heading, index.html's
-#     <title>, App.tsx's title) to match this repo's real name -- a no-op
-#     wherever that placeholder text is already gone.
+#     the CLI's own rename step, also personalizes the placeholder-identity
+#     spots (package.json's name, the README and CHANGELOG headings, the page
+#     titles, App.tsx's title) to match this repo's real name -- a no-op
+#     wherever that placeholder text is already gone. The release built
+#     before it keeps the old name; the next one carries the new.
 #   - push to dev                    -> dev channel: mutable /<repo>/dev/
 #     with version.json + a self-reload snippet, for live review inside Grist.
 #

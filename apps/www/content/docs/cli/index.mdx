@@ -282,6 +282,11 @@ the version the lockfile pins. So dependency code (Vite, its plugins,
 anything they pull in) never runs next to the token that can push to your
 repo and its `gh-pages` branch.
 
+A "Use this template" copy is named after its repository by its first
+release, which commits the rename to `main`: `package.json`'s name, the
+README and CHANGELOG headings and the page titles. That release still
+carries the template's name; the next one carries yours.
+
 If you scaffolded via ["Use this template"](https://github.com/ArthurBlanchon/grist-widget-template/generate)
 with **Include all branches** checked, GitHub Pages is already pointed at
 the copied `gh-pages` branch — nothing else to configure. Scaffolding a

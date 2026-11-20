@@ -451,26 +451,47 @@ export function withInstallUrl(readme, url) {
 }
 
 /**
- * The same four placeholder-identity edits
+ * The placeholder-identity edits
  * `packages/create-grist-widget/bin/create-grist-widget.mjs` applies at
  * scaffold time, parameterized by a derived identity instead of CLI input.
  * Each substitution is a plain string replace, so it's naturally a no-op
  * wherever the placeholder text is already gone -- a CLI-scaffolded repo
  * (whose name may legitimately differ from its GitHub repo name) is never
  * touched by this.
+ *
+ * Two placeholders: the template's own (`grist-widget-template-vite`, in a
+ * copy of the template source), and the distribution repository's
+ * (`grist-widget-template`, scaffolded under that name, in a "Use this
+ * template" copy of it). The second is matched only where it names the
+ * widget -- package.json's name, the README and CHANGELOG headings, the
+ * page titles -- never in the README's link to the template repository.
  */
-function identityEdits({ packageName, title }) {
+export function identityEdits({ packageName, title }) {
+  const heading = (name) => [`# ${name}\n`, `# ${packageName}\n`]
   return [
-    ["package.json", [["grist-widget-template-vite", packageName]]],
-    ["README.md", [["grist-widget-template-vite", packageName]]],
-    ["CHANGELOG.md", [["grist-widget-template-vite", packageName]]],
-    ["index.html", [["<title>Grist Widget</title>", `<title>${title}</title>`]]],
+    ["package.json", [["grist-widget-template-vite", packageName], ['"name": "grist-widget-template"', `"name": "${packageName}"`]]],
+    ["README.md", [["grist-widget-template-vite", packageName], heading("grist-widget-template")]],
+    ["CHANGELOG.md", [["grist-widget-template-vite", packageName], heading("grist-widget-template")]],
+    [
+      "index.html",
+      [
+        ["<title>Grist Widget</title>", `<title>${title}</title>`],
+        ["<title>Grist Widget Template</title>", `<title>${title}</title>`],
+      ],
+    ],
     ["src/app/App.tsx", [['title: "Grist Widget Template",', `title: "${title}",`]]],
-    ["public/demo/index.html", [["Grist Widget Template — demo", `${title} — demo`]]],
+    // The page's title and the demo section's.
+    ["public/demo/index.html", [["Grist Widget Template", title]]],
     // Where the widget lived before the src/app/ layout: a repo copied from
     // an older template repository still has it there.
     ["src/App.tsx", [['title: "Grist Widget Template",', `title: "${title}",`]]],
   ]
+}
+
+/** `text`, the content of `file`, with its placeholder identity replaced by `identity`'s. */
+export function personalized(file, text, identity) {
+  const subs = identityEdits(identity).find(([f]) => f === file)?.[1] ?? []
+  return subs.reduce((out, [search, replace]) => out.split(search).join(replace), text)
 }
 
 /**
@@ -512,11 +533,12 @@ export function resetBranchesIfFirstRelease(
   const renamedFiles = []
 
   if (repo) {
-    for (const [file, subs] of identityEdits(deriveIdentity(repo))) {
+    const identity = deriveIdentity(repo)
+    for (const [file] of identityEdits(identity)) {
       const p = join(repoDir, file)
       if (!existsSync(p)) continue
       const before = readFileSync(p, "utf8")
-      const after = subs.reduce((text, [search, replace]) => text.split(search).join(replace), before)
+      const after = personalized(file, before, identity)
       if (after !== before) {
         writeFileSync(p, after)
         changedFiles.add(file)

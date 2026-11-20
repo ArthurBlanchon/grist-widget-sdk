@@ -52,3 +52,5 @@ coverage/
 packages/core/LICENSE
 packages/create-grist-widget/LICENSE
 e2e-grist-output/
+# The examples' manifest a build before 0.8 generated (ADR 0023).
+/widgets.json

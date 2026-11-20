@@ -234,6 +234,9 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter ${{ matrix.workspace }} run lint
+      # The domain-root build (gristwidgets.com). deploy-apps.yml also builds
+      # it under /grist-widget-sdk/ for GitHub Pages; a failure only that base
+      # shows still surfaces after the merge.
       - name: Build the site
         if: matrix.workspace == 'www'
         run: pnpm --filter www build

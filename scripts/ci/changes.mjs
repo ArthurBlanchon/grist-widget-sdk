@@ -27,12 +27,16 @@ export const RULES = {
   // coverage check counts them: a docs-only change must compile them too.
   core: ["packages/core/", "apps/www/content/docs/", "scripts/extract-doc-snippets.mjs", LOCKFILE],
   cli: ["packages/create-grist-widget/", LOCKFILE],
-  // The site also renders the SDK's reference, the CLI's help and the
-  // catalog (each widget's SPEC.md and package.json, through catalog.mjs).
+  // The site also reads the SDK's source (its type tables), its reference,
+  // the CLI's help and the catalog (each widget's SPEC.md, package.json and
+  // CHANGELOG.md, through catalog.mjs and the parsers it imports). A test
+  // keeps this list in step with what apps/www reads.
   lint: [
     "apps/www/",
+    "packages/core/src/sdk/",
     "scripts/widgets/catalog.mjs",
-    /^widgets\/[^/]+\/(SPEC\.md|package\.json)$/,
+    "scripts/widgets/check-widgets.mjs",
+    /^widgets\/[^/]+\/(SPEC\.md|package\.json|CHANGELOG\.md)$/,
     "templates/grist-widget-template-vite/",
     "packages/core/api/reference.json",
     "packages/create-grist-widget/src/help.mjs",

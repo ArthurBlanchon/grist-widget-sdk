@@ -1,6 +1,10 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 
+import { readdirSync, readFileSync } from "node:fs"
+import { dirname, join, relative, resolve } from "node:path"
+import { fileURLToPath } from "node:url"
+
 import { batches, BATCH_SIZE, changedJobs, listSlugs, RULES, touchedWidgets } from "./changes.mjs"
 
 const none = Object.fromEntries(Object.keys(RULES).map((k) => [k, false]))
@@ -17,13 +21,35 @@ test("a docs page compiles its snippets: the core job runs, with the site's lint
 
 test("an SDK change runs its tests, the smokes, the real widgets and the catalog", () => {
   const jobs = changedJobs(["packages/core/src/sdk/index.ts"])
-  assert.deepEqual(jobs, { ...none, core: true, external_install: true, create_widget: true, real_widgets: true, size: true, widgets: true })
+  // The site too: its type tables read the SDK's source.
+  assert.deepEqual(jobs, { ...none, core: true, lint: true, external_install: true, create_widget: true, real_widgets: true, size: true, widgets: true })
 })
 
 test("a catalog widget's spec or package.json builds the site too: its catalog page reads them", () => {
   assert.deepEqual(changedJobs(["widgets/map/SPEC.md"]), { ...none, lint: true, widgets: true })
   assert.deepEqual(changedJobs(["widgets/map/package.json"]), { ...none, lint: true, widgets: true })
+  assert.deepEqual(changedJobs(["widgets/map/CHANGELOG.md"]), { ...none, lint: true, widgets: true })
   assert.equal(changedJobs(["scripts/widgets/catalog.mjs"]).lint, true)
+  assert.equal(changedJobs(["scripts/widgets/check-widgets.mjs"]).lint, true)
+})
+
+test("everything the site reads from outside apps/www builds it: type tables and imports", () => {
+  const root = fileURLToPath(new URL("../..", import.meta.url))
+  const www = join(root, "apps/www")
+  const files = (dir) =>
+    readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
+      ["node_modules", ".next", "out", ".generated", ".source"].includes(e.name) ? [] : e.isDirectory() ? files(join(dir, e.name)) : [join(dir, e.name)]
+    )
+  const read = []
+  for (const file of files(www)) {
+    const text = readFileSync(file, "utf8")
+    // <AutoTypeTable path="../../packages/..."> resolves from apps/www; an import from its own file.
+    if (file.endsWith(".mdx")) for (const [, p] of text.matchAll(/path="(\.\.\/[^"]+)"/g)) read.push(resolve(www, p))
+    if (/\.(tsx?|mjs)$/.test(file)) for (const [, p] of text.matchAll(/from ["']((?:\.\.\/)+[^"']+)["']/g)) read.push(resolve(dirname(file), p))
+  }
+  const outside = [...new Set(read.map((p) => relative(root, p)).filter((p) => !p.startsWith("apps/www/")))]
+  assert.ok(outside.length > 10, `found ${outside.length} files`)
+  for (const file of outside) assert.equal(changedJobs([file]).lint, true, file)
 })
 
 test("a catalog widget's change runs the widgets job only, for that widget", () => {

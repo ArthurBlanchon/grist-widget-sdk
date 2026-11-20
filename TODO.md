@@ -28,12 +28,6 @@ Each item is one pull request; the plan says when each milestone is done.
   Signature pad open with their attachments cells empty (`pnpm demo` and
   the real-Grist check have the files). Done when grist-static serves them,
   or the demo page hands them to it.
-- [ ] **A declared Ref column, read in a real Grist** (ADR 0022): the
-  ids come from Grist's own code read (grist-static 0.1.6, Grist 1.7.22),
-  and from the emulator; no catalog widget declares a Ref, so the Real
-  widgets job doesn't run it. Done when a real-Grist check (next to
-  `scripts/real-widgets/write-round-trip.mjs`) reads a pure Ref column as
-  its row id.
 - [ ] **M5. The loop, from issue to release.** Left: three real issues
   from report to release through the skills, with only the maintainer's
   approvals (the plan's "done when"), and the scheduled runs set up as
@@ -71,6 +65,11 @@ Each item is one pull request; the plan says when each milestone is done.
   `grist-widget-template` in its `package.json`, README and CHANGELOG, which
   the deploy's identity edits don't match (found reviewing #106). Done when
   the first release names such a copy after its repository too.
+- [ ] **`w.mappings` spells Grist's `null`**: Grist, and the emulator since
+  #111, send `null` for an unmapped column, which `GristWidgetColumnMap`
+  (`string | string[] | undefined`) doesn't allow. Add `| null`, with the API
+  report, and split a declared type into its bases in one helper (`basesOf`,
+  used in four places). Done when the type and the helper land.
 - [ ] **Release 0.8.0** when M1–M7 are done.
 
 ## 2. After 0.8.0

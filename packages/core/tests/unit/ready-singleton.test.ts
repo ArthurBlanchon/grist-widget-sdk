@@ -13,6 +13,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import {
   ensureGristReady,
+  gristColumnsToMap,
   resetGristReady,
 } from "../../src/sdk/runtime/ready"
 
@@ -82,5 +83,41 @@ describe("ensureGristReady", () => {
       columns: [{ name: "Group_name" }],
     })
     expect(readyMock).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe("the declaration Grist reads (grist.ready's columns)", () => {
+  afterEach(() => {
+    resetGristReady()
+    delete (globalThis as { grist?: unknown }).grist
+  })
+
+  it("hands Grist each declared type's base: Grist maps a column whose base type is declared", () => {
+    expect(
+      gristColumnsToMap([
+        "Plain",
+        { name: "Owner", type: "Ref:People" },
+        { name: "Tags", type: "RefList:Tags", allowMultiple: true },
+        { name: "Label", type: "Text, Ref:People" },
+        { name: "At", type: "DateTime:Europe/Paris", optional: true },
+        { name: "Count", type: "Numeric" },
+        { name: "Anything" },
+      ])
+    ).toEqual([
+      "Plain",
+      { name: "Owner", type: "Ref" },
+      { name: "Tags", type: "RefList", allowMultiple: true },
+      { name: "Label", type: "Text,Ref" },
+      { name: "At", type: "DateTime", optional: true },
+      { name: "Count", type: "Numeric" },
+      { name: "Anything" },
+    ])
+  })
+
+  it("is what ensureGristReady sends", async () => {
+    const ready = vi.fn().mockResolvedValue(undefined)
+    ;(globalThis as unknown as { grist: { ready: typeof ready } }).grist = { ready }
+    await ensureGristReady({ requiredAccess: "read table", columns: [{ name: "Owner", type: "Ref:People" }] })
+    expect(ready).toHaveBeenCalledWith({ requiredAccess: "read table", columns: [{ name: "Owner", type: "Ref" }] })
   })
 })

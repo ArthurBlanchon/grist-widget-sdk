@@ -14,6 +14,14 @@ const base = {
 }
 
 describe("buildManifest", () => {
+  it("lists each declared column under its base type, as Grist maps by it", () => {
+    const m = buildManifest({
+      ...base,
+      options: { requiredAccess: "read table", columns: ["Plain", { name: "Owner", type: "Ref:People" }, { name: "At", type: "Text, DateTime:UTC", optional: true }] },
+    })
+    expect(m.columns).toEqual(["Plain", { name: "Owner", type: "Ref" }, { name: "At", type: "Text,DateTime", optional: true }])
+  })
+
   it("is a Grist custom widget entry (ICustomWidget), plus the SDK's own key", () => {
     expect(buildManifest(base)).toEqual({
       name: "World map",

@@ -180,9 +180,17 @@ describe("Record editor", () => {
   })
 
   it("AC-9 shows Grist's error and keeps the edits when a save fails", async () => {
-    setup(["Title", "Ghost"])
+    // The mapped column is removed by someone else, and the save goes out before Grist says so:
+    // Grist, and the emulator, refuse the write ("Invalid column").
+    const withGhost = document()
+    const table = withGhost.tables.Interventions!
+    table.columns = { ...table.columns, Ghost: { type: "Text", label: "Ghost" } }
+    const { emulator } = renderWithGrist(<App />, { widget, emulator: { document: withGhost, widgetInteraction: { access_level: "full" } } })
+    emulator.setColumnMappings({ Fields: ["Title", "Ghost"] })
+    emulator.selectRow(1)
     await screen.findByLabelText("Ghost")
     type("Ghost", "boo")
+    delete emulator.state.tables.get("Interventions")!.columns.Ghost
     save()
     expect(await screen.findByText(/Grist did not save the row/)).toBeInTheDocument()
     expect(screen.getByLabelText("Ghost")).toHaveValue("boo")

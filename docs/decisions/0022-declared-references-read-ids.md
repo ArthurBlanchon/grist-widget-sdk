@@ -43,3 +43,10 @@ checked in grist-static 0.1.6, built from grist-core).
 - Like Grist, the emulator answers every `docApi` call but `getDocName` only
   with full access (`fetchTable`, `listTables`, `applyUserActions`,
   `getAccessToken`), so a test can't do what the widget couldn't.
+- Grist offers a column for mapping by its base type
+  (`ColumnToMapImpl.canByMapped`): a declared `Ref:People` matched no
+  column, so the SDK hands Grist `Ref` (and `DateTime` for
+  `DateTime:<zone>`), and keeps the full type for its own reads. Checked in
+  a real Grist by `scripts/real-widgets/ref-read.mjs` (weekly), where a
+  widget declaring `Ref:People`, `RefList:People` and a reference showing a
+  number reads the row ids.

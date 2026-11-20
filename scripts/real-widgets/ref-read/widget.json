@@ -1,0 +1,9 @@
+{
+  "title": "Ref read",
+  "requiredAccess": "read table",
+  "columns": [
+    { "name": "Owner", "type": "Ref:People" },
+    { "name": "Helpers", "type": "RefList:People" },
+    { "name": "Code", "type": "Ref:Codes" }
+  ]
+}

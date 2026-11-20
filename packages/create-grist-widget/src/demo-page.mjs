@@ -60,8 +60,9 @@ export function patchDemoDocument(bytes, widgetUrl) {
 /**
  * Name the demo document's widget section `title`: replaces every whole copy
  * of the title placeholder in the document's bytes, in place, keeping its
- * length (the rest is spaces; a title longer than the placeholder is cut at
- * a character). Embedded verbatim in the demo page, so it must stay
+ * length (the rest is spaces, which Grist's section header doesn't show but
+ * its rename field does; a title longer than the placeholder is cut at a
+ * code point). Embedded verbatim in the demo page, so it must stay
  * self-contained (120 is DEMO_TITLE_LENGTH). Returns false when the
  * document holds no placeholder: a document generated before it keeps the
  * title it was generated with.

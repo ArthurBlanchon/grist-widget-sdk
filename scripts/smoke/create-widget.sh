@@ -62,6 +62,11 @@ test -f "$PROJECT/.gitignore" || { echo "::error::.gitignore missing (npm strips
 test ! -e "$PROJECT/_gitignore" || { echo "::error::_gitignore leftover — rename to .gitignore didn't happen"; exit 1; }
 grep -q '"packageManager"' "$PROJECT/package.json" || { echo "::error::packageManager missing — bundled deploy.yml's pnpm/action-setup step would fail with 'No pnpm version is specified'"; exit 1; }
 
+echo "   checking the scaffold's demo page names the widget and its section"
+grep -q '<title>My Widget — demo</title>' "$PROJECT/public/demo/index.html" || { echo "::error::public/demo/index.html's title isn't the widget's"; exit 1; }
+grep -q '"section":"My Widget"' "$PROJECT/public/demo/index.html" || { echo "::error::public/demo/index.html doesn't name the demo's section after the widget"; exit 1; }
+! grep -q "Grist Widget Template" "$PROJECT/public/demo/index.html" || { echo "::error::public/demo/index.html still names the template"; exit 1; }
+
 echo "   checking the bundled workflows tolerate a scaffold with no committed lockfile"
 # This scaffold was made with --no-install: its first commit has no
 # pnpm-lock.yaml (a default, installing scaffold has one -- checked below).

@@ -155,7 +155,8 @@ export async function withLocalGrist(fn, { gristPort = DEMO_GRIST_PORT, containe
  * `demo --save`: writes public/demo/demo.grist and public/demo/index.html.
  * Both are the widget's: commit them, and edit the document in any Grist
  * (open it, change the data, download it back) — keep the widget section's
- * URL as it is, the page points it at the widget.
+ * URL and title as they are: the page points the URL at the widget and
+ * names the section after it.
  */
 export async function saveDemo({ cwd, gristPort = DEMO_GRIST_PORT, log = console.log }) {
   const pkg = JSON.parse(readFileSync(path.join(cwd, "package.json"), "utf8"))

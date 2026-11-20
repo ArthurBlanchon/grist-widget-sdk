@@ -1,6 +1,6 @@
 # 0024. 0.8.0 ships once the refactoring is done; M5 and M7 follow it
 
-- **Status:** proposed
+- **Status:** accepted (the maintainer, 2026-11-20)
 - **Date:** 2026-11-20
 - **Amends:** [the plan to 0.8.0](../planning/2026-11-15-plan-0.8.md)
   ("Release 0.8.0 when M1–M7 are done")

@@ -20,6 +20,12 @@ test("an SDK change runs its tests, the smokes, the real widgets and the catalog
   assert.deepEqual(jobs, { ...none, core: true, external_install: true, create_widget: true, real_widgets: true, size: true, widgets: true })
 })
 
+test("a catalog widget's spec or package.json builds the site too: its catalog page reads them", () => {
+  assert.deepEqual(changedJobs(["widgets/map/SPEC.md"]), { ...none, lint: true, widgets: true })
+  assert.deepEqual(changedJobs(["widgets/map/package.json"]), { ...none, lint: true, widgets: true })
+  assert.equal(changedJobs(["scripts/widgets/catalog.mjs"]).lint, true)
+})
+
 test("a catalog widget's change runs the widgets job only, for that widget", () => {
   assert.deepEqual(changedJobs(["widgets/kanban-board/src/app/App.tsx"]), { ...none, widgets: true })
   assert.deepEqual(touchedWidgets(["widgets/kanban-board/src/app/App.tsx", "widgets/map/SPEC.md"]), ["kanban-board", "map"])

@@ -211,7 +211,9 @@ jobs:
 
   # Lints the workspaces the two jobs above don't. None is type-aware against
   # grist-widget-sdk, so no SDK build is needed. The template ships in every
-  # scaffold: a lint error there is one in every new widget.
+  # scaffold: a lint error there is one in every new widget. The site is also
+  # built (next build, its type-check included), as deploy-apps.yml does
+  # after the merge: a page that doesn't build fails here, not on main.
   lint:
     needs: changes
     if: needs.changes.outputs.lint == 'true'
@@ -232,6 +234,9 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter ${{ matrix.workspace }} run lint
+      - name: Build the site
+        if: matrix.workspace == 'www'
+        run: pnpm --filter www build
 
   # Every pull request: the CI scripts' own tests, no unmet peer dependency,
   # every public API name used, and every command and path the AGENTS.md

@@ -27,9 +27,12 @@ export const RULES = {
   // coverage check counts them: a docs-only change must compile them too.
   core: ["packages/core/", "apps/www/content/docs/", "scripts/extract-doc-snippets.mjs", LOCKFILE],
   cli: ["packages/create-grist-widget/", LOCKFILE],
-  // The site also renders the SDK's reference and the CLI's help.
+  // The site also renders the SDK's reference, the CLI's help and the
+  // catalog (each widget's SPEC.md and package.json, through catalog.mjs).
   lint: [
     "apps/www/",
+    "scripts/widgets/catalog.mjs",
+    /^widgets\/[^/]+\/(SPEC\.md|package\.json)$/,
     "templates/grist-widget-template-vite/",
     "packages/core/api/reference.json",
     "packages/create-grist-widget/src/help.mjs",
@@ -70,7 +73,8 @@ export const RULES = {
 
 const EVERYTHING = [".github/workflows/", "scripts/ci/"]
 
-const matches = (file, rule) => (rule.endsWith("/") ? file.startsWith(rule) : file === rule)
+/** A rule is a folder ("x/"), a file, or a pattern for files. */
+const matches = (file, rule) => (rule instanceof RegExp ? rule.test(file) : rule.endsWith("/") ? file.startsWith(rule) : file === rule)
 
 const runsAll = (files) => files === null || files.some((f) => EVERYTHING.some((r) => matches(f, r)))
 

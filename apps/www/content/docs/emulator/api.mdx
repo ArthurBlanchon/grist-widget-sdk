@@ -66,11 +66,16 @@ emulator.apply([["AddRecord", "Tasks", null, { title: "x" }]]) // any user actio
 emulator.selectRow(2)            // or "new" (the add-row), or null
 emulator.selectTable("Contacts") // the section's table
 
-emulator.setColumnMappings({ Label: "title" }) // as a user mapping columns
+emulator.setColumnMappings({ Label: "title" }) // as a user mapping columns (see below)
 await emulator.setOptions({ color: "blue" })   // widget options
 emulator.setInteraction({ access_level: "read table" }) // access Grist grants
 emulator.theme.set("light")
 ```
+
+Once the widget has declared its columns, the mappings it receives are
+Grist's: every declared column, `null` (or `[]`) when unmapped, and a
+column the table doesn't have, or whose base type the declaration doesn't
+accept, left out, as in Grist's column panel.
 
 `emulator.state` is the live document (tables, selection, options), and
 `emulator.bus` the event bus every change goes through.

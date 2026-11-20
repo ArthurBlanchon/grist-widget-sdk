@@ -80,8 +80,9 @@ A column that accepts several types (`"Text,Ref"`) takes the first that
 matches. An `allowMultiple` column is a list, one value per mapped column.
 Grist offers a column for mapping by its base type: a declared `Ref:People`
 accepts any reference column, `DateTime:Europe/Paris` any date and time
-column. What follows the colon is for the widget's code; Grist doesn't check
-it.
+column. Neither Grist nor the SDK checks what follows the colon: a widget
+that follows the ids into a table should check the mapped column's type
+first (`w.listColumns()`).
 
 ## Cells that don't match
 
@@ -96,8 +97,9 @@ type GristCellIssue = { rowId: number; column: string; message: string; value: u
 ```
 
 This happens when a Numeric cell holds text Grist couldn't parse (Grist
-keeps the text), a formula fails (`formula error (ZeroDivisionError)`), or a
-column's type changed after it was mapped. `mountGristWidget()` shows an
+keeps the text), a formula fails (`formula error (ZeroDivisionError)`), or an
+`Any` column holds a value of another type. (A column whose type changes to
+one the declaration doesn't accept is unmapped instead.) `mountGristWidget()` shows an
 alert above the widget naming the first one (`cell-issues`).
 
 ## More rules: a Standard Schema

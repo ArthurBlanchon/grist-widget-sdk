@@ -120,7 +120,8 @@ describe("Bulk editor", () => {
     // The mapped column is removed by someone else, and the change goes out before Grist says so:
     // Grist, and the emulator, refuse the write ("Invalid column").
     const withGhost = doc()
-    withGhost.tables.Table1.columns.Ghost = { type: "Text", label: "Ghost" }
+    const table = withGhost.tables.Table1!
+    table.columns = { ...table.columns, Ghost: { type: "Text", label: "Ghost" } }
     const { emulator } = renderWithGrist(<App />, { widget, emulator: { document: withGhost, widgetInteraction: { access_level: "full" } } })
     emulator.setColumnMappings({ Target: "Ghost" })
     fireEvent.change(await screen.findByLabelText("New value for Ghost"), { target: { value: "boo" } })

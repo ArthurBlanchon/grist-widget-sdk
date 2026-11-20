@@ -65,6 +65,11 @@ Each item is one pull request; the plan says when each milestone is done.
   `grist-widget-template` in its `package.json`, README and CHANGELOG, which
   the deploy's identity edits don't match (found reviewing #106). Done when
   the first release names such a copy after its repository too.
+- [ ] **`w.mappings` spells Grist's `null`**: Grist, and the emulator since
+  #111, send `null` for an unmapped column, which `GristWidgetColumnMap`
+  (`string | string[] | undefined`) doesn't allow. Add `| null`, with the API
+  report, and split a declared type into its bases in one helper (`basesOf`,
+  used in four places). Done when the type and the helper land.
 - [ ] **Release 0.8.0** when M1–M7 are done.
 
 ## 2. After 0.8.0

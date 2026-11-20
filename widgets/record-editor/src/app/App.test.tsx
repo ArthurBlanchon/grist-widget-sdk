@@ -183,7 +183,8 @@ describe("Record editor", () => {
     // The mapped column is removed by someone else, and the save goes out before Grist says so:
     // Grist, and the emulator, refuse the write ("Invalid column").
     const withGhost = document()
-    withGhost.tables.Interventions.columns.Ghost = { type: "Text", label: "Ghost" }
+    const table = withGhost.tables.Interventions!
+    table.columns = { ...table.columns, Ghost: { type: "Text", label: "Ghost" } }
     const { emulator } = renderWithGrist(<App />, { widget, emulator: { document: withGhost, widgetInteraction: { access_level: "full" } } })
     emulator.setColumnMappings({ Fields: ["Title", "Ghost"] })
     emulator.selectRow(1)

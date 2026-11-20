@@ -72,8 +72,13 @@ function serve(dir) {
   const types = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css" }
   return new Promise((resolve) => {
     const server = http.createServer((req, res) => {
-      let f = path.join(dir, decodeURIComponent(new URL(req.url, "http://x").pathname))
-      if (!f.startsWith(dir) || !existsSync(f) || statSync(f).isDirectory()) f = path.join(dir, "index.html")
+      let f
+      try {
+        f = path.join(dir, decodeURIComponent(new URL(req.url, "http://x").pathname))
+      } catch {
+        f = ""
+      }
+      if (!f.startsWith(dir + path.sep) || !existsSync(f) || statSync(f).isDirectory()) f = path.join(dir, "index.html")
       res.writeHead(200, { "Content-Type": types[path.extname(f)] ?? "application/octet-stream" })
       createReadStream(f).pipe(res)
     })
@@ -86,9 +91,10 @@ const server = await serve(dist)
 const origin = `http://127.0.0.1:${server.address().port}`
 let read = null
 let failure = null
-const gristUrl = await startGrist({ container: CONTAINER, port: PORT })
-const browser = await chromium.launch(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {})
+let browser = null
 try {
+  const gristUrl = await startGrist({ container: CONTAINER, port: PORT })
+  browser = await chromium.launch(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {})
   const api = gristApi(gristUrl, await apiKey(gristUrl))
   const options = { requiredAccess: declared.requiredAccess, columns: declared.columns }
   const { docId, viewId } = await createDocument(api, await firstWorkspace(api), "ref read", options, `${origin}/`, DEMO)
@@ -117,7 +123,7 @@ try {
 } catch (e) {
   failure = String(e)
 } finally {
-  await browser.close()
+  await browser?.close()
   server.close()
   stopGrist(CONTAINER)
   rmSync(dist, { recursive: true, force: true })

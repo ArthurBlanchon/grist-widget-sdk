@@ -27,6 +27,20 @@ const ACCESS = new Set(["none", "read table", "full"])
  * deploy workflow built with, e.g. "/world-map/v0.1.0/" or "/world-map/dev/")
  * from `ownerRepo` ("owner/repo").
  */
+/**
+ * The declared columns as Grist reads them: Grist offers a column for
+ * mapping when its base type is declared, and uses a widget list entry's
+ * columns until the widget itself calls ready(). So `"Ref:People"` →
+ * `"Ref"`, `"DateTime:UTC"` → `"DateTime"`, as the SDK sends ready().
+ */
+export function gristColumns(columns) {
+  return columns.map((c) =>
+    typeof c === "string" || !c.type
+      ? c
+      : { ...c, type: c.type.split(",").map((t) => t.trim().split(":")[0]).filter(Boolean).join(",") }
+  )
+}
+
 export function buildManifest({ pkg, options, metadata, ownerRepo, base, sdkVersion, cliVersion, hasDemo = false, now = new Date() }) {
   const match = OWNER_REPO.exec(String(ownerRepo ?? ""))
   if (!match) throw new Error(`manifest: expected owner/repo, got ${JSON.stringify(ownerRepo)}`)
@@ -45,7 +59,7 @@ export function buildManifest({ pkg, options, metadata, ownerRepo, base, sdkVers
     // A dev build is a preview: listed, but not offered in Grist's picker.
     published: channel === "release",
     accessLevel: access,
-    ...(options.columns?.length ? { columns: options.columns } : {}),
+    ...(options.columns?.length ? { columns: gristColumns(options.columns) } : {}),
     // The SDK shows its own connecting screen until Grist is ready.
     renderAfterReady: false,
     ...(description ? { description } : {}),

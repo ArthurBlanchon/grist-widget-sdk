@@ -41,7 +41,7 @@ export function resolveMappings(state: EmulatorDocumentState): GristWidgetColumn
   const request = state.configuration?.columns
   if (!request?.length) return mapping
   const columns = state.tables.get(state.selection.tableId)?.columns ?? {}
-  const typeOf = (colId: string) => (colId in columns ? pureType(columns[colId].type) : null)
+  const typeOf = (colId: string) => (Object.prototype.hasOwnProperty.call(columns, colId) ? pureType(columns[colId].type) : null)
   // Grist sends null for an unmapped column, which GristWidgetColumnMap doesn't spell.
   const result: Record<string, string | string[] | null> = {}
   for (const declared of request) {

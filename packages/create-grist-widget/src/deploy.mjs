@@ -46,7 +46,7 @@
 //
 //   reset-branches [--repo-dir <dir>] [--repo <name>] [--owner-repo <owner/name>]
 //     On a repo's first genuine release only (caller gates on plan()'s
-//     firstRelease): renames the four placeholder-identity spots (only if
+//     firstRelease): renames the placeholder-identity spots (only if
 //     --repo is given and they still carry the template's own placeholder
 //     text -- a no-op for a CLI scaffold that already renamed itself), writes
 //     the /latest/ install URL into README.md's install-url block (owner/name
@@ -451,9 +451,9 @@ export function withInstallUrl(readme, url) {
 }
 
 /**
- * The placeholder-identity edits
- * `packages/create-grist-widget/bin/create-grist-widget.mjs` applies at
- * scaffold time, parameterized by a derived identity instead of CLI input.
+ * The placeholder-identity edits, parameterized by a derived identity: the
+ * ones `packages/create-grist-widget/bin/create-grist-widget.mjs` applies at
+ * scaffold time, and the distribution repository's own name (below).
  * Each substitution is a plain string replace, so it's naturally a no-op
  * wherever the placeholder text is already gone -- a CLI-scaffolded repo
  * (whose name may legitimately differ from its GitHub repo name) is never
@@ -465,8 +465,11 @@ export function withInstallUrl(readme, url) {
  * template" copy of it). The second is matched only where it names the
  * widget -- package.json's name, the README and CHANGELOG headings, the
  * page titles -- never in the README's link to the template repository.
+ *
+ * These edits are committed to `main` after the first release is built: the
+ * widget's pages and manifest carry the new name from its next release.
  */
-export function identityEdits({ packageName, title }) {
+function identityEdits({ packageName, title }) {
   const heading = (name) => [`# ${name}\n`, `# ${packageName}\n`]
   return [
     ["package.json", [["grist-widget-template-vite", packageName], ['"name": "grist-widget-template"', `"name": "${packageName}"`]]],
@@ -498,7 +501,7 @@ export function personalized(file, text, identity) {
  * Establish the state every widget repo should start from, on its first
  * genuine release only (gated by the caller on `plan()`'s `firstRelease`):
  *
- *   0. If `repo` is given, rewrite the four placeholder-identity spots (see
+ *   0. If `repo` is given, rewrite the placeholder-identity spots (see
  *      `identityEdits`) to match the real repo name -- the piece "Use this
  *      template" skips entirely, since it copies the repo verbatim and never
  *      runs the CLI's own rename step. Folded into the same commit as the

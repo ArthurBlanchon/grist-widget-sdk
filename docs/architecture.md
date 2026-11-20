@@ -12,7 +12,7 @@ moving code between packages. The decisions behind it are in
 packages/core/                  grist-widget-sdk (npm): the SDK, the app chrome, the emulator
 packages/create-grist-widget/   create-grist-widget (npm): scaffold, upgrade, demo, release, protect, deploy
 templates/grist-widget-template-vite/   the template the CLI embeds and scaffolds
-examples/                       16 example widgets (each a widget's src/app/), built by the site
+widgets/                        the catalog widgets (SPEC.md, code, tests), released to widgets-dist
 apps/www/                       the docs and landing site (Next.js + fumadocs, static export)
 scripts/                        the site build, CI helpers, real-widget checks, smoke tests
 docs/                           this file, decisions, operations, plans
@@ -95,7 +95,7 @@ origins, GitHub Pages and Cloudflare Pages
 ([ADR 0001](./decisions/0001-two-site-origins.md),
 [site deploy](./operations/site-deploy.md)). It contains:
 - the docs, from `apps/www`;
-- each example at `/examples/<id>/latest/`, with its demo page;
+- each catalog widget at `/widgets/<slug>/`, its channels and its demo page;
 - grist-static.
 
 `apps/www` does not depend on `grist-widget-sdk`, so an SDK change cannot
@@ -105,7 +105,7 @@ break the docs deploy.
 
 The catalog of widgets is
 [awesome-grist-widgets](https://github.com/ArthurBlanchon/awesome-grist-widgets).
-`widgets.json` is generated from each widget's published
+Its `widgets.json` is generated from each widget's published
 `grist-widget.json`; its entries marked `"reference": true`, plus
 `scripts/real-widgets/pending.json`, are the reference widgets. The Real
 widgets job checks every SDK pull request against them

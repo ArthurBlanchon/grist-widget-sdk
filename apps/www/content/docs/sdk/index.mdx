@@ -135,19 +135,15 @@ See the [API reference](/docs/sdk/api/use-grist) for every field.
 
 ## Asking for write access and declared columns
 
-**[declared-columns](/examples/declared-columns/demo/)**
-shows declared columns and `columnMappingStatus`.
-
 In the widget configuration panel, the user maps these logical names
 to real columns. You consume them via `w.mappedRecord` and
 `w.updateRecord(...)` on writes — see [Declare and map columns](/docs/sdk/guide/column-mapping).
 
 ## Run a write
 
-**[mark-done](/examples/mark-done/demo/)** writes the selected row;
-**[bulk-mark-done](/examples/bulk-mark-done/demo/)** writes many rows as one
-action, and **[schema-migration](/examples/schema-migration/demo/)** changes
-the schema. [Write data](/docs/sdk/guide/writing-data) explains each.
+`w.updateRecord(...)` writes the selected row, `w.table.update([...])` many
+rows as one action, and `w.applyActions([...])` changes the schema.
+[Write data](/docs/sdk/guide/writing-data) explains each.
 
 ## Explore the rest of the SDK
 
@@ -173,9 +169,9 @@ the schema. [Write data](/docs/sdk/guide/writing-data) explains each.
     href="/docs/sdk/guide/column-mapping"
   />
   <Card
-    title="Examples"
-    description="Working starting points, each running in a real Grist in your browser."
-    href="/docs/quickstart/examples"
+    title="The catalog"
+    description="Widgets built with the SDK, each with its demo in a real Grist, and its spec, code and tests."
+    href="/widgets/"
   />
 </Cards>
 

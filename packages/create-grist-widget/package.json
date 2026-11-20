@@ -15,10 +15,6 @@
     "bin",
     "src",
     "template",
-    "vendor",
-    "examples",
-    "ui-source",
-    "manifest.json",
     "LICENSE"
   ],
   "publishConfig": {

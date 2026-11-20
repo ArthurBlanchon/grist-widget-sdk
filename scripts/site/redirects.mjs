@@ -7,6 +7,13 @@
 
 const REPO = "https://github.com/ArthurBlanchon/grist-widget-sdk/blob/main"
 
+/** The example widgets the site served at /examples/<id>/ until 0.8 (ADR 0023). */
+const RETIRED_EXAMPLES = [
+  "attachment-gallery", "bulk-mark-done", "declared-columns", "form-edit", "hello-world", "mark-done",
+  "reads-demo", "rest-fetch", "schema-migration", "schema-preview", "spreadsheet-grid", "task-board",
+  "theme-demo", "typed-reads", "widget-options", "writes-demo",
+]
+
 /** Old path (no base, trailing slash) → new location: a site path starting with "/", or a full URL. */
 export const REDIRECTS = {
   // Maintainer docs moved into the repository (docs rewrite plan, M1).
@@ -21,8 +28,22 @@ export const REDIRECTS = {
   "/docs/sdk/guide/raw-plugin-api-vs-sdk/": "/docs/",
   // Merged into the guides, the reference and the examples (docs rewrite plan, R6).
   "/docs/sdk/guide/cheatsheet/": "/docs/sdk/api/",
-  "/docs/sdk/guide/cookbook/": "/docs/quickstart/examples/",
+  "/docs/sdk/guide/cookbook/": "/widgets/",
+  // examples/ retired for the catalog (ADR 0023): its page and each
+  // example's demo page send the reader to the catalog.
+  "/docs/quickstart/examples/": "/widgets/",
+  ...Object.fromEntries(RETIRED_EXAMPLES.map((id) => [`/examples/${id}/demo/`, "/widgets/"])),
 }
+
+/**
+ * Widget URLs that left the site, and where to find a replacement. A Grist
+ * document may still embed one, so the page written there shows in the
+ * widget's frame: it says so and links out, without a refresh (the target,
+ * a docs page, refuses to be framed on the canonical origin).
+ */
+export const RETIRED_WIDGETS = Object.fromEntries(
+  RETIRED_EXAMPLES.map((id) => [`/examples/${id}/latest/`, "/widgets/"])
+)
 
 const escapeHtml = (s) => s.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;")
 
@@ -49,10 +70,35 @@ export function redirectPage(target) {
 `
 }
 
-/** `[relative file path, html]` for every redirect, for an origin whose base is `siteBase`. */
+/** The page written at a retired widget's URL, shown inside a Grist document's widget frame. */
+export function retiredWidgetPage(target) {
+  const href = escapeHtml(target)
+  return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Widget retired</title>
+<meta name="robots" content="noindex">
+<style>body{font:14px/1.5 system-ui,sans-serif;margin:16px;color:CanvasText;background:Canvas}:root{color-scheme:light dark}</style>
+</head>
+<body>
+<p>This example widget was retired. Find a replacement in the widget catalog:
+<a href="${href}" target="_blank" rel="noopener noreferrer">${href}</a>, then change this widget's URL in the
+custom widget's settings.</p>
+</body>
+</html>
+`
+}
+
+/** `[relative file path, html]` for every redirect and retired widget, for an origin whose base is `siteBase`. */
 export function redirectFiles(siteBase) {
-  return Object.entries(REDIRECTS).map(([from, to]) => {
+  const file = (from) => {
     if (!from.startsWith("/") || !from.endsWith("/")) throw new Error(`redirect source must be /…/: ${from}`)
-    return [`${from.slice(1)}index.html`, redirectPage(redirectTarget(to, siteBase))]
-  })
+    return `${from.slice(1)}index.html`
+  }
+  return [
+    ...Object.entries(REDIRECTS).map(([from, to]) => [file(from), redirectPage(redirectTarget(to, siteBase))]),
+    ...Object.entries(RETIRED_WIDGETS).map(([from, to]) => [file(from), retiredWidgetPage(redirectTarget(to, siteBase))]),
+  ]
 }

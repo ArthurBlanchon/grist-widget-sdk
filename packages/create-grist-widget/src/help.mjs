@@ -9,7 +9,6 @@ Usage:
   npm create grist-widget <name> [options]       Scaffold into ./<name>
   create-grist-widget create <name> [options]    Same as above, explicit
   create-grist-widget init [options]             Scaffold into the current directory
-  create-grist-widget use <example-id>           Replace the current project's widget (src/app/)
   create-grist-widget upgrade [--force]          Bring the template's files up to this CLI's
                                                  (run it on dev, in a widget: pnpm exec create-grist-widget upgrade);
                                                  --force overwrites a src/main.tsx or file of the widget's own
@@ -29,11 +28,8 @@ Usage:
                                                  widget's Grist manifest (run by the deploy workflow
                                                  after vite build; --owner-repo defaults to
                                                  $GITHUB_REPOSITORY)
-  create-grist-widget list [--json]              List available starting examples
 
 Options (create / init):
-  --example <id>   Start from a named example instead of the blank template
-                    (see "list" for ids)
   --yes            Skip interactive prompts, use defaults/flags only
   --no-install     Don't run the package manager install automatically
   --pm <name>      Install with this package manager instead of pnpm (the
@@ -45,6 +41,10 @@ Options (create / init):
   --help, -h       Show this help
   --version, -v    Show this CLI's version
 
-Note: "create", "init", "use", "upgrade", "demo", "release", "protect", "manifest", and "list" are themselves valid widget names.
-A bare "create-grist-widget list" runs the list command, not "scaffold a
-widget named list" — use "create-grist-widget create list" for that.`
+Every widget starts from the template. For patterns (drag and drop, writes,
+attachments, maps…), read a catalog widget's spec, code and tests:
+https://gristwidgets.com/widgets/
+
+Note: "create", "init", "upgrade", "demo", "release", "protect", "manifest",
+"list" and "use" are themselves valid widget names: use
+"create-grist-widget create <name>" for one of those.`

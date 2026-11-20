@@ -51,10 +51,8 @@ deploy() { ( cd "$TEMPLATE_DIR" && "$DEPLOY_BIN" "$@" ); }
 # create-widget.sh already take.
 echo "== 0/11 build the SDK (workspace-linked dependency of the template)"
 pnpm --filter grist-widget-sdk run build
-# The deploy workflow's build job also runs `create-grist-widget manifest`;
-# its bin imports files the package's build generates (vendor/, as in the
-# published tarball), so build it too.
-node scripts/build-widgets-manifest.mjs >/dev/null
+# The deploy workflow's build job also runs `create-grist-widget manifest`,
+# from the package as its build leaves it: build it too.
 pnpm --filter create-grist-widget run build
 
 echo "== 1/11 bootstrap a bare repo standing in for gh-pages"

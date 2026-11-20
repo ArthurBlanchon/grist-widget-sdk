@@ -3,26 +3,18 @@
 //
 // Five verbs (batch H, docs/history/2026-08-08-execution-plan.md §98-105, and
 // T2 of docs/history/2026-11-01-widget-lifecycle-plan.md):
-//   create <name> [--example <id>]   scaffold a new widget into ./<name>
-//   init [--example <id>]            scaffold into the current directory
-//   use <example-id>                 swap the current project's widget (src/app/)
+//   create <name>                    scaffold a new widget into ./<name>
+//   init                             scaffold into the current directory
 //   upgrade                          bring the template's files up to this CLI's
 //   demo [--save] [--port <n>]       the widget in a real Grist on this machine (Docker);
 //                                    --save writes its static demo into public/demo/
 //   release <patch|minor|major>      the release commit on dev (version, CHANGELOG.md)
 //   protect [--dry-run]              the repository settings a template copy lacks (rulesets, ...), via gh
 //   manifest --base <path>           write dist/grist-widget.json (the deploy workflow's build job)
-//   list [--json]                    print the available starting examples
 //
-// `create`/`init`/`use` share one compose engine — see
-// packages/create-grist-widget/vendor/compose-example.mjs (a verbatim,
-// path-free copy of scripts/compose-example.mjs, embedded by
-// scripts/build-template.mjs alongside the template itself, along with
-// examples/, ui-source/, and manifest.json — see that script for why).
-// Nothing here ever hits the network: everything list/use/create --example
-// need already shipped in the tarball. The one exception is `upgrade`, which
-// asks the npm registry when versions in pnpm's age exceptions were published,
-// and `demo`, which runs Grist from a Docker image.
+// Every scaffold starts from the one template (ADR 0023): an agent or a
+// person adapts it, reading the catalog's widgets (widgets/<slug>/: spec,
+// code, tests) for patterns.
 
 import { HELP } from "../src/help.mjs"
 import {
@@ -39,8 +31,6 @@ import { fileURLToPath } from "node:url"
 import { execFileSync, execSync } from "node:child_process"
 import * as clack from "@clack/prompts"
 
-import { createComposer } from "../vendor/compose-example.mjs"
-import { checkGitGate } from "../src/git-gate.mjs"
 import { addedAgeExceptions } from "../src/age-exceptions.mjs"
 import { installPlan } from "../src/package-manager.mjs"
 import { RENAMED_NAMES_URL } from "../src/codemods.mjs"
@@ -56,15 +46,19 @@ const TEMPLATE_DIR = path.join(PKG_ROOT, "template")
 
 const cliPkg = JSON.parse(readFileSync(path.join(PKG_ROOT, "package.json"), "utf8"))
 
-const composer = createComposer({
-  templateDir: TEMPLATE_DIR,
-  examplesDir: path.join(PKG_ROOT, "examples"),
-  uiDir: path.join(PKG_ROOT, "ui-source"),
-  manifestPath: path.join(PKG_ROOT, "manifest.json"),
-})
+/** Where `--example`, `list` and `use` (retired in 0.8, ADR 0023) now send people: the catalog. */
+const CATALOG_NOTE =
+  "create-grist-widget starts every widget from its template. For a starting point close to yours, read a catalog" +
+  " widget's spec, code and tests: https://gristwidgets.com/widgets/ (sources: https://github.com/ArthurBlanchon/grist-widget-sdk/tree/main/widgets)."
 
-function loadManifest() {
-  return JSON.parse(readFileSync(path.join(PKG_ROOT, "manifest.json"), "utf8"))
+function retired(what, hint = "") {
+  console.error(`${what} was retired in create-grist-widget 0.8. ${CATALOG_NOTE}${hint}`)
+  process.exit(1)
+}
+
+/** `--example` is retired; `--example blank`, which always meant the template, still does. */
+function refuseExample(args) {
+  if (args.example !== undefined && args.example !== "blank") retired("--example")
 }
 
 // Mirrors npm's own unscoped package name rule, kept intentionally loose.
@@ -84,7 +78,10 @@ function parseArgs(argv) {
   const out = { _: [] }
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i]
-    if (a.startsWith("--")) {
+    if (a.startsWith("--") && a.includes("=")) {
+      const at = a.indexOf("=")
+      out[a.slice(2, at)] = a.slice(at + 1)
+    } else if (a.startsWith("--")) {
       const key = a.slice(2)
       const next = argv[i + 1]
       if (next === undefined || next.startsWith("--")) out[key] = true
@@ -239,51 +236,16 @@ function listFilesRecursive(dir, base = dir) {
   return out
 }
 
-/** Interactive "which example?" picker, shared by `create` and `init` — reads the same manifest.json `list` does. */
-async function pickExampleInteractively(manifest) {
-  const choice = await clack.select({
-    message: "Start from an example?",
-    options: [
-      { value: null, label: "Blank template (two-field editor)" },
-      ...manifest.map((e) => ({ value: e.id, label: e.title, hint: e.description })),
-    ],
-  })
-  if (clack.isCancel(choice)) {
-    clack.cancel("Cancelled.")
-    process.exit(1)
-  }
-  return choice
-}
-
-function resolveExampleFlag(exampleFlag, manifest) {
-  if (exampleFlag === undefined || exampleFlag === true) return { ok: true, exampleId: null }
-  if (exampleFlag === "blank") return { ok: true, exampleId: null }
-  if (!manifest.some((e) => e.id === exampleFlag)) {
-    return { ok: false }
-  }
-  return { ok: true, exampleId: exampleFlag }
-}
-
 // ---------------------------------------------------------------------------
 // create
 // ---------------------------------------------------------------------------
 
 async function cmdCreate(argv) {
   const args = parseArgs(argv)
-  const manifest = loadManifest()
+  refuseExample(args)
   const interactive = Boolean(process.stdout.isTTY) && !args.yes && !args._[0]
 
   let rawName = args._[0]
-  let exampleId = null
-
-  if (args.example !== undefined) {
-    const resolved = resolveExampleFlag(args.example, manifest)
-    if (!resolved.ok) {
-      console.error(`Unknown example "${args.example}". Run "create-grist-widget list" to see available examples.`)
-      process.exit(1)
-    }
-    exampleId = resolved.exampleId
-  }
 
   if (interactive) {
     clack.intro("create-grist-widget")
@@ -299,14 +261,11 @@ async function cmdCreate(argv) {
       }
       rawName = nameAnswer
     }
-    if (args.example === undefined) {
-      exampleId = await pickExampleInteractively(manifest)
-    }
     clack.outro("Scaffolding...")
   }
 
   if (!rawName) {
-    console.error("Usage: npm create grist-widget <widget-name> [--example <id>] [--yes] [--no-install] [--pm <pm>]")
+    console.error("Usage: npm create grist-widget <widget-name> [--yes] [--no-install] [--pm <pm>]")
     process.exit(1)
   }
   if (!isValidName(rawName)) {
@@ -324,11 +283,6 @@ async function cmdCreate(argv) {
   restoreGitignore(target)
   applyIdentityEdits(target, rawName)
 
-  if (exampleId) {
-    composer.overlayExampleSrc({ exampleId, destDir: target })
-    composer.mergeExtraDependencies({ exampleId, destDir: target })
-  }
-
   stampCreateGristWidgetVersion(target)
 
   // Install first, so the first commit includes the lockfile (pinned, with
@@ -338,7 +292,7 @@ async function cmdCreate(argv) {
 
   printAgeExceptionsNote(ageExceptions)
   printNoPnpmNote(skipped)
-  console.log(`\nCreated ${rawName}/${exampleId ? ` (starting from "${exampleId}")` : ""}\n`)
+  console.log(`\nCreated ${rawName}/\n`)
   console.log(`  cd ${rawName}`)
   if (!installed) console.log("  pnpm install")
   console.log("  pnpm dev")
@@ -362,23 +316,12 @@ async function cmdCreate(argv) {
 
 async function cmdInit(argv) {
   const args = parseArgs(argv)
-  const manifest = loadManifest()
+  refuseExample(args)
   const cwd = process.cwd()
 
-  let exampleId = null
-  if (args.example !== undefined) {
-    const resolved = resolveExampleFlag(args.example, manifest)
-    if (!resolved.ok) {
-      console.error(`Unknown example "${args.example}". Run "create-grist-widget list" to see available examples.`)
-      process.exit(1)
-    }
-    exampleId = resolved.exampleId
-  }
-
-  const interactive = Boolean(process.stdout.isTTY) && !args.yes && args.example === undefined
+  const interactive = Boolean(process.stdout.isTTY) && !args.yes
   if (interactive) {
     clack.intro("create-grist-widget init")
-    exampleId = await pickExampleInteractively(manifest)
     clack.outro("Initializing...")
   }
 
@@ -423,11 +366,6 @@ async function cmdInit(argv) {
   restoreGitignore(cwd)
   applyIdentityEdits(cwd, rawName)
 
-  if (exampleId) {
-    composer.overlayExampleSrc({ exampleId, destDir: cwd })
-    composer.mergeExtraDependencies({ exampleId, destDir: cwd })
-  }
-
   stampCreateGristWidgetVersion(cwd)
 
   // Never auto-commit into a pre-existing repo's history — only take over
@@ -440,7 +378,7 @@ async function cmdInit(argv) {
 
   printAgeExceptionsNote(ageExceptions)
   printNoPnpmNote(skipped)
-  console.log(`\nInitialized ${rawName}/${exampleId ? ` (starting from "${exampleId}")` : ""} in the current directory.\n`)
+  console.log(`\nInitialized ${rawName}/ in the current directory.\n`)
   if (!installed) console.log("  pnpm install")
   console.log("  pnpm dev")
   if (gitAlreadyExists) {
@@ -452,57 +390,6 @@ async function cmdInit(argv) {
     console.log("\nCould not create the initial git commit automatically (no git identity")
     console.log('configured?) — run `git config user.name`/`user.email`, then commit yourself.')
   }
-}
-
-// ---------------------------------------------------------------------------
-// use
-// ---------------------------------------------------------------------------
-
-function cmdUse(argv) {
-  const args = parseArgs(argv)
-  const exampleId = args._[0]
-  if (!exampleId) {
-    console.error('Usage: create-grist-widget use <example-id>\nRun "create-grist-widget list" to see available examples.')
-    process.exit(1)
-  }
-  const manifest = loadManifest()
-  if (!manifest.some((e) => e.id === exampleId)) {
-    console.error(`Unknown example "${exampleId}". Run "create-grist-widget list" to see available examples.`)
-    process.exit(1)
-  }
-
-  const cwd = process.cwd()
-  // Scaffolds older than the src/app/ layout keep their widget in src/, and
-  // their main.tsx imports ./App.tsx: an example written to src/app/ would
-  // never show.
-  if (existsSync(path.join(cwd, "src", "App.tsx"))) {
-    console.error(
-      "use: this project keeps its widget in src/App.tsx. Widgets now live in src/app/: move it there first" +
-        " (see https://gristwidgets.com/docs/cli/upgrading), then run use again."
-    )
-    process.exit(1)
-  }
-  const gate = checkGitGate(cwd)
-  if (!gate.ok) {
-    if (gate.reason === "no-repo") {
-      console.error(
-        'use: this command replaces src/app/ and must run inside a git repository so the change is easy to review and undo. Run "git init" first.'
-      )
-    } else {
-      console.error(
-        "use: working tree has uncommitted changes — commit or stash them first, so this swap is easy to diff and undo."
-      )
-    }
-    process.exit(1)
-  }
-
-  composer.overlayExampleSrc({ exampleId, destDir: cwd })
-  const { merged } = composer.mergeExtraDependencies({ exampleId, destDir: cwd })
-
-  console.log(`Swapped in "${exampleId}".`)
-  console.log("\n  git diff       # review what changed")
-  if (merged) console.log("  pnpm install   # new dependencies were added")
-  console.log("  pnpm dev")
 }
 
 // ---------------------------------------------------------------------------
@@ -730,29 +617,6 @@ function cmdUpgrade(argv) {
 }
 
 // ---------------------------------------------------------------------------
-// list
-// ---------------------------------------------------------------------------
-
-function cmdList(argv) {
-  const args = parseArgs(argv)
-  const manifest = loadManifest()
-
-  if (args.json) {
-    // A projected, public subset — not the raw manifest, which carries
-    // monorepo-internal fields (columns, usesUi, sourcePath,
-    // hasExampleDocument) that shouldn't become an accidental CLI contract.
-    const projected = manifest.map((e) => ({ id: e.id, title: e.title, description: e.description }))
-    console.log(JSON.stringify(projected, null, 2))
-    return
-  }
-
-  const idWidth = Math.max(2, ...manifest.map((e) => e.id.length))
-  for (const e of manifest) {
-    console.log(`${e.id.padEnd(idWidth)}  ${e.title} — ${e.description}`)
-  }
-}
-
-// ---------------------------------------------------------------------------
 // dispatch
 // ---------------------------------------------------------------------------
 
@@ -768,8 +632,8 @@ async function main() {
     console.log(cliPkg.version)
     return
   }
-  if (first === "list") return cmdList(rest)
-  if (first === "use") return cmdUse(rest)
+  if (first === "list" || first === "use")
+    return retired(`create-grist-widget ${first}`, ` For a widget named "${first}", run: create-grist-widget create ${first}`)
   if (first === "upgrade") return cmdUpgrade(rest)
   if (first === "demo") return cmdDemo(rest)
   if (first === "release") return cmdRelease(rest)

@@ -75,10 +75,14 @@ export function LocalDevPage() {
       </section>
 
       <section style={cardStyle}>
-        <h2 style={cardTitleStyle}>Starting from another example?</h2>
+        <h2 style={cardTitleStyle}>Looking for a pattern?</h2>
         <p style={cardTextStyle}>
-          <code style={codeStyle}>npx create-grist-widget list</code> shows the examples, and{" "}
-          <code style={codeStyle}>npx create-grist-widget use &lt;example&gt;</code> swaps this widget for one.
+          The{" "}
+          <a href="https://gristwidgets.com/widgets/" target="_blank" rel="noopener noreferrer">
+            widget catalog
+          </a>{" "}
+          shows finished widgets with their spec, code and tests: read one close to yours, and adapt it in{" "}
+          <code style={codeStyle}>src/app/</code>.
         </p>
       </section>
     </main>

@@ -8,7 +8,6 @@ import type { MDXComponents } from 'mdx/types';
 
 import { ApiReference } from '@/components/api-reference';
 import { CliHelp } from '@/components/cli-help';
-import { ExamplesCatalog } from '@/components/examples-catalog';
 import { typeTableGenerator } from '@/lib/typescript-generator';
 
 // Registered once here rather than per-page -- `defaultMdxComponents`
@@ -22,7 +21,6 @@ export function getMDXComponents(components?: MDXComponents) {
     ),
     ApiReference,
     CliHelp,
-    ExamplesCatalog,
     Tabs,
     Tab,
     Steps,

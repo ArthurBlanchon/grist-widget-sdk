@@ -52,7 +52,6 @@ jobs:
       - name: Pack the SDK and the CLI
         run: |
           mkdir -p "$RUNNER_TEMP/tarballs"
-          node scripts/build-widgets-manifest.mjs
           pnpm --filter grist-widget-sdk run build
           pnpm --filter create-grist-widget run build
           (cd packages/core && mv "$(pnpm pack --pack-destination "$RUNNER_TEMP" | tail -1)" "$RUNNER_TEMP/tarballs/sdk.tgz")

@@ -2,7 +2,6 @@ packages:
   - 'packages/*'
   - 'apps/*'
   - 'templates/*'
-  - 'examples'
   - 'widgets/*'
 
 # One version of each dependency for every catalog widget (widgets/*): a

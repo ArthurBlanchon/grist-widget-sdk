@@ -184,16 +184,6 @@ jobs:
       - name: Build the SDK (published artifact)
         run: pnpm --filter grist-widget-sdk build
 
-      # create-grist-widget's own `prepack` (packages/create-grist-widget/scripts/build-template.mjs,
-      # batch H) now embeds widgets.json as manifest.json alongside the
-      # template, and throws if it's missing. `changeset publish` below runs
-      # each changed package's npm lifecycle scripts (including prepack) as
-      # part of `npm publish` -- a fresh checkout has no widgets.json yet,
-      # so a create-grist-widget release failed outright until this step
-      # existed (found live: create-grist-widget@0.3.8's publish attempt).
-      - name: Build the widget examples manifest (create-grist-widget's prepack needs it)
-        run: pnpm build:widgets-manifest
-
       # changesets/action v2 (requires @changesets/cli 3): inputs are
       # kebab-case and renamed from v1 (version/publish/commit/title), the
       # token is read ONLY from `github-token` (the GITHUB_TOKEN env var is

@@ -32,6 +32,7 @@ link it from where the decision is applied.
 | [0020](./0020-agents-on-issues.md) | What agents do to issues on their own |
 | [0021](./0021-chrome-language.md) | The SDK's chrome speaks the languages the widget declares |
 | [0022](./0022-declared-references-read-ids.md) | A declared reference column reads as row ids |
+| [0023](./0023-template-is-the-only-start.md) | The template is the only starting point; examples/ is retired |
 
 The plans in [`docs/planning/`](../planning/) and
 [`docs/history/`](../history/) hold the reasoning in full. The design

@@ -45,8 +45,8 @@ Each item is one pull request; the plan says when each milestone is done.
   widget links `widget-bug.yml`, so its file name and its `widget` and
   `version` ids stay (ADR 0019).
 - [ ] **M7. Bring the widgets home, then retire.** Wave 3 (REST
-  enrichment, Ask AI, Scan with AI) after M1–M4; `examples/` removed with
-  an API coverage check; awesome-grist-widgets absorbed and archived; the
+  enrichment, Ask AI, Scan with AI) after M1–M4; awesome-grist-widgets
+  absorbed and archived; the
   six reference repositories retired, the news feed with them
   ([ADR 0011](./docs/decisions/0011-reference-widgets-retired.md)).
 - [ ] **The catalog's widgets declare `languages: ["en", "fr"]`** once the
@@ -71,10 +71,6 @@ Each item is one pull request; the plan says when each milestone is done.
   `grist-widget-template` in its `package.json`, README and CHANGELOG, which
   the deploy's identity edits don't match (found reviewing #106). Done when
   the first release names such a copy after its repository too.
-- [ ] **The typed-reads example shows a Date a day early west of UTC**
-  (#85; the docs page is fixed): `examples/typed-reads/WidgetApp.tsx` needs
-  `timeZone: "UTC"`. `examples/` isn't in ADR 0012's table, so its fix
-  waits for the maintainer's go, or for M7, which retires the folder.
 - [ ] **Release 0.8.0** when M1–M7 are done.
 
 ## 2. After 0.8.0
@@ -96,8 +92,8 @@ kept only where still relevant after the 0.4.0 review:
   (`onEditOptions`).
 - **Secrets guidance** (old batch K): widget options are not a secrets
   store; document what to do instead.
-- **Landing page with a live widget** (old batch N): an example's
-  `/examples/<id>/demo/`, embedded.
+- **Landing page with a live widget** (old batch N): a catalog
+  widget's `/widgets/<slug>/demo/`, embedded.
 - **Error-message pass** (task-053): every thrown error names its function
   and gives a one-line hint.
 

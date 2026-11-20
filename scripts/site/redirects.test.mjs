@@ -2,11 +2,11 @@ import assert from "node:assert/strict"
 import { existsSync } from "node:fs"
 import { test } from "node:test"
 
-import { REDIRECTS, redirectFiles, redirectPage, redirectTarget } from "./redirects.mjs"
+import { REDIRECTS, RETIRED_WIDGETS, redirectFiles, redirectPage, redirectTarget, retiredWidgetPage } from "./redirects.mjs"
 
 test("each old path gets an index.html that sends to its target", () => {
   const files = redirectFiles("")
-  assert.equal(files.length, Object.keys(REDIRECTS).length)
+  assert.equal(files.length, Object.keys(REDIRECTS).length + Object.keys(RETIRED_WIDGETS).length)
   const [path, html] = files.find(([p]) => p === "docs/contributing/deploy/index.html")
   assert.equal(path, "docs/contributing/deploy/index.html")
   assert.match(html, /http-equiv="refresh" content="0; url=https:\/\/github\.com\/.*site-deploy\.md"/)
@@ -31,5 +31,21 @@ test("a target inside the docs is a real page", () => {
     const page = path === "" ? "index.mdx" : `${path}.mdx`
     const index = `${path}/index.mdx`
     assert.ok(existsSync(new URL(page, docs)) || existsSync(new URL(index, docs)), target)
+  }
+})
+
+test("a retired widget's page shows in Grist's frame and links out, with no refresh", () => {
+  const [, html] = redirectFiles("/grist-widget-sdk/").find(([p]) => p === "examples/hello-world/latest/index.html")
+  assert.doesNotMatch(html, /http-equiv="refresh"/)
+  assert.match(html, /<a href="\/grist-widget-sdk\/widgets\/" target="_blank" rel="noopener noreferrer">/)
+  assert.doesNotMatch(retiredWidgetPage('/a"><script>'), /"><script>/)
+  assert.ok(!Object.keys(REDIRECTS).some((from) => from in RETIRED_WIDGETS), "one page per path")
+})
+
+test("a target inside the site's own routes is a real route", () => {
+  const app = new URL("../../apps/www/app/", import.meta.url)
+  for (const target of [...Object.values(REDIRECTS), ...Object.values(RETIRED_WIDGETS)]) {
+    if (!target.startsWith("/") || target.startsWith("/docs/")) continue
+    assert.ok(existsSync(new URL(`${target.slice(1)}page.tsx`, app)), target)
   }
 })

@@ -3,7 +3,6 @@
     "---Get started---",
     "index",
     "quickstart/index",
-    "quickstart/examples",
     "---Guides---",
     "sdk/index",
     "sdk/guide/column-mapping",

@@ -1,11 +1,10 @@
 name: Deploy apps to GitHub Pages
 
-# Builds apps/www and every examples/<id>/ (with its demo page) and
+# Builds apps/www and the catalog widgets (with their demo pages) and
 # publishes them as ONE GitHub Pages deployment at
 # https://arthurblanchon.github.io/grist-widget-sdk/: apps/www at that root
 # (which includes its own /docs/* -- quickstart, CLI reference, SDK
-# guide/API/design, registry), each example under /examples/<id>/ and its
-# grist-static demo under /examples/<id>/demo/.
+# guide/API/design, registry), each catalog widget under /widgets/<slug>/.
 #
 # This is ONE OF TWO independent origins. The same site is also served at
 # https://gristwidgets.com/ by Cloudflare Pages, running the same
@@ -48,7 +47,7 @@ name: Deploy apps to GitHub Pages
 # github.com/ArthurBlanchon/grist-widget-template repo via
 # template-canary.yml, which this workflow has no bearing on.
 #
-# scripts/build-site.mjs builds apps/www, the example widgets and their
+# scripts/build-site.mjs builds apps/www, the catalog widgets and their
 # demos (grist-static) into one tree, shipped together on both origins --
 # see docs/operations/site-deploy.md.
 
@@ -60,7 +59,6 @@ on:
       - "packages/core/**"
       # The CLI page shows the CLI's help (apps/www's <CliHelp />).
       - "packages/create-grist-widget/src/help.mjs"
-      - "examples/**"
       - "widgets/**"
       - "templates/grist-widget-template-vite/**"
       - "scripts/**"

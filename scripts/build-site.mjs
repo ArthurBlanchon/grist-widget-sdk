@@ -1,15 +1,13 @@
 #!/usr/bin/env node
-// Builds apps/www + every examples/<id>/ (its widget at latest/, its demo at
-// demo/) + grist-static + the template's own preview, and assembles them
-// into ./site — the single deployable tree,
-// shared by every host that serves this site.
+// Builds apps/www + the catalog widgets (their channels and demos) +
+// grist-static + the template's own preview, and assembles them into ./site
+// — the single deployable tree, shared by every host that serves this site.
 //
 // The site is published at TWO independent origins, deliberately: some
 // enterprise networks allowlist github.io while blocking unknown domains,
 // and some do the reverse. Neither origin redirects to the other, and each
-// carries a complete copy (docs, example widgets and their demos), so the
-// docs' /examples/<id>/demo/ links resolve within whichever origin the
-// reader can reach.
+// carries a complete copy (docs, catalog widgets and their demos), so the
+// docs' links resolve within whichever origin the reader can reach.
 //
 //   GitHub Pages     SITE_BASE=/grist-widget-sdk/  -> arthurblanchon.github.io/grist-widget-sdk/
 //   Cloudflare Pages (SITE_BASE unset)             -> gristwidgets.com
@@ -40,9 +38,6 @@ import { dirname, join, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 
 import { demoPageHtml, GRIST_STATIC_VERSION } from "../packages/create-grist-widget/src/demo-page.mjs"
-import { allExtraDependencies, composeExample, overlayExampleSrc } from "./compose-example.mjs"
-import { DEMOS_DIR } from "./example-demos.mjs"
-import { listExampleIds } from "./example-ids.mjs"
 import { copyGristStatic } from "./site/grist-static.mjs"
 import { siteHeaders } from "./site/headers.mjs"
 import { redirectFiles } from "./site/redirects.mjs"
@@ -61,11 +56,10 @@ function normalizeBase(raw) {
 
 const siteBase = normalizeBase(process.env.SITE_BASE)
 // siteBase is "" at a domain root (Next's basePath rejects a bare "/") --
-// but examplesBase and gristStaticBase are consumed as Vite `base` values and
+// but gristStaticBase is consumed as a Vite `base` value and
 // as a demo page's script URL, which need a real leading slash even at a
 // domain root, or they resolve relative to the current page instead of the
 // site root (found live on a Cloudflare Pages preview, PR #111).
-const examplesBase = `${siteBase || "/"}examples/`
 const gristStaticBase = `${siteBase || "/"}grist-static/${GRIST_STATIC_VERSION}/`
 // Deliberately not "/template/" -- that was the retired showcase path (see
 // templates/grist-widget-template-vite/README.md's "Live preview" section)
@@ -97,69 +91,6 @@ function run(args, env) {
     stdio: "inherit",
     env: { ...process.env, ...env },
   })
-}
-
-/**
- * Compose + build every examples/<id>/ standalone, sharing one `pnpm
- * install` across all of them (see scripts/compose-example.mjs) rather than
- * one install per example — the SDK dependency is a `file:` reference to
- * packages/core (built above), the same workspace-source resolution www's
- * own build uses.
- * Proving a build against the *published* SDK is scripts/smoke/create-widget.sh's
- * job (§4 of the execution plan), not this one.
- *
- * Each example deploys at examples/<id>/latest/ — not a bare <id>/ — so the
- * composed project's own unmodified main.tsx (inherited from the template)
- * recognizes the URL as a "channel" page and renders the actual widget when
- * embedded, instead of the generic showcase hub a channel-less path falls
- * back to. See parseDeployPath() in packages/core/src/app/deploy-path.ts.
- */
-function buildExamples() {
-  const scratchDir = mkdtempSync(join(tmpdir(), "grist-widget-examples-"))
-  const examplesOutDir = join(scratchDir, "out")
-  const projectDir = join(scratchDir, "project")
-
-  const exampleIds = listExampleIds(join(repoRoot, "examples"))
-
-  composeExample({
-    exampleId: exampleIds[0],
-    destDir: projectDir,
-    sdkDependency: `file:${join(repoRoot, "packages/core")}`,
-  })
-  const pkgPath = join(projectDir, "package.json")
-  const pkg = JSON.parse(readFileSync(pkgPath, "utf8"))
-  Object.assign(pkg.dependencies, allExtraDependencies())
-  writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`)
-  execFileSync("pnpm", ["install"], { cwd: projectDir, stdio: "inherit" })
-
-  for (const id of exampleIds) {
-    overlayExampleSrc({ exampleId: id, destDir: projectDir })
-    execFileSync(
-      "pnpm",
-      [
-        "exec", "vite", "build",
-        "--base", `${examplesBase}${id}/latest/`,
-        "--outDir", join(examplesOutDir, id, "latest"),
-        "--emptyOutDir",
-      ],
-      { cwd: projectDir, stdio: "inherit" }
-    )
-    writeExampleDemo(id, join(examplesOutDir, id, "demo"))
-  }
-
-  return examplesOutDir
-}
-
-/**
- * examples/<id>/demo/: the example in a real Grist from static files
- * (grist-static, served by this site), with its committed demo document
- * (scripts/example-demos.mjs) pointed at examples/<id>/latest/.
- */
-function writeExampleDemo(id, demoDir) {
-  const title = widgets.find((w) => w.id === id)?.title ?? id
-  mkdirSync(demoDir, { recursive: true })
-  cpSync(join(DEMOS_DIR, `${id}.grist`), join(demoDir, "demo.grist"))
-  writeFileSync(join(demoDir, "index.html"), demoPageHtml({ title, widget: "../latest/", gristStatic: gristStaticBase }))
 }
 
 // The catalog widgets (widgets/<slug>/): their released versions, from the
@@ -278,8 +209,8 @@ async function buildCatalogWidgets() {
 
 /**
  * Builds the template's own pristine source (unmodified, no example
- * overlay) and returns the built dir. Unlike buildExamples(), no scratch
- * project or separate `pnpm install` is needed -- templates/* is already a
+ * overlay) and returns the built dir. No scratch project or separate
+ * `pnpm install` is needed -- templates/* is already a
  * real pnpm workspace member (pnpm-workspace.yaml), already resolving
  * grist-widget-sdk from packages/core/dist the same way www does.
  *
@@ -328,18 +259,13 @@ function buildTemplatePreview() {
 console.log(
   `Building site\n  SITE_BASE        ${siteBase || "(domain root)"}\n` +
     `  grist-static base     ${gristStaticBase}\n` +
-    `  examples base         ${examplesBase}\n` +
     `  template preview base ${templatePreviewBase}\n` +
     `  served at             ${siteUrl}\n` +
     `  canonical origin      ${canonicalOrigin}`
 )
 
-// grist-widget-sdk (every composed example depends on its build), then
-// widgets.json (the examples' titles, and the demo documents' check).
+// grist-widget-sdk: the catalog widgets and the template preview build on it.
 run(["--filter", "grist-widget-sdk", "build"])
-run(["build:widgets-manifest"])
-run(["exec", "node", "scripts/example-demos.mjs", "check"])
-const widgets = JSON.parse(readFileSync(join(repoRoot, "widgets.json"), "utf8"))
 
 run(["--filter", "www", "build"], {
   // Empty means "no basePath" to next.config.mjs — which is exactly right at
@@ -349,9 +275,6 @@ run(["--filter", "www", "build"], {
   WWW_SITE_URL: siteUrl,
   WWW_CANONICAL_ORIGIN: canonicalOrigin,
 })
-
-console.log("\nBuilding examples")
-const examplesOut = buildExamples()
 
 console.log("\nCatalog widgets")
 const { out: catalogOut, channels: catalogChannels } = await buildCatalogWidgets()
@@ -364,16 +287,14 @@ rmSync(outDir, { recursive: true, force: true })
 mkdirSync(outDir, { recursive: true })
 console.log(`\nCopying grist-static ${GRIST_STATIC_VERSION}`)
 await copyGristStatic(join(outDir, "grist-static", GRIST_STATIC_VERSION))
-cpSync(examplesOut, join(outDir, "examples"), { recursive: true })
-rmSync(dirname(examplesOut), { recursive: true, force: true })
 cpSync(templatePreviewOut, join(outDir, "template-preview"), { recursive: true })
 rmSync(dirname(templatePreviewOut), { recursive: true, force: true })
 
 // www publishes at the site root, including its own /docs/*. Guard against its
 // build ever emitting a top-level entry that would silently shadow
-// examples/, grist-static/ or template-preview/.
+// grist-static/ or template-preview/.
 for (const entry of readdirSync(join(repoRoot, "apps/www/out"))) {
-  if (entry === "examples" || entry === "grist-static" || entry === "template-preview") {
+  if (entry === "grist-static" || entry === "template-preview") {
     console.error(
       `::error::apps/www build produced a top-level '${entry}', which collides with ${entry}/. Refusing to publish.`
     )

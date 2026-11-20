@@ -14,7 +14,6 @@
   "updateInternalDependencies": "patch",
   "ignore": [
     "grist-widget-template-vite",
-    "examples",
     "@grist-widgets/shared",
     "@grist-widgets/bulk-editor",
     "@grist-widgets/chart-builder",

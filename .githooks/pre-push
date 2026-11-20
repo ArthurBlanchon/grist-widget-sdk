@@ -4,16 +4,15 @@
 # skippable with `git push --no-verify`, and only installed at all if
 # `pnpm install` has been run (see the root package.json's `prepare`
 # script, which sets `core.hooksPath` to this directory). The matching
-# workflows (require-changeset.yml, agent-surface.yml) are the real,
+# jobs in ci.yml (changeset, and check:agents-md in gate) are the real,
 # unbypassable gates -- this is just a courtesy.
 set -euo pipefail
 
 # Never in CI: the workflows are the real gates there, and `pnpm install`
 # installs this hook on runners too. Found live: release.yml's
 # changesets/action pushes each release tag with its own concurrent
-# `git push`, so this hook ran twice at once, the two
-# build-widgets-manifest runs raced on a shared scratch directory,
-# and the create-grist-widget@0.3.16 tag push was rejected after npm had
+# `git push`, so this hook ran twice at once, two of its runs raced on
+# a shared scratch directory, and the create-grist-widget@0.3.16 tag push was rejected after npm had
 # already published.
 [ -n "${CI:-}" ] && exit 0
 
@@ -39,7 +38,4 @@ REPO_ROOT="$(git rev-parse --show-toplevel)"
 
 bash "$REPO_ROOT/scripts/check-changeset.sh" main
 
-# require the widget manifest to build before checking AGENTS.md against
-# it -- same order as agent-surface.yml.
-node "$REPO_ROOT/scripts/build-widgets-manifest.mjs"
 node "$REPO_ROOT/scripts/check-agents-md.mjs"

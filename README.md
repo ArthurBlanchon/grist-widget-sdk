@@ -9,7 +9,7 @@ Documentation: **[gristwidgets.com](https://gristwidgets.com)** (source in `apps
 ## What is inside
 
 - `packages/core` - `grist-widget-sdk`, the reusable SDK package
-- `examples` - the SDK's example widgets (each `examples/<id>/` is a widget's `src/app/`); the site serves each one in a real Grist at `/examples/<id>/demo/`
+- `widgets` - the catalog widgets, each with its `SPEC.md`, code and tests; the site serves each one in a real Grist at `/widgets/<slug>/demo/`
 - `apps/www` - landing site + documentation (Next.js + fumadocs + shadcn/ui, static export), deployed at the site root
 - `templates/grist-widget-template-vite` - standalone starter template
 

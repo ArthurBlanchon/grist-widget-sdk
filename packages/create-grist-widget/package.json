@@ -15,7 +15,8 @@
     "bin",
     "src",
     "template",
-    "LICENSE"
+    "LICENSE",
+    "CHANGELOG.md"
   ],
   "publishConfig": {
     "access": "public"

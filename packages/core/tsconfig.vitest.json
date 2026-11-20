@@ -2,6 +2,8 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "noEmit": true,
+    // Tests emit nothing: a test helper's inferred type needn't be nameable.
+    "declaration": false,
     "types": ["vitest/globals", "@testing-library/jest-dom/vitest"]
   },
   "include": ["src", "tests/**/*.ts", "tests/**/*.tsx"]

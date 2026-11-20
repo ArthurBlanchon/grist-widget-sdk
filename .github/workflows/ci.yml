@@ -75,7 +75,8 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter grist-widget-sdk build
-      - run: pnpm --filter grist-widget-sdk exec tsc --noEmit
+      # The source and the tests (tsconfig.vitest.json), as `typecheck` does.
+      - run: pnpm --filter grist-widget-sdk run typecheck
       # Compile-time tests of the SDK's types (GristMappedRow).
       - run: pnpm --filter grist-widget-sdk exec tsc -p tsconfig.type-tests.json
       - run: pnpm --filter grist-widget-sdk run lint

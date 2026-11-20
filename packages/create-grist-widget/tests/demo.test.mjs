@@ -1,7 +1,7 @@
 import { mkdtempSync, writeFileSync } from "node:fs"
 import os from "node:os"
 import path from "node:path"
-import { describe, expect, it } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { DEMO_GRIST_PORT, demoArgs, demoRefusal, localPluginApi } from "../src/demo.mjs"
 import { GRIST_IMAGE, openUrl } from "../src/grist-local.mjs"
@@ -158,6 +158,7 @@ describe("the demo document (createDocument)", () => {
   // A fake Grist REST API: it answers what createDocument asks and keeps the section it saves.
   function fakeGrist({ table1 = false } = {}) {
     const saved = []
+    const titles = []
     const removed = []
     const api = async (method, url, body) => {
       if (url.endsWith("/docs")) return "doc1"
@@ -171,7 +172,10 @@ describe("the demo document (createDocument)", () => {
       }
       if (url.endsWith("/apply")) {
         if (body[0][0] === "CreateViewSection") return { retValues: [{ sectionRef: 5 }] }
-        if (body[0][0] === "UpdateRecord") saved.push(JSON.parse(JSON.parse(body[0][3].options).customView))
+        if (body[0][0] === "UpdateRecord") {
+          saved.push(JSON.parse(JSON.parse(body[0][3].options).customView))
+          titles.push(body[0][3].title)
+        }
         if (body[0][0] === "RemoveTable") {
           // As Grist: removing a table that isn't there fails.
           if (!table1 || removed.length) throw new Error("POST /apply: 500 No such table: Table1")
@@ -181,8 +185,39 @@ describe("the demo document (createDocument)", () => {
       }
       return null
     }
-    return { api, saved, removed }
+    return { api, saved, titles, removed }
   }
+
+  afterEach(() => vi.unstubAllGlobals())
+
+  it("titles the widget section after the document, or as asked", async () => {
+    const { createDocument } = await import("../src/grist-local.mjs")
+    const plain = fakeGrist()
+    await createDocument(plain.api, 1, "Tasks", { requiredAccess: "read table" }, "http://w/")
+    expect(plain.titles).toEqual(["Tasks"])
+    const asked = fakeGrist()
+    await createDocument(asked.api, 1, "Tasks", { requiredAccess: "read table" }, "http://w/", null, { sectionTitle: "Other" })
+    expect(asked.titles).toEqual(["Other"])
+  })
+
+  it("gives a demo document the title placeholder its page replaces", async () => {
+    const { createDemoDocument } = await import("../src/demo.mjs")
+    const { DEMO_TITLE_PLACEHOLDER, DEMO_URL_PLACEHOLDER } = await import("../src/demo-page.mjs")
+    const grist = fakeGrist()
+    // The same fake, over HTTP as gristApi calls it, and the document's download.
+    vi.stubGlobal("fetch", async (url, init = {}) => {
+      if (String(url).includes("/download")) return new Response("grist-bytes")
+      if (String(url).endsWith("/api/orgs")) return new Response(JSON.stringify([{ id: 1 }]))
+      if (String(url).endsWith("/workspaces")) return new Response(JSON.stringify([{ id: 2 }]))
+      const body = init.body === undefined ? undefined : JSON.parse(init.body)
+      const out = await grist.api(init.method, String(url).slice("http://g".length), body)
+      return new Response(out === null ? "" : JSON.stringify(out))
+    })
+    const bytes = await createDemoDocument({ gristUrl: "http://g", key: "k", options: { requiredAccess: "read table" }, name: "My Tasks" })
+    expect(String(bytes)).toBe("grist-bytes")
+    expect(grist.titles).toEqual([DEMO_TITLE_PLACEHOLDER])
+    expect(grist.saved[0].url).toBe(DEMO_URL_PLACEHOLDER)
+  })
 
   it("removes the new document's Table1 once, and only when the Grist image made one", async () => {
     const { createDocument } = await import("../src/grist-local.mjs")

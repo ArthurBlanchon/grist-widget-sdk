@@ -19,7 +19,7 @@ import path from "node:path"
 
 import { mkdirSync, writeFileSync } from "node:fs"
 
-import { demoPageHtml, DEMO_URL_PLACEHOLDER } from "./demo-page.mjs"
+import { DEMO_TITLE_PLACEHOLDER, demoPageHtml, DEMO_URL_PLACEHOLDER } from "./demo-page.mjs"
 import {
   apiKey,
   createDocument,
@@ -125,13 +125,15 @@ export const DEMO_DIR = path.join("public", "demo")
 /**
  * A demo document from `options` in the Grist at `gristUrl` (API key `key`):
  * the same table, sample rows and mapped section as `pnpm demo`, with the
- * widget at the placeholder URL the demo page replaces. Returns the .grist
- * bytes.
+ * widget at the placeholder URL and the section under the placeholder title
+ * that the demo page replaces. Returns the .grist bytes.
  */
 export async function createDemoDocument({ gristUrl, key, options, name, demo = null }) {
   const api = gristApi(gristUrl, key)
   // grist-static, which runs the demo page, serves no attachment: the page's document has none.
-  const { docId } = await createDocument(api, await firstWorkspace(api), name, options, DEMO_URL_PLACEHOLDER, demo && { ...demo, files: undefined })
+  const { docId } = await createDocument(api, await firstWorkspace(api), name, options, DEMO_URL_PLACEHOLDER, demo && { ...demo, files: undefined }, {
+    sectionTitle: DEMO_TITLE_PLACEHOLDER,
+  })
   const res = await fetch(`${gristUrl}/api/docs/${docId}/download?nohistory=true`, { headers: { Authorization: `Bearer ${key}` } })
   if (!res.ok) throw new Error(`demo: downloading the document failed (${res.status})`)
   return Buffer.from(await res.arrayBuffer())
@@ -153,7 +155,8 @@ export async function withLocalGrist(fn, { gristPort = DEMO_GRIST_PORT, containe
  * `demo --save`: writes public/demo/demo.grist and public/demo/index.html.
  * Both are the widget's: commit them, and edit the document in any Grist
  * (open it, change the data, download it back) — keep the widget section's
- * URL as it is, the page points it at the widget.
+ * URL and title as they are: the page points the URL at the widget and
+ * names the section after it.
  */
 export async function saveDemo({ cwd, gristPort = DEMO_GRIST_PORT, log = console.log }) {
   const pkg = JSON.parse(readFileSync(path.join(cwd, "package.json"), "utf8"))

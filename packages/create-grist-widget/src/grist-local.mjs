@@ -368,7 +368,12 @@ export function gristApi(baseUrl, key) {
   }
 }
 
-export async function createDocument(api, wsId, name, options, widgetUrl, demo = null) {
+/**
+ * A document named `name`, with the widget at `widgetUrl` in a section
+ * titled `sectionTitle` (default: `name`; a demo document gets the title
+ * placeholder its page replaces).
+ */
+export async function createDocument(api, wsId, name, options, widgetUrl, demo = null, { sectionTitle = name } = {}) {
   const spec = demo ? demoSpec(options, demo) : documentSpec(options)
   const tables = spec.tables ?? [{ id: "Data", columns: spec.columns, rows: spec.rows }]
   const tableId = spec.table ?? "Data"
@@ -457,7 +462,7 @@ export async function createDocument(api, wsId, name, options, widgetUrl, demo =
       "UpdateRecord",
       "_grist_Views_section",
       sectionRef,
-      { options: JSON.stringify({ customView: JSON.stringify(customView) }), title: name, linkSrcSectionRef: recordSection.id },
+      { options: JSON.stringify({ customView: JSON.stringify(customView) }), title: sectionTitle, linkSrcSectionRef: recordSection.id },
     ],
   ])
   return { docId, viewId: table.primaryViewId }

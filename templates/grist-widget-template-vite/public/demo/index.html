@@ -26,10 +26,32 @@ function patchDemoDocument(bytes, widgetUrl) {
   }
   return found
 }
+function patchDemoTitle(bytes, title) {
+  var length = 120
+  var prefix = new TextEncoder().encode("grist-widget-demo-title:")
+  var text = new TextEncoder().encode(title)
+  if (text.length > length) {
+    var cut = length
+    while (cut > 0 && (text[cut] & 0xc0) === 0x80) cut--
+    text = text.slice(0, cut)
+  }
+  var next = new Uint8Array(length).fill(0x20)
+  next.set(text)
+  var found = false
+  search: for (var i = 0; i <= bytes.length - length; i++) {
+    for (var j = 0; j < prefix.length; j++) if (bytes[i + j] !== prefix[j]) continue search
+    for (j = prefix.length; j < length; j++) if (bytes[i + j] !== 0x20) continue search
+    bytes.set(next, i)
+    found = true
+    i += length - 1
+  }
+  return found
+}
 (async function () {
-  var config = {"title":"Grist Widget Template — demo","widget":"../"}
+  var config = {"title":"Grist Widget Template — demo","section":"Grist Widget Template","widget":"../"}
   var bytes = new Uint8Array(await (await fetch("demo.grist")).arrayBuffer())
   patchDemoDocument(bytes, new URL(config.widget, location.href).href)
+  patchDemoTitle(bytes, config.section)
   bootstrapGrist({ initialFile: URL.createObjectURL(new Blob([bytes])), name: config.title, singlePage: true })
 })()
 </script>

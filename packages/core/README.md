@@ -117,5 +117,5 @@ From the monorepo root:
 ```bash
 pnpm --filter grist-widget-sdk build
 pnpm --filter grist-widget-sdk test
-pnpm --filter grist-widget-sdk exec tsc --noEmit
+pnpm --filter grist-widget-sdk typecheck
 ```

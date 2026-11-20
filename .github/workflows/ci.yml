@@ -188,7 +188,7 @@ jobs:
       - run: pnpm install --no-frozen-lockfile --filter grist-widget-sdk...
       - run: node -e "const v=require('./packages/core/node_modules/react/package.json').version; if(!v.startsWith('18.')) throw new Error('React '+v+', not 18'); console.log('React', v)"
       - run: pnpm --filter grist-widget-sdk build
-      - run: pnpm --filter grist-widget-sdk exec tsc --noEmit
+      - run: pnpm --filter grist-widget-sdk run typecheck
       - run: pnpm --filter grist-widget-sdk test
 
   # The CLI's own source (bin/, scripts/, src/, tests/): lint and unit tests.

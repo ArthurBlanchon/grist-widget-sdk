@@ -640,9 +640,9 @@
     {
       "name": "gristAddTableAction",
       "kind": "function",
-      "summary": "`[\"AddTable\", tableId, tableInfo]`",
+      "summary": "`[\"AddTable\", tableId, columns]`: a new table and its columns, each `{ id, type?, isFormula?, formula?, … }`, as Grist's AddTable takes them.",
       "signatures": [
-        "gristAddTableAction(tableId: string, tableInfo: Record<string, unknown>): GristUserActionTuple"
+        "gristAddTableAction(tableId: string, columns: ReadonlyArray<{ id: string; } & Record<string, unknown>>): GristUserActionTuple"
       ]
     },
     {

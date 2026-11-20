@@ -23,7 +23,9 @@ const WIDGETS_DIR = fileURLToPath(new URL("../../widgets/", import.meta.url))
 
 /** @type {Record<string, (string|RegExp)[]>} */
 export const RULES = {
-  core: ["packages/core/", LOCKFILE],
+  // The docs' tsx snippets are compiled by the SDK's tests, and the API
+  // coverage check counts them: a docs-only change must compile them too.
+  core: ["packages/core/", "apps/www/content/docs/", "scripts/extract-doc-snippets.mjs", LOCKFILE],
   cli: ["packages/create-grist-widget/", LOCKFILE],
   // The site also renders the SDK's reference and the CLI's help.
   lint: [

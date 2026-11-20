@@ -78,9 +78,15 @@ export function gristRemoveColumnAction(tableId: string, colId: string): GristUs
   return ["RemoveColumn", tableId, colId]
 }
 
-/** `["AddTable", tableId, tableInfo]` */
-export function gristAddTableAction(tableId: string, tableInfo: Record<string, unknown>): GristUserActionTuple {
-  return ["AddTable", tableId, tableInfo]
+/**
+ * `["AddTable", tableId, columns]`: a new table and its columns, each
+ * `{ id, type?, isFormula?, formula?, … }`, as Grist's AddTable takes them.
+ */
+export function gristAddTableAction(
+  tableId: string,
+  columns: ReadonlyArray<{ id: string } & Record<string, unknown>>
+): GristUserActionTuple {
+  return ["AddTable", tableId, [...columns]]
 }
 
 function inferBulkLength(values: Record<string, unknown[]>): number {

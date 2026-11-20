@@ -11,7 +11,9 @@ export function gristAddColumnAction(tableId: string, colId: string, colInfo: Re
 export function gristAddRecordAction(tableId: string, values: Record<string, unknown>): GristUserActionTuple;
 
 // @public
-export function gristAddTableAction(tableId: string, tableInfo: Record<string, unknown>): GristUserActionTuple;
+export function gristAddTableAction(tableId: string, columns: ReadonlyArray<{
+    id: string;
+} & Record<string, unknown>>): GristUserActionTuple;
 
 // @public
 export function gristAddVisibleColumnAction(tableId: string, colId: string, colInfo: Record<string, unknown>): GristUserActionTuple;

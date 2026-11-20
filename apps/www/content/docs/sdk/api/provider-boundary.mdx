@@ -16,6 +16,23 @@ description: "The two components at a widget's root: the connection to Grist, an
 Render them yourself only for a page that manages its own React root. One
 provider per widget; nesting providers is unsupported.
 
+```tsx
+import { createRoot } from "react-dom/client"
+import { GristBoundary, GristWidgetProvider } from "grist-widget-sdk"
+
+function Widget() {
+  return <p>Connected, with the access it asked for.</p>
+}
+
+createRoot(document.getElementById("root")!).render(
+  <GristWidgetProvider options={{ requiredAccess: "read table" }}>
+    <GristBoundary>
+      <Widget />
+    </GristBoundary>
+  </GristWidgetProvider>
+)
+```
+
 ## `<GristWidgetProvider>`
 
 ```ts

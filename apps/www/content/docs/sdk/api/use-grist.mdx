@@ -124,6 +124,15 @@ members.
 `useGristOptional()` returns `null` outside `<GristWidgetProvider>`, for a
 component that also works without Grist.
 
+```tsx
+import { useGristOptional } from "grist-widget-sdk"
+
+export function TableName() {
+  const w = useGristOptional()
+  return <span>{w ? w.currentTableId ?? "…" : "Not in Grist"}</span>
+}
+```
+
 ## Examples
 
 ### Selection + write

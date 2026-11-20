@@ -14,18 +14,28 @@ Turns a column-oriented payload (`fetchRows({ columnar: true })`:
 `{ id: [1, 2], Name: ["a", "b"] }`) into rows (`[{ id: 1, Name: "a" }, …]`),
 in the order of the `id` column.
 
+```tsx
+import { tableDataToRows } from "grist-widget-sdk"
+
+const rows = tableDataToRows<{ Name: string }>({ id: [1, 2], Name: ["Ada", "Grace"] })
+// [{ id: 1, Name: "Ada" }, { id: 2, Name: "Grace" }]
+console.log(rows[0]?.Name)
+```
+
 ### `decodeGristValue(value, column?)`
 
 Decode a single cell from its wire format into a JS value.
 
-```ts
+```tsx
+import { decodeGristValue } from "grist-widget-sdk"
+
 decodeGristValue(1717599600, { type: "DateTime:UTC" })
 // → Date
 
 decodeGristValue(["L", 1, 2], { type: "RefList:Tasks" })
 // → marshalled list
 
-decodeGristValue(["E", "TypeError", "expected number"], col)
+decodeGristValue(["E", "TypeError", "expected number"], { type: "Numeric" })
 // → { kind: "error", type: "TypeError", message: "expected number" }
 ```
 
@@ -35,7 +45,9 @@ If `column` is omitted, the codec applies type-inference based on the tag.
 
 Inverse — turn a JS value into the wire format Grist expects.
 
-```ts
+```tsx
+import { encodeGristValue } from "grist-widget-sdk"
+
 encodeGristValue(new Date(), { type: "DateTime:UTC" }) // → epoch seconds
 encodeGristValue([1, 2], { type: "RefList:Tasks" })    // → ["L", 1, 2]
 ```
@@ -43,6 +55,14 @@ encodeGristValue([1, 2], { type: "RefList:Tasks" })    // → ["L", 1, 2]
 ### `isGristCellError(value)`
 
 True when `value` is a formula error, Grist's `["E", type, message?]` tuple.
+
+```tsx
+import { isGristCellError } from "grist-widget-sdk"
+
+function Total({ value }: { value: unknown }) {
+  return <span>{isGristCellError(value) ? "#ERROR" : String(value)}</span>
+}
+```
 
 ### `normalizeGristChoiceListEntries(widgetOptions)`
 
@@ -54,6 +74,13 @@ dropdown: `[{ value, label, fillColor?, textColor? }]`.
 A replica column's formula kind: `"computed"` (a formula column),
 `"trigger"` (a data column with a trigger formula), `"empty_slot"` or
 `"none"`.
+
+```tsx
+import { resolveGristFormulaKind } from "grist-widget-sdk"
+
+resolveGristFormulaKind({ type: "Numeric", isFormula: true, formula: "$Price * $Qty" }) // "computed"
+resolveGristFormulaKind({ type: "Text", isFormula: false })                              // "none"
+```
 
 ## Links
 
@@ -70,7 +97,9 @@ and other schemes, relative URLs, and credentials
 <a href={httpUrl(row.Website)}>{row.Name}</a>
 ```
 
-```ts
+```tsx
+import { httpUrl } from "grist-widget-sdk"
+
 httpUrl(" https://example.com/a b ") // "https://example.com/a%20b"
 httpUrl("javascript:alert(1)")       // undefined
 ```
@@ -84,6 +113,24 @@ httpUrl("javascript:alert(1)")       // undefined
 | `gristAttachmentCellValue(id)` | The cell value for one file, `["L", id]`. |
 | `gristAttachmentCellValues(ids)` | The cell value for several, `["L", ...ids]`. |
 | `mergeGristAttachmentCellValue(cell, newIds)` | The cell with `newIds` added, without duplicates. |
+
+```tsx
+import {
+  extractGristAttachmentId,
+  extractGristAttachmentIdsFromCell,
+  gristAttachmentCellValue,
+  gristAttachmentCellValues,
+  mergeGristAttachmentCellValue,
+} from "grist-widget-sdk"
+
+const cell = ["L", 12, 13]
+const ids = extractGristAttachmentIdsFromCell(cell)  // ["12", "13"]
+const cover = extractGristAttachmentId(cell)          // "12": the first file
+const one = gristAttachmentCellValue(14)              // ["L", 14]
+const both = gristAttachmentCellValues([12, 13])      // ["L", 12, 13], ready to write
+const more = mergeGristAttachmentCellValue(cell, [13, 14]) // ["L", 12, 13, 14]
+console.log(ids, cover, one, both, more)
+```
 
 Downloading and uploading need the document's REST API: `useGrist()`'s
 `getAttachmentUrl`, `fetchAttachmentBlob` and `uploadAttachment`.
@@ -105,12 +152,40 @@ import { gristAddColumnAction } from "grist-widget-sdk/actions"
 | `gristBulkAddRecordAction(tableId, values, rowIds?)` | `["BulkAddRecord", tableId, ids, { col: [...] }]`: Grist allocates the ids unless given |
 | `gristBulkUpdateRecordAction(tableId, rowIds, values)` | `["BulkUpdateRecord", tableId, rowIds, { col: [...] }]` |
 | `gristBulkRemoveRecordAction(tableId, rowIds)` | `["BulkRemoveRecord", tableId, rowIds]` |
-| `gristAddTableAction(tableId, tableInfo)` | `["AddTable", tableId, tableInfo]` |
+| `gristAddTableAction(tableId, columns)` | `["AddTable", tableId, columns]`, each column `{ id, type?, … }` |
 | `gristAddColumnAction(tableId, colId, colInfo)` | `["AddColumn", tableId, colId, colInfo]` |
 | `gristAddVisibleColumnAction(tableId, colId, colInfo)` | `["AddVisibleColumn", ...]`: also shows it in the section |
 | `gristModifyColumnAction(tableId, colId, colInfo)` | `["ModifyColumn", ...]` |
 | `gristRenameColumnAction(tableId, colId, newColId)` | `["RenameColumn", ...]` |
 | `gristRemoveColumnAction(tableId, colId)` | `["RemoveColumn", ...]` |
+
+```tsx
+import type { UseGristResult } from "grist-widget-sdk"
+import {
+  gristAddRecordAction,
+  gristAddTableAction,
+  gristAddVisibleColumnAction,
+  gristBulkAddRecordAction,
+  gristModifyColumnAction,
+  gristRemoveColumnAction,
+  gristRemoveRecordAction,
+  gristUpdateRecordAction,
+} from "grist-widget-sdk/actions"
+
+// One step of Grist's undo: the schema and the rows change together.
+async function reorganise(w: UseGristResult) {
+  await w.applyActions([
+    gristAddTableAction("Archive", [{ id: "Title", type: "Text" }]),
+    gristAddVisibleColumnAction("Tasks", "Owner", { type: "Text" }),
+    gristModifyColumnAction("Tasks", "Due", { type: "Date" }),
+    gristRemoveColumnAction("Tasks", "Legacy"),
+    gristAddRecordAction("Tasks", { Title: "Write the brief" }),
+    gristBulkAddRecordAction("Tasks", { Title: ["Review", "Ship"] }),
+    gristUpdateRecordAction("Tasks", 1, { Done: true }),
+    gristRemoveRecordAction("Tasks", 2),
+  ])
+}
+```
 
 For other actions, write the tuple: `applyActions` takes any
 `GristUserActionTuple`.

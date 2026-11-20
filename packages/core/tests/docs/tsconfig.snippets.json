@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2020",
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "lib": ["ES2020", "ES2022.Error", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "moduleResolution": "bundler",
     "jsx": "react-jsx",
@@ -9,6 +9,7 @@
     "noEmit": true,
     "skipLibCheck": true,
     "isolatedModules": true,
+    "resolveJsonModule": true,
     "types": ["react"],
     // Snippets are excerpts, not real modules -- an import a snippet's own
     // fragment doesn't happen to use, or a `w` the wrapper supplies that a
@@ -21,16 +22,18 @@
     // exists to catch (a real SDK symbol renamed/retyped out from under a
     // sample). `strict` stays on for everything else.
     "noImplicitAny": false,
-    // Resolve "grist-widget-sdk", "/app" and "/emulator/testing" to
+    // Resolve "grist-widget-sdk" and each of its entries to
     // this package's own source, the same public surface public-api.test.ts
     // pins -- never the published npm package, so a doc sample is checked
     // against the code about to ship, not last release's.
     "paths": {
-      "grist-widget-sdk": ["../../../src/sdk/index.ts"],
-      "grist-widget-sdk/app": ["../../../src/app/index.ts"],
-      "grist-widget-sdk/actions": ["../../../src/actions/index.ts"],
-      "grist-widget-sdk/emulator/testing": ["../../../src/emulator/testing/index.ts"]
+      "grist-widget-sdk": ["../../src/index.ts"],
+      "grist-widget-sdk/app": ["../../src/app/index.ts"],
+      "grist-widget-sdk/actions": ["../../src/actions/index.ts"],
+      "grist-widget-sdk/emulator": ["../../src/emulator/index.ts"],
+      "grist-widget-sdk/emulator/testing": ["../../src/emulator/testing/index.ts"]
     }
   },
-  "include": [".generated/**/*.tsx"]
+  // The SDK's own global declaration (window.grist), which its source needs.
+  "include": [".generated/**/*.tsx", "../../src/sdk/grist-global.d.ts"]
 }

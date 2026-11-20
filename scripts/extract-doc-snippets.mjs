@@ -145,9 +145,14 @@ function supplyFor(code, { forceInclude = [] } = {}) {
   return lines.join("\n")
 }
 
-/** Extracts every fenced \`\`\`tsx block from one .mdx file, with its fence info string (e.g. "no-check"). */
-function extractFromFile(absPath) {
-  const lines = readFileSync(absPath, "utf8").split("\n")
+/**
+ * Every fenced \`\`\`tsx block of a page's text, with its fence info string
+ * (e.g. "no-check"): the blocks this harness compiles, unless marked
+ * no-check. scripts/ci/api-coverage.mjs reads the docs through it, so the
+ * two can't disagree on what a compiled snippet is.
+ */
+export function extractBlocks(text) {
+  const lines = text.split("\n")
   const blocks = []
   let capturing = null
   let info = null
@@ -164,6 +169,10 @@ function extractFromFile(absPath) {
     }
   }
   return blocks
+}
+
+function extractFromFile(absPath) {
+  return extractBlocks(readFileSync(absPath, "utf8"))
 }
 
 function walkMdxFiles(dir) {
@@ -185,7 +194,7 @@ function slugFor(mdxPath, index) {
 }
 
 /** Wraps one extracted block as a standalone, type-checkable .tsx file's contents. */
-function renderSnippetFile(code) {
+export function renderSnippetFile(code) {
   const trimmed = code.trim()
   // "export const X = ..." / "export function X() {...}" is a real top-level
   // declaration too -- wrapping it inside the fragment function below would

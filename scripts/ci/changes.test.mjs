@@ -10,6 +10,11 @@ test("docs-only changes run no job (the gate still passes)", () => {
   assert.deepEqual(changedJobs(["TODO.md", "docs/planning/x.md", "README.md"]), none)
 })
 
+test("a docs page compiles its snippets: the core job runs, with the site's lint", () => {
+  assert.deepEqual(changedJobs(["apps/www/content/docs/sdk/api/helpers.mdx"]), { ...none, core: true, lint: true })
+  assert.equal(changedJobs(["scripts/extract-doc-snippets.mjs"]).core, true)
+})
+
 test("an SDK change runs its tests, the smokes, the real widgets and the catalog", () => {
   const jobs = changedJobs(["packages/core/src/sdk/index.ts"])
   assert.deepEqual(jobs, { ...none, core: true, external_install: true, create_widget: true, real_widgets: true, size: true, widgets: true })

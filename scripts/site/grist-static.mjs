@@ -24,8 +24,12 @@ export function integrityOf(buffer) {
   return `sha512-${createHash("sha512").update(buffer).digest("base64")}`
 }
 
-/** Copies grist-static's dist/ into `destDir`, from a cache dir if a previous build fetched it. */
-export async function copyGristStatic(destDir, { version = GRIST_STATIC_VERSION, cacheDir = join(tmpdir(), "grist-static-cache") } = {}) {
+/**
+ * grist-static `version`'s unpacked package folder, fetched from the npm
+ * registry and checked against its pinned integrity the first time, then
+ * reused from `cacheDir`.
+ */
+export async function gristStaticPackage(version = GRIST_STATIC_VERSION, { cacheDir = join(tmpdir(), "grist-static-cache") } = {}) {
   const expected = GRIST_STATIC_INTEGRITY[version]
   if (!expected) throw new Error(`grist-static ${version}: no pinned integrity in scripts/site/grist-static.mjs`)
   const unpacked = join(cacheDir, version)
@@ -47,7 +51,12 @@ export async function copyGristStatic(destDir, { version = GRIST_STATIC_VERSION,
       rmSync(scratch, { recursive: true, force: true })
     }
   }
-  const dist = join(unpacked, "package", "dist")
+  return join(unpacked, "package")
+}
+
+/** Copies grist-static's dist/ into `destDir`, from a cache dir if a previous build fetched it. */
+export async function copyGristStatic(destDir, { version = GRIST_STATIC_VERSION, cacheDir } = {}) {
+  const dist = join(await gristStaticPackage(version, { cacheDir }), "dist")
   cpSync(dist, destDir, {
     recursive: true,
     filter: (src) => src === dist || keepGristStaticFile(src.slice(dist.length + 1)),

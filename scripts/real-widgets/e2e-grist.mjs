@@ -142,18 +142,16 @@ function serve(dist) {
 export const failingViolations = (violations) => violations.filter((v) => v.impact === "serious" || v.impact === "critical")
 
 /**
- * Grist's plugin API, as this Grist's own production copy, so nothing leaves
- * the machine: where a built catalog widget loads it (grist-static's copy,
- * /grist-static/<version>/, on the page's own origin, ADR 0016), and where a
- * widget built before that loads it (docs.getgrist.com).
+ * Grist's plugin API where a widget built before ADR 0016's amendment loads
+ * it, docs.getgrist.com, served from this Grist's own copy so nothing leaves
+ * the machine. A catalog widget built now ships its own copy, which the
+ * check runs as it is: the file every document gets.
  */
 async function servePluginApi(context, gristUrl) {
-  const fulfill = async (route) => {
+  await context.route("https://docs.getgrist.com/grist-plugin-api.js", async (route) => {
     const r = await fetch(`${gristUrl}/grist-plugin-api.js`)
     await route.fulfill({ status: 200, contentType: "text/javascript", body: await r.text() })
-  }
-  await context.route("**/grist-static/*/grist-plugin-api.js", fulfill)
-  await context.route("https://docs.getgrist.com/grist-plugin-api.js", fulfill)
+  })
 }
 
 /** Wait until the widget's frame renders past GristBoundary: its state and the frame. */

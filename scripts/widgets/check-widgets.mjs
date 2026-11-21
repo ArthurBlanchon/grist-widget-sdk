@@ -27,6 +27,7 @@ import { fileURLToPath } from "node:url"
 
 import { jsGzipBytes } from "../ci/size-budget.mjs"
 import { parseCspExtra, PLUGIN_API_URL, specCsp } from "../../widgets/_shared/csp.mjs"
+import { checkPluginApi, PLUGIN_API_FILE } from "../../widgets/_shared/plugin-api.mjs"
 import { reportUrlFor } from "../../widgets/_shared/report.mjs"
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..")
@@ -56,9 +57,12 @@ export function checkSize(slug, spec, dir = join(WIDGETS_DIR, slug)) {
   if (!existsSync(dist)) return [`dist/ is missing: build the widget before --sizes`]
   const budget = Number(spec.data["bundle-kb"] ?? DEFAULT_BUNDLE_KB)
   if (!Number.isFinite(budget) || budget <= 0) return ["SPEC.md: bundle-kb must be a positive number"]
-  const kb = jsGzipBytes(dist) / 1000
+  // Grist's plugin API, shipped with every widget, isn't the widget's weight: the pinned file, or a problem.
+  const api = join(dist, PLUGIN_API_FILE)
+  const problems = existsSync(api) ? checkPluginApi(readFileSync(api)) : [`dist/${PLUGIN_API_FILE} is missing: the page's plugin API`]
+  const kb = jsGzipBytes(dist, [PLUGIN_API_FILE]) / 1000
   console.log(`  ${slug}: ${kb.toFixed(1)} KB of JavaScript (gzip), budget ${budget} KB`)
-  return kb > budget ? [`bundle: ${kb.toFixed(1)} KB gzipped, over its ${budget} KB budget`] : []
+  return kb > budget ? [...problems, `bundle: ${kb.toFixed(1)} KB gzipped, over its ${budget} KB budget`] : problems
 }
 
 /**
@@ -262,7 +266,7 @@ export function checkStatic(slug, dir = join(WIDGETS_DIR, slug)) {
   for (const s of SECTIONS) if (!have.includes(s)) problems.push(`SPEC.md: no "## ${s}" section`)
   // The Content Security Policy's additions (widgets/_shared/csp.mjs), and
   // the source page's only outside script, Grist's plugin API: the build
-  // points it at grist-static's copy on the widget's own origin.
+  // replaces it with the copy it ships (_shared/plugin-api.mjs).
   const csp = parseCspExtra(specCsp(readFileSync(specPath, "utf8")))
   problems.push(...csp.problems.map((p) => `SPEC.md: ${p}`))
   const html = existsSync(join(dir, "index.html")) ? readFileSync(join(dir, "index.html"), "utf8") : ""

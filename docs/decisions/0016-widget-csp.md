@@ -2,8 +2,8 @@
 
 - **Status:** accepted
 - **Date:** 2026-11-15
-- **Amended:** 2026-11-21: scripts from the widget's own origin only; the
-  plugin API is grist-static's production copy (below)
+- **Amended:** 2026-11-21: scripts from the widget's own files only; each
+  build ships a pinned copy of the plugin API (below)
 
 ## Context
 
@@ -23,16 +23,18 @@ host, `connect-src` the hosts the spec declares".
   headers handle framing (`scripts/site/headers.mjs`).
 - **The base:** scripts from the widget's own origin only. No inline
   script, no eval.
-- **The plugin API is a production build, served by the site.** The built
-  page loads `grist-static/<version>/grist-plugin-api.js` from its own
-  origin (`PLUGIN_API_BUILT`), the copy the site already serves for the
-  demo pages: grist-static's, pinned by version and integrity
-  (`scripts/site/grist-static.mjs`). The source `index.html` keeps
-  `https://docs.getgrist.com/grist-plugin-api.js` for `pnpm dev`, which
-  has no policy; the build replaces it, and fails without it. Styles its own
-  and inline. Images, fonts, media and frames its own, `data:` and `blob:`.
-  `connect-src 'self'`, `object-src 'none'`, `base-uri 'self'`,
-  `form-action 'none'`.
+- **The plugin API ships with the widget.** Each build writes
+  `grist-plugin-api-<version>.js` next to its page and points the page's
+  script at it (`_shared/plugin-api.mjs`, `_shared/vite.ts`): grist-static's
+  `grist-plugin-api.js`, a build without eval, pinned by the grist-static
+  version and by the file's own sha512. The tarball's integrity is checked
+  when it is fetched, the file's hash at every build and by
+  `check-widgets --sizes`, which leaves the file out of the widget's size
+  budget. The pin is the catalog's own; the demo pages' grist-static
+  version can move without it. A released version thus needs nothing from
+  anywhere else, at any path, on any host, for good (ADR 0013). The source
+  `index.html` keeps `https://docs.getgrist.com/grist-plugin-api.js` for
+  `pnpm dev`, which has no policy; a build without that tag fails.
 - **A spec adds what its widget needs,** in its front matter's `csp:`, to
   `connect-src`, `img-src`, `font-src`, `style-src`, `frame-src`,
   `media-src` or `object-src`: https hosts, or a scheme. Never to scripts.
@@ -62,11 +64,13 @@ host, `connect-src` the hosts the spec declares".
   as a webpack development build, which runs its modules through `eval`.
   The policy refused it, `window.grist` was never defined, and every
   widget showed "The Grist plugin did not load", in the demos and in real
-  Grist. A file the widget doesn't pin can change under it; grist-static's
-  is pinned, and moving to a newer one is a change of
-  `GRIST_STATIC_VERSION` that the real-Grist check sees.
-- The e2e check serves the local Grist's own plugin API in place of both
-  URLs, so it tests the widget, not a given copy of the file: the copy's
-  own check is the site's integrity pin.
+  Grist. A file the widget doesn't ship can change under it. A copy served
+  by the site, at a path that names a grist-static version, would have
+  broken every release the day the site moved to the next version: hence a
+  copy in each release.
+- Each release carries the 842 KB file (165 KB gzipped), the weight
+  docs.getgrist.com's file had before. Moving to a newer copy changes the
+  pin and releases every widget; the real-Grist check runs the shipped
+  file, so it sees the change.
 - The policy reaches the `/dev/` channels from `main`; each widget carries
   it from its next release.

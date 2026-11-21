@@ -1,16 +1,16 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 
-import { BASE, parseCspExtra, PLUGIN_API_BUILT, specCsp, widgetCsp } from "../../widgets/_shared/csp.mjs"
-import { GRIST_STATIC_VERSION } from "../../packages/create-grist-widget/src/demo-page.mjs"
+import { BASE, parseCspExtra, specCsp, widgetCsp } from "../../widgets/_shared/csp.mjs"
+import { checkPluginApi, PLUGIN_API_FILE, PLUGIN_API_GRIST_STATIC } from "../../widgets/_shared/plugin-api.mjs"
+import { GRIST_STATIC_INTEGRITY } from "../site/grist-static.mjs"
 import { listWidgets, parseFrontMatter, WIDGETS_DIR } from "./check-widgets.mjs"
 
 const directives = (policy) => Object.fromEntries(policy.split("; ").map((d) => [d.split(" ")[0], d.split(" ").slice(1)]))
 
-test("the base runs only the widget's own scripts and Grist's plugin API", () => {
+test("the base runs only the widget's own scripts", () => {
   const p = directives(widgetCsp())
-  // The plugin API file itself, not its host, which serves much else.
-  // No outside script, Grist's plugin API included: a built page loads grist-static's copy, on its own origin.
+  // No outside script, Grist's plugin API included: the build ships its own copy (_shared/plugin-api.mjs).
   assert.deepEqual(p["script-src"], ["'self'"])
   assert.deepEqual(p["object-src"], ["'none'"])
   assert.deepEqual(p["connect-src"], ["'self'"])
@@ -53,11 +53,8 @@ test("the build and the check read csp: the same way", () => {
   assert.equal(specCsp("# no front matter"), "")
 })
 
-test("a built page loads the plugin API from grist-static's production copy, three levels up from /widgets/<slug>/<channel>/", () => {
-  assert.equal(PLUGIN_API_BUILT, `../../../grist-static/${GRIST_STATIC_VERSION}/grist-plugin-api.js`)
-  assert.equal(new URL(PLUGIN_API_BUILT, "https://gristwidgets.com/widgets/kanban-board/v0/").href, `https://gristwidgets.com/grist-static/${GRIST_STATIC_VERSION}/grist-plugin-api.js`)
-  assert.equal(
-    new URL(PLUGIN_API_BUILT, "https://arthurblanchon.github.io/grist-widget-sdk/widgets/map/0.3.1/").href,
-    `https://arthurblanchon.github.io/grist-widget-sdk/grist-static/${GRIST_STATIC_VERSION}/grist-plugin-api.js`
-  )
+test("the shipped plugin API is pinned: a grist-static version with its integrity, and the file's own hash", () => {
+  assert.ok(GRIST_STATIC_INTEGRITY[PLUGIN_API_GRIST_STATIC], `grist-static ${PLUGIN_API_GRIST_STATIC} has no pinned integrity`)
+  assert.equal(PLUGIN_API_FILE, `grist-plugin-api-${PLUGIN_API_GRIST_STATIC}.js`)
+  assert.match(checkPluginApi(Buffer.from("grist = {}"))[0], /pinned sha512-/)
 })

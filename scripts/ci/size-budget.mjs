@@ -15,13 +15,14 @@ import { gzipSync } from "node:zlib"
 /** Measured at 93.7 KB after SDK 0.4.0 (no zod); about 5 % of headroom. */
 export const SIZE_BUDGET_GZIP_BYTES = 100_000
 
-export function jsGzipBytes(dir) {
+/** The gzipped size of every .js file under `dir`, but those named in `skip`. */
+export function jsGzipBytes(dir, skip = []) {
   let total = 0
   const walk = (d) => {
     for (const e of readdirSync(d, { withFileTypes: true })) {
       const p = join(d, e.name)
       if (e.isDirectory()) walk(p)
-      else if (e.name.endsWith(".js")) total += gzipSync(readFileSync(p), { level: 9 }).length
+      else if (e.name.endsWith(".js") && !skip.includes(e.name)) total += gzipSync(readFileSync(p), { level: 9 }).length
     }
   }
   walk(dir)

@@ -1,7 +1,7 @@
 {
   "name": "@grist-widgets/map",
   "private": true,
-  "version": "0.3.0",
+  "version": "0.3.1",
   "type": "module",
   "description": "Rows as points by their coordinates, coloured by category and clustered; or countries coloured by a value. Clicking a point selects its row.",
   "license": "MIT",

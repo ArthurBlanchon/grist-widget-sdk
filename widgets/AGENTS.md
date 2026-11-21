@@ -60,8 +60,10 @@ the first).
   attachment it fetched, a `mailto:`) disables that line with its reason,
   for review.
 - **A Content Security Policy in every page** ([ADR 0016](../docs/decisions/0016-widget-csp.md)),
-  written by the build (`_shared/csp.mjs`): the widget's own scripts and
-  Grist's plugin API run, nothing else. A widget that loads from elsewhere
+  written by the build (`_shared/csp.mjs`): scripts from the widget's own
+  origin only. The build points the page's plugin API script at
+  grist-static's production copy, which the site serves; `index.html`
+  keeps docs.getgrist.com's for `pnpm dev`. A widget that loads from elsewhere
   says so in its spec's front matter, `csp:` (`connect-src https://host`;
   `img-src`, `font-src`, `style-src`, `frame-src`, `media-src`,
   `object-src`), never scripts or eval. `grist` stands for the document's

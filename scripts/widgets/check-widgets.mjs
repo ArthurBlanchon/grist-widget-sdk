@@ -261,7 +261,8 @@ export function checkStatic(slug, dir = join(WIDGETS_DIR, slug)) {
   const have = sections(body)
   for (const s of SECTIONS) if (!have.includes(s)) problems.push(`SPEC.md: no "## ${s}" section`)
   // The Content Security Policy's additions (widgets/_shared/csp.mjs), and
-  // the page's only outside script, which the policy allows: Grist's plugin API.
+  // the source page's only outside script, Grist's plugin API: the build
+  // points it at grist-static's copy on the widget's own origin.
   const csp = parseCspExtra(specCsp(readFileSync(specPath, "utf8")))
   problems.push(...csp.problems.map((p) => `SPEC.md: ${p}`))
   const html = existsSync(join(dir, "index.html")) ? readFileSync(join(dir, "index.html"), "utf8") : ""

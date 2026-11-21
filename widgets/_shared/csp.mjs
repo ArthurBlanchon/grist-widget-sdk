@@ -2,8 +2,11 @@
 // <meta> the build writes into its page (_shared/vite.ts), from a strict
 // base and what the widget's spec adds (its front matter's `csp:`).
 //
-// The base: the widget's own scripts and Grist's plugin API, nothing else
-// runs; styles its own and inline (React's style attributes); images, fonts,
+// The base: the widget's own origin's scripts, nothing else runs, Grist's
+// plugin API included: the build points the page at the production copy
+// grist-static ships, which the site serves (/grist-static/<version>/), not
+// at docs.getgrist.com, whose file Grist may redeploy at any time (it once
+// served a development build that runs on eval, which this policy refuses); styles its own and inline (React's style attributes); images, fonts,
 // media and frames its own, data: and blob: (files it fetched and shows);
 // no plugin object, no base change, no form posting.
 //
@@ -15,12 +18,21 @@
 // are refused there). Scripts, eval and inline scripts can't be added.
 // ADR 0016.
 
-/** Grist's plugin API: the one outside script a widget's page loads, by its exact URL. */
+import { GRIST_STATIC_VERSION } from "../../packages/create-grist-widget/src/demo-page.mjs"
+
+/** Grist's plugin API as a widget's source page loads it, for `pnpm dev`; a build replaces it. */
 export const PLUGIN_API_URL = "https://docs.getgrist.com/grist-plugin-api.js"
+
+/**
+ * Where a built page loads the plugin API: grist-static's production copy, on
+ * the widget's own origin. Relative to the page, which the site serves at
+ * /widgets/<slug>/<channel>/ on both origins (ADR 0013).
+ */
+export const PLUGIN_API_BUILT = `../../../grist-static/${GRIST_STATIC_VERSION}/grist-plugin-api.js`
 
 export const BASE = {
   "default-src": ["'self'"],
-  "script-src": ["'self'", PLUGIN_API_URL],
+  "script-src": ["'self'"],
   "style-src": ["'self'", "'unsafe-inline'"],
   "img-src": ["'self'", "data:", "blob:"],
   "font-src": ["'self'", "data:"],

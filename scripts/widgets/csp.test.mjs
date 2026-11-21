@@ -1,7 +1,8 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 
-import { BASE, parseCspExtra, specCsp, widgetCsp } from "../../widgets/_shared/csp.mjs"
+import { BASE, parseCspExtra, PLUGIN_API_BUILT, specCsp, widgetCsp } from "../../widgets/_shared/csp.mjs"
+import { GRIST_STATIC_VERSION } from "../../packages/create-grist-widget/src/demo-page.mjs"
 import { listWidgets, parseFrontMatter, WIDGETS_DIR } from "./check-widgets.mjs"
 
 const directives = (policy) => Object.fromEntries(policy.split("; ").map((d) => [d.split(" ")[0], d.split(" ").slice(1)]))
@@ -9,7 +10,8 @@ const directives = (policy) => Object.fromEntries(policy.split("; ").map((d) => 
 test("the base runs only the widget's own scripts and Grist's plugin API", () => {
   const p = directives(widgetCsp())
   // The plugin API file itself, not its host, which serves much else.
-  assert.deepEqual(p["script-src"], ["'self'", "https://docs.getgrist.com/grist-plugin-api.js"])
+  // No outside script, Grist's plugin API included: a built page loads grist-static's copy, on its own origin.
+  assert.deepEqual(p["script-src"], ["'self'"])
   assert.deepEqual(p["object-src"], ["'none'"])
   assert.deepEqual(p["connect-src"], ["'self'"])
   assert.ok(!widgetCsp().includes("unsafe-eval"))
@@ -49,4 +51,13 @@ test("the build and the check read csp: the same way", () => {
   // An empty value is empty, not the next line's key.
   assert.equal(specCsp("---\ncsp:\naccess: full\n---\n"), "")
   assert.equal(specCsp("# no front matter"), "")
+})
+
+test("a built page loads the plugin API from grist-static's production copy, three levels up from /widgets/<slug>/<channel>/", () => {
+  assert.equal(PLUGIN_API_BUILT, `../../../grist-static/${GRIST_STATIC_VERSION}/grist-plugin-api.js`)
+  assert.equal(new URL(PLUGIN_API_BUILT, "https://gristwidgets.com/widgets/kanban-board/v0/").href, `https://gristwidgets.com/grist-static/${GRIST_STATIC_VERSION}/grist-plugin-api.js`)
+  assert.equal(
+    new URL(PLUGIN_API_BUILT, "https://arthurblanchon.github.io/grist-widget-sdk/widgets/map/0.3.1/").href,
+    `https://arthurblanchon.github.io/grist-widget-sdk/grist-static/${GRIST_STATIC_VERSION}/grist-plugin-api.js`
+  )
 })

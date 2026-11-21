@@ -13,7 +13,7 @@ import tailwindcss from "@tailwindcss/vite"
 import react from "@vitejs/plugin-react"
 import type { Plugin, UserConfig } from "vite"
 
-import { parseCspExtra, specCsp, widgetCsp } from "./csp.mjs"
+import { parseCspExtra, PLUGIN_API_BUILT, PLUGIN_API_URL, specCsp, widgetCsp } from "./csp.mjs"
 
 const shared = import.meta.dirname
 
@@ -134,6 +134,8 @@ export function licencesPlugin(): Plugin {
  * The widget's Content Security Policy, as a <meta> at the top of its built
  * page (_shared/csp.mjs): the strict base, with what its SPEC.md's `csp:`
  * front matter adds. Builds only: the dev server injects inline scripts.
+ * The built page also loads the plugin API from grist-static's production
+ * copy on its own origin (PLUGIN_API_BUILT), not from docs.getgrist.com.
  */
 export function cspPlugin(widgetDir: string): Plugin {
   return {
@@ -149,7 +151,9 @@ export function cspPlugin(widgetDir: string): Plugin {
         // Right after <meta charset>, which must stay early; before every script.
         const charset = /<meta charset="[^"]*"\s*\/?>/i
         if (!charset.test(html)) throw new Error(`${widgetDir}/index.html: no <meta charset> to put the policy after`)
-        return html.replace(charset, (m) => `${m}\n    ${meta}`)
+        const pluginApi = `<script src="${PLUGIN_API_URL}"></script>`
+        if (!html.includes(pluginApi)) throw new Error(`${widgetDir}/index.html: no ${pluginApi} to point at grist-static's copy`)
+        return html.replace(pluginApi, `<script src="${PLUGIN_API_BUILT}"></script>`).replace(charset, (m) => `${m}\n    ${meta}`)
       },
     },
   }

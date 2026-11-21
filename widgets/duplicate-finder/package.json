@@ -1,7 +1,7 @@
 {
   "name": "@grist-widgets/duplicate-finder",
   "private": true,
-  "version": "0.3.0",
+  "version": "0.3.1",
   "type": "module",
   "description": "Find the rows that are the same on key columns, exactly or approximately, and merge them; with a data-quality report per column.",
   "license": "MIT",

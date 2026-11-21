@@ -151,7 +151,7 @@ failing on it: a change that looks wrong there is for the review.
 | The theme | `_shared/theme.css` |
 | Translations | `_shared/i18n.ts` |
 | Vite and Vitest configuration | `_shared/vite.ts` |
-| Grist's plugin API each build ships, pinned (ADR 0016) | `_shared/plugin-api.mjs` |
+| Grist's plugin API each build ships, pinned (ADR 0016), and the committed copy | `_shared/plugin-api.mjs`, `_shared/plugin-api/` |
 | ESLint configuration | `_shared/eslint.config.js` |
 | shadcn configuration | `_shared/components.json` |
 | The checker | `../scripts/widgets/check-widgets.mjs` |

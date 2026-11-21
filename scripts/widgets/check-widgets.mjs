@@ -273,6 +273,8 @@ export function checkStatic(slug, dir = join(WIDGETS_DIR, slug)) {
   for (const m of html.matchAll(/<script[^>]*\bsrc=["']([^"']+)["']/g)) {
     if (/^(https?:)?\/\//.test(m[1]) && m[1] !== PLUGIN_API_URL) problems.push(`index.html: a script from ${m[1]}, which the policy refuses`)
   }
+  const pluginApiTag = `<script src="${PLUGIN_API_URL}"></script>`
+  if (html && html.split(pluginApiTag).length !== 2) problems.push(`index.html: needs ${pluginApiTag} once, exactly, for the build to replace it`)
   // What the widget's code calls needs its csp: (ADR 0016), or it fails only in production.
   const code = srcFilesOf(dir).filter((f) => !/\.test\.[tj]sx?$/.test(f)).map((f) => readFileSync(f, "utf8")).join("\n")
   const connect = csp.extra["connect-src"] ?? []

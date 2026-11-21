@@ -50,8 +50,14 @@ published nor shipped to a widget.
 - **Grist access tokens**: `useGrist().fetchWithAuth()` only ever sends the
   document's access token to the Grist instance that issued it; an absolute
   URL to another origin throws.
-- **The Grist plugin API** (`window.grist`) is loaded, as Grist documents
-  it, from `https://docs.getgrist.com/grist-plugin-api.js`. It has no
-  subresource-integrity hash on purpose: Grist updates that file in place
-  with each release, so a pinned hash would break every widget. A widget
-  already runs inside Grist, so this adds no party it doesn't trust.
+- **The Grist plugin API** (`window.grist`):
+  - A widget made from the template loads it, as Grist documents it, from
+    `https://docs.getgrist.com/grist-plugin-api.js`, with no
+    subresource-integrity hash: Grist updates that file in place with each
+    release, so a pinned hash would break the widget. A widget already
+    runs inside Grist, so this adds no party it doesn't trust.
+  - A catalog widget ships its own copy, next to its page: grist-static's
+    build of the file, committed in `widgets/_shared/plugin-api/` and
+    pinned by its sha512 (ADR 0016). Its policy runs no script from
+    anywhere else, and no eval, which docs.getgrist.com's development
+    build needs.

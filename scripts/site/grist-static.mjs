@@ -7,7 +7,7 @@
 
 import { execFileSync } from "node:child_process"
 import { createHash } from "node:crypto"
-import { cpSync, existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs"
+import { cpSync, existsSync, mkdirSync, mkdtempSync, renameSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 
@@ -33,6 +33,8 @@ export async function gristStaticPackage(version = GRIST_STATIC_VERSION, { cache
   const expected = GRIST_STATIC_INTEGRITY[version]
   if (!expected) throw new Error(`grist-static ${version}: no pinned integrity in scripts/site/grist-static.mjs`)
   const unpacked = join(cacheDir, version)
+  // Unpacked into a folder of its own, then renamed into place: a folder at
+  // `unpacked` is complete, whichever of several builds made it.
   if (!existsSync(join(unpacked, "package", "dist", "latest.js"))) {
     const url = `https://registry.npmjs.org/grist-static/-/grist-static-${version}.tgz`
     console.log(`Fetching ${url}`)
@@ -41,12 +43,20 @@ export async function gristStaticPackage(version = GRIST_STATIC_VERSION, { cache
     const tarball = Buffer.from(await res.arrayBuffer())
     const actual = integrityOf(tarball)
     if (actual !== expected) throw new Error(`grist-static ${version}: integrity ${actual}, expected ${expected}. Refusing to publish it.`)
-    const scratch = mkdtempSync(join(tmpdir(), "grist-static-"))
+    mkdirSync(cacheDir, { recursive: true })
+    const scratch = mkdtempSync(join(cacheDir, `.${version}-`))
     try {
       writeFileSync(join(scratch, "pkg.tgz"), tarball)
-      rmSync(unpacked, { recursive: true, force: true })
-      mkdirSync(unpacked, { recursive: true })
-      execFileSync("tar", ["-xzf", join(scratch, "pkg.tgz"), "-C", unpacked])
+      execFileSync("tar", ["-xzf", join(scratch, "pkg.tgz"), "-C", scratch])
+      rmSync(join(scratch, "pkg.tgz"))
+      if (!existsSync(join(unpacked, "package", "dist", "latest.js"))) {
+        rmSync(unpacked, { recursive: true, force: true })
+        try {
+          renameSync(scratch, unpacked)
+        } catch (error) {
+          if (!existsSync(join(unpacked, "package", "dist", "latest.js"))) throw error
+        }
+      }
     } finally {
       rmSync(scratch, { recursive: true, force: true })
     }

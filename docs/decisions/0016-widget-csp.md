@@ -26,15 +26,17 @@ host, `connect-src` the hosts the spec declares".
 - **The plugin API ships with the widget.** Each build writes
   `grist-plugin-api-<version>.js` next to its page and points the page's
   script at it (`_shared/plugin-api.mjs`, `_shared/vite.ts`): grist-static's
-  `grist-plugin-api.js`, a build without eval, pinned by the grist-static
-  version and by the file's own sha512. The tarball's integrity is checked
-  when it is fetched, the file's hash at every build and by
-  `check-widgets --sizes`, which leaves the file out of the widget's size
-  budget. The pin is the catalog's own; the demo pages' grist-static
-  version can move without it. A released version thus needs nothing from
-  anywhere else, at any path, on any host, for good (ADR 0013). The source
-  `index.html` keeps `https://docs.getgrist.com/grist-plugin-api.js` for
-  `pnpm dev`, which has no policy; a build without that tag fails.
+  `grist-plugin-api.js`, a build without eval, committed in
+  `widgets/_shared/plugin-api/` with grist-static's licence, so a build
+  needs no network. It is pinned by its sha512, checked at every build and
+  by `check-widgets --sizes`, which leaves it out of the widget's size
+  budget; a test checks it against grist-static's npm tarball, whose
+  integrity is pinned. The pin is the catalog's own; the demo pages'
+  grist-static version can move without it. A released version thus needs
+  nothing from anywhere else, at any path, on any host (ADR 0013). The
+  source `index.html` keeps `https://docs.getgrist.com/grist-plugin-api.js`
+  once, for `pnpm dev`, which has no policy; `check-widgets` and the build
+  fail without it.
 - **A spec adds what its widget needs,** in its front matter's `csp:`, to
   `connect-src`, `img-src`, `font-src`, `style-src`, `frame-src`,
   `media-src` or `object-src`: https hosts, or a scheme. Never to scripts.
@@ -72,5 +74,12 @@ host, `connect-src` the hosts the spec declares".
   docs.getgrist.com's file had before. Moving to a newer copy changes the
   pin and releases every widget; the real-Grist check runs the shipped
   file, so it sees the change.
+- A released version speaks the plugin API of its copy to every later
+  Grist, where docs.getgrist.com's file moved with Grist. That holds while
+  Grist keeps its plugin protocol compatible, as it means to; the weekly
+  run against the latest Grist (`widgets-latest-grist.yml`) sees a break,
+  and a new copy reaches the widgets in their next release, not the
+  versions already out. Newer calls (`reportWidgetErrors`) wait for a copy
+  that has them.
 - The policy reaches the `/dev/` channels from `main`; each widget carries
   it from its next release.

@@ -2,8 +2,11 @@ import assert from "node:assert/strict"
 import { test } from "node:test"
 
 import { BASE, parseCspExtra, specCsp, widgetCsp } from "../../widgets/_shared/csp.mjs"
-import { checkPluginApi, PLUGIN_API_FILE, PLUGIN_API_GRIST_STATIC } from "../../widgets/_shared/plugin-api.mjs"
-import { GRIST_STATIC_INTEGRITY } from "../site/grist-static.mjs"
+import { readFileSync } from "node:fs"
+import { join } from "node:path"
+
+import { checkPluginApi, PLUGIN_API_DIR, PLUGIN_API_FILE, PLUGIN_API_GRIST_STATIC, pinnedPluginApi } from "../../widgets/_shared/plugin-api.mjs"
+import { GRIST_STATIC_INTEGRITY, gristStaticPackage } from "../site/grist-static.mjs"
 import { listWidgets, parseFrontMatter, WIDGETS_DIR } from "./check-widgets.mjs"
 
 const directives = (policy) => Object.fromEntries(policy.split("; ").map((d) => [d.split(" ")[0], d.split(" ").slice(1)]))
@@ -53,8 +56,25 @@ test("the build and the check read csp: the same way", () => {
   assert.equal(specCsp("# no front matter"), "")
 })
 
-test("the shipped plugin API is pinned: a grist-static version with its integrity, and the file's own hash", () => {
-  assert.ok(GRIST_STATIC_INTEGRITY[PLUGIN_API_GRIST_STATIC], `grist-static ${PLUGIN_API_GRIST_STATIC} has no pinned integrity`)
+test("the shipped plugin API is pinned: the committed file matches its sha512", () => {
   assert.equal(PLUGIN_API_FILE, `grist-plugin-api-${PLUGIN_API_GRIST_STATIC}.js`)
-  assert.match(checkPluginApi(Buffer.from("grist = {}"))[0], /pinned sha512-/)
+  assert.equal(pinnedPluginApi().license, "Apache-2.0")
+  assert.match(checkPluginApi(Buffer.from("grist = {}"))[0], /not the pinned file/)
+})
+
+// The committed copy and licence are grist-static's, from its npm tarball
+// (integrity-checked). Needs the registry: always run in CI, skipped offline elsewhere.
+test("the committed plugin API and licence are grist-static's own", async (t) => {
+  assert.ok(GRIST_STATIC_INTEGRITY[PLUGIN_API_GRIST_STATIC], `grist-static ${PLUGIN_API_GRIST_STATIC} has no pinned integrity`)
+  let pkg
+  try {
+    pkg = await gristStaticPackage(PLUGIN_API_GRIST_STATIC)
+  } catch (error) {
+    if (process.env.CI || !/fetch failed|ENOTFOUND|EAI_AGAIN|answered/.test(String(error?.message ?? error))) throw error
+    t.skip(`registry unreachable: ${error.message}`)
+    return
+  }
+  assert.ok(readFileSync(join(pkg, "dist", "grist-plugin-api.js")).equals(readFileSync(join(PLUGIN_API_DIR, PLUGIN_API_FILE))))
+  assert.equal(readFileSync(join(pkg, "LICENSE.txt"), "utf8"), readFileSync(join(PLUGIN_API_DIR, "LICENSE.txt"), "utf8"))
+  assert.equal(JSON.parse(readFileSync(join(pkg, "package.json"), "utf8")).license, "Apache-2.0")
 })

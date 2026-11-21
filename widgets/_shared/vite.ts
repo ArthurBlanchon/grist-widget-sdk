@@ -60,6 +60,9 @@ function noticeText(dir: string): string {
   return files.map((f) => readFileSync(path.join(dir, f), "utf8").trim()).join("\n\n")
 }
 
+/** A third-party file the build adds itself, outside the module graph (the plugin API). */
+type ThirdParty = { name: string; version: string; license: string; notice: string }
+
 /**
  * Two files, for every third-party package whose code the build ships:
  * - dist/licenses.json: name, version and licence (SPDX), which
@@ -75,9 +78,6 @@ function noticeText(dir: string): string {
  * repository's), and code a package vendors in its own files, which is
  * that package's to declare.
  */
-/** A third-party file the build adds itself, outside the module graph (the plugin API). */
-type ThirdParty = { name: string; version: string; license: string; notice: string }
-
 export function licencesPlugin(added: () => ThirdParty[] = () => []): Plugin {
   return {
     name: "grist-widgets:licences",
@@ -168,12 +168,12 @@ export function cspPlugin(widgetDir: string): Plugin {
  * docs.getgrist.com's for `pnpm dev`; a build without that tag fails.
  */
 export function pluginApiPlugin(widgetDir: string): Plugin & { thirdParty: () => ThirdParty[] } {
-  let pinned: Awaited<ReturnType<typeof pinnedPluginApi>> | null = null
+  let pinned: ReturnType<typeof pinnedPluginApi> | null = null
   return {
     name: "grist-widgets:plugin-api",
     apply: "build",
-    async buildStart() {
-      pinned = await pinnedPluginApi()
+    buildStart() {
+      pinned = pinnedPluginApi()
     },
     transformIndexHtml: {
       // After Vite's own pass, which leaves an outside script as it is.

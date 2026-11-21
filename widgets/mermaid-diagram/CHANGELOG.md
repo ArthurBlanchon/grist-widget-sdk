@@ -2,6 +2,10 @@
 
 What changed in each version, for the people using the widget. Newest first.
 
+## 0.3.2 (2026-11-21)
+
+- The widget loads again: Grist started serving its plugin script as a development build that this widget's security policy refuses, which left every copy on "The Grist plugin did not load". The widget now ships its own copy of Grist's plugin script, a fixed version without that problem, and runs no script from anywhere else.
+
 ## 0.3.1 (2026-11-16)
 
 - A flowchart built from more rows than a diagram can hold (500 arrows) draws the first ones and says how many of how many are drawn, instead of an error about a setting nobody using the widget can change.

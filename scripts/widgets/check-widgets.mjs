@@ -27,6 +27,7 @@ import { fileURLToPath } from "node:url"
 
 import { jsGzipBytes } from "../ci/size-budget.mjs"
 import { parseCspExtra, PLUGIN_API_URL, specCsp } from "../../widgets/_shared/csp.mjs"
+import { checkPluginApi, PLUGIN_API_FILE } from "../../widgets/_shared/plugin-api.mjs"
 import { reportUrlFor } from "../../widgets/_shared/report.mjs"
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..")
@@ -56,9 +57,12 @@ export function checkSize(slug, spec, dir = join(WIDGETS_DIR, slug)) {
   if (!existsSync(dist)) return [`dist/ is missing: build the widget before --sizes`]
   const budget = Number(spec.data["bundle-kb"] ?? DEFAULT_BUNDLE_KB)
   if (!Number.isFinite(budget) || budget <= 0) return ["SPEC.md: bundle-kb must be a positive number"]
-  const kb = jsGzipBytes(dist) / 1000
+  // Grist's plugin API, shipped with every widget, isn't the widget's weight: the pinned file, or a problem.
+  const api = join(dist, PLUGIN_API_FILE)
+  const problems = existsSync(api) ? checkPluginApi(readFileSync(api)) : [`dist/${PLUGIN_API_FILE} is missing: the page's plugin API`]
+  const kb = jsGzipBytes(dist, [PLUGIN_API_FILE]) / 1000
   console.log(`  ${slug}: ${kb.toFixed(1)} KB of JavaScript (gzip), budget ${budget} KB`)
-  return kb > budget ? [`bundle: ${kb.toFixed(1)} KB gzipped, over its ${budget} KB budget`] : []
+  return kb > budget ? [...problems, `bundle: ${kb.toFixed(1)} KB gzipped, over its ${budget} KB budget`] : problems
 }
 
 /**
@@ -261,13 +265,16 @@ export function checkStatic(slug, dir = join(WIDGETS_DIR, slug)) {
   const have = sections(body)
   for (const s of SECTIONS) if (!have.includes(s)) problems.push(`SPEC.md: no "## ${s}" section`)
   // The Content Security Policy's additions (widgets/_shared/csp.mjs), and
-  // the page's only outside script, which the policy allows: Grist's plugin API.
+  // the source page's only outside script, Grist's plugin API: the build
+  // replaces it with the copy it ships (_shared/plugin-api.mjs).
   const csp = parseCspExtra(specCsp(readFileSync(specPath, "utf8")))
   problems.push(...csp.problems.map((p) => `SPEC.md: ${p}`))
   const html = existsSync(join(dir, "index.html")) ? readFileSync(join(dir, "index.html"), "utf8") : ""
   for (const m of html.matchAll(/<script[^>]*\bsrc=["']([^"']+)["']/g)) {
     if (/^(https?:)?\/\//.test(m[1]) && m[1] !== PLUGIN_API_URL) problems.push(`index.html: a script from ${m[1]}, which the policy refuses`)
   }
+  const pluginApiTag = `<script src="${PLUGIN_API_URL}"></script>`
+  if (html && html.split(pluginApiTag).length !== 2) problems.push(`index.html: needs ${pluginApiTag} once, exactly, for the build to replace it`)
   // What the widget's code calls needs its csp: (ADR 0016), or it fails only in production.
   const code = srcFilesOf(dir).filter((f) => !/\.test\.[tj]sx?$/.test(f)).map((f) => readFileSync(f, "utf8")).join("\n")
   const connect = csp.extra["connect-src"] ?? []

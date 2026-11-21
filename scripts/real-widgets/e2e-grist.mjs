@@ -141,6 +141,19 @@ function serve(dist) {
 /** The axe-core violations that fail the check: serious or critical, WCAG 2 A and AA. */
 export const failingViolations = (violations) => violations.filter((v) => v.impact === "serious" || v.impact === "critical")
 
+/**
+ * Grist's plugin API where a widget built before ADR 0016's amendment loads
+ * it, docs.getgrist.com, served from this Grist's own copy so nothing leaves
+ * the machine. A catalog widget built now ships its own copy, which the
+ * check runs as it is: the file every document gets.
+ */
+async function servePluginApi(context, gristUrl) {
+  await context.route("https://docs.getgrist.com/grist-plugin-api.js", async (route) => {
+    const r = await fetch(`${gristUrl}/grist-plugin-api.js`)
+    await route.fulfill({ status: 200, contentType: "text/javascript", body: await r.text() })
+  })
+}
+
 /** Wait until the widget's frame renders past GristBoundary: its state and the frame. */
 async function waitRendered(page, origin, timeout) {
   let state = "no widget frame"
@@ -355,11 +368,7 @@ async function checkWidget({ browser, gristUrl, api, wsId, widgetDir, outDir, ti
       console.error(`[csp-violation] ${e.effectiveDirective} refused ${e.blockedURI || "inline"} in ${location.href}`)
     })
   }, origin)
-  // Widgets load the plugin API from docs.getgrist.com: serve this Grist's own copy, so nothing leaves the machine.
-  await context.route("https://docs.getgrist.com/grist-plugin-api.js", async (route) => {
-    const r = await fetch(`${gristUrl}/grist-plugin-api.js`)
-    await route.fulfill({ status: 200, contentType: "text/javascript", body: await r.text() })
-  })
+  await servePluginApi(context, gristUrl)
   const uncaught = []
   try {
     await context.request.get(`${gristUrl}/login`)
@@ -493,10 +502,7 @@ async function compareWithRelease({ browser, gristUrl, api, wsId, name, options,
   const context = await browser.newContext({ viewport: { width: 1400, height: 900 } })
   try {
     await context.clock.setFixedTime(COMPARISON_CLOCK)
-    await context.route("https://docs.getgrist.com/grist-plugin-api.js", async (route) => {
-      const r = await fetch(`${gristUrl}/grist-plugin-api.js`)
-      await route.fulfill({ status: 200, contentType: "text/javascript", body: await r.text() })
-    })
+    await servePluginApi(context, gristUrl)
     await context.request.get(`${gristUrl}/login`)
     const origin = `http://127.0.0.1:${server.address().port}`
     const { docId, viewId } = await createDocument(api, wsId, `${name} ${released.version}`, options, `${origin}/${name}/dev/`, demo)

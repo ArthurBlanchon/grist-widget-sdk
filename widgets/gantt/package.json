@@ -1,7 +1,7 @@
 {
   "name": "@grist-widgets/gantt",
   "private": true,
-  "version": "0.3.0",
+  "version": "0.3.1",
   "type": "module",
   "description": "Tasks on a timeline, grouped and in rows; drag a bar to move it, or its ends to change its dates.",
   "license": "MIT",

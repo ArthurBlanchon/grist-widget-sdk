@@ -2,6 +2,10 @@
 
 What changed in each version, for the people using the widget. Newest first.
 
+## 0.3.2 (2026-11-21)
+
+- The widget loads again: Grist started serving its plugin script as a development build that this widget's security policy refuses, which left every copy on "The Grist plugin did not load". The widget now ships its own copy of Grist's plugin script, a fixed version without that problem, and runs no script from anywhere else.
+
 ## 0.3.1 (2026-11-16)
 
 - Moving a card with the arrow keys keeps the keyboard on it in its new column, and a screen reader says where it went: before, the focus jumped back to the top of the board.

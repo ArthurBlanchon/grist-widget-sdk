@@ -60,8 +60,10 @@ the first).
   attachment it fetched, a `mailto:`) disables that line with its reason,
   for review.
 - **A Content Security Policy in every page** ([ADR 0016](../docs/decisions/0016-widget-csp.md)),
-  written by the build (`_shared/csp.mjs`): the widget's own scripts and
-  Grist's plugin API run, nothing else. A widget that loads from elsewhere
+  written by the build (`_shared/csp.mjs`): scripts from the widget's own
+  files only. The build ships Grist's plugin API with the widget, a pinned
+  copy (`_shared/plugin-api.mjs`); `index.html` keeps docs.getgrist.com's
+  for `pnpm dev`. A widget that loads from elsewhere
   says so in its spec's front matter, `csp:` (`connect-src https://host`;
   `img-src`, `font-src`, `style-src`, `frame-src`, `media-src`,
   `object-src`), never scripts or eval. `grist` stands for the document's
@@ -149,6 +151,7 @@ failing on it: a change that looks wrong there is for the review.
 | The theme | `_shared/theme.css` |
 | Translations | `_shared/i18n.ts` |
 | Vite and Vitest configuration | `_shared/vite.ts` |
+| Grist's plugin API each build ships, pinned (ADR 0016), and the committed copy | `_shared/plugin-api.mjs`, `_shared/plugin-api/` |
 | ESLint configuration | `_shared/eslint.config.js` |
 | shadcn configuration | `_shared/components.json` |
 | The checker | `../scripts/widgets/check-widgets.mjs` |

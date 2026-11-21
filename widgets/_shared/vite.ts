@@ -13,7 +13,8 @@ import tailwindcss from "@tailwindcss/vite"
 import react from "@vitejs/plugin-react"
 import type { Plugin, UserConfig } from "vite"
 
-import { parseCspExtra, specCsp, widgetCsp } from "./csp.mjs"
+import { parseCspExtra, PLUGIN_API_URL, specCsp, widgetCsp } from "./csp.mjs"
+import { PLUGIN_API_FILE, pinnedPluginApi } from "./plugin-api.mjs"
 
 const shared = import.meta.dirname
 
@@ -59,6 +60,9 @@ function noticeText(dir: string): string {
   return files.map((f) => readFileSync(path.join(dir, f), "utf8").trim()).join("\n\n")
 }
 
+/** A third-party file the build adds itself, outside the module graph (the plugin API). */
+type ThirdParty = { name: string; version: string; license: string; notice: string }
+
 /**
  * Two files, for every third-party package whose code the build ships:
  * - dist/licenses.json: name, version and licence (SPDX), which
@@ -74,7 +78,7 @@ function noticeText(dir: string): string {
  * repository's), and code a package vendors in its own files, which is
  * that package's to declare.
  */
-export function licencesPlugin(): Plugin {
+export function licencesPlugin(added: () => ThirdParty[] = () => []): Plugin {
   return {
     name: "grist-widgets:licences",
     apply: "build",
@@ -111,14 +115,16 @@ export function licencesPlugin(): Plugin {
           return { dir, name: String(pkg.name ?? path.basename(dir)), version: String(pkg.version ?? ""), license: licenceOf(pkg, dir) }
         })
         .sort((a, b) => a.name.localeCompare(b.name) || a.version.localeCompare(b.version))
-      const unique = list.filter((p, i) => i === 0 || p.name !== list[i - 1]!.name || p.version !== list[i - 1]!.version)
+      const unique: Array<Omit<ThirdParty, "notice"> & { dir?: string; notice?: string }> = list.filter((p, i) => i === 0 || p.name !== list[i - 1]!.name || p.version !== list[i - 1]!.version)
+      unique.push(...added())
+      unique.sort((a, b) => a.name.localeCompare(b.name) || a.version.localeCompare(b.version))
       this.emitFile({
         type: "asset",
         fileName: "licenses.json",
         source: `${JSON.stringify(unique.map(({ name, version, license }) => ({ name, version, license })), null, 2)}\n`,
       })
-      const notices = unique.map(({ dir, name, version, license }) => {
-        const text = noticeText(dir)
+      const notices = unique.map(({ dir, name, version, license, notice }) => {
+        const text = dir ? noticeText(dir) : (notice ?? "")
         return `${name}@${version} (${license})\n\n${text || `No licence file in the package; its package.json says ${license}.`}`
       })
       this.emitFile({
@@ -155,11 +161,43 @@ export function cspPlugin(widgetDir: string): Plugin {
   }
 }
 
+/**
+ * Grist's plugin API, shipped with the widget (_shared/plugin-api.mjs): the
+ * build writes the pinned file next to the page, as PLUGIN_API_FILE, and
+ * points the page's docs.getgrist.com script at it. The source page keeps
+ * docs.getgrist.com's for `pnpm dev`; a build without that tag fails.
+ */
+export function pluginApiPlugin(widgetDir: string): Plugin & { thirdParty: () => ThirdParty[] } {
+  let pinned: ReturnType<typeof pinnedPluginApi> | null = null
+  return {
+    name: "grist-widgets:plugin-api",
+    apply: "build",
+    buildStart() {
+      pinned = pinnedPluginApi()
+    },
+    transformIndexHtml: {
+      // After Vite's own pass, which leaves an outside script as it is.
+      order: "post",
+      handler(html) {
+        const tag = `<script src="${PLUGIN_API_URL}"></script>`
+        if (!html.includes(tag)) throw new Error(`${widgetDir}/index.html: no ${tag} to replace with ${PLUGIN_API_FILE}`)
+        return html.replace(tag, `<script src="./${PLUGIN_API_FILE}"></script>`)
+      },
+    },
+    generateBundle() {
+      if (!pinned) throw new Error("the plugin API wasn't loaded")
+      this.emitFile({ type: "asset", fileName: PLUGIN_API_FILE, source: pinned.bytes })
+    },
+    thirdParty: () => (pinned ? [{ name: pinned.name, version: pinned.version, license: pinned.license, notice: pinned.notice }] : []),
+  }
+}
+
 export function widgetViteConfig(widgetDir: string): UserConfig & { test: Record<string, unknown> } {
+  const pluginApi = pluginApiPlugin(widgetDir)
   return {
     // Relative URLs: a released version works at any path, on both origins.
     base: "./",
-    plugins: [react(), tailwindcss(), licencesPlugin(), cspPlugin(widgetDir)],
+    plugins: [react(), tailwindcss(), pluginApi, licencesPlugin(pluginApi.thirdParty), cspPlugin(widgetDir)],
     // The widget's slug and version, for its reportUrl (_shared/report-url.ts).
     define: {
       __WIDGET_SLUG__: JSON.stringify(path.basename(widgetDir)),

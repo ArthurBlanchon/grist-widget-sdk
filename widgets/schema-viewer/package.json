@@ -1,7 +1,7 @@
 {
   "name": "@grist-widgets/schema-viewer",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.2.1",
   "type": "module",
   "description": "An entity-relationship diagram of the document: its tables, their columns and the references between them, with the schema as text for an AI.",
   "license": "MIT",

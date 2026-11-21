@@ -64,7 +64,10 @@ Each item is one pull request; the plan says when each milestone is done.
   continue towards 0.9.0.
 - [ ] **The template's Content Security Policy and standard criteria**
   (the plan put them in 0.8.0; ADR 0024 moves them): a scaffold meets the
-  catalog's bar (ADR 0016, ADR 0018). Done with M7, or earlier on the train.
+  catalog's bar (ADR 0016, ADR 0018). A policy without `unsafe-eval` needs
+  a production plugin API: docs.getgrist.com's is a development build that
+  runs `eval` (ADR 0016's amendment), so the scaffold would ship a pinned
+  copy as the catalog does. Done with M7, or earlier on the train.
 
 ## 2. After 0.8.0
 

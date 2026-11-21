@@ -1,0 +1,8 @@
+{
+  "slug": "grouped-view",
+  "version": "0.3.3",
+  "commit": "538dc6cfbe7d5a2b5d54b9dd2932ed465094ad7e",
+  "released": "2026-11-21T17:07:00.266Z",
+  "changes": "- No more linking alert (\"Widget linking\") in a section that follows no other, or that no section follows: the widget works either way.",
+  "changelog": "CHANGELOG.md"
+}

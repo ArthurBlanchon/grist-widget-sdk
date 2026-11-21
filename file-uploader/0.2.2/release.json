@@ -1,0 +1,8 @@
+{
+  "slug": "file-uploader",
+  "version": "0.2.2",
+  "commit": "538dc6cfbe7d5a2b5d54b9dd2932ed465094ad7e",
+  "released": "2026-11-21T17:06:58.401Z",
+  "changes": "- The alert shown while its section follows no other now says where to link it: SELECT BY, in the widget's panel, Data.",
+  "changelog": "CHANGELOG.md"
+}

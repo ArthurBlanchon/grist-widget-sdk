@@ -16,6 +16,8 @@ export const widget = defineGristWidget({
   description: "Drop files onto the selected row's attachments, within the types and size its owner allows.",
   reportUrl: reportUrl(),
   requiredAccess: "full",
+  // It shows the row selected in another section: unlinked, it would show one row for good.
+  requiredLinking: "target",
   columns: [{ name: "Files", type: "Attachments", title: "Attachments column" }],
 })
 

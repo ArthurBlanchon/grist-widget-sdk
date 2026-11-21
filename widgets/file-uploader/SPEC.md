@@ -21,6 +21,9 @@ Grist's own attachment cell takes files one cell at a time, with no
 limits, and Grist Forms take no attachments. This is a drop zone with
 rules, inside the document.
 
+It follows the row selected in another section of the page (SELECT BY in
+its panel, Data): while its section follows none, it says so.
+
 ## Columns
 
 | Column | Type | Required | Use |

@@ -16,6 +16,8 @@ export const widget = defineGristWidget({
   description: "Have the selected row signed on a tablet, a phone or with a mouse; the signature is saved as an image with the signer's name and the time.",
   reportUrl: reportUrl(),
   requiredAccess: "full",
+  // It shows the row selected in another section: unlinked, it would show one row for good.
+  requiredLinking: "target",
   columns: [
     { name: "Signature", type: "Attachments", title: "Signature (an attachments column)" },
     { name: "SignedBy", type: "Text", optional: true, title: "Signed by" },

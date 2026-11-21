@@ -70,6 +70,12 @@ the first).
   own server and allows every http(s) origin: it is what a widget calling
   Grist's REST API needs, and `check-widgets` requires it then. A new
   `connect-src` host is a new outbound host.
+- **A linking alert only where the link is needed:** a widget that shows
+  the row selected in another section, in every mode, declares
+  `requiredLinking: "target"`; one that is there to drive other sections,
+  `"source"` (with `allowSelectBy`). One that works unlinked in any of its
+  modes declares neither: a false alert is worse than none. The real-Grist
+  check (`--standard`) opens each widget in a section linked to none.
 - **"Report a problem"** ([ADR 0019](../docs/decisions/0019-report-a-problem.md)):
   the declaration says `reportUrl: reportUrl()` (`@shared/report-url`), the
   widget bug form prefilled with its slug and version; `check-widgets`

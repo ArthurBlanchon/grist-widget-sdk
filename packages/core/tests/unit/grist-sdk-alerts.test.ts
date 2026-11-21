@@ -46,16 +46,26 @@ describe("getGristSdkAlerts", () => {
     expect(alert!.message).toBe("mapBack skipped multi-mapped column: Tags.")
   })
 
-  it("says when the section is linked to nothing, or a selector is wired to nothing", () => {
+  it("says nothing of linking to a widget that works unlinked, which is the default", () => {
     const unlinked = ready({ interaction: { access_level: "read table", linking: { asTarget: null, asSource: null } } as never })
-    expect(kinds(unlinked)).toEqual(["section-not-linked"])
-    expect(kinds(unlinked, { allowSelectBy: true })).toEqual(["source-not-wired"])
-    expect(getGristSdkAlerts(unlinked, {}, { sectionNotLinkedHint: "Use Link." })[0]!.message).toMatch(/Use Link\.$/)
+    expect(kinds(unlinked)).toEqual([])
+  })
+
+  it("says when a widget that follows a selection is linked to nothing, or a selector is followed by none", () => {
+    const unlinked = ready({ interaction: { access_level: "read table", linking: { asTarget: null, asSource: null } } as never })
+    expect(kinds(unlinked, { requiredLinking: "target" })).toEqual(["section-not-linked"])
+    expect(kinds(unlinked, { requiredLinking: "source" })).toEqual(["source-not-wired"])
+    expect(getGristSdkAlerts(unlinked, { requiredLinking: "target" }, { sectionNotLinkedHint: "Use Link." })[0]!.message).toMatch(/Use Link\.$/)
+    const linked = ready({ interaction: { linking: { asTarget: { sectionId: 1 }, asSource: true } } as never })
+    expect(kinds(linked, { requiredLinking: "target" })).toEqual([])
+    expect(kinds(linked, { requiredLinking: "source" })).toEqual([])
+    // A host that reports no linking: no alert either way.
+    expect(kinds(ready({}), { requiredLinking: "target" })).toEqual([])
   })
 
   it("drops the kinds a widget suppresses", () => {
     const unlinked = ready({ interaction: { linking: { asTarget: null } } as never })
-    expect(kinds(unlinked, { suppressAlerts: ["section-not-linked"] })).toEqual([])
+    expect(kinds(unlinked, { requiredLinking: "target", suppressAlerts: ["section-not-linked"] })).toEqual([])
   })
 })
 

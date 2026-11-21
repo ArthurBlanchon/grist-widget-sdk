@@ -32,7 +32,7 @@ While the widget runs, what needs the person's attention shows above it:
 | `column-mapping`, `mapping-pending` | A required column lost its mapping, or Grist hasn't sent the mappings yet |
 | `map-back-skip` | A write skipped a name mapped to several columns |
 | `cell-issues` | A mapped cell doesn't fit its declared type |
-| `section-not-linked`, `source-not-wired` | The section's linking isn't set up as the widget declares |
+| `section-not-linked`, `source-not-wired` | The widget declares `requiredLinking` and its section isn't linked that way ([Widget linking](/docs/sdk/guide/linking-and-theme)) |
 | `read-only` | The document is open read-only and the widget writes |
 
 To turn a kind off, list it in the declaration:
@@ -40,7 +40,7 @@ To turn a kind off, list it in the declaration:
 ```ts no-check
 export const widget = defineGristWidget({
   requiredAccess: "read table",
-  suppressAlerts: ["section-not-linked"],
+  suppressAlerts: ["cell-issues"],
 })
 ```
 

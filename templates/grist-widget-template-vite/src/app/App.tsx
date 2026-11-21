@@ -12,6 +12,10 @@ export const widget = defineGristWidget({
   title: "Grist Widget Template",
   description: "Mark the selected task done.",
   requiredAccess: "full",
+  // It shows the row selected in another section ("Select by" in Grist's
+  // panel): without that link, an alert says so. A widget that works on the
+  // whole table leaves this out.
+  requiredLinking: "target",
   columns: [
     { name: "Title", type: "Text" },
     { name: "Done", type: "Bool" },

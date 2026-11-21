@@ -14,6 +14,8 @@ export const widget = defineGristWidget({
   description: "Find a row by typing part of its name, and pick it: linked widgets follow.",
   reportUrl: reportUrl(),
   requiredAccess: "read table",
+  // It is there to drive the page's other sections: say so when none follows it.
+  requiredLinking: "source",
   allowSelectBy: true,
   columns: [
     { name: "Title", title: "Title" },

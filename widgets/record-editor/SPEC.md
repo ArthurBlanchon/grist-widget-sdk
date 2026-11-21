@@ -20,6 +20,9 @@ Grist's own card view edits cells one at a time and saves each at once;
 Grist Forms only add rows, and only from a public link. This is the form
 inside the document, for people who already have access to it.
 
+It follows the row selected in another section of the page (SELECT BY in
+its panel, Data): while its section follows none, it says so.
+
 ## Columns
 
 | Column | Type | Required | Use |

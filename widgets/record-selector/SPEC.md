@@ -16,6 +16,9 @@ it: the other widgets on the page, linked to this one, then show that row.
 Grist's own table can be searched, but it is a grid: this is the search
 box a page of cards, charts and custom widgets needs.
 
+Other sections follow it (their SELECT BY set to it, in their panel,
+Data): while none does, it says so.
+
 ## Columns
 
 | Column | Type | Required | Use |

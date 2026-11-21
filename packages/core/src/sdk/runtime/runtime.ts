@@ -75,6 +75,15 @@ export type GristRuntimeOptions = GristReadyOptions & OptionsVersioning & {
   /** Alert kinds mountGristWidget() never shows for this widget, e.g. ["section-not-linked"]. */
   suppressAlerts?: GristSdkAlertKind[]
   /**
+   * The page link the widget can't work without, for its alerts. `"target"`:
+   * it follows the row selected in another section (Grist's "Select by"),
+   * so a section linked to none gets `section-not-linked`. `"source"`: it is
+   * there to drive other sections (with `allowSelectBy`), so one that no
+   * section follows gets `source-not-wired`. Unset: the widget works
+   * unlinked, and no linking alert shows.
+   */
+  requiredLinking?: "target" | "source"
+  /**
    * Extra rules for the mapped records, as a Standard Schema (zod 4,
    * valibot, arktype…), checked after each cell's declared type. A record
    * that fails keeps its typed values; its issues go to `cellIssues`.
@@ -253,6 +262,11 @@ export function createGristRuntime(options: GristRuntimeOptions = {}): GristRunt
     // Bound before ready(): Grist may push the first record during it. A
     // declared reference column asks for row ids (host.ts).
     setReferenceIds(declaresReferences(options.columns))
+    if (options.requiredLinking === "source" && !options.allowSelectBy) {
+      console.warn(
+        'grist-widget-sdk: requiredLinking: "source" needs allowSelectBy: true, or Grist offers no section this widget to follow.'
+      )
+    }
     if (mixesReferenceKinds(options.columns)) {
       console.warn(
         "grist-widget-sdk: this widget declares a Ref column and a Text,Ref one. Grist then sends row ids for every reference, so the Text,Ref column reads the id, not the name."

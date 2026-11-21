@@ -37,6 +37,8 @@
 //                      at 1,280 px without horizontal overflow (<name>-320.png,
 //                      <name>-1280.png); a keyboard path (Tab through, Escape, then
 //                      axe again with --axe) that reaches a control when there is one;
+//                      a section linked to none: it renders, with a linking alert only
+//                      if it declares requiredLinking;
 //                      and the document open read-only (/m/view): it renders, and a
 //                      widget asking for full access shows the read-only alert
 //   --baseline <dir>   a checkout of the widgets-dist branch: the widget's last
@@ -419,6 +421,41 @@ async function checkWidget({ browser, gristUrl, api, wsId, widgetDir, outDir, ti
           if (after.failing.length) standardFailure ??= `accessibility after the keyboard path at ${width} px: ${after.failing.join(", ")}`
         }
       }
+
+      // Unlinked: the widget in a section that follows no other, and that no
+      // section follows, as one added with no "Select by". It renders, and
+      // says a link is missing only if it declares it can't work without one.
+      const unlinked = await createDocument(api, wsId, `${name} unlinked`, options, `${origin}/${name}/dev/`, demo, { linked: false })
+      const loose = await context.newPage()
+      await loose.goto(`${gristUrl}/doc/${unlinked.docId}/p/${unlinked.viewId}`)
+      const lo = await waitRendered(loose, origin, timeout)
+      const kind = options.requiredLinking === "target" ? "section-not-linked" : options.requiredLinking === "source" ? "source-not-wired" : null
+      const needsLink = Boolean(kind) && !(options.suppressAlerts ?? []).includes(kind)
+      // The alert follows Grist's options, which may come a moment after the
+      // first render: wait for it while it is due, watch for it a while if not.
+      let linkAlert = false
+      let unreadable = null
+      if (lo.state === "rendered" && lo.frame) {
+        const until = Date.now() + (needsLink ? timeout * 1000 : 3000)
+        while (Date.now() < until && !linkAlert) {
+          try {
+            linkAlert = await lo.frame.evaluate(() => /Widget linking|Liaison du widget/.test(document.body.innerText))
+          } catch (e) {
+            unreadable = String(e).slice(0, 200)
+            break
+          }
+          if (!linkAlert) await loose.waitForTimeout(250)
+        }
+      }
+      result.standard.push(`unlinked: ${lo.state}, ${unreadable ? `frame unreadable (${unreadable})` : linkAlert ? "says the link is missing" : "no linking alert"}`)
+      if (lo.state !== "rendered" && !standardFailure) standardFailure = `unlinked: ${lo.state}`
+      else if (unreadable && !standardFailure) standardFailure = `unlinked: the widget's frame couldn't be read: ${unreadable}`
+      else if (linkAlert !== needsLink && !standardFailure) {
+        standardFailure = needsLink
+          ? `unlinked: the widget declares requiredLinking: "${options.requiredLinking}" and doesn't say the link is missing`
+          : "unlinked: a linking alert, on a widget that works unlinked (declare requiredLinking if it can't)"
+      }
+      await loose.close()
 
       // Read-only: the same document in view mode.
       const view = await context.newPage()

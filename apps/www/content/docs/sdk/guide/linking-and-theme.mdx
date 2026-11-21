@@ -18,6 +18,29 @@ To **enable your widget as a linking source**, declare it at provider time:
 <GristWidgetProvider options={{ allowSelectBy: true }}>
 ```
 
+### The link a widget can't work without
+
+Most widgets work unlinked: they show the whole table, and can drive
+other sections if someone wants them to. A widget that can't work without
+a link says which in its declaration, and an alert above it says when
+Grist reports that link missing:
+
+```ts
+import { defineGristWidget } from "grist-widget-sdk"
+
+// It shows the row selected in another section (SELECT BY in Grist's
+// creator panel, Data): `section-not-linked` when its section follows none.
+export const form = defineGristWidget({ requiredLinking: "target" })
+
+// It is there to drive other sections: `source-not-wired` when none follows it.
+export const picker = defineGristWidget({ allowSelectBy: true, requiredLinking: "source" })
+```
+
+Without `requiredLinking`, no linking alert shows. `"source"` needs
+`allowSelectBy: true`, or Grist offers no section the widget to follow;
+the SDK warns in the console. A Grist that doesn't report linking (an
+older one, the emulator) shows neither alert.
+
 ### `setCursorPosition`
 
 Moves the cursor in the linked widget. Accepts a subset of Grist `CursorPos`:

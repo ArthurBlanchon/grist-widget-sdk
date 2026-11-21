@@ -19,8 +19,6 @@ export const widget = defineGristWidget({
   reportUrl: reportUrl(),
   // The document's columns and their types are in Grist's metadata tables, readable with full access.
   requiredAccess: "full",
-  // It shows the whole document, whatever row is selected.
-  suppressAlerts: ["section-not-linked"],
 })
 
 export default function App() {

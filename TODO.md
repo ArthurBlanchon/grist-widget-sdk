@@ -69,6 +69,14 @@ Each item is one pull request; the plan says when each milestone is done.
   runs `eval` (ADR 0016's amendment), so the scaffold would ship a pinned
   copy as the catalog does. Done with M7, or earlier on the train.
 
+- [ ] **Linking in the emulator, and by mode:** the emulator reports no
+  `linking`, so a widget's test can't open it unlinked
+  (`createGristEmulator({ linking })` would); and `requiredLinking` is one
+  value for every mode, so a widget whose viewer mode needs the selected
+  row and whose gallery mode doesn't (Attachment viewer, Document
+  template, Mermaid diagram) declares none. Done when a test can open a
+  widget unlinked and a declaration can depend on its options.
+
 ## 2. After 0.8.0
 
 - **1.0.0:** the API report's baseline reset, the deprecate-first rule in

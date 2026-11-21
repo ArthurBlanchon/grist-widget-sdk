@@ -61,11 +61,11 @@ const en = {
   cellIssueMore: " (and {n} more)",
   cellIssues: "{where}: {message}{more}. Check the column's type, or the cell, in Grist.",
   sourceNotWired:
-    "This widget is configured as a selector (allowSelectBy) but no other section is using it as a link source yet. Link another section to read from this widget.",
+    "No section follows this widget yet, and it works by driving another one. In Grist, open that section's creator panel, Data, and set SELECT BY to this widget.",
   sectionNotLinked:
-    "This widget section is not linked to a table or selector. Link it from the page settings so the selected row is sent to the widget.",
+    "This widget shows the row selected in another section, and this section follows none.",
   sectionNotLinkedHint:
-    "In Grist, select this widget section on the page, then use Link to connect a table, card, or chart view as the selector.",
+    "In Grist, open this widget's creator panel, Data, and set SELECT BY to another section of the page.",
 
   reportProblem: "Report a problem",
   crashTitle: "The widget stopped working",
@@ -120,11 +120,11 @@ const fr: GristChromeMessages = {
   cellIssueMore: " (et {n} de plus)",
   cellIssues: "{where} : {message}{more}. Vérifiez le type de la colonne, ou la cellule, dans Grist.",
   sourceNotWired:
-    "Ce widget sert de sélecteur (allowSelectBy), mais aucune autre section ne s'y lie encore. Liez une autre section à ce widget pour qu'elle suive sa sélection.",
+    "Aucune section ne suit encore ce widget, qui sert à en piloter une autre. Dans Grist, ouvrez le panneau de création de cette section, onglet Données source, et choisissez ce widget sous SÉLECTIONNER PAR.",
   sectionNotLinked:
-    "Cette section n'est liée à aucune table ni sélecteur. Liez-la depuis les réglages de la page pour que la ligne sélectionnée soit envoyée au widget.",
+    "Ce widget montre la ligne sélectionnée dans une autre section, et cette section n'en suit aucune.",
   sectionNotLinkedHint:
-    "Dans Grist, sélectionnez cette section sur la page, puis liez-la à une table, une fiche ou un graphique qui servira de sélecteur.",
+    "Dans Grist, ouvrez le panneau de création de ce widget, onglet Données source, et choisissez sous SÉLECTIONNER PAR une autre section de la page.",
 
   reportProblem: "Signaler un problème",
   crashTitle: "Le widget ne fonctionne plus",

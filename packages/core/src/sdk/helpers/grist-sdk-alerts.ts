@@ -78,7 +78,7 @@ export function getGristSdkAlerts(
   state: GristRuntimeState,
   widget: {
     columns?: GristColumnsToMap
-    allowSelectBy?: boolean
+    requiredLinking?: "target" | "source"
     suppressAlerts?: readonly GristSdkAlertKind[]
     cellIssues?: readonly GristCellIssue[]
   },
@@ -133,12 +133,14 @@ export function getGristSdkAlerts(
     out.push(alert("cell-issues", formatChrome(t.cellIssues, { where, message: first.message, more })))
   }
 
+  // Only for a widget that can't work without the link: most work unlinked,
+  // on the whole table, and are selectors only if someone wants one.
   const linking = parseGristWidgetLinkingInfo(state.interaction?.linking)
-  if (widget.allowSelectBy) {
+  if (widget.requiredLinking === "source") {
     if (linking && !linking.asSource) {
       out.push(alert("source-not-wired", t.sourceNotWired))
     }
-  } else if (isWidgetSectionNotLinked(state.interaction)) {
+  } else if (widget.requiredLinking === "target" && isWidgetSectionNotLinked(state.interaction)) {
     const hint = options.sectionNotLinkedHint?.trim()
     out.push(alert("section-not-linked", t.sectionNotLinked + (hint ? ` ${hint}` : "")))
   }
@@ -152,6 +154,6 @@ export function useGristSdkAlerts(options?: GristSdkAlertsOptions): GristSdkAler
   const { connection, state, cellIssues } = useNearestGristState()
   const { locale } = useChromeMessages()
   if (!connection) return []
-  const { columns, allowSelectBy, suppressAlerts } = connection.runtime.options
-  return getGristSdkAlerts(state, { columns, allowSelectBy, suppressAlerts, cellIssues }, { locale, ...options })
+  const { columns, requiredLinking, suppressAlerts } = connection.runtime.options
+  return getGristSdkAlerts(state, { columns, requiredLinking, suppressAlerts, cellIssues }, { locale, ...options })
 }

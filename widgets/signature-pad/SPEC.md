@@ -20,6 +20,9 @@ name and the time, and the row shows it afterwards.
 Grist has no signature field; the forum's threads and comparable tools
 (Glide, Retool) have one.
 
+It follows the row selected in another section of the page (SELECT BY in
+its panel, Data): while its section follows none, it says so.
+
 ## Columns
 
 | Column | Type | Required | Use |

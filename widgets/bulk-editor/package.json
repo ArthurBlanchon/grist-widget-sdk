@@ -1,7 +1,7 @@
 {
   "name": "@grist-widgets/bulk-editor",
   "private": true,
-  "version": "0.2.1",
+  "version": "0.2.2",
   "type": "module",
   "description": "Set one column to one value on every row the section shows, after a confirmation, in one action you can undo.",
   "license": "MIT",

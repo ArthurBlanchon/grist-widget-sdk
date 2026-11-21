@@ -25,7 +25,8 @@ itself is new on every change, so depend on its members, not on it.
 
 ```ts
 type UseGristOptions = GristReadyOptions & {
-  suppressAlerts?: GristSdkAlertKind[] // alert kinds mountGristWidget() never shows, e.g. ["section-not-linked"]
+  requiredLinking?: "target" | "source" // the link it can't work without: an alert when it is missing
+  suppressAlerts?: GristSdkAlertKind[] // alert kinds mountGristWidget() never shows, e.g. ["cell-issues"]
   schema?: StandardSchema              // extra rules for the mapped records (zod 4, valibot, arktype…)
   optionsVersion?: number              // the version of the widget options it reads and writes
   migrate?: MigrateWidgetOptions       // brings older options to optionsVersion, on read

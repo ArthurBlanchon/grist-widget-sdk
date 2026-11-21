@@ -20,6 +20,8 @@ export const widget = defineGristWidget({
   description: "Edit the selected row in a form, each field typed by its column, with Save and Cancel; or add a row.",
   reportUrl: reportUrl(),
   requiredAccess: "full",
+  // It shows the row selected in another section: unlinked, it would show one row for good.
+  requiredLinking: "target",
   columns: [{ name: "Fields", allowMultiple: true, title: "Fields of the form" }],
 })
 

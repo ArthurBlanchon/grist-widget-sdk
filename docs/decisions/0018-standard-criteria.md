@@ -4,6 +4,8 @@
 - **Date:** 2026-11-16
 - **Amends:** the plan to 0.8.0, §3: the volume budget is DOM nodes, not
   time measured as the SDK's bench does
+- **Amended:** 2026-11-21: `--standard` also opens the widget unlinked
+  (below)
 
 ## Context
 
@@ -44,6 +46,18 @@ Two facts shaped how they are checked:
   open in view mode renders, and a widget that writes says why it can't
   (the SDK's `read-only` alert). A widget's test may add to them; it doesn't
   replace them.
+- **`--standard` also opens the widget in a section linked to none**
+  (amended 2026-11-21), as one added to a page with no SELECT BY, and that
+  no section follows. It renders, and shows a linking alert exactly when its
+  declaration's `requiredLinking` calls for one (and `suppressAlerts`
+  doesn't drop it). Not a fifth criterion in the specs: the declaration is
+  the contract, and a spec says in its Job when the widget follows or
+  drives another section. The rule behind it: a linking alert only where
+  the link is needed, and a widget with a mode that works unlinked declares
+  none, since a false alert is worse than none. It came from the Gantt
+  chart warning, in a real document, that its section followed none, which
+  every whole-table widget did and no check saw: the demo and the e2e
+  document always link the widget's section.
 - **`check-widgets` requires the section** in every spec but those of the
   widgets still to migrate (`STANDARD_PENDING`, a list that only shrinks),
   and wherever the section is, an `AC-volume` test that isn't skipped and

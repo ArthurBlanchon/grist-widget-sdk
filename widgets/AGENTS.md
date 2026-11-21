@@ -75,7 +75,8 @@ the first).
   `requiredLinking: "target"`; one that is there to drive other sections,
   `"source"` (with `allowSelectBy`). One that works unlinked in any of its
   modes declares neither: a false alert is worse than none. The real-Grist
-  check (`--standard`) opens each widget in a section linked to none.
+  check (`--standard`) opens each widget in a section linked to none
+  ([ADR 0018](../docs/decisions/0018-standard-criteria.md)).
 - **"Report a problem"** ([ADR 0019](../docs/decisions/0019-report-a-problem.md)):
   the declaration says `reportUrl: reportUrl()` (`@shared/report-url`), the
   widget bug form prefilled with its slug and version; `check-widgets`

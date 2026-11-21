@@ -262,6 +262,9 @@ export function createGristRuntime(options: GristRuntimeOptions = {}): GristRunt
     // Bound before ready(): Grist may push the first record during it. A
     // declared reference column asks for row ids (host.ts).
     setReferenceIds(declaresReferences(options.columns))
+    if (options.requiredLinking !== undefined && options.requiredLinking !== "target" && options.requiredLinking !== "source") {
+      console.warn(`grist-widget-sdk: requiredLinking is "target", "source" or unset, not ${JSON.stringify(options.requiredLinking)}: no linking alert will show.`)
+    }
     if (options.requiredLinking === "source" && !options.allowSelectBy) {
       console.warn(
         'grist-widget-sdk: requiredLinking: "source" needs allowSelectBy: true, or Grist offers no section this widget to follow.'

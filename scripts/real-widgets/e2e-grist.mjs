@@ -429,13 +429,27 @@ async function checkWidget({ browser, gristUrl, api, wsId, widgetDir, outDir, ti
       const loose = await context.newPage()
       await loose.goto(`${gristUrl}/doc/${unlinked.docId}/p/${unlinked.viewId}`)
       const lo = await waitRendered(loose, origin, timeout)
-      if (lo.state === "rendered") await loose.waitForTimeout(1000)
-      const linkAlert = lo.frame
-        ? await lo.frame.evaluate(() => /Widget linking|Liaison du widget/.test(document.body.innerText)).catch(() => false)
-        : false
-      const needsLink = options.requiredLinking === "target" || options.requiredLinking === "source"
-      result.standard.push(`unlinked: ${lo.state}, ${linkAlert ? "says the link is missing" : "no linking alert"}`)
+      const kind = options.requiredLinking === "target" ? "section-not-linked" : options.requiredLinking === "source" ? "source-not-wired" : null
+      const needsLink = Boolean(kind) && !(options.suppressAlerts ?? []).includes(kind)
+      // The alert follows Grist's options, which may come a moment after the
+      // first render: wait for it while it is due, watch for it a while if not.
+      let linkAlert = false
+      let unreadable = null
+      if (lo.state === "rendered" && lo.frame) {
+        const until = Date.now() + (needsLink ? timeout * 1000 : 3000)
+        while (Date.now() < until && !linkAlert) {
+          try {
+            linkAlert = await lo.frame.evaluate(() => /Widget linking|Liaison du widget/.test(document.body.innerText))
+          } catch (e) {
+            unreadable = String(e).slice(0, 200)
+            break
+          }
+          if (!linkAlert) await loose.waitForTimeout(250)
+        }
+      }
+      result.standard.push(`unlinked: ${lo.state}, ${unreadable ? `frame unreadable (${unreadable})` : linkAlert ? "says the link is missing" : "no linking alert"}`)
       if (lo.state !== "rendered" && !standardFailure) standardFailure = `unlinked: ${lo.state}`
+      else if (unreadable && !standardFailure) standardFailure = `unlinked: the widget's frame couldn't be read: ${unreadable}`
       else if (linkAlert !== needsLink && !standardFailure) {
         standardFailure = needsLink
           ? `unlinked: the widget declares requiredLinking: "${options.requiredLinking}" and doesn't say the link is missing`

@@ -65,7 +65,7 @@ const en = {
   sectionNotLinked:
     "This widget shows the row selected in another section, and this section follows none.",
   sectionNotLinkedHint:
-    "In Grist, open this widget's creator panel, Data, and set SELECT BY to a table or card on the page.",
+    "In Grist, open this widget's creator panel, Data, and set SELECT BY to another section of the page.",
 
   reportProblem: "Report a problem",
   crashTitle: "The widget stopped working",
@@ -120,11 +120,11 @@ const fr: GristChromeMessages = {
   cellIssueMore: " (et {n} de plus)",
   cellIssues: "{where} : {message}{more}. Vérifiez le type de la colonne, ou la cellule, dans Grist.",
   sourceNotWired:
-    "Aucune section ne suit encore ce widget, qui sert à en piloter une autre. Dans Grist, ouvrez le panneau de cette section, Données, et choisissez ce widget sous SÉLECTIONNER PAR.",
+    "Aucune section ne suit encore ce widget, qui sert à en piloter une autre. Dans Grist, ouvrez le panneau de création de cette section, onglet Données source, et choisissez ce widget sous SÉLECTIONNER PAR.",
   sectionNotLinked:
     "Ce widget montre la ligne sélectionnée dans une autre section, et cette section n'en suit aucune.",
   sectionNotLinkedHint:
-    "Dans Grist, ouvrez le panneau de ce widget, Données, et choisissez sous SÉLECTIONNER PAR une table ou une fiche de la page.",
+    "Dans Grist, ouvrez le panneau de création de ce widget, onglet Données source, et choisissez sous SÉLECTIONNER PAR une autre section de la page.",
 
   reportProblem: "Signaler un problème",
   crashTitle: "Le widget ne fonctionne plus",

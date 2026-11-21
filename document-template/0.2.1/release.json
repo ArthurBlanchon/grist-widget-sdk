@@ -1,0 +1,8 @@
+{
+  "slug": "document-template",
+  "version": "0.2.1",
+  "commit": "0d2469ae252b526cfb9a0525526fc29b76b78a76",
+  "released": "2026-11-21T12:09:02.502Z",
+  "changes": "- The widget loads again: Grist started serving its plugin script as a development build that this widget's security policy refuses, which left every copy on \"The Grist plugin did not load\". The widget now ships its own copy of Grist's plugin script, a fixed version without that problem, and runs no script from anywhere else.",
+  "changelog": "CHANGELOG.md"
+}

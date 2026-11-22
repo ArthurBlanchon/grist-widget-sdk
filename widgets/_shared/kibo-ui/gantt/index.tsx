@@ -530,16 +530,18 @@ const DailyHeader: FC = () => {
   const margin = 62 * columnWidth;
   const from = scrollX - margin;
   const to = scrollX + viewport + margin;
-  let left = 0;
+  // Each month's left edge, from the days before it.
+  const days = gantt.timelineData.flatMap((year) => year.quarters.flatMap((quarter) => quarter.months).map((month) => month.days));
+  const starts = days.reduce<number[]>((acc, _, i) => [...acc, i === 0 ? 0 : acc[i - 1]! + days[i - 1]! * columnWidth], []);
 
-  return gantt.timelineData.map((year) =>
+  return gantt.timelineData.map((year, yearIndex) =>
     year.quarters
       .flatMap((quarter) => quarter.months)
       .map((month, index) => {
-        const start = left;
-        left += month.days * columnWidth;
+        const start = starts[yearIndex * 12 + index] ?? 0;
+        const end = start + month.days * columnWidth;
         const key = `${year.year}-${index}`;
-        if (left < from || start > to) {
+        if (end < from || start > to) {
           return <div aria-hidden className="relative shrink-0" key={key} style={{ width: month.days * columnWidth }} />;
         }
         return (

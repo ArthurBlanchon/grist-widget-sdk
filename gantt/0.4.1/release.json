@@ -1,0 +1,8 @@
+{
+  "slug": "gantt",
+  "version": "0.4.1",
+  "commit": "344784a29a16eca8cd2daf82fe35e9ac01fae704",
+  "released": "2026-11-22T12:18:11.411Z",
+  "changes": "- The configuration's button says Apply, not Save, and the view says what Grist does next: it keeps the new default scale as a draft of the widget, as it does for its sort and filters, until you click Save in the widget's header. Two buttons named Save, one after the other, were confusing.",
+  "changelog": "CHANGELOG.md"
+}

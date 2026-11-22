@@ -108,7 +108,10 @@ export function Settings() {
 - Grist keeps what a widget writes to its options as a draft of the
   section, as it does for sort and filters: the section's header then
   shows Grist's own Save and Revert, and only Save keeps it for everyone.
-  Name the view's button Apply, not Save, and say so in the view.
+  Don't add a Save button of your own, which reads as the same step twice:
+  apply a choice at once, and say to click Grist's Save. The widget hears
+  its own write and a Revert (the saved options come back), but not a
+  Save, so a notice about it needs a way to be hidden.
 - In a test, `emulator.openConfiguration()` clicks Grist's button
   (`renderWithGrist` returns the emulator); it throws when the widget
   declared no `hasCustomOptions`, since Grist then shows none.

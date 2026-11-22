@@ -2,6 +2,10 @@
 
 What changed in each version, for the people using the widget. Newest first.
 
+## 0.4.2 (2026-11-22)
+
+- The configuration has no Apply button any more: choosing a default scale applies it at once. A notice at the top of the chart then says to click Save at the top of the section, Grist's own button, to keep it for everyone. It goes away with Grist's Revert, or when you hide it.
+
 ## 0.4.1 (2026-11-22)
 
 - The configuration's button says Apply, not Save, and the view says what Grist does next: it keeps the new default scale as a draft of the widget, as it does for its sort and filters, until you click Save in the widget's header. Two buttons named Save, one after the other, were confusing.

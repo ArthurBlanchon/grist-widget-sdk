@@ -20,6 +20,7 @@ import {
 } from "@shared/kibo-ui/gantt"
 import { Button } from "@shared/ui/button"
 import { NativeSelect, NativeSelectOption } from "@shared/ui/native-select"
+import { OptionsDraftNotice, useOptionsDraft } from "@shared/options-draft"
 import { reportUrl } from "@shared/report-url"
 
 import { choiceStyles } from "./colors"
@@ -70,6 +71,8 @@ export default function App() {
   // The buttons change the view for now; the configuration sets the scale it opens on.
   const defaultScale = readDefaultScale(w.widgetOptions)
   const [scale, setScale] = useState<Scale>(defaultScale)
+  // What the configuration writes is a draft of the section until Grist's Save: the notice says so.
+  const draft = useOptionsDraft(w.widgetOptions)
   // A new default (the options arrive, or the configuration saves one) moves the view to it.
   const [shownDefault, setShownDefault] = useState<Scale>(defaultScale)
   if (shownDefault !== defaultScale) {
@@ -165,6 +168,7 @@ export default function App() {
 
   return (
     <main className="flex h-svh min-h-0 flex-col bg-background text-foreground">
+      <OptionsDraftNotice visible={draft.visible && !w.readOnly} hide={draft.hide} />
       <header className="flex shrink-0 flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b px-4 py-2 text-sm">
         <div>
           <h1 className="font-medium">{t("title")}</h1>
@@ -207,7 +211,10 @@ export default function App() {
         <Configuration
           defaultScale={defaultScale}
           readOnly={w.readOnly}
-          save={(next) => w.patchWidgetOptions({ defaultScale: next })}
+          save={async (next) => {
+            await w.patchWidgetOptions({ defaultScale: next })
+            draft.wrote({ defaultScale: next })
+          }}
           close={w.closeConfiguration}
           t={t}
         />
@@ -255,11 +262,10 @@ type T = ReturnType<typeof useT<keyof (typeof messages)["en"]>>
 
 /**
  * The widget's configuration view: Grist's "Open configuration" and the
- * settings icon both open it (useGrist().configurationOpen). It sets the
- * scale the chart opens on, kept in the widget options; ✕, Cancel and
- * Escape leave it without saving. Grist keeps what the widget writes to its
- * options as a draft of the section, which its own Save keeps for good: the
- * widget's button says Apply, and the view says so.
+ * settings icon both open it (useGrist().configurationOpen). A choice
+ * applies at once, to the widget's options: Grist keeps them as a draft of
+ * the section until its own Save, which the notice at the top says
+ * (_shared/options-draft). ✕ and Escape close it.
  */
 function Configuration({
   defaultScale,
@@ -274,23 +280,17 @@ function Configuration({
   close: () => void
   t: T
 }) {
-  const [choice, setChoice] = useState<Scale>(defaultScale)
-  const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const first = useRef<HTMLSelectElement>(null)
   const id = useId()
   useEffect(() => first.current?.focus(), [])
 
-  async function submit() {
-    setSaving(true)
+  async function choose(next: Scale) {
     setError(null)
     try {
-      await save(choice)
-      close()
+      await save(next)
     } catch (err) {
       setError(t("saveSettingsFailed", { error: err instanceof Error ? err.message : String(err) }))
-    } finally {
-      setSaving(false)
     }
   }
 
@@ -318,9 +318,9 @@ function Configuration({
           ref={first}
           id={`${id}-scale`}
           aria-describedby={`${id}-hint`}
-          value={choice}
+          value={defaultScale}
           disabled={readOnly}
-          onChange={(e) => setChoice(e.target.value as Scale)}
+          onChange={(e) => void choose(e.target.value as Scale)}
         >
           {SCALES.map((value) => (
             <NativeSelectOption key={value} value={value}>
@@ -332,24 +332,12 @@ function Configuration({
           {t("defaultScaleHint")}
         </span>
       </div>
-      {readOnly ? (
-        <p className="text-xs text-muted-foreground">{t("settingsReadOnly")}</p>
-      ) : (
-        <p className="max-w-md text-xs text-muted-foreground">{t("draftHint")}</p>
-      )}
+      {readOnly ? <p className="text-xs text-muted-foreground">{t("settingsReadOnly")}</p> : null}
       {error ? (
         <p role="alert" className="text-destructive">
           {error}
         </p>
       ) : null}
-      <div className="flex gap-2">
-        <Button size="sm" disabled={readOnly || saving} onClick={() => void submit()}>
-          {t("saveSettings")}
-        </Button>
-        <Button size="sm" variant="outline" onClick={close}>
-          {t("cancel")}
-        </Button>
-      </div>
     </section>
   )
 }

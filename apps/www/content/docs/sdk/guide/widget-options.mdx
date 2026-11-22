@@ -109,9 +109,10 @@ export function Settings() {
   section, as it does for sort and filters: the section's header then
   shows Grist's own Save and Revert, and only Save keeps it for everyone.
   Don't add a Save button of your own, which reads as the same step twice:
-  apply a choice at once, and say to click Grist's Save. The widget hears
-  its own write and a Revert (the saved options come back), but not a
-  Save, so a notice about it needs a way to be hidden.
+  apply a choice at once, and say to click Grist's Save, in the view, while
+  it is open. The widget hears its own write and a Revert (the saved
+  options come back), but not a Save, so the message can't wait for one:
+  it goes with a Revert, or with the view.
 - In a test, `emulator.openConfiguration()` clicks Grist's button
   (`renderWithGrist` returns the emulator); it throws when the widget
   declared no `hasCustomOptions`, since Grist then shows none.

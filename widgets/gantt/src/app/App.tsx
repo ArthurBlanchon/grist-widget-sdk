@@ -71,8 +71,6 @@ export default function App() {
   // The buttons change the view for now; the configuration sets the scale it opens on.
   const defaultScale = readDefaultScale(w.widgetOptions)
   const [scale, setScale] = useState<Scale>(defaultScale)
-  // What the configuration writes is a draft of the section until Grist's Save: the notice says so.
-  const draft = useOptionsDraft(w.widgetOptions)
   // A new default (the options arrive, or the configuration saves one) moves the view to it.
   const [shownDefault, setShownDefault] = useState<Scale>(defaultScale)
   if (shownDefault !== defaultScale) {
@@ -168,7 +166,6 @@ export default function App() {
 
   return (
     <main className="flex h-svh min-h-0 flex-col bg-background text-foreground">
-      <OptionsDraftNotice visible={draft.visible && !w.readOnly} hide={draft.hide} />
       <header className="flex shrink-0 flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b px-4 py-2 text-sm">
         <div>
           <h1 className="font-medium">{t("title")}</h1>
@@ -211,10 +208,8 @@ export default function App() {
         <Configuration
           defaultScale={defaultScale}
           readOnly={w.readOnly}
-          save={async (next) => {
-            await w.patchWidgetOptions({ defaultScale: next })
-            draft.wrote({ defaultScale: next })
-          }}
+          options={w.widgetOptions}
+          save={(next) => w.patchWidgetOptions({ defaultScale: next })}
           close={w.closeConfiguration}
           t={t}
         />
@@ -264,23 +259,27 @@ type T = ReturnType<typeof useT<keyof (typeof messages)["en"]>>
  * The widget's configuration view: Grist's "Open configuration" and the
  * settings icon both open it (useGrist().configurationOpen). A choice
  * applies at once, to the widget's options: Grist keeps them as a draft of
- * the section until its own Save, which the notice at the top says
- * (_shared/options-draft). ✕ and Escape close it.
+ * the section until its own Save, which a warning in the view says
+ * (_shared/options-draft) until a Revert, or the view closes. ✕ and Escape
+ * close it.
  */
 function Configuration({
   defaultScale,
+  options,
   readOnly,
   save,
   close,
   t,
 }: {
   defaultScale: Scale
+  options: Record<string, unknown> | null
   readOnly: boolean
   save: (scale: Scale) => Promise<unknown>
   close: () => void
   t: T
 }) {
   const [error, setError] = useState<string | null>(null)
+  const draft = useOptionsDraft(options)
   const first = useRef<HTMLSelectElement>(null)
   const id = useId()
   useEffect(() => first.current?.focus(), [])
@@ -289,6 +288,7 @@ function Configuration({
     setError(null)
     try {
       await save(next)
+      draft.wrote({ defaultScale: next })
     } catch (err) {
       setError(t("saveSettingsFailed", { error: err instanceof Error ? err.message : String(err) }))
     }
@@ -333,6 +333,7 @@ function Configuration({
         </span>
       </div>
       {readOnly ? <p className="text-xs text-muted-foreground">{t("settingsReadOnly")}</p> : null}
+      <OptionsDraftNotice visible={draft.visible} />
       {error ? (
         <p role="alert" className="text-destructive">
           {error}

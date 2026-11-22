@@ -72,9 +72,9 @@ read from the columns' settings, which only full access reads.
   opens on it (weeks when none is set). Grist's "Open configuration" and the
   widget's settings icon open the same configuration view; a choice there
   applies at once, to the widget's options. Grist keeps them as a draft of
-  the section until its own Save: a notice at the top of the widget says to
-  click it, until Grist's Revert or the reader hides it. Its close button
-  and Escape close the view. The scale buttons change the view only. On a
+  the section until its own Save: a warning in the view says to click it,
+  until Grist's Revert or the view closes. Its close button and Escape
+  close the view. The scale buttons change the view only. On a
   document open read-only, the settings icon isn't shown.
 
 ## Standard criteria

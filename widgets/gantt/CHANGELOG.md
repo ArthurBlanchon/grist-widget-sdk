@@ -2,6 +2,10 @@
 
 What changed in each version, for the people using the widget. Newest first.
 
+## 0.4.3 (2026-11-22)
+
+- The message to click Save is now a warning inside the configuration, easier to see, and it goes away when you close the configuration.
+
 ## 0.4.2 (2026-11-22)
 
 - The configuration has no Apply button any more: choosing a default scale applies it at once. A notice at the top of the chart then says to click Save at the top of the section, Grist's own button, to keep it for everyone. It goes away with Grist's Revert, or when you hide it.

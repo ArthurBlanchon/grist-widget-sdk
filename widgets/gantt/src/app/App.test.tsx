@@ -207,20 +207,34 @@ describe("AC-13 the default scale, set in the configuration view", () => {
 
   const notice = () => screen.queryByText(/click Save at the top of this section/)
 
-  it("AC-13 the settings icon opens the configuration; a choice applies at once, and a notice says to click Save", async () => {
+  it("AC-13 the settings icon opens the configuration; a choice applies at once, and a warning in it says to click Save", async () => {
     const { emulator } = setup()
     await screen.findByText("Survey")
     fireEvent.click(screen.getByRole("button", { name: "Settings" }))
-    await screen.findByRole("dialog", { name: "Configuration" })
+    const view = await screen.findByRole("dialog", { name: "Configuration" })
     expect(screen.queryByRole("button", { name: /apply|save|cancel/i })).not.toBeInTheDocument()
     expect(notice()).not.toBeInTheDocument()
     fireEvent.change(screen.getByLabelText("Default scale"), { target: { value: "daily" } })
     await waitFor(() => expect(emulator.state.widgetOptions).toMatchObject({ defaultScale: "daily" }))
     await waitFor(() => expect(pressed()).toEqual(["Days"]))
-    expect(await screen.findByText(/click Save at the top of this section/)).toBeInTheDocument()
+    const warning = await screen.findByText(/click Save at the top of this section/)
+    expect(view).toContainElement(warning)
   })
 
-  it("AC-13 Grist's Revert, which sends back the saved options, takes the notice away", async () => {
+  it("AC-13 the warning goes with the view", async () => {
+    setup()
+    await screen.findByText("Survey")
+    fireEvent.click(screen.getByRole("button", { name: "Settings" }))
+    fireEvent.change(await screen.findByLabelText("Default scale"), { target: { value: "monthly" } })
+    await screen.findByText(/click Save at the top of this section/)
+    fireEvent.click(screen.getByRole("button", { name: "Close" }))
+    await waitFor(() => expect(notice()).not.toBeInTheDocument())
+    fireEvent.click(screen.getByRole("button", { name: "Settings" }))
+    await screen.findByRole("dialog", { name: "Configuration" })
+    expect(notice()).not.toBeInTheDocument()
+  })
+
+  it("AC-13 Grist's Revert, which sends back the saved options, takes the warning away", async () => {
     const { emulator } = setup(ALL, undefined, { defaultScale: "weekly" })
     await screen.findByText("Survey")
     fireEvent.click(screen.getByRole("button", { name: "Settings" }))
@@ -229,16 +243,6 @@ describe("AC-13 the default scale, set in the configuration view", () => {
     await emulator.setOptions({ defaultScale: "weekly", __version: 1 })
     await waitFor(() => expect(notice()).not.toBeInTheDocument())
     expect(pressed()).toEqual(["Weeks"])
-  })
-
-  it("AC-13 the notice can be hidden (after Grist's Save, which the widget can't see)", async () => {
-    setup()
-    await screen.findByText("Survey")
-    fireEvent.click(screen.getByRole("button", { name: "Settings" }))
-    fireEvent.change(await screen.findByLabelText("Default scale"), { target: { value: "monthly" } })
-    await screen.findByText(/click Save at the top of this section/)
-    fireEvent.click(screen.getByRole("button", { name: "Hide this message" }))
-    expect(notice()).not.toBeInTheDocument()
   })
 
   it("AC-13 Grist's \"Open configuration\" opens the same view", async () => {

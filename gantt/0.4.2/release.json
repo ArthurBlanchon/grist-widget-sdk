@@ -1,0 +1,8 @@
+{
+  "slug": "gantt",
+  "version": "0.4.2",
+  "commit": "3b1b37a80dddb7935dabb0973683c2c2d0b694c0",
+  "released": "2026-11-22T14:23:29.581Z",
+  "changes": "- The configuration has no Apply button any more: choosing a default scale applies it at once. A notice at the top of the chart then says to click Save at the top of the section, Grist's own button, to keep it for everyone. It goes away with Grist's Revert, or when you hide it.",
+  "changelog": "CHANGELOG.md"
+}

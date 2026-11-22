@@ -91,9 +91,6 @@ Each item is one pull request; the plan says when each milestone is done.
 From the earlier backlog (`docs/history/TASKS.md`, `docs/history/2026-08-09-execution-plan.md`),
 kept only where still relevant after the 0.4.0 review:
 
-- **A config panel affordance** (old batch J): a documented way for a
-  widget to show its settings when Grist's "Open configuration" is used
-  (`onEditOptions`).
 - **Secrets guidance** (old batch K): widget options are not a secrets
   store; document what to do instead.
 - **Landing page with a live widget** (old batch N): a catalog

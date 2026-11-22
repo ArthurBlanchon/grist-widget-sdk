@@ -80,8 +80,9 @@ export type GristEmulator = {
   /**
    * Clicks Grist's "Open configuration", in the creator panel: calls the
    * widget's `onEditOptions`, which the SDK turns into
-   * `useGrist().configurationOpen`. Throws when the widget declared no
-   * `hasCustomOptions`, since Grist then shows no such button.
+   * `useGrist().configurationOpen`. Throws when the widget handed
+   * `grist.ready()` no `onEditOptions` (the SDK hands one for
+   * `hasCustomOptions: true`), since Grist then shows no such button.
    */
   openConfiguration: () => Promise<void>
   /** Host theme controls (`grist.on("message")` / `msg.theme`). */
@@ -169,10 +170,13 @@ export function createGristEmulator(options: CreateGristEmulatorOptions): GristE
       bus.emit({ type: "options-change", options: { ...state.widgetOptions }, interaction: { ...interaction } })
     },
     async openConfiguration() {
-      if (!state.configuration?.hasCustomOptions) {
-        throw new Error("Grist shows no \"Open configuration\" for this widget: it declared no hasCustomOptions in grist.ready().")
+      // Grist shows the button only for an onEditOptions handed to ready();
+      // the SDK hands one whenever the widget declares hasCustomOptions.
+      if (!(await transport.fireEditOptions())) {
+        throw new Error(
+          "Grist shows no \"Open configuration\" for this widget: it handed grist.ready() no onEditOptions (with the SDK, declare hasCustomOptions: true), or it isn't ready yet."
+        )
       }
-      await transport.fireEditOptions()
     },
     theme: {
       set(next) {

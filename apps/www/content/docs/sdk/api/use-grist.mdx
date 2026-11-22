@@ -100,9 +100,9 @@ widget says what to change in Grist.
 | `optionsIssue` | `"read table"` | Why the widget may not write over its options (written by a newer version, or not migrated), or `null`. |
 | `setWidgetOptions(options)` | `"full"` | Replaces them (under `optionsVersion`, if declared); rejects while `optionsIssue` is set, except `setWidgetOptions({})`, which resets them. |
 | `patchWidgetOptions(patch)` | `"full"` | Merges `patch` into them, as the widget reads them; rejects while `optionsIssue` is set. |
-| `configurationOpen` | `"read table"` | `true` while the widget's configuration view is open: Grist's "Open configuration" (with `hasCustomOptions: true`) or `openConfiguration()` opened it. The widget draws the view ([Widget options](/docs/sdk/guide/widget-options#a-configuration-view)). |
-| `openConfiguration()` | `"read table"` | Opens it from the widget, as Grist's button does. |
-| `closeConfiguration()` | `"read table"` | Closes it: the view's close button, Escape, Cancel, or once its settings are saved. |
+| `configurationOpen` | `"none"` | `true` while the widget's configuration view is open: Grist's "Open configuration" (with `hasCustomOptions: true`) or `openConfiguration()` opened it. The widget draws the view ([Widget options](/docs/sdk/guide/widget-options#a-configuration-view)). |
+| `openConfiguration()` | `"none"` | Opens it from the widget, as Grist's button does. |
+| `closeConfiguration()` | `"none"` | Closes it: the view's close button, Escape, Cancel, or once its settings are saved. |
 
 ### Linking (`"read table"`)
 

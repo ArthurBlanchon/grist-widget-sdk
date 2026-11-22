@@ -6,4 +6,4 @@ A widget's configuration view, opened from Grist or from the widget. `useGrist()
 
 Grist shows the button only when the widget hands it an `onEditOptions`: until now, `hasCustomOptions: true` alone showed none. The SDK now hands it one whenever `hasCustomOptions` is `true`. The emulator follows Grist (no `onEditOptions`, no button), and `emulator.openConfiguration()` clicks the button in a test; it throws for a widget that declared no `hasCustomOptions`.
 
-Existing widgets that set `hasCustomOptions: true` and opened their settings from `onEditOptions` keep working; they can read `configurationOpen` instead of keeping that state themselves.
+Existing widgets that set `hasCustomOptions: true` and opened their settings from `onEditOptions` keep working; they can read `configurationOpen` instead of keeping that state themselves. A widget that set `hasCustomOptions: true` without an `onEditOptions` had no button in Grist, and now has one that does nothing until it draws a view on `configurationOpen`: draw one, or drop the flag.

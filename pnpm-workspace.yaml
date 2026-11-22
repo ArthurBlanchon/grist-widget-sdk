@@ -26,7 +26,7 @@ catalog:
   '@dnd-kit/modifiers': ^9.0.0
   '@uidotdev/usehooks': ^2.4.1
   'date-fns': ^4.4.0
-  'jotai': ^2.20.0
+  'jotai': ^3.0.2
   'lodash.throttle': ^4.1.1
   '@types/lodash.throttle': ^4.1.9
   # The Map (mapcn's ui/map.tsx, in widgets/_shared/ui). 6.4.1+ fixes GHSA-jrc7-96c5-q579 (critical XSS in 5.x).

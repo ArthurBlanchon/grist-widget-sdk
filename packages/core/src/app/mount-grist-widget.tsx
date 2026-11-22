@@ -193,19 +193,15 @@ export function GristWidgetApp({
             <GristBoundary>
               <ReportUrlProvider url={metadata?.reportUrl}>
                 <div style={FILL}>
-                  <Wrap>
-                    <WidgetCrashBoundary>
-                      <Suspense fallback={null}>
-                        {Settings ? (
-                          <WithSettingsView Settings={Settings}>
-                            <App />
-                          </WithSettingsView>
-                        ) : (
+                  <MaybeSettings Settings={Settings}>
+                    <Wrap>
+                      <WidgetCrashBoundary>
+                        <Suspense fallback={null}>
                           <App />
-                        )}
-                      </Suspense>
-                    </WidgetCrashBoundary>
-                  </Wrap>
+                        </Suspense>
+                      </WidgetCrashBoundary>
+                    </Wrap>
+                  </MaybeSettings>
                 </div>
               </ReportUrlProvider>
             </GristBoundary>
@@ -235,6 +231,11 @@ function isEmbedded(): boolean {
 function PageMetadata({ metadata }: { metadata: GristWidgetAppProps["metadata"] }) {
   usePageMetadata(metadata?.title ? { title: metadata.title, description: metadata.description ?? "" } : null)
   return null
+}
+
+/** The Settings view over the widget and its alerts, when the widget has Settings. */
+function MaybeSettings({ Settings, children }: { Settings?: ComponentType; children: ReactNode }) {
+  return Settings ? <WithSettingsView Settings={Settings}>{children}</WithSettingsView> : <>{children}</>
 }
 
 function PassThrough({ children }: { children: ReactNode }) {

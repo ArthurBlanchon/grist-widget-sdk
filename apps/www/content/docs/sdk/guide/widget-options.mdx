@@ -84,7 +84,7 @@ export function Settings() {
       <input
         type="checkbox"
         checked={w.widgetOptions?.compact === true}
-        disabled={w.readOnly}
+        disabled={w.readOnly || w.optionsIssue !== null}
         onChange={(e) => void w.patchWidgetOptions({ compact: e.target.checked })}
       />
     </label>
@@ -104,19 +104,32 @@ export function Settings() {
 - **Grist's Save.** Grist keeps what a widget writes to its options as a
   draft of the section, as it does for sort and filters: only its Save, at
   the top of the section, keeps it for everyone. While the new options are
-  a draft (`w.optionsDraft`), the view says to click it. The widget hears
-  its own write and Grist's Revert, but not its Save: the reminder goes
-  with a Revert, or when the view closes.
+  a draft (`w.optionsDraft`), the view says to click it, if not done yet.
+  The widget hears its own write and Grist's Revert, but not its Save: the
+  reminder goes with a Revert, or when the view closes, and each opening
+  starts afresh.
 - **No Save button of the widget's own:** a choice applies at once, and
   the reminder points at Grist's.
 - **Read-only documents:** the view says the settings can't be kept;
   disable the fields with `w.readOnly`.
+- **Options the widget may not write over** (written by a newer version,
+  or not migrated: [above](#options-that-change-shape)): the view shows
+  `w.optionsIssue`; disable the fields while it is set.
 - **Settings for now, not for everyone** (a zoom, the current tab) stay in
   the widget's toolbar, in React state: writing them would leave a draft
   at each click.
 
-In a test, `emulator.openConfiguration()` clicks Grist's button
-(`renderWithGrist` returns the emulator).
+In a test, pass the `Settings` as `mountGristWidget()` gets them, then
+click Grist's button with `emulator.openConfiguration()`:
+
+```tsx no-check
+const { emulator } = renderWithGrist(<App />, { widget, Settings })
+await emulator.openConfiguration()
+```
+
+`smokeTestWidget(entry)` opens them too, so Settings that throw fail it.
+An export named `Settings` in `src/app/App.tsx` is the SDK's Settings
+view's content: a widget that draws its own view gives it another name.
 
 A widget that draws its own configuration instead can still read
 `w.configurationOpen` with `hasCustomOptions: true`: then declare it only

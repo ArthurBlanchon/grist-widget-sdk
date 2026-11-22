@@ -273,7 +273,7 @@ export function Settings() {
         id={`${id}-scale`}
         aria-describedby={`${id}-hint`}
         value={defaultScale}
-        disabled={w.readOnly}
+        disabled={w.readOnly || w.optionsIssue !== null}
         onChange={(e) => void choose(e.target.value as Scale)}
       >
         {SCALES.map((value) => (

@@ -74,7 +74,7 @@ const en = {
 
   settingsTitle: "Settings",
   settingsBack: "Back to widget",
-  settingsDraft: "Settings changed: click Save at the top of this section to keep them for everyone.",
+  settingsDraft: "Settings changed. If you haven't yet, click Save at the top of this section to keep them for everyone.",
   settingsReadOnly: "The document is open read-only: settings can't be saved.",
 }
 
@@ -139,7 +139,7 @@ const fr: GristChromeMessages = {
   settingsTitle: "Paramètres",
   // Not « Retour »: Grist's French interface uses it for Revert, next to Enregistrer.
   settingsBack: "Revenir au widget",
-  settingsDraft: "Paramètres modifiés : cliquez sur Enregistrer en haut de cette section pour les garder pour tous.",
+  settingsDraft: "Paramètres modifiés. Si ce n'est pas encore fait, cliquez sur Enregistrer en haut de cette section pour les garder pour tous.",
   settingsReadOnly: "Le document est ouvert en lecture seule : les paramètres ne peuvent pas être enregistrés.",
 }
 

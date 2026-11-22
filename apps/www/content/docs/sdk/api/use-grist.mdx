@@ -101,7 +101,7 @@ widget says what to change in Grist.
 | `setWidgetOptions(options)` | `"full"` | Replaces them (under `optionsVersion`, if declared); rejects while `optionsIssue` is set, except `setWidgetOptions({})`, which resets them. |
 | `patchWidgetOptions(patch)` | `"full"` | Merges `patch` into them, as the widget reads them; rejects while `optionsIssue` is set. |
 | `configurationOpen` | `"none"` | `true` while the widget's configuration is open: Grist's "Open configuration" (with `hasCustomOptions: true`) or `openConfiguration()` opened it. With an exported `Settings`, `mountGristWidget()` draws the view ([Widget options](/docs/sdk/guide/widget-options#a-settings-view)). |
-| `optionsDraft` | `"none"` | `true` once the widget's own write to its options comes back: Grist holds it as a draft of the section until its Save. `false` again on Grist's Revert, and when the configuration closes (Grist tells a widget nothing on Save). |
+| `optionsDraft` | `"none"` | `true` once the widget's own write to its options comes back: Grist holds it as a draft of the section until its Save. `false` again on Grist's Revert, and when the configuration opens or closes (Grist tells a widget nothing on Save). |
 | `openConfiguration()` | `"none"` | Opens it from the widget, as Grist's button does. |
 | `closeConfiguration()` | `"none"` | Closes it: the view's close button, Escape, Cancel, or once its settings are saved. |
 

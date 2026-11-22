@@ -260,7 +260,10 @@ export function createGristApi(runtime: GristRuntime): GristApi {
         const next = writeWidgetOptions(options, readWidgetOptions(current, runtime.options), runtime.options)
         // Before the write: Grist may send the options back during it.
         runtime.update({ optionsWritten: stableJson(next) })
-        await grist.setOptions(next)
+        await grist.setOptions(next).catch((err: unknown) => {
+          runtime.update({ optionsWritten: null })
+          throw err
+        })
       })
       patching = run.catch(() => undefined)
       return run
@@ -276,12 +279,16 @@ export function createGristApi(runtime: GristRuntime): GristApi {
         const read = readWidgetOptions(current, runtime.options)
         const next = writeWidgetOptions({ ...read.options, ...patch }, read, runtime.options)
         runtime.update({ optionsWritten: stableJson(next) })
-        await grist.setOptions(next)
+        await grist.setOptions(next).catch((err: unknown) => {
+          runtime.update({ optionsWritten: null })
+          throw err
+        })
       })
       patching = run.catch(() => undefined)
       return run
     },
-    openConfiguration: () => runtime.update({ configurationOpen: true }),
+    // Opening starts afresh: a write from elsewhere, maybe saved since, isn't this view's.
+    openConfiguration: () => runtime.update({ configurationOpen: true, optionsDraft: false, optionsWritten: null }),
     // Closing forgets the draft: Grist tells a widget nothing on Save.
     closeConfiguration: () => runtime.update({ configurationOpen: false, optionsDraft: false, optionsWritten: null }),
 

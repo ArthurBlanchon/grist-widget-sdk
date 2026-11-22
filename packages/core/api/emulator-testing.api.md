@@ -56,6 +56,7 @@ export type RenderWithGristOptions = RenderOptions & {
     widget?: GristWidget | UseGristOptions;
     rows?: ReadonlyArray<Record<string, unknown>>;
     readOnly?: boolean;
+    Settings?: ComponentType;
 };
 
 // @public
@@ -73,6 +74,7 @@ export type SmokeTestWidgetOptions = {
     App: ComponentType;
     options?: UseGristOptions;
     widget?: GristWidget;
+    Settings?: ComponentType;
     document?: GristReplicaDocument;
     timeout?: number;
 };

@@ -35,8 +35,12 @@ re-exports it. A widget made before `defineGristWidget` exports `GRIST_OPTIONS` 
 `src/main.tsx` is one call, `mountGristWidget(entry, { dev })` from `grist-widget-sdk/app`,
 with `entry` the module `src/app/App.tsx`: inside Grist it renders the widget in
 `GristWidgetProvider` and `GristBoundary`, with the SDK's alerts and Grist's light/dark
-theme. To replace the alerts or the pages shown outside Grist, export `Alerts`,
-`LocalDevPage` or `ReleasePage` from `src/app/App.tsx`; a provider goes inside `App`. Never
+theme. A widget with settings exports `Settings` (only the fields, which write its options)
+from `src/app/App.tsx`: Grist's "Open configuration" then opens the SDK's Settings view,
+which `w.openConfiguration()` opens from the widget's own button
+(<https://gristwidgets.com/docs/sdk/guide/widget-options>). To replace the alerts or the
+pages shown outside Grist, export `Alerts`, `LocalDevPage` or `ReleasePage` from
+`src/app/App.tsx`; a provider goes inside `App`. Never
 edit `src/main.tsx`: `upgrade` refuses to run over a changed one. Access level, column
 mapping, and rendering all live in `src/app/App.tsx`: that's the file to edit.
 

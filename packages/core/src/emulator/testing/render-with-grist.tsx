@@ -9,7 +9,7 @@
  * Cleanup is automatic when the test's container unmounts.
  */
 
-import { useEffect, type ReactElement, type ReactNode } from "react"
+import { useEffect, type ReactElement, type ReactNode, type ComponentType } from "react"
 
 import { render, type RenderOptions, type RenderResult } from "@testing-library/react"
 
@@ -41,6 +41,12 @@ export type RenderWithGristOptions = RenderOptions & {
   rows?: ReadonlyArray<Record<string, unknown>>
   /** The document open read-only, as for a viewer: `w.readOnly`, and writes fail as in Grist. */
   readOnly?: boolean
+  /**
+   * With `widget`: the widget's exported `Settings`, drawn in the SDK's
+   * Settings view as `mountGristWidget()` does (and `hasCustomOptions`
+   * defaulting to `true`, so `emulator.openConfiguration()` opens it).
+   */
+  Settings?: ComponentType
 }
 
 /** Testing Library's render result, with the emulator the widget runs against. */
@@ -97,7 +103,11 @@ export function renderWithGrist(
   )
   // The declaration's languages, so the SDK's chrome speaks the language it would in Grist.
   const languages = options.widget && isGristWidget(options.widget) ? options.widget.metadata.languages : undefined
-  const app = widgetOptions ? <GristWidgetApp App={Widget} options={widgetOptions} metadata={languages ? { languages } : undefined} /> : ui
+  const app = widgetOptions ? (
+    <GristWidgetApp App={Widget} options={widgetOptions} metadata={languages ? { languages } : undefined} Settings={options.Settings} />
+  ) : (
+    ui
+  )
   const result = render(app, { ...options, wrapper })
   const originalUnmount = result.unmount
   result.unmount = () => {

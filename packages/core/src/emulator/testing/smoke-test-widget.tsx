@@ -1,5 +1,5 @@
 import { Component, type ComponentType, type ReactNode } from "react"
-import { waitFor } from "@testing-library/react"
+import { act, waitFor } from "@testing-library/react"
 
 import { entryProps, GristWidgetApp, isGristWidgetEntry, type GristWidgetEntry } from "../../app/mount-grist-widget"
 import type { GristReplicaDocument, GristWidget, UseGristOptions } from "../../sdk"
@@ -15,6 +15,8 @@ export type SmokeTestWidgetOptions = {
   options?: UseGristOptions
   /** The widget's declaration, from `defineGristWidget()` (or pass `options`). */
   widget?: GristWidget
+  /** The widget's `Settings`, opened once in the SDK's Settings view after the widget renders. */
+  Settings?: ComponentType
   /**
    * The Grist document to run against. Defaults to one table with a column
    * per column the widget declares, typed after the first type it accepts,
@@ -52,7 +54,7 @@ export async function smokeTestWidget(
   input: SmokeTestWidgetOptions | GristWidgetEntry,
   extra: Pick<SmokeTestWidgetOptions, "document" | "timeout"> = {}
 ): Promise<void> {
-  const { App, options: given, widget, document, timeout = 10_000 } =
+  const { App, options: given, widget, Settings, document, timeout = 10_000 } =
     isGristWidgetEntry(input) ? { ...entryProps(input), ...extra } : input
   installJsdomStubs()
   const options = given ?? widget?.options
@@ -71,7 +73,16 @@ export async function smokeTestWidget(
 
   const columns = declaredColumns(options)
   const gristDocument = document ?? declaredDocument(columns)
-  const result = renderWithGrist(<GristWidgetApp App={Probe} options={options} />, {
+  const SettingsProbe = Settings
+    ? () => (
+        <CatchRenderError crash={crash}>
+          <div data-grist-smoke-settings="">
+            <Settings />
+          </div>
+        </CatchRenderError>
+      )
+    : undefined
+  const result = renderWithGrist(<GristWidgetApp App={Probe} options={options} Settings={SettingsProbe} />, {
     emulator: {
       document: gristDocument,
       // Granted as the user would in Grist's widget panel: the access the
@@ -99,6 +110,22 @@ export async function smokeTestWidget(
       )
     }
     if (crash.error !== undefined) throw crash.error
+    // Its Settings too, opened as Grist's "Open configuration" does.
+    if (SettingsProbe) {
+      await act(() => result.emulator.openConfiguration())
+      try {
+        await waitFor(
+          () => {
+            if (crash.error !== undefined) return
+            if (!result.container.ownerDocument.querySelector("[data-grist-smoke-settings]")) throw new Error("not rendered yet")
+          },
+          { timeout }
+        )
+      } catch {
+        throw new Error(`smokeTestWidget: the widget's Settings didn't render within ${timeout} ms.`)
+      }
+      if (crash.error !== undefined) throw crash.error
+    }
   } finally {
     result.unmount()
   }

@@ -230,6 +230,52 @@ describe("the Settings view", () => {
     expect(await screen.findByText(/open read-only: settings can't be saved/)).toBeInTheDocument()
   })
 
+  it("gives the focus back to the widget's button, with the widget no longer inert", async () => {
+    // jsdom has no inert: focus() inside an inert element does nothing, as in a browser.
+    const focus = HTMLElement.prototype.focus
+    const spy = vi.spyOn(HTMLElement.prototype, "focus").mockImplementation(function (this: HTMLElement, options?: FocusOptions) {
+      for (let el: HTMLElement | null = this; el; el = el.parentElement) if ((el as HTMLElement & { inert?: boolean }).inert) return
+      focus.call(this, options)
+    })
+    try {
+      renderApp()
+      await screen.findByTestId("widget")
+      const button = screen.getByRole("button", { name: "open settings" })
+      button.focus()
+      fireEvent.click(button)
+      await screen.findByRole("dialog", { name: "Settings" })
+      fireEvent.click(screen.getByRole("button", { name: /Back to widget/ }))
+      await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument())
+      expect(button).toHaveFocus()
+    } finally {
+      spy.mockRestore()
+    }
+  })
+
+  it("leaves Escape to a popover inside the settings that handles it", async () => {
+    function WithPopover() {
+      return <input aria-label="search" onKeyDown={(e) => e.key === "Escape" && e.preventDefault()} />
+    }
+    renderWithGrist(<GristWidgetApp App={Counter} options={{ requiredAccess: "full" }} Settings={WithPopover} />, {
+      emulator: { document: presets.blank() },
+    })
+    await screen.findByTestId("widget")
+    fireEvent.click(screen.getByRole("button", { name: "open settings" }))
+    fireEvent.keyDown(await screen.findByLabelText("search"), { key: "Escape" })
+    expect(screen.getByRole("dialog", { name: "Settings" })).toBeInTheDocument()
+  })
+
+  it("shows why the options can't be written over (ADR 0017)", async () => {
+    renderWithGrist(
+      <GristWidgetApp App={Counter} options={{ requiredAccess: "full", optionsVersion: 1 }} Settings={Settings} />,
+      { emulator: { document: presets.blank(), widgetOptions: { compact: true, __version: 3 } } }
+    )
+    await screen.findByTestId("widget")
+    fireEvent.click(screen.getByRole("button", { name: "open settings" }))
+    await screen.findByRole("dialog", { name: "Settings" })
+    expect(screen.getByRole("alert")).toHaveTextContent(/version/i)
+  })
+
   it("isn't there for a widget without Settings", async () => {
     const { emulator } = renderWithGrist(<GristWidgetApp App={Counter} options={{ requiredAccess: "full" }} />, {
       emulator: { document: presets.blank() },

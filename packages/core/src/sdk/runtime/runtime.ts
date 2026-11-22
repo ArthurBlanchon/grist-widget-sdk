@@ -187,7 +187,7 @@ export function createGristRuntime(options: GristRuntimeOptions = {}): GristRunt
     ...(options.hasCustomOptions || options.onEditOptions
       ? {
           onEditOptions: async () => {
-            update({ configurationOpen: true })
+            update({ configurationOpen: true, optionsDraft: false, optionsWritten: null })
             await options.onEditOptions?.()
           },
         }

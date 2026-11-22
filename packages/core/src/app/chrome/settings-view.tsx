@@ -1,7 +1,8 @@
-import { Suspense, useEffect, useId, useRef, type ComponentType, type CSSProperties, type KeyboardEvent, type ReactNode } from "react"
+import { Suspense, useEffect, useId, useLayoutEffect, useRef, type ComponentType, type CSSProperties, type KeyboardEvent, type ReactNode } from "react"
 
 import { useGrist } from "../../sdk"
 import { useChromeMessages } from "../../sdk/chrome-messages"
+import { WidgetCrashBoundary } from "./report-problem"
 import { tokens } from "./tokens"
 
 /**
@@ -20,8 +21,9 @@ export function WithSettingsView({ Settings, children }: { Settings: ComponentTy
   const widget = useRef<HTMLDivElement>(null)
   const open = w.configurationOpen
   // `inert` on the widget under the view: nothing there takes focus or clicks.
-  // Set on the element: React 18 doesn't know the attribute.
-  useEffect(() => {
+  // Set on the element: React 18 doesn't know the attribute. A layout effect,
+  // so it is lifted before the view's cleanup gives the focus back.
+  useLayoutEffect(() => {
     if (widget.current) widget.current.inert = open
   }, [open])
   return (
@@ -29,12 +31,26 @@ export function WithSettingsView({ Settings, children }: { Settings: ComponentTy
       <div ref={widget} aria-hidden={open || undefined} style={CONTENTS}>
         {children}
       </div>
-      {open ? <SettingsView Settings={Settings} close={w.closeConfiguration} draft={w.optionsDraft} readOnly={w.readOnly} /> : null}
+      {open ? (
+        <SettingsView Settings={Settings} close={w.closeConfiguration} draft={w.optionsDraft} readOnly={w.readOnly} issue={w.optionsIssue} />
+      ) : null}
     </>
   )
 }
 
-function SettingsView({ Settings, close, draft, readOnly }: { Settings: ComponentType; close: () => void; draft: boolean; readOnly: boolean }) {
+function SettingsView({
+  Settings,
+  close,
+  draft,
+  readOnly,
+  issue,
+}: {
+  Settings: ComponentType
+  close: () => void
+  draft: boolean
+  readOnly: boolean
+  issue: string | null
+}) {
   const { locale, t } = useChromeMessages()
   const titleId = useId()
   const body = useRef<HTMLDivElement>(null)
@@ -51,7 +67,8 @@ function SettingsView({ Settings, close, draft, readOnly }: { Settings: Componen
   }, [])
 
   function onKeyDown(e: KeyboardEvent) {
-    if (e.key === "Escape") {
+    // A popover inside the settings handles its own Escape first (Radix prevents the default).
+    if (e.key === "Escape" && !e.defaultPrevented) {
       e.stopPropagation()
       close()
     }
@@ -73,11 +90,19 @@ function SettingsView({ Settings, close, draft, readOnly }: { Settings: Componen
           </p>
         ) : null}
         {readOnly ? <p style={NOTE}>{t.settingsReadOnly}</p> : null}
+        {/* ADR 0017: options from a newer version, or not migrated, are never written over. */}
+        {issue ? (
+          <p role="alert" style={ISSUE}>
+            {issue}
+          </p>
+        ) : null}
       </div>
       <div ref={body} style={BODY}>
-        <Suspense fallback={null}>
-          <Settings />
-        </Suspense>
+        <WidgetCrashBoundary>
+          <Suspense fallback={null}>
+            <Settings />
+          </Suspense>
+        </WidgetCrashBoundary>
       </div>
     </div>
   )
@@ -133,6 +158,8 @@ const WARNING: CSSProperties = {
 }
 
 const NOTE: CSSProperties = { margin: 0, color: tokens.mutedForeground }
+
+const ISSUE: CSSProperties = { margin: 0, color: tokens.destructive }
 
 const BODY: CSSProperties = { flex: 1, minHeight: 0, overflowY: "auto", padding: "1rem" }
 

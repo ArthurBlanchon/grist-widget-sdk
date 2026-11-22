@@ -652,6 +652,15 @@ describe("optionsDraft", () => {
     expect(w().optionsDraft).toBe(false)
   })
 
+  it("starts afresh when the configuration opens: a write from elsewhere may be saved since", async () => {
+    const { w } = renderProbe({ requiredAccess: "full", hasCustomOptions: true })
+    await untilReady(w)
+    await settle(() => w().patchWidgetOptions({ a: 2 }))
+    expect(w().optionsDraft).toBe(true)
+    await settle(() => w().openConfiguration())
+    expect(w().optionsDraft).toBe(false)
+  })
+
   it("turns false when the configuration closes: Grist tells a widget nothing on Save", async () => {
     const { w } = renderProbe({ requiredAccess: "full", hasCustomOptions: true })
     await untilReady(w)

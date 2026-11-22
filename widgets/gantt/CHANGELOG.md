@@ -2,6 +2,11 @@
 
 What changed in each version, for the people using the widget. Newest first.
 
+## 0.4.0 (2026-11-22)
+
+- A day scale: the timeline shows days, weeks or months.
+- A default scale, the one the chart opens on, set in the widget's configuration: Grist's "Open configuration" and the chart's settings icon both open it. Without one, the chart opens on weeks, as before. The scale buttons change the view for the moment, without saving it.
+
 ## 0.3.2 (2026-11-21)
 
 - No more linking alert ("Widget linking") in a section that follows no other, or that no section follows: the widget works either way.

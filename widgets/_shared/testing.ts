@@ -26,6 +26,8 @@ export const domNodes = (): number => document.body.getElementsByTagName("*").le
 export type VolumeOptions = {
   /** The widget table's columns whose value is made distinct on every row: the worst case for a widget that groups by them. */
   unique?: string[]
+  /** The widget options the section holds (a scale, a view) when the volume depends on them. */
+  widgetOptions?: Record<string, unknown>
 }
 
 export function volumeDocument(
@@ -144,7 +146,10 @@ async function settledNodes(limitMs = VOLUME_TIMEOUT_MS - 5_000): Promise<number
  */
 export async function expectVolume(ui: ReactElement, widget: GristWidget, demo: GristWidgetDemo, options: VolumeOptions = {}): Promise<number> {
   const { document, mapping } = volumeDocument(widget, demo, VOLUME_ROWS, options)
-  const { emulator } = renderWithGrist(ui, { widget, emulator: { document } })
+  const { emulator } = renderWithGrist(ui, {
+    widget,
+    emulator: { document, ...(options.widgetOptions ? { widgetOptions: options.widgetOptions } : {}) },
+  })
   emulator.setColumnMappings(mapping)
   const nodes = await settledNodes()
   expect(nodes, `${nodes} DOM nodes for ${VOLUME_ROWS} rows; the budget is ${VOLUME_NODES} (ADR 0018)`).toBeLessThanOrEqual(VOLUME_NODES)

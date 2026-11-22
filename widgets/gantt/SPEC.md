@@ -15,7 +15,8 @@ People who plan work in Grist (projects, interventions, a production
 schedule, room bookings) see their tasks as bars on a timeline, in
 groups, with the tasks that share a resource on one row. They move a bar
 to change its dates, or drag its ends to change its length, and Grist
-saves the new dates.
+saves the new dates. The timeline shows days, weeks or months; the
+widget's configuration sets the scale it opens on.
 
 Grist has no timeline view; its forum threads asking for one count
 thousands of views.
@@ -59,7 +60,7 @@ read from the columns' settings, which only full access reads.
   as the days it now covers.
 - **AC-6** Given rows without a start or an end date, they are left out and
   the header says how many.
-- **AC-7** Given the scale buttons, the timeline shows weeks or months.
+- **AC-7** Given the scale buttons, the timeline shows days, weeks or months.
 - **AC-8** Given a write that Grist refuses, the widget shows the error.
 - **AC-9** Given a browser that prefers French, the widget's text and the
   timeline's dates are in French.
@@ -67,6 +68,12 @@ read from the columns' settings, which only full access reads.
 - **AC-11** Given no task with dates, the widget says so.
 - **AC-12** Given more than 50 tasks, the chart shows the first 50 in the
   section's order, with a button that shows the next ones.
+- **AC-13** Given a default scale in the widget's configuration, the chart
+  opens on it (weeks when none is set). Grist's "Open configuration" and the
+  widget's settings icon open the same configuration view; Save keeps the
+  scale in the widget's options, and its close button, Cancel and Escape
+  leave it without saving. The scale buttons change the view only. On a
+  document open read-only, the settings icon isn't shown.
 
 ## Standard criteria
 

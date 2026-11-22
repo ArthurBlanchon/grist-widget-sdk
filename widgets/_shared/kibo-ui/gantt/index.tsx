@@ -516,39 +516,53 @@ export const GanttContentHeader: FC<GanttContentHeaderProps> = ({
   );
 };
 
+// A column a day makes about 1,100 columns over three years, and five DOM
+// nodes each: only the months near the view are drawn, the others are an
+// empty block of the same width (ADR 0018's node budget).
 const DailyHeader: FC = () => {
   const gantt = useContext(GanttContext);
+  const [scrollX] = useGanttScrollX();
+  const columnWidth = (gantt.columnWidth * gantt.zoom) / 100;
+  const viewport =
+    gantt.ref?.current?.clientWidth || (typeof window === "undefined" ? 1280 : window.innerWidth);
+  // About two months on each side, so a scroll between two updates (they are
+  // throttled) still finds its days drawn.
+  const margin = 62 * columnWidth;
+  const from = scrollX - margin;
+  const to = scrollX + viewport + margin;
+  let left = 0;
 
   return gantt.timelineData.map((year) =>
     year.quarters
       .flatMap((quarter) => quarter.months)
-      .map((month, index) => (
-        <div className="relative flex flex-col" key={`${year.year}-${index}`}>
-          <GanttContentHeader
-            columns={month.days}
-            renderHeaderItem={(item: number) => (
-              <div className="flex items-center justify-center gap-1">
-                <p>
-                  {format(addDays(new Date(year.year, index, 1), item), "d", { locale: gantt.locale })}
-                </p>
-                <p className="text-muted-foreground">
-                  {format(
-                    addDays(new Date(year.year, index, 1), item), "EEEEE", { locale: gantt.locale })}
-                </p>
-              </div>
-            )}
-            title={format(new Date(year.year, index, 1), "MMMM yyyy", { locale: gantt.locale })}
-          />
-          <GanttColumns
-            columns={month.days}
-            isColumnSecondary={(item: number) =>
-              [0, 6].includes(
-                addDays(new Date(year.year, index, 1), item).getDay()
-              )
-            }
-          />
-        </div>
-      ))
+      .map((month, index) => {
+        const start = left;
+        left += month.days * columnWidth;
+        const key = `${year.year}-${index}`;
+        if (left < from || start > to) {
+          return <div aria-hidden className="relative shrink-0" key={key} style={{ width: month.days * columnWidth }} />;
+        }
+        return (
+          <div className="relative flex flex-col" key={key}>
+            <GanttContentHeader
+              columns={month.days}
+              renderHeaderItem={(item: number) => {
+                const date = addDays(new Date(year.year, index, 1), item);
+                return `${format(date, "d", { locale: gantt.locale })} ${format(date, "EEEEE", { locale: gantt.locale })}`;
+              }}
+              title={format(new Date(year.year, index, 1), "MMMM yyyy", { locale: gantt.locale })}
+            />
+            <GanttColumns
+              columns={month.days}
+              isColumnSecondary={(item: number) =>
+                [0, 6].includes(
+                  addDays(new Date(year.year, index, 1), item).getDay()
+                )
+              }
+            />
+          </div>
+        );
+      })
   );
 };
 

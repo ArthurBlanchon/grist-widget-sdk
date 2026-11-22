@@ -3,7 +3,7 @@ import { afterEach, beforeAll, describe, expect, it, vi } from "vitest"
 import { cleanup, fireEvent, installJsdomStubs, renderWithGrist, screen, waitFor } from "grist-widget-sdk/emulator/testing"
 import type { GristReplicaDocument, GristReplicaRow } from "grist-widget-sdk"
 
-import App, { widget, writeDates } from "./App"
+import App, { readDefaultScale, widget, writeDates } from "./App"
 import { readableOn } from "./colors"
 import { expectVolume, VOLUME_TIMEOUT_MS } from "@shared/testing"
 import { demo } from "./demo"
@@ -53,8 +53,11 @@ const doc = (rows: GristReplicaRow[] = ROWS): GristReplicaDocument => ({
 
 const ALL = { Title: "Title", Start: "Start", End: "End", Group: "Group", Sequence: "Sequence", Status: "Status" }
 
-function setup(mappings: Record<string, string> = ALL, rows?: GristReplicaRow[]) {
-  const result = renderWithGrist(<App />, { widget, emulator: { document: doc(rows), widgetInteraction: { access_level: "full" } } })
+function setup(mappings: Record<string, string> = ALL, rows?: GristReplicaRow[], widgetOptions?: Record<string, unknown>) {
+  const result = renderWithGrist(<App />, {
+    widget,
+    emulator: { document: doc(rows), widgetInteraction: { access_level: "full" }, ...(widgetOptions ? { widgetOptions } : {}) },
+  })
   result.emulator.setColumnMappings(mappings)
   return result
 }
@@ -130,13 +133,17 @@ describe("Gantt chart", () => {
     expect(screen.queryByText("No dates")).not.toBeInTheDocument()
   })
 
-  it("AC-7 switches the timeline between weeks and months", async () => {
+  it("AC-7 switches the timeline between days, weeks and months", async () => {
     setup()
     await screen.findByText("Survey")
-    const months = screen.getByRole("button", { name: "Months" })
-    fireEvent.click(months)
-    expect(months).toHaveAttribute("aria-pressed", "true")
-    expect(screen.getByRole("button", { name: "Weeks" })).toHaveAttribute("aria-pressed", "false")
+    const pressed = () => ["Days", "Weeks", "Months"].filter((name) => screen.getByRole("button", { name }).getAttribute("aria-pressed") === "true")
+    expect(pressed()).toEqual(["Weeks"])
+    fireEvent.click(screen.getByRole("button", { name: "Months" }))
+    expect(pressed()).toEqual(["Months"])
+    fireEvent.click(screen.getByRole("button", { name: "Days" }))
+    expect(pressed()).toEqual(["Days"])
+    // One column a day: the day's number and weekday letter head it.
+    expect(screen.getAllByText(/^15 \S$/).length).toBeGreaterThan(0)
   })
 
   it("AC-8 shows the error when Grist refuses the new dates", async () => {
@@ -186,6 +193,70 @@ describe("Gantt chart", () => {
   })
 })
 
+describe("AC-13 the default scale, set in the configuration view", () => {
+  const pressed = () => ["Days", "Weeks", "Months"].filter((name) => screen.getByRole("button", { name }).getAttribute("aria-pressed") === "true")
+
+  it("AC-13 opens on the scale the widget options hold, weeks when unset or unknown", async () => {
+    setup(ALL, undefined, { defaultScale: "monthly" })
+    await screen.findByText("Survey")
+    await waitFor(() => expect(pressed()).toEqual(["Months"]))
+    expect(readDefaultScale(null)).toBe("weekly")
+    expect(readDefaultScale({ defaultScale: "hourly" })).toBe("weekly")
+    expect(readDefaultScale({ defaultScale: "daily" })).toBe("daily")
+  })
+
+  it("AC-13 the settings icon opens the configuration, and Save keeps the scale in the widget options", async () => {
+    const { emulator } = setup()
+    await screen.findByText("Survey")
+    fireEvent.click(screen.getByRole("button", { name: "Settings" }))
+    const view = await screen.findByRole("dialog", { name: "Configuration" })
+    fireEvent.change(screen.getByLabelText("Default scale"), { target: { value: "daily" } })
+    fireEvent.click(screen.getByRole("button", { name: "Save" }))
+    await waitFor(() => expect(view).not.toBeInTheDocument())
+    expect(emulator.state.widgetOptions).toMatchObject({ defaultScale: "daily" })
+    await waitFor(() => expect(pressed()).toEqual(["Days"]))
+  })
+
+  it("AC-13 Grist's \"Open configuration\" opens the same view", async () => {
+    const { emulator } = setup()
+    await screen.findByText("Survey")
+    await emulator.openConfiguration()
+    expect(await screen.findByRole("dialog", { name: "Configuration" })).toBeInTheDocument()
+  })
+
+  it("AC-13 the close button, Cancel and Escape leave it without saving", async () => {
+    const { emulator } = setup()
+    await screen.findByText("Survey")
+    for (const leave of [
+      () => fireEvent.click(screen.getByRole("button", { name: "Close" })),
+      () => fireEvent.click(screen.getByRole("button", { name: "Cancel" })),
+      () => fireEvent.keyDown(screen.getByLabelText("Default scale"), { key: "Escape" }),
+    ]) {
+      fireEvent.click(screen.getByRole("button", { name: "Settings" }))
+      fireEvent.change(await screen.findByLabelText("Default scale"), { target: { value: "monthly" } })
+      leave()
+      await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument())
+    }
+    expect(emulator.state.widgetOptions?.defaultScale).toBeUndefined()
+    expect(pressed()).toEqual(["Weeks"])
+  })
+
+  it("AC-13 the scale buttons change the view only: nothing is saved", async () => {
+    const { emulator } = setup()
+    await screen.findByText("Survey")
+    fireEvent.click(screen.getByRole("button", { name: "Days" }))
+    expect(emulator.state.widgetOptions?.defaultScale).toBeUndefined()
+  })
+
+  it("AC-13 a read-only document shows no settings icon", async () => {
+    renderWithGrist(<App />, { widget, readOnly: true, emulator: { document: doc(), widgetInteraction: { access_level: "full" } } }).emulator.setColumnMappings(ALL)
+    await screen.findByText("Survey")
+    expect(screen.queryByRole("button", { name: "Settings" })).not.toBeInTheDocument()
+  })
+})
+
 it("AC-volume renders 5,000 rows within the DOM budget", () => expectVolume(<App />, widget, demo), VOLUME_TIMEOUT_MS)
 
 it("AC-volume holds with a distinct group and row for every task", () => expectVolume(<App />, widget, demo, { unique: ["Group", "Team"] }), VOLUME_TIMEOUT_MS)
+
+it("AC-volume holds on the day scale", () => expectVolume(<App />, widget, demo, { widgetOptions: { defaultScale: "daily" } }), VOLUME_TIMEOUT_MS)

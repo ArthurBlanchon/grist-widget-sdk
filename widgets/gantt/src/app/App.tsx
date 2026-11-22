@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from "react"
 import { fr } from "date-fns/locale"
-import { Calendar, CalendarDays } from "lucide-react"
+import { Calendar, CalendarDays, CalendarRange, Settings, X } from "lucide-react"
 
 import { defineGristWidget, type GristColumnInfo } from "grist-widget-sdk"
 
@@ -19,6 +19,7 @@ import {
   type Range,
 } from "@shared/kibo-ui/gantt"
 import { Button } from "@shared/ui/button"
+import { NativeSelect, NativeSelectOption } from "@shared/ui/native-select"
 import { reportUrl } from "@shared/report-url"
 
 import { choiceStyles } from "./colors"
@@ -31,6 +32,9 @@ export const widget = defineGristWidget({
   description: "Tasks on a timeline, grouped and in rows; drag a bar to move it, or its ends to change its dates.",
   reportUrl: reportUrl(),
   requiredAccess: "full",
+  // Grist's "Open configuration" opens the widget's configuration view, as its settings icon does.
+  hasCustomOptions: true,
+  optionsVersion: 1,
   columns: [
     { name: "Title", type: "Text", title: "Task" },
     { name: "Start", type: "Date", title: "Start date" },
@@ -41,7 +45,14 @@ export const widget = defineGristWidget({
   ],
 })
 
-type Scale = Extract<Range, "monthly" | "weekly">
+type Scale = Extract<Range, "daily" | "weekly" | "monthly">
+const SCALES: readonly Scale[] = ["daily", "weekly", "monthly"]
+
+/** The scale the chart opens on: the widget options' `defaultScale`, weeks when unset or unknown. */
+export function readDefaultScale(options: Record<string, unknown> | null | undefined): Scale {
+  const value = options?.defaultScale
+  return SCALES.includes(value as Scale) ? (value as Scale) : "weekly"
+}
 type UpdateRecord = ReturnType<typeof widget.useGrist>["updateRecord"]
 
 /** What moving or resizing a bar writes: the row's Start and End, as the days the bar now covers. */
@@ -56,7 +67,15 @@ export default function App() {
   const w = widget.useGrist()
   const t = useT(messages)
   const locale = detectLocale()
-  const [scale, setScale] = useState<Scale>("weekly")
+  // The buttons change the view for now; the configuration sets the scale it opens on.
+  const defaultScale = readDefaultScale(w.widgetOptions)
+  const [scale, setScale] = useState<Scale>(defaultScale)
+  // A new default (the options arrive, or the configuration saves one) moves the view to it.
+  const [shownDefault, setShownDefault] = useState<Scale>(defaultScale)
+  if (shownDefault !== defaultScale) {
+    setShownDefault(defaultScale)
+    setScale(defaultScale)
+  }
   const [error, setError] = useState<string | null>(null)
 
   // Choice colours, from the columns' settings in Grist.
@@ -160,20 +179,39 @@ export default function App() {
             {t("moreTasks", { n: Math.min(TASKS_SHOWN, tasks.length - listed), left: tasks.length - listed })}
           </Button>
         ) : null}
-        <div className="flex items-center gap-1 rounded-lg border p-1" role="group" aria-label={t("scale")}>
-          {(
-            [
-              ["monthly", Calendar, t("monthly")],
-              ["weekly", CalendarDays, t("weekly")],
-            ] as const
-          ).map(([value, Icon, label]) => (
-            <Button key={value} variant={scale === value ? "secondary" : "ghost"} size="icon-sm" aria-pressed={scale === value} title={label} onClick={() => setScale(value)}>
-              <Icon aria-hidden />
-              <span className="sr-only">{label}</span>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 rounded-lg border p-1" role="group" aria-label={t("scale")}>
+            {(
+              [
+                ["daily", CalendarDays, t("daily")],
+                ["weekly", CalendarRange, t("weekly")],
+                ["monthly", Calendar, t("monthly")],
+              ] as const
+            ).map(([value, Icon, label]) => (
+              <Button key={value} variant={scale === value ? "secondary" : "ghost"} size="icon-sm" aria-pressed={scale === value} title={label} onClick={() => setScale(value)}>
+                <Icon aria-hidden />
+                <span className="sr-only">{label}</span>
+              </Button>
+            ))}
+          </div>
+          {w.readOnly ? null : (
+            <Button variant="ghost" size="icon-sm" title={t("settings")} aria-expanded={w.configurationOpen} onClick={w.openConfiguration}>
+              <Settings aria-hidden />
+              <span className="sr-only">{t("settings")}</span>
             </Button>
-          ))}
+          )}
         </div>
       </header>
+
+      {w.configurationOpen ? (
+        <Configuration
+          defaultScale={defaultScale}
+          readOnly={w.readOnly}
+          save={(next) => w.patchWidgetOptions({ defaultScale: next })}
+          close={w.closeConfiguration}
+          t={t}
+        />
+      ) : null}
 
       {error ? (
         <p role="alert" className="px-4 py-2 text-sm text-destructive">
@@ -210,5 +248,102 @@ export default function App() {
         </GanttProvider>
       </div>
     </main>
+  )
+}
+
+type T = ReturnType<typeof useT<keyof (typeof messages)["en"]>>
+
+/**
+ * The widget's configuration view: Grist's "Open configuration" and the
+ * settings icon both open it (useGrist().configurationOpen). It sets the
+ * scale the chart opens on, kept in the widget options; ✕, Cancel and
+ * Escape leave it without saving.
+ */
+function Configuration({
+  defaultScale,
+  readOnly,
+  save,
+  close,
+  t,
+}: {
+  defaultScale: Scale
+  readOnly: boolean
+  save: (scale: Scale) => Promise<unknown>
+  close: () => void
+  t: T
+}) {
+  const [choice, setChoice] = useState<Scale>(defaultScale)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const first = useRef<HTMLSelectElement>(null)
+  const id = useId()
+  useEffect(() => first.current?.focus(), [])
+
+  async function submit() {
+    setSaving(true)
+    setError(null)
+    try {
+      await save(choice)
+      close()
+    } catch (err) {
+      setError(t("saveSettingsFailed", { error: err instanceof Error ? err.message : String(err) }))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  function onKeyDown(e: KeyboardEvent) {
+    if (e.key === "Escape") {
+      e.stopPropagation()
+      close()
+    }
+  }
+
+  return (
+    <section role="dialog" aria-label={t("configuration")} onKeyDown={onKeyDown} className="flex shrink-0 flex-col gap-3 border-b bg-card px-4 py-3 text-sm">
+      <div className="flex items-center justify-between gap-2">
+        <h2 className="font-medium">{t("configuration")}</h2>
+        <Button variant="ghost" size="icon-sm" title={t("close")} onClick={close}>
+          <X aria-hidden />
+          <span className="sr-only">{t("close")}</span>
+        </Button>
+      </div>
+      <div className="flex max-w-xs flex-col gap-1">
+        <label htmlFor={`${id}-scale`} className="font-medium">
+          {t("defaultScale")}
+        </label>
+        <NativeSelect
+          ref={first}
+          id={`${id}-scale`}
+          aria-describedby={`${id}-hint`}
+          value={choice}
+          disabled={readOnly}
+          onChange={(e) => setChoice(e.target.value as Scale)}
+        >
+          {SCALES.map((value) => (
+            <NativeSelectOption key={value} value={value}>
+              {t(value)}
+            </NativeSelectOption>
+          ))}
+        </NativeSelect>
+        <span id={`${id}-hint`} className="text-xs text-muted-foreground">
+          {t("defaultScaleHint")}
+        </span>
+      </div>
+      {readOnly ? <p className="text-xs text-muted-foreground">{t("settingsReadOnly")}</p> : null}
+      {error ? (
+        <p role="alert" className="text-destructive">
+          {error}
+        </p>
+      ) : null}
+      <div className="flex gap-2">
+        <Button size="sm" disabled={readOnly || saving} onClick={() => void submit()}>
+          {t("saveSettings")}
+        </Button>
+        <Button size="sm" variant="outline" onClick={close}>
+          {t("cancel")}
+        </Button>
+      </div>
+    </section>
   )
 }

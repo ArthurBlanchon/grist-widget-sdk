@@ -50,6 +50,65 @@ function readSettings(raw: Record<string, unknown> | null): Settings {
 }
 ```
 
+## A configuration view
+
+Settings that a person chooses (a default view, a limit) belong in a
+configuration view. Grist offers one: with `hasCustomOptions: true`, its
+creator panel shows "Open configuration" for the widget. The SDK turns that
+button into `w.configurationOpen`, and `w.openConfiguration()` opens the
+same view from the widget's own settings icon, so the setting is found from
+either side. The widget draws the view; the SDK keeps whether it is open.
+
+```tsx
+import { useState } from "react"
+import { defineGristWidget } from "grist-widget-sdk"
+
+export const widget = defineGristWidget({
+  title: "Board",
+  requiredAccess: "full",
+  hasCustomOptions: true, // Grist shows "Open configuration"
+})
+
+export function Settings() {
+  const w = widget.useGrist()
+  const [error, setError] = useState<string | null>(null)
+  const compact = w.widgetOptions?.compact === true
+  if (!w.configurationOpen) {
+    // Hidden on a read-only document, where the settings can't be saved for good.
+    return w.readOnly ? null : <button aria-label="Settings" onClick={w.openConfiguration}>⚙</button>
+  }
+  return (
+    <div role="dialog" aria-label="Configuration" onKeyDown={(e) => e.key === "Escape" && w.closeConfiguration()}>
+      {/* Focus goes into the view, so Escape reaches it. */}
+      <button aria-label="Close" autoFocus onClick={w.closeConfiguration}>✕</button>
+      <button
+        onClick={async () => {
+          try {
+            await w.patchWidgetOptions({ compact: !compact })
+            w.closeConfiguration()
+          } catch (err) {
+            setError(String(err))
+          }
+        }}
+      >
+        {compact ? "Expand" : "Compact"}
+      </button>
+      {error ? <p role="alert">{error}</p> : null}
+    </div>
+  )
+}
+```
+
+- Declare `hasCustomOptions` only when the widget draws a view on
+  `configurationOpen`: the SDK hands Grist a handler whenever it is `true`,
+  so Grist shows the button, and a widget that draws nothing shows a button
+  that does nothing. A widget's own `onEditOptions` is still called, after
+  `configurationOpen` turns `true`.
+- Give the view a way out: a close button, Escape, and Cancel next to Save.
+- In a test, `emulator.openConfiguration()` clicks Grist's button
+  (`renderWithGrist` returns the emulator); it throws when the widget
+  declared no `hasCustomOptions`, since Grist then shows none.
+
 ## Options that change shape
 
 A section keeps its options for years, while the widget changes. When a new
@@ -99,19 +158,6 @@ Test the migration with the previous version's options:
 
 ```tsx no-check
 renderWithGrist(<App />, { widget, emulator: { widgetOptions: { columns: "To do,Done" } } })
-```
-
-## Opening the configuration panel
-
-`hasCustomOptions: true` in the declaration shows "Open configuration" in
-Grist's widget menu, and Grist calls `onEditOptions` when the user picks it:
-
-```tsx no-check
-export const widget = defineGristWidget({
-  requiredAccess: "full",
-  hasCustomOptions: true,
-  onEditOptions: () => setShowSettings(true),
-})
 ```
 
 ## Pitfalls

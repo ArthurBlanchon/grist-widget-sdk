@@ -111,6 +111,13 @@ export type UseGristResult<TRow = Record<string, unknown>, TMapped = Record<stri
   /** The options Grist stores for this widget, migrated (optionsVersion), null until it sends them. */
   widgetOptions: Record<string, unknown> | null
   /**
+   * The widget's configuration view is open: Grist's "Open configuration"
+   * button (with `hasCustomOptions: true`) or `openConfiguration()` opened
+   * it, and `closeConfiguration()` hasn't closed it. The widget draws the
+   * view; the SDK keeps the state.
+   */
+  configurationOpen: boolean
+  /**
    * Why the widget may not write over its options, or null: written by a
    * newer version of it, or not migrated. `setWidgetOptions({})` resets them.
    */
@@ -234,6 +241,7 @@ function buildResult<TRow, TMapped>(
     actionError: state.actionError,
     widgetOptions: state.widgetOptions,
     optionsIssue: state.optionsIssue,
+    configurationOpen: state.configurationOpen,
   } as UseGristResult<TRow, TMapped>
   return result
 }

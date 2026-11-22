@@ -117,6 +117,7 @@ export type EmulatorTransport = {
     fireOptions: () => void;
     fireTheme: (message: Record<string, unknown>) => void;
     emitInitialState: () => void;
+    fireEditOptions: () => Promise<boolean>;
 };
 
 // @public
@@ -139,6 +140,7 @@ export type GristEmulator = {
     setColumnMappings: (mappings: GristWidgetColumnMap | undefined) => void;
     setOptions: (options: Record<string, unknown>) => Promise<void>;
     setInteraction: (interaction: Record<string, unknown>) => void;
+    openConfiguration: () => Promise<void>;
     theme: {
         set: (theme: "light" | "dark") => void;
     };

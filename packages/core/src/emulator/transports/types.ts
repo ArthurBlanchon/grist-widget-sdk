@@ -17,6 +17,8 @@ export type EmulatorTransport = {
   fireTheme: (message: Record<string, unknown>) => void
   /** Replays the post-ready bootstrap (options + cursor + data) as if the widget had just connected. */
   emitInitialState: () => void
+  /** Calls the `onEditOptions` the widget handed `grist.ready()`, as Grist's "Open configuration" does; false without one. */
+  fireEditOptions: () => Promise<boolean>
 }
 
 export type TransportContext = {

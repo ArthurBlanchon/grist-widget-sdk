@@ -205,13 +205,14 @@ describe("AC-13 the default scale, set in the configuration view", () => {
     expect(readDefaultScale({ defaultScale: "daily" })).toBe("daily")
   })
 
-  it("AC-13 the settings icon opens the configuration, and Save keeps the scale in the widget options", async () => {
+  it("AC-13 the settings icon opens the configuration, and Apply writes the scale to the widget options", async () => {
     const { emulator } = setup()
     await screen.findByText("Survey")
     fireEvent.click(screen.getByRole("button", { name: "Settings" }))
     const view = await screen.findByRole("dialog", { name: "Configuration" })
     fireEvent.change(screen.getByLabelText("Default scale"), { target: { value: "daily" } })
-    fireEvent.click(screen.getByRole("button", { name: "Save" }))
+    expect(screen.getByText(/click Save in the widget's header/)).toBeInTheDocument()
+    fireEvent.click(screen.getByRole("button", { name: "Apply" }))
     await waitFor(() => expect(view).not.toBeInTheDocument())
     expect(emulator.state.widgetOptions).toMatchObject({ defaultScale: "daily" })
     await waitFor(() => expect(pressed()).toEqual(["Days"]))

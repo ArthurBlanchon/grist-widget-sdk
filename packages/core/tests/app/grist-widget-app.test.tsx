@@ -142,6 +142,105 @@ describe("inside Grist", () => {
   })
 })
 
+describe("the Settings view", () => {
+  function Counter() {
+    const w = useGrist()
+    const [n, setN] = useState(0)
+    return (
+      <div>
+        <p data-testid="widget">count {n}</p>
+        <button onClick={() => setN((x) => x + 1)}>more</button>
+        <button onClick={w.openConfiguration}>open settings</button>
+      </div>
+    )
+  }
+  function Settings() {
+    const w = useGrist()
+    return (
+      <label>
+        Compact
+        <input type="checkbox" checked={w.widgetOptions?.compact === true} onChange={(e) => void w.patchWidgetOptions({ compact: e.target.checked })} />
+      </label>
+    )
+  }
+  const renderApp = (widgetOptions: Record<string, unknown> = {}, readOnly = false) =>
+    renderWithGrist(<GristWidgetApp App={Counter} options={{ requiredAccess: "full" }} Settings={Settings} />, {
+      readOnly,
+      emulator: { document: presets.blank(), widgetOptions },
+    })
+
+  it("asks Grist for its \"Open configuration\", which opens the view", async () => {
+    const { emulator } = renderApp()
+    await screen.findByTestId("widget")
+    expect(emulator.state.configuration?.hasCustomOptions).toBe(true)
+    await act(() => emulator.openConfiguration())
+    expect(await screen.findByRole("dialog", { name: "Settings" })).toBeInTheDocument()
+  })
+
+  it("fills the panel: a header, a Back to widget button, the fields; the widget stays mounted, its state kept", async () => {
+    renderApp()
+    await screen.findByTestId("widget")
+    fireEvent.click(screen.getByRole("button", { name: "more" }))
+    fireEvent.click(screen.getByRole("button", { name: "open settings" }))
+    const view = await screen.findByRole("dialog", { name: "Settings" })
+    expect(view).toHaveStyle({ position: "fixed" })
+    expect(screen.getByRole("heading", { name: "Settings" })).toBeInTheDocument()
+    // The first field has the focus.
+    expect(screen.getByLabelText("Compact")).toHaveFocus()
+    fireEvent.click(screen.getByRole("button", { name: /Back to widget/ }))
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument())
+    expect(screen.getByTestId("widget")).toHaveTextContent("count 1")
+  })
+
+  it("goes back on Escape", async () => {
+    renderApp()
+    await screen.findByTestId("widget")
+    fireEvent.click(screen.getByRole("button", { name: "open settings" }))
+    fireEvent.keyDown(await screen.findByLabelText("Compact"), { key: "Escape" })
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument())
+  })
+
+  it("says to click Grist's Save while the new options are a draft, until the view closes", async () => {
+    renderApp()
+    await screen.findByTestId("widget")
+    fireEvent.click(screen.getByRole("button", { name: "open settings" }))
+    expect(screen.queryByText(/click Save at the top of this section/)).not.toBeInTheDocument()
+    fireEvent.click(await screen.findByLabelText("Compact"))
+    expect(await screen.findByText(/click Save at the top of this section/)).toBeInTheDocument()
+    fireEvent.click(screen.getByRole("button", { name: /Back to widget/ }))
+    fireEvent.click(await screen.findByRole("button", { name: "open settings" }))
+    await screen.findByRole("dialog", { name: "Settings" })
+    expect(screen.queryByText(/click Save at the top of this section/)).not.toBeInTheDocument()
+  })
+
+  it("drops the reminder on Grist's Revert (the saved options come back)", async () => {
+    const { emulator } = renderApp({ compact: false })
+    await screen.findByTestId("widget")
+    fireEvent.click(screen.getByRole("button", { name: "open settings" }))
+    fireEvent.click(await screen.findByLabelText("Compact"))
+    await screen.findByText(/click Save at the top of this section/)
+    await act(() => emulator.setOptions({ compact: false }))
+    await waitFor(() => expect(screen.queryByText(/click Save at the top of this section/)).not.toBeInTheDocument())
+  })
+
+  it("says why settings can't be kept on a read-only document", async () => {
+    renderApp({}, true)
+    await screen.findByTestId("widget")
+    fireEvent.click(screen.getByRole("button", { name: "open settings" }))
+    expect(await screen.findByText(/open read-only: settings can't be saved/)).toBeInTheDocument()
+  })
+
+  it("isn't there for a widget without Settings", async () => {
+    const { emulator } = renderWithGrist(<GristWidgetApp App={Counter} options={{ requiredAccess: "full" }} />, {
+      emulator: { document: presets.blank() },
+    })
+    await screen.findByTestId("widget")
+    expect(emulator.state.configuration?.hasCustomOptions).toBeFalsy()
+    fireEvent.click(screen.getByRole("button", { name: "open settings" }))
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
+  })
+})
+
 describe("default alerts", () => {
   it("list what needs attention above the widget", async () => {
     renderWithGrist(

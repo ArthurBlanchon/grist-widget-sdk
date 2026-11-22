@@ -42,6 +42,7 @@ export type GristWidgetAppProps = {
     Alerts?: ComponentType<{
         children: ReactNode;
     }> | null;
+    Settings?: ComponentType;
     LocalDevPage?: ComponentType;
     ReleasePage?: ComponentType<{
         channel: DeployChannel;
@@ -55,6 +56,7 @@ export type GristWidgetEntry = {
     GRIST_OPTIONS?: UseGristOptions;
     WIDGET_METADATA?: GristWidgetMetadata;
     Alerts?: GristWidgetAppProps["Alerts"];
+    Settings?: GristWidgetAppProps["Settings"];
     LocalDevPage?: GristWidgetAppProps["LocalDevPage"];
     ReleasePage?: GristWidgetAppProps["ReleasePage"];
 };

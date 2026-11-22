@@ -10,6 +10,7 @@ import { ReleasePage as DefaultReleasePage } from "./chrome/release-page"
 import { ReportUrlProvider, WidgetCrashBoundary } from "./chrome/report-problem"
 import { GristChromeLocaleProvider } from "../sdk/chrome-messages"
 import { WidgetAlerts } from "./chrome/widget-alerts"
+import { WithSettingsView } from "./chrome/settings-view"
 import { parseDeployPath, type DeployChannel } from "./deploy-path"
 import { EmbeddedThemeProvider, StandaloneThemeProvider } from "./widget-theme"
 
@@ -36,6 +37,16 @@ export type GristWidgetAppProps = {
    * failed writes) above the widget; `null` renders the widget alone.
    */
   Alerts?: ComponentType<{ children: ReactNode }> | null
+  /**
+   * The widget's settings: only the fields, which write its options
+   * (`patchWidgetOptions`). With it, Grist's "Open configuration" shows for
+   * the widget (`hasCustomOptions` defaults to `true`), and while the
+   * configuration is open (that button, or the widget's own calling
+   * `openConfiguration()`), a Settings view fills the widget's panel: a
+   * header, a "Back to widget" button, the reminder to click Grist's Save
+   * while the new options are a draft, then these fields, scrolling.
+   */
+  Settings?: ComponentType
   /** Shown outside Grist on the local dev server. Defaults to a page pointing at `pnpm test` and the `dev` loop. */
   LocalDevPage?: ComponentType
   /**
@@ -55,7 +66,8 @@ export type MountGristWidgetConfig = GristWidgetAppProps & {
 /**
  * A widget's entry module, `src/app/App.tsx`, as `import * as entry` gives
  * it: the widget as its default export, its declaration as `widget`, and
- * optionally its own `Alerts`, `LocalDevPage` and `ReleasePage`.
+ * optionally its `Settings`, and its own `Alerts`, `LocalDevPage` and
+ * `ReleasePage`.
  *
  * Everything a widget customises lives there, in its own file: the
  * template's `src/main.tsx` stays the same in every widget, and
@@ -69,6 +81,7 @@ export type GristWidgetEntry = {
   GRIST_OPTIONS?: UseGristOptions
   WIDGET_METADATA?: GristWidgetMetadata
   Alerts?: GristWidgetAppProps["Alerts"]
+  Settings?: GristWidgetAppProps["Settings"]
   LocalDevPage?: GristWidgetAppProps["LocalDevPage"]
   ReleasePage?: GristWidgetAppProps["ReleasePage"]
 }
@@ -98,6 +111,7 @@ export function entryProps(entry: GristWidgetEntry, dev = false): GristWidgetApp
     dev,
   }
   if ("Alerts" in entry) props.Alerts = entry.Alerts
+  if (entry.Settings) props.Settings = entry.Settings
   if (entry.LocalDevPage) props.LocalDevPage = entry.LocalDevPage
   if (entry.ReleasePage) props.ReleasePage = entry.ReleasePage
   return props
@@ -163,13 +177,16 @@ export function GristWidgetApp({
   metadata,
   dev = false,
   Alerts = WidgetAlerts,
+  Settings,
   LocalDevPage = DefaultLocalDevPage,
   ReleasePage = DefaultReleasePage,
 }: GristWidgetAppProps) {
   const Wrap = Alerts ?? PassThrough
   if (isEmbedded()) {
+    // A widget with Settings gets Grist's "Open configuration" unless it says otherwise.
+    const ready = Settings && options.hasCustomOptions === undefined ? { ...options, hasCustomOptions: true } : options
     return (
-      <GristWidgetProvider options={options}>
+      <GristWidgetProvider options={ready}>
         <PageMetadata metadata={metadata} />
         <GristChromeLocaleProvider languages={metadata?.languages}>
           <EmbeddedThemeProvider>
@@ -179,7 +196,13 @@ export function GristWidgetApp({
                   <Wrap>
                     <WidgetCrashBoundary>
                       <Suspense fallback={null}>
-                        <App />
+                        {Settings ? (
+                          <WithSettingsView Settings={Settings}>
+                            <App />
+                          </WithSettingsView>
+                        ) : (
+                          <App />
+                        )}
                       </Suspense>
                     </WidgetCrashBoundary>
                   </Wrap>

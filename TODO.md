@@ -101,16 +101,13 @@ Each item is one pull request; the plan says when each milestone is done.
 - [ ] **Grist's own UI flows in the check:** mapping a column in the
   creator panel, and "Open configuration" (`hasCustomOptions`), clicked as
   a person does. Checked by hand for the Gantt on 2026-11-22 only.
-- [ ] **A configuration view across the catalog.** The Gantt's (0.4.3) is
-  the pattern: Grist's "Open configuration" and a settings icon open one
-  view; a choice applies at once, and `_shared/options-draft.tsx` shows a
-  warning in the view to click Grist's Save (Grist keeps options as a
-  draft of the section, as for sort and filters, and sends the widget
-  nothing on Save: the warning goes with a Revert, or with the view). Chart builder,
-  Kanban board, Mail merge, Document template and File uploader write
-  options too: the notice in each, then their settings in the view. Later,
-  the SDK could show that notice itself, as an alert, for every widget
-  that writes its options.
+- [ ] **The SDK's Settings view across the catalog.** The Gantt (0.4.4)
+  exports `Settings`, and `mountGristWidget()` draws the full-panel view,
+  with Grist's Save reminder (`optionsDraft`). Chart builder, Kanban board,
+  Mail merge, Document template and File uploader write options too: their
+  settings move into an exported `Settings`, a patch each. What is a
+  setting for everyone moves there; what only changes the view for now
+  (a chart's type, a zoom) stays in the toolbar, in React state.
 - [ ] **A rollback runbook.** A bad release on `/v<major>/` can only be
   replaced by a new one, and releases are monthly. Write the emergency
   path in `docs/operations/site-deploy.md`: an immediate revert release

@@ -118,6 +118,14 @@ export type UseGristResult<TRow = Record<string, unknown>, TMapped = Record<stri
    */
   configurationOpen: boolean
   /**
+   * The widget wrote its options and Grist holds them as a draft of the
+   * section, as it does for sort and filters: only its Save, at the top of
+   * the section, keeps them for everyone. `false` again on Grist's Revert,
+   * and when the configuration view closes: Grist tells a widget nothing on
+   * Save. The Settings view of `mountGristWidget()` says so while it's true.
+   */
+  optionsDraft: boolean
+  /**
    * Why the widget may not write over its options, or null: written by a
    * newer version of it, or not migrated. `setWidgetOptions({})` resets them.
    */
@@ -242,6 +250,7 @@ function buildResult<TRow, TMapped>(
     widgetOptions: state.widgetOptions,
     optionsIssue: state.optionsIssue,
     configurationOpen: state.configurationOpen,
+    optionsDraft: state.optionsDraft,
   } as UseGristResult<TRow, TMapped>
   return result
 }

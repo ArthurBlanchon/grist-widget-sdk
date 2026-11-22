@@ -544,6 +544,7 @@ export type UseGristResult<TRow = Record<string, unknown>, TMapped = Record<stri
     actionError: string | null;
     widgetOptions: Record<string, unknown> | null;
     configurationOpen: boolean;
+    optionsDraft: boolean;
     optionsIssue: string | null;
 };
 

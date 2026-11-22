@@ -549,7 +549,7 @@
     {
       "name": "GristWidgetEntry",
       "kind": "type",
-      "summary": "A widget's entry module, `src/app/App.tsx`, as `import * as entry` gives it: the widget as its default export, its declaration as `widget`, and optionally its own `Alerts`, `LocalDevPage` and `ReleasePage`."
+      "summary": "A widget's entry module, `src/app/App.tsx`, as `import * as entry` gives it: the widget as its default export, its declaration as `widget`, and optionally its `Settings`, and its own `Alerts`, `LocalDevPage` and `ReleasePage`."
     },
     {
       "name": "MountedGristWidget",

@@ -59,6 +59,7 @@ const MEMBERS = [
   "setWidgetOptions",
   "patchWidgetOptions",
   "configurationOpen",
+  "optionsDraft",
   "openConfiguration",
   "closeConfiguration",
   "setCursorPosition",
@@ -624,6 +625,41 @@ describe("configurationOpen", () => {
     await untilReady(w)
     await expect(emulator.openConfiguration()).rejects.toThrow(/hasCustomOptions/)
     expect(w().configurationOpen).toBe(false)
+  })
+})
+
+describe("optionsDraft", () => {
+  it("is true once the widget's own write comes back, as Grist sends a draft of the section", async () => {
+    const { w } = renderProbe({ requiredAccess: "full", hasCustomOptions: true }, {
+      emulator: { document: presets.todoList(), widgetOptions: { a: 1 } },
+    })
+    await untilReady(w)
+    expect(w().optionsDraft).toBe(false)
+    await settle(() => w().patchWidgetOptions({ b: 2 }))
+    expect(w().optionsDraft).toBe(true)
+    await settle(() => w().setWidgetOptions({ c: 3 }))
+    expect(w().optionsDraft).toBe(true)
+  })
+
+  it("turns false when other options come (Grist's Revert sends the saved ones back)", async () => {
+    const { w, emulator } = renderProbe({ requiredAccess: "full", hasCustomOptions: true }, {
+      emulator: { document: presets.todoList(), widgetOptions: { a: 1 } },
+    })
+    await untilReady(w)
+    await settle(() => w().patchWidgetOptions({ a: 2 }))
+    expect(w().optionsDraft).toBe(true)
+    await settle(() => emulator.setOptions({ a: 1 }))
+    expect(w().optionsDraft).toBe(false)
+  })
+
+  it("turns false when the configuration closes: Grist tells a widget nothing on Save", async () => {
+    const { w } = renderProbe({ requiredAccess: "full", hasCustomOptions: true })
+    await untilReady(w)
+    await settle(() => w().openConfiguration())
+    await settle(() => w().patchWidgetOptions({ a: 2 }))
+    expect(w().optionsDraft).toBe(true)
+    await settle(() => w().closeConfiguration())
+    expect(w().optionsDraft).toBe(false)
   })
 })
 

@@ -70,6 +70,14 @@ export type GristRuntimeState = {
   readOnlyRefused: boolean
   /** The widget's configuration view is open: Grist's "Open configuration", or `openConfiguration()`. */
   configurationOpen: boolean
+  /**
+   * The widget wrote its options, and Grist holds them as a draft of the
+   * section: they came back as written, and no Revert has replaced them yet.
+   * Grist tells a widget nothing on Save, so closing the configuration ends it.
+   */
+  optionsDraft: boolean
+  /** @internal The options the widget last wrote, as stable JSON, until Grist sends others. */
+  optionsWritten: string | null
 }
 
 /** What a widget asks Grist for (`UseGristOptions`). */
@@ -136,6 +144,8 @@ export function initialRuntimeState(options: GristReadyOptions = {}): GristRunti
     readOnly: isReadOnlyUrl(),
     readOnlyRefused: false,
     configurationOpen: false,
+    optionsDraft: false,
+    optionsWritten: null,
   }
 }
 
@@ -244,7 +254,13 @@ export function createGristRuntime(options: GristRuntimeOptions = {}): GristRunt
       // memory (options-version.ts): nothing is written on load.
       optionsStream.subscribe(({ options: saved, interaction }) => {
         const read = readWidgetOptions(saved, options)
+        // The widget's own write comes back as a draft of the section; other
+        // options (Grist's Revert, the saved ones) end it.
+        const written = state.optionsWritten
+        const draft = written !== null && stableJson(saved) === written
         update({
+          optionsDraft: draft,
+          ...(written !== null && !draft ? { optionsWritten: null } : {}),
           widgetOptions: read.options,
           optionsIssue: read.issue,
           interaction,
@@ -317,4 +333,13 @@ export function createGristRuntime(options: GristRuntimeOptions = {}): GristRunt
     },
     update,
   }
+}
+
+/** JSON with sorted keys: options compare by content, whatever order a host keeps them in. */
+export function stableJson(value: unknown): string {
+  return JSON.stringify(value, (_key, v: unknown) =>
+    v && typeof v === "object" && !Array.isArray(v)
+      ? Object.fromEntries(Object.entries(v as Record<string, unknown>).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)))
+      : v
+  )
 }

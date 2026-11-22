@@ -101,12 +101,12 @@ Each item is one pull request; the plan says when each milestone is done.
 - [ ] **Grist's own UI flows in the check:** mapping a column in the
   creator panel, and "Open configuration" (`hasCustomOptions`), clicked as
   a person does. Checked by hand for the Gantt on 2026-11-22 only.
-- [ ] **A configuration view across the catalog.** The Gantt's (0.4.2) is
+- [ ] **A configuration view across the catalog.** The Gantt's (0.4.3) is
   the pattern: Grist's "Open configuration" and a settings icon open one
   view; a choice applies at once, and `_shared/options-draft.tsx` shows a
-  notice at the top to click Grist's Save (Grist keeps options as a draft
-  of the section, as for sort and filters, and sends the widget nothing on
-  Save: the notice goes with a Revert, or when hidden). Chart builder,
+  warning in the view to click Grist's Save (Grist keeps options as a
+  draft of the section, as for sort and filters, and sends the widget
+  nothing on Save: the warning goes with a Revert, or with the view). Chart builder,
   Kanban board, Mail merge, Document template and File uploader write
   options too: the notice in each, then their settings in the view. Later,
   the SDK could show that notice itself, as an alert, for every widget

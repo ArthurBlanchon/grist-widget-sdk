@@ -1,0 +1,8 @@
+{
+  "slug": "gantt",
+  "version": "0.4.3",
+  "commit": "d2da64e43de2ef409a3b5cbbd1821bd33b869eb0",
+  "released": "2026-11-22T14:52:02.358Z",
+  "changes": "- The message to click Save is now a warning inside the configuration, easier to see, and it goes away when you close the configuration.",
+  "changelog": "CHANGELOG.md"
+}

@@ -88,13 +88,15 @@ describe("smokeTestWidget()", () => {
   })
 
   it("opens the widget's Settings too, as Grist's \"Open configuration\" does", async () => {
-    let rendered = false
+    const seen = { rendered: false }
     function Settings() {
-      rendered = true
+      useEffect(() => {
+        seen.rendered = true
+      })
       return <p>settings</p>
     }
     await smokeTestWidget({ default: () => <p>hello</p>, GRIST_OPTIONS: { requiredAccess: "read table" }, Settings })
-    expect(rendered).toBe(true)
+    expect(seen.rendered).toBe(true)
   })
 
   it("fails with the Settings' own error when they throw", async () => {

@@ -142,6 +142,16 @@ describe("inside Grist", () => {
   })
 })
 
+/** Whether `el` or one of its ancestors is inert (jsdom keeps the property, without its effect). */
+function hasInertAncestor(el: HTMLElement): boolean {
+  let node: HTMLElement | null = el
+  while (node) {
+    if ((node as HTMLElement & { inert?: boolean }).inert) return true
+    node = node.parentElement
+  }
+  return false
+}
+
 describe("the Settings view", () => {
   function Counter() {
     const w = useGrist()
@@ -234,7 +244,7 @@ describe("the Settings view", () => {
     // jsdom has no inert: focus() inside an inert element does nothing, as in a browser.
     const focus = HTMLElement.prototype.focus
     const spy = vi.spyOn(HTMLElement.prototype, "focus").mockImplementation(function (this: HTMLElement, options?: FocusOptions) {
-      for (let el: HTMLElement | null = this; el; el = el.parentElement) if ((el as HTMLElement & { inert?: boolean }).inert) return
+      if (hasInertAncestor(this)) return
       focus.call(this, options)
     })
     try {

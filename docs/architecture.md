@@ -101,19 +101,25 @@ origins, GitHub Pages and Cloudflare Pages
 `apps/www` does not depend on `grist-widget-sdk`, so an SDK change cannot
 break the docs deploy.
 
-## The registry and the reference widgets
+## The catalog, its channels and the reference widgets
 
-The catalog of widgets is
-[awesome-grist-widgets](https://github.com/ArthurBlanchon/awesome-grist-widgets).
-Its `widgets.json` is generated from each widget's published
-`grist-widget.json`; its entries marked `"reference": true`, plus
-`scripts/real-widgets/pending.json`, are the reference widgets. The Real
-widgets job checks every SDK pull request against them
-([real widgets](./operations/real-widgets.md)).
-
-The [widget factory plan](./history/2026-11-14-widget-factory-plan.md)
-brings the catalog into this repository (`widgets/<slug>/`, one `SPEC.md`
-each, the shared shadcn UI in `widgets/_shared/`).
+- **The catalog** is `widgets/<slug>/`, one `SPEC.md` each, with the shared
+  shadcn UI in `widgets/_shared/` ([ADR 0007](./decisions/0007-widget-factory.md),
+  [ADR 0008](./decisions/0008-shared-design-system.md)). The site's lists,
+  `/widgets/catalog.json` and Grist's `/widgets/grist-widgets.json`, are
+  generated from the specs ([ADR 0014](./decisions/0014-catalog-lists.md)).
+- **A release is built once** into the `widgets-dist` branch and served for
+  good at `/widgets/<slug>/<version>/`. A document installs the major's
+  channel, `/v<major>/`; `/dev/` serves `main`
+  ([ADR 0013](./decisions/0013-widget-channels.md)). Each release carries
+  everything it runs, Grist's plugin API included
+  ([ADR 0016](./decisions/0016-widget-csp.md)).
+- **The six reference widgets** (separate repositories, made from the
+  template) are checked against every SDK pull request by the Real widgets
+  job ([real widgets](./operations/real-widgets.md)), until they are
+  retired ([ADR 0011](./decisions/0011-reference-widgets-retired.md)).
+  awesome-grist-widgets, which listed them, is absorbed into the catalog
+  then archived (the plan to 0.8.0, M7).
 
 ## Design rules
 

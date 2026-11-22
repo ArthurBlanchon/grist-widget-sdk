@@ -60,6 +60,8 @@ export type GristApi = {
     applyActions: (actions: GristUserActionTuple[], options?: GristApplyUserActionsOptions) => Promise<unknown>;
     setWidgetOptions: (options: Record<string, unknown>) => Promise<void>;
     patchWidgetOptions: (patch: Record<string, unknown>) => Promise<void>;
+    openConfiguration: () => void;
+    closeConfiguration: () => void;
     setCursorPosition: (pos: GristCursorPos) => Promise<void>;
     setLinkedRowSelection: (rowIds: number[] | null) => Promise<void>;
     getAttachmentUrl: (attachmentId: string, options?: {
@@ -541,6 +543,7 @@ export type UseGristResult<TRow = Record<string, unknown>, TMapped = Record<stri
     actionStatus: GristWidgetActionStatus;
     actionError: string | null;
     widgetOptions: Record<string, unknown> | null;
+    configurationOpen: boolean;
     optionsIssue: string | null;
 };
 

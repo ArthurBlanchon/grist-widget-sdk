@@ -58,6 +58,9 @@ const MEMBERS = [
   "optionsIssue",
   "setWidgetOptions",
   "patchWidgetOptions",
+  "configurationOpen",
+  "openConfiguration",
+  "closeConfiguration",
   "setCursorPosition",
   "setLinkedRowSelection",
   "getAttachmentUrl",
@@ -597,6 +600,52 @@ describe("patchWidgetOptions", () => {
     await untilReady(w)
     await settle(() => Promise.all([w().patchWidgetOptions({ b: 2 }), w().patchWidgetOptions({ c: 3 })]))
     expect(emulator.state.widgetOptions).toEqual({ a: 1, b: 2, c: 3 })
+  })
+})
+
+describe("configurationOpen", () => {
+  it("is false until something opens the configuration view", async () => {
+    const { w } = renderProbe({ requiredAccess: "full", hasCustomOptions: true })
+    await untilReady(w)
+    expect(w().configurationOpen).toBe(false)
+  })
+
+  it("turns true when Grist's \"Open configuration\" is clicked, then calls the widget's own onEditOptions", async () => {
+    const onEditOptions = vi.fn()
+    const { w, emulator } = renderProbe({ requiredAccess: "full", hasCustomOptions: true, onEditOptions })
+    await untilReady(w)
+    await settle(() => emulator.openConfiguration())
+    expect(w().configurationOpen).toBe(true)
+    expect(onEditOptions).toHaveBeenCalledTimes(1)
+  })
+
+  it("has no Grist button to open it without hasCustomOptions, as in Grist", async () => {
+    const { w, emulator } = renderProbe({ requiredAccess: "full" })
+    await untilReady(w)
+    await expect(emulator.openConfiguration()).rejects.toThrow(/hasCustomOptions/)
+    expect(w().configurationOpen).toBe(false)
+  })
+})
+
+describe("openConfiguration", () => {
+  it("opens the configuration view from the widget, as Grist's button does", async () => {
+    const { w } = renderProbe({ requiredAccess: "full", hasCustomOptions: true })
+    await untilReady(w)
+    await settle(() => w().openConfiguration())
+    expect(w().configurationOpen).toBe(true)
+  })
+})
+
+describe("closeConfiguration", () => {
+  it("closes it, whoever opened it", async () => {
+    const { w, emulator } = renderProbe({ requiredAccess: "full", hasCustomOptions: true })
+    await untilReady(w)
+    await settle(() => emulator.openConfiguration())
+    await settle(() => w().closeConfiguration())
+    expect(w().configurationOpen).toBe(false)
+    await settle(() => w().openConfiguration())
+    await settle(() => w().closeConfiguration())
+    expect(w().configurationOpen).toBe(false)
   })
 })
 

@@ -50,6 +50,55 @@ function readSettings(raw: Record<string, unknown> | null): Settings {
 }
 ```
 
+## A configuration view
+
+Settings that a person chooses (a default view, a limit) belong in a
+configuration view. Grist offers one: with `hasCustomOptions: true`, its
+creator panel shows "Open configuration" for the widget. The SDK turns that
+button into `w.configurationOpen`, and `w.openConfiguration()` opens the
+same view from the widget's own settings icon, so the setting is found from
+either side. The widget draws the view; the SDK keeps whether it is open.
+
+```tsx
+import { defineGristWidget } from "grist-widget-sdk"
+
+export const widget = defineGristWidget({
+  title: "Board",
+  requiredAccess: "full",
+  hasCustomOptions: true, // Grist shows "Open configuration"
+})
+
+export function Settings() {
+  const w = widget.useGrist()
+  const compact = w.widgetOptions?.compact === true
+  if (!w.configurationOpen) {
+    // Hidden on a read-only document, where the settings can't be saved for good.
+    return w.readOnly ? null : <button aria-label="Settings" onClick={w.openConfiguration}>⚙</button>
+  }
+  return (
+    <div role="dialog" aria-label="Configuration" onKeyDown={(e) => e.key === "Escape" && w.closeConfiguration()}>
+      <button aria-label="Close" onClick={w.closeConfiguration}>✕</button>
+      <button
+        onClick={async () => {
+          await w.patchWidgetOptions({ compact: !compact })
+          w.closeConfiguration()
+        }}
+      >
+        {compact ? "Expand" : "Compact"}
+      </button>
+    </div>
+  )
+}
+```
+
+- Grist calls the button's handler only when the widget asks for it: the
+  SDK hands Grist one whenever `hasCustomOptions` is `true`. A widget's own
+  `onEditOptions` is still called, after `configurationOpen` turns `true`.
+- Give the view a way out: a close button, Escape, and Cancel next to Save.
+- In a test, `emulator.openConfiguration()` clicks Grist's button
+  (`renderWithGrist` returns the emulator); it throws when the widget
+  declared no `hasCustomOptions`, since Grist then shows none.
+
 ## Options that change shape
 
 A section keeps its options for years, while the widget changes. When a new

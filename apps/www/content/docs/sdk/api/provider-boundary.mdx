@@ -59,7 +59,7 @@ type UseGristOptions = {
   columns?: Array<string | GristColumnToMap>      // the columns the user maps in Grist
   allowSelectBy?: boolean                         // other sections can link to this widget
   requiredLinking?: "target" | "source"           // the link it can't work without, for its alerts
-  hasCustomOptions?: boolean                      // Grist shows "Open configuration"
+  hasCustomOptions?: boolean                      // Grist shows "Open configuration", which opens configurationOpen
   onEditOptions?: () => void | Promise<void>      // ...which calls this
   suppressAlerts?: GristSdkAlertKind[]            // alerts mountGristWidget() never shows
   optionsVersion?: number                         // the version of the widget options

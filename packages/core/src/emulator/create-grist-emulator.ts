@@ -77,6 +77,13 @@ export type GristEmulator = {
   setColumnMappings: (mappings: GristWidgetColumnMap | undefined) => void
   setOptions: (options: Record<string, unknown>) => Promise<void>
   setInteraction: (interaction: Record<string, unknown>) => void
+  /**
+   * Clicks Grist's "Open configuration", in the creator panel: calls the
+   * widget's `onEditOptions`, which the SDK turns into
+   * `useGrist().configurationOpen`. Throws when the widget declared no
+   * `hasCustomOptions`, since Grist then shows no such button.
+   */
+  openConfiguration: () => Promise<void>
   /** Host theme controls (`grist.on("message")` / `msg.theme`). */
   theme: {
     set: (theme: "light" | "dark") => void
@@ -160,6 +167,12 @@ export function createGristEmulator(options: CreateGristEmulatorOptions): GristE
     setInteraction(interaction) {
       state.widgetInteraction = { ...interaction }
       bus.emit({ type: "options-change", options: { ...state.widgetOptions }, interaction: { ...interaction } })
+    },
+    async openConfiguration() {
+      if (!state.configuration?.hasCustomOptions) {
+        throw new Error("Grist shows no \"Open configuration\" for this widget: it declared no hasCustomOptions in grist.ready().")
+      }
+      await transport.fireEditOptions()
     },
     theme: {
       set(next) {

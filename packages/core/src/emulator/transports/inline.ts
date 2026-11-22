@@ -329,9 +329,16 @@ export function createInlineTransport(
     }
   }
 
+  // What Grist's "Open configuration" calls: the widget's onEditOptions.
+  let editOptions: (() => unknown) | undefined
   const grist: InlineGristGlobal = {
     async ready(opts) {
-      await api.CustomSectionAPI.configure(opts ? { ...opts, onEditOptions: undefined } as unknown as Record<string, unknown> : {})
+      editOptions = opts?.onEditOptions
+      // As Grist's plugin API: the button shows when there is an onEditOptions
+      // to call, whatever hasCustomOptions says.
+      await api.CustomSectionAPI.configure(
+        opts ? ({ ...opts, hasCustomOptions: Boolean(opts.onEditOptions), onEditOptions: undefined } as unknown as Record<string, unknown>) : {}
+      )
     },
 
     onRecord(cb, opts) {
@@ -480,6 +487,11 @@ export function createInlineTransport(
     },
     fireOptions() {
       pushOptions()
+    },
+    async fireEditOptions() {
+      if (!editOptions) return false
+      await editOptions()
+      return true
     },
     fireTheme(message) {
       bus.emit({ type: "theme-change", message })

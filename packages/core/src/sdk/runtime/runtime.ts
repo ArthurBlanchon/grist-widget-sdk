@@ -68,6 +68,8 @@ export type GristRuntimeState = {
   readOnly: boolean
   /** A write was refused because the document is read-only, for the alerts. */
   readOnlyRefused: boolean
+  /** The widget's configuration view is open: Grist's "Open configuration", or `openConfiguration()`. */
+  configurationOpen: boolean
 }
 
 /** What a widget asks Grist for (`UseGristOptions`). */
@@ -133,6 +135,7 @@ export function initialRuntimeState(options: GristReadyOptions = {}): GristRunti
     mapBackSkipped: [],
     readOnly: isReadOnlyUrl(),
     readOnlyRefused: false,
+    configurationOpen: false,
   }
 }
 
@@ -169,7 +172,16 @@ export function createGristRuntime(options: GristRuntimeOptions = {}): GristRunt
     columns: options.columns ?? [],
     ...(options.allowSelectBy !== undefined ? { allowSelectBy: options.allowSelectBy } : {}),
     ...(options.hasCustomOptions !== undefined ? { hasCustomOptions: options.hasCustomOptions } : {}),
-    ...(options.onEditOptions ? { onEditOptions: options.onEditOptions } : {}),
+    // Grist's "Open configuration" opens the widget's configuration view
+    // (configurationOpen), then calls the widget's own onEditOptions, if any.
+    ...(options.hasCustomOptions || options.onEditOptions
+      ? {
+          onEditOptions: async () => {
+            update({ configurationOpen: true })
+            await options.onEditOptions?.()
+          },
+        }
+      : {}),
   }
 
   const refreshTable = async () => {

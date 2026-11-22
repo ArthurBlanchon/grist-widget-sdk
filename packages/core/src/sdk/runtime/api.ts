@@ -89,6 +89,10 @@ export type GristApi = {
   applyActions: (actions: GristUserActionTuple[], options?: GristApplyUserActionsOptions) => Promise<unknown>
   setWidgetOptions: (options: Record<string, unknown>) => Promise<void>
   patchWidgetOptions: (patch: Record<string, unknown>) => Promise<void>
+  /** Opens the widget's configuration view (`configurationOpen`), as Grist's "Open configuration" does. */
+  openConfiguration: () => void
+  /** Closes it: the view's close button, Escape, or once its settings are saved. */
+  closeConfiguration: () => void
   setCursorPosition: (pos: GristCursorPos) => Promise<void>
   setLinkedRowSelection: (rowIds: number[] | null) => Promise<void>
   getAttachmentUrl: (attachmentId: string, options?: { readOnly?: boolean }) => Promise<string>
@@ -272,6 +276,8 @@ export function createGristApi(runtime: GristRuntime): GristApi {
       patching = run.catch(() => undefined)
       return run
     },
+    openConfiguration: () => runtime.update({ configurationOpen: true }),
+    closeConfiguration: () => runtime.update({ configurationOpen: false }),
 
     setCursorPosition: async (pos) => {
       if (!grist.setCursorPos) throw new Error("setCursorPos is not available in this Grist version")

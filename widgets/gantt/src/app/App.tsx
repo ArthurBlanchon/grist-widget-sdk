@@ -257,7 +257,9 @@ type T = ReturnType<typeof useT<keyof (typeof messages)["en"]>>
  * The widget's configuration view: Grist's "Open configuration" and the
  * settings icon both open it (useGrist().configurationOpen). It sets the
  * scale the chart opens on, kept in the widget options; ✕, Cancel and
- * Escape leave it without saving.
+ * Escape leave it without saving. Grist keeps what the widget writes to its
+ * options as a draft of the section, which its own Save keeps for good: the
+ * widget's button says Apply, and the view says so.
  */
 function Configuration({
   defaultScale,
@@ -330,7 +332,11 @@ function Configuration({
           {t("defaultScaleHint")}
         </span>
       </div>
-      {readOnly ? <p className="text-xs text-muted-foreground">{t("settingsReadOnly")}</p> : null}
+      {readOnly ? (
+        <p className="text-xs text-muted-foreground">{t("settingsReadOnly")}</p>
+      ) : (
+        <p className="max-w-md text-xs text-muted-foreground">{t("draftHint")}</p>
+      )}
       {error ? (
         <p role="alert" className="text-destructive">
           {error}

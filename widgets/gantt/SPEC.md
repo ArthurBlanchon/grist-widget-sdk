@@ -70,9 +70,10 @@ read from the columns' settings, which only full access reads.
   section's order, with a button that shows the next ones.
 - **AC-13** Given a default scale in the widget's configuration, the chart
   opens on it (weeks when none is set). Grist's "Open configuration" and the
-  widget's settings icon open the same configuration view; Save keeps the
-  scale in the widget's options, and its close button, Cancel and Escape
-  leave it without saving. The scale buttons change the view only. On a
+  widget's settings icon open the same configuration view; Apply writes the
+  scale to the widget's options, which Grist keeps as a draft of the
+  section until its own Save (the view says so), and its close button,
+  Cancel and Escape leave it without writing. The scale buttons change the view only. On a
   document open read-only, the settings icon isn't shown.
 
 ## Standard criteria

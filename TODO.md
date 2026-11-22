@@ -77,6 +77,54 @@ Each item is one pull request; the plan says when each milestone is done.
   template, Mermaid diagram) declares none. Done when a test can open a
   widget unlinked and a declaration can depend on its options.
 
+- [ ] **Hosting that holds at 100 widgets** ([ADR 0025](./docs/decisions/0025-widget-hosting-growth.md),
+  proposed). After one week the site is about 230 MB: grist-static
+  89 MB in 1,501 files, `widgets-dist` 131.5 MB in 1,899 files for 16
+  widgets, every release repeating its fonts and Grist's plugin API. At
+  100 widgets released monthly, GitHub Pages' 1 GB and Cloudflare's
+  20,000 files are about a year away (`scripts/site/budget.mjs` warns at
+  60 %). Done when the ADR is decided and applied, and the budget's trend
+  is in the site-deploy runbook. With it, the option to investigate:
+  grist-static from a CDN instead of its 1,501 files.
+- [ ] **A fresh install in the real-Grist check.** `--standard` opens each
+  widget with its columns already mapped through the API, its options set
+  and, until #122, its section linked: kinder than a person adding it to a
+  page. Two of this week's production bugs hid there (the plugin API's
+  `eval`, the false linking alert). Add a scenario per widget: no mapping,
+  no options, linked to nothing; it renders the SDK's mapping screen and no
+  error, then works once mapped through Grist's own panel.
+- [ ] **A weekly smoke run on hosted Grist** (docs.getgrist.com): the
+  pinned Docker image is not the service most people use (its iframe
+  sandbox, its plugin API, "Report a problem" opening a tab). Each
+  widget's `/dev/` in a test document of a dedicated account. Needs the
+  maintainer: the account, and its API key as an environment secret.
+- [ ] **Grist's own UI flows in the check:** mapping a column in the
+  creator panel, and "Open configuration" (`hasCustomOptions`), clicked as
+  a person does. Checked by hand for the Gantt on 2026-11-22 only.
+- [ ] **A configuration view across the catalog.** The Gantt's (0.4.1) is
+  the pattern: Grist's "Open configuration" and a settings icon open one
+  view; its button says Apply, and it says Grist keeps the options as a
+  draft of the section until Save in the widget's header (Grist's own
+  behaviour, as for sort and filters). Chart builder, Kanban board, Mail
+  merge, Document template and File uploader write options too: one
+  shared view in `widgets/_shared/`, then a patch of each.
+- [ ] **A rollback runbook.** A bad release on `/v<major>/` can only be
+  replaced by a new one, and releases are monthly. Write the emergency
+  path in `docs/operations/site-deploy.md`: an immediate revert release
+  through `release-widgets`, and whether the channel may point back at the
+  previous version meanwhile (a direct push to `widgets-dist`: the
+  maintainer's).
+- [ ] **Install from `/v<major>/` only, said where people install.** A
+  release pins Grist's plugin API (ADR 0016): if Grist ever changes its
+  protocol, the weekly latest-Grist run sees it and a new release fixes the
+  channel, never a pinned `/<version>/`. The catalog pages and the
+  install docs say to use the channel, and why.
+- [ ] **The weekly upkeep without a go each week,** once M5 has run: the
+  catalog's dependency versions live in `pnpm-workspace.yaml`, so each
+  green `catalog-upgrade` waits for the maintainer (ADR 0012). Propose an
+  amendment: the agent merges a catalog patch or minor update when it is
+  green and compared with the last releases.
+
 ## 2. After 0.8.0
 
 - **1.0.0:** the API report's baseline reset, the deprecate-first rule in
@@ -85,6 +133,14 @@ Each item is one pull request; the plan says when each milestone is done.
 - **The size check** at 30 widgets, then at 60 (CI time, the site's size,
   the maintainer's time; the shared runtime past 40 % of the budget).
 - **More catalog widgets,** from issues and `catalog/roadmap.md`'s "Later".
+- **More languages than English and French:** Grist ships about twenty;
+  the chrome follows a widget's `languages` (ADR 0021), the catalog's
+  dictionaries would take contributed ones.
+- **A screen-reader pass** on each category, beyond axe and the keyboard
+  path (in `sota-review`).
+- **The vendored kibo-ui Gantt** now differs from upstream (the day
+  header draws only the months near the view): an upstream update is a
+  merge by hand, noted in `widgets/_shared/kibo-ui/`.
 
 ## 3. Later, if they still matter
 

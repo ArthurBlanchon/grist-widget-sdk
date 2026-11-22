@@ -104,7 +104,11 @@ export function Settings() {
   so Grist shows the button, and a widget that draws nothing shows a button
   that does nothing. A widget's own `onEditOptions` is still called, after
   `configurationOpen` turns `true`.
-- Give the view a way out: a close button, Escape, and Cancel next to Save.
+- Give the view a way out: a close button, Escape, and Cancel.
+- Grist keeps what a widget writes to its options as a draft of the
+  section, as it does for sort and filters: the section's header then
+  shows Grist's own Save and Revert, and only Save keeps it for everyone.
+  Name the view's button Apply, not Save, and say so in the view.
 - In a test, `emulator.openConfiguration()` clicks Grist's button
   (`renderWithGrist` returns the emulator); it throws when the widget
   declared no `hasCustomOptions`, since Grist then shows none.

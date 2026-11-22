@@ -205,17 +205,40 @@ describe("AC-13 the default scale, set in the configuration view", () => {
     expect(readDefaultScale({ defaultScale: "daily" })).toBe("daily")
   })
 
-  it("AC-13 the settings icon opens the configuration, and Apply writes the scale to the widget options", async () => {
+  const notice = () => screen.queryByText(/click Save at the top of this section/)
+
+  it("AC-13 the settings icon opens the configuration; a choice applies at once, and a notice says to click Save", async () => {
     const { emulator } = setup()
     await screen.findByText("Survey")
     fireEvent.click(screen.getByRole("button", { name: "Settings" }))
-    const view = await screen.findByRole("dialog", { name: "Configuration" })
+    await screen.findByRole("dialog", { name: "Configuration" })
+    expect(screen.queryByRole("button", { name: /apply|save|cancel/i })).not.toBeInTheDocument()
+    expect(notice()).not.toBeInTheDocument()
     fireEvent.change(screen.getByLabelText("Default scale"), { target: { value: "daily" } })
-    expect(screen.getByText(/click Save in the widget's header/)).toBeInTheDocument()
-    fireEvent.click(screen.getByRole("button", { name: "Apply" }))
-    await waitFor(() => expect(view).not.toBeInTheDocument())
-    expect(emulator.state.widgetOptions).toMatchObject({ defaultScale: "daily" })
+    await waitFor(() => expect(emulator.state.widgetOptions).toMatchObject({ defaultScale: "daily" }))
     await waitFor(() => expect(pressed()).toEqual(["Days"]))
+    expect(await screen.findByText(/click Save at the top of this section/)).toBeInTheDocument()
+  })
+
+  it("AC-13 Grist's Revert, which sends back the saved options, takes the notice away", async () => {
+    const { emulator } = setup(ALL, undefined, { defaultScale: "weekly" })
+    await screen.findByText("Survey")
+    fireEvent.click(screen.getByRole("button", { name: "Settings" }))
+    fireEvent.change(await screen.findByLabelText("Default scale"), { target: { value: "monthly" } })
+    await screen.findByText(/click Save at the top of this section/)
+    await emulator.setOptions({ defaultScale: "weekly", __version: 1 })
+    await waitFor(() => expect(notice()).not.toBeInTheDocument())
+    expect(pressed()).toEqual(["Weeks"])
+  })
+
+  it("AC-13 the notice can be hidden (after Grist's Save, which the widget can't see)", async () => {
+    setup()
+    await screen.findByText("Survey")
+    fireEvent.click(screen.getByRole("button", { name: "Settings" }))
+    fireEvent.change(await screen.findByLabelText("Default scale"), { target: { value: "monthly" } })
+    await screen.findByText(/click Save at the top of this section/)
+    fireEvent.click(screen.getByRole("button", { name: "Hide this message" }))
+    expect(notice()).not.toBeInTheDocument()
   })
 
   it("AC-13 Grist's \"Open configuration\" opens the same view", async () => {
@@ -225,21 +248,20 @@ describe("AC-13 the default scale, set in the configuration view", () => {
     expect(await screen.findByRole("dialog", { name: "Configuration" })).toBeInTheDocument()
   })
 
-  it("AC-13 the close button, Cancel and Escape leave it without saving", async () => {
+  it("AC-13 the close button and Escape close it, writing nothing", async () => {
     const { emulator } = setup()
     await screen.findByText("Survey")
     for (const leave of [
       () => fireEvent.click(screen.getByRole("button", { name: "Close" })),
-      () => fireEvent.click(screen.getByRole("button", { name: "Cancel" })),
       () => fireEvent.keyDown(screen.getByLabelText("Default scale"), { key: "Escape" }),
     ]) {
       fireEvent.click(screen.getByRole("button", { name: "Settings" }))
-      fireEvent.change(await screen.findByLabelText("Default scale"), { target: { value: "monthly" } })
+      await screen.findByLabelText("Default scale")
       leave()
       await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument())
     }
     expect(emulator.state.widgetOptions?.defaultScale).toBeUndefined()
-    expect(pressed()).toEqual(["Weeks"])
+    expect(notice()).not.toBeInTheDocument()
   })
 
   it("AC-13 the scale buttons change the view only: nothing is saved", async () => {

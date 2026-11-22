@@ -1,0 +1,8 @@
+{
+  "slug": "gantt",
+  "version": "0.4.4",
+  "commit": "77b2fe6ee66713acb0ff91016f4e854e966ea771",
+  "released": "2026-11-22T21:55:34.294Z",
+  "changes": "- The settings open in a view that fills the widget, easier to use in a small panel: a \"Settings\" header, a large \"Back to widget\" button, the reminder to click Save at the top of the section while the change isn't kept, then the settings.",
+  "changelog": "CHANGELOG.md"
+}

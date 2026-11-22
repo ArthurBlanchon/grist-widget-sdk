@@ -1,0 +1,8 @@
+{
+  "slug": "gantt",
+  "version": "0.4.0",
+  "commit": "dde7e7a448889a51080ae29ad263ee5eca78bc61",
+  "released": "2026-11-22T09:50:03.765Z",
+  "changes": "- A day scale: the timeline shows days, weeks or months.\n- A default scale, the one the chart opens on, set in the widget's configuration: Grist's \"Open configuration\" and the chart's settings icon both open it. Without one, the chart opens on weeks, as before. The scale buttons change the view for the moment, without saving it.",
+  "changelog": "CHANGELOG.md"
+}

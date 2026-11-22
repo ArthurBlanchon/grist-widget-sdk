@@ -87,6 +87,27 @@ describe("smokeTestWidget()", () => {
     ).rejects.toThrow("boom in render")
   })
 
+  it("opens the widget's Settings too, as Grist's \"Open configuration\" does", async () => {
+    const seen = { rendered: false }
+    function Settings() {
+      useEffect(() => {
+        seen.rendered = true
+      })
+      return <p>settings</p>
+    }
+    await smokeTestWidget({ default: () => <p>hello</p>, GRIST_OPTIONS: { requiredAccess: "read table" }, Settings })
+    expect(seen.rendered).toBe(true)
+  })
+
+  it("fails with the Settings' own error when they throw", async () => {
+    function Settings(): never {
+      throw new Error("boom in settings")
+    }
+    await expect(
+      smokeTestWidget({ App: () => <p>hello</p>, options: { requiredAccess: "read table" }, Settings, timeout: 2_000 })
+    ).rejects.toThrow("boom in settings")
+  })
+
   it("fails with what the page showed when the widget never renders", async () => {
     await expect(
       smokeTestWidget({ App: () => null, options: { requiredAccess: "read table" }, timeout: 500 })

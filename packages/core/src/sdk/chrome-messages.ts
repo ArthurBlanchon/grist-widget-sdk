@@ -71,6 +71,11 @@ const en = {
   crashTitle: "The widget stopped working",
   crashMessage: "Reload it to try again. If it happens again, report the problem: say what you did just before.",
   crashReload: "Reload the widget",
+
+  settingsTitle: "Settings",
+  settingsBack: "Back to widget",
+  settingsDraft: "Settings changed. If you haven't yet, click Save at the top of this section to keep them for everyone.",
+  settingsReadOnly: "The document is open read-only: settings can't be saved.",
 }
 
 export type GristChromeMessages = Readonly<Record<keyof typeof en, string>>
@@ -130,6 +135,12 @@ const fr: GristChromeMessages = {
   crashTitle: "Le widget ne fonctionne plus",
   crashMessage: "Rechargez-le pour réessayer. Si cela se reproduit, signalez le problème : dites ce que vous veniez de faire.",
   crashReload: "Recharger le widget",
+
+  settingsTitle: "Paramètres",
+  // Not « Retour »: Grist's French interface uses it for Revert, next to Enregistrer.
+  settingsBack: "Revenir au widget",
+  settingsDraft: "Paramètres modifiés. Si ce n'est pas encore fait, cliquez sur Enregistrer en haut de cette section pour les garder pour tous.",
+  settingsReadOnly: "Le document est ouvert en lecture seule : les paramètres ne peuvent pas être enregistrés.",
 }
 
 /** Each language's chrome. */

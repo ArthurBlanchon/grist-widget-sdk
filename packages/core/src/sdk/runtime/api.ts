@@ -26,7 +26,7 @@ import type {
   GristTableOperations,
 } from "../types"
 import { readWidgetOptions, writeWidgetOptions } from "./options-version"
-import type { GristRuntime } from "./runtime"
+import { stableJson, type GristRuntime } from "./runtime"
 
 export type ListTablesOptions = {
   /** Include Grist's own tables (`_grist_*`, `GristHidden_*`). */
@@ -257,7 +257,13 @@ export function createGristApi(runtime: GristRuntime): GristApi {
     setWidgetOptions: (options) => {
       const run = patching.then(async () => {
         const current = (await grist.getOptions()) as Record<string, unknown> | null
-        await grist.setOptions(writeWidgetOptions(options, readWidgetOptions(current, runtime.options), runtime.options))
+        const next = writeWidgetOptions(options, readWidgetOptions(current, runtime.options), runtime.options)
+        // Before the write: Grist may send the options back during it.
+        runtime.update({ optionsWritten: stableJson(next) })
+        await grist.setOptions(next).catch((err: unknown) => {
+          runtime.update({ optionsWritten: null })
+          throw err
+        })
       })
       patching = run.catch(() => undefined)
       return run
@@ -271,13 +277,20 @@ export function createGristApi(runtime: GristRuntime): GristApi {
         // migrated, under the current version.
         const current = (await grist.getOptions()) as Record<string, unknown> | null
         const read = readWidgetOptions(current, runtime.options)
-        await grist.setOptions(writeWidgetOptions({ ...read.options, ...patch }, read, runtime.options))
+        const next = writeWidgetOptions({ ...read.options, ...patch }, read, runtime.options)
+        runtime.update({ optionsWritten: stableJson(next) })
+        await grist.setOptions(next).catch((err: unknown) => {
+          runtime.update({ optionsWritten: null })
+          throw err
+        })
       })
       patching = run.catch(() => undefined)
       return run
     },
-    openConfiguration: () => runtime.update({ configurationOpen: true }),
-    closeConfiguration: () => runtime.update({ configurationOpen: false }),
+    // Opening starts afresh: a write from elsewhere, maybe saved since, isn't this view's.
+    openConfiguration: () => runtime.update({ configurationOpen: true, optionsDraft: false, optionsWritten: null }),
+    // Closing forgets the draft: Grist tells a widget nothing on Save.
+    closeConfiguration: () => runtime.update({ configurationOpen: false, optionsDraft: false, optionsWritten: null }),
 
     setCursorPosition: async (pos) => {
       if (!grist.setCursorPos) throw new Error("setCursorPos is not available in this Grist version")

@@ -2,6 +2,10 @@
 
 What changed in each version, for the people using the widget. Newest first.
 
+## 0.4.4 (2026-11-22)
+
+- The settings open in a view that fills the widget, easier to use in a small panel: a "Settings" header, a large "Back to widget" button, the reminder to click Save at the top of the section while the change isn't kept, then the settings.
+
 ## 0.4.3 (2026-11-22)
 
 - The message to click Save is now a warning inside the configuration, easier to see, and it goes away when you close the configuration.

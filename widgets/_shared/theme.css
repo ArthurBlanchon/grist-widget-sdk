@@ -13,7 +13,6 @@
 /* Tailwind generates the classes the shared components use, not only the widget's own. */
 @source "./ui";
 @source "./kibo-ui";
-@source "./options-draft.tsx";
 
 @custom-variant dark (&:is(.dark *));
 

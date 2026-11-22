@@ -70,11 +70,11 @@ read from the columns' settings, which only full access reads.
   section's order, with a button that shows the next ones.
 - **AC-13** Given a default scale in the widget's configuration, the chart
   opens on it (weeks when none is set). Grist's "Open configuration" and the
-  widget's settings icon open the same configuration view; a choice there
-  applies at once, to the widget's options. Grist keeps them as a draft of
-  the section until its own Save: a warning in the view says to click it,
-  until Grist's Revert or the view closes. Its close button and Escape
-  close the view. The scale buttons change the view only. On a
+  widget's settings icon open the same Settings view, the SDK's, which
+  fills the widget's panel; a choice there applies at once, to the widget's
+  options. Grist keeps them as a draft of the section until its own Save:
+  the view says to click it, until Grist's Revert or the view closes. "Back
+  to widget" and Escape close it. The scale buttons change the view only. On a
   document open read-only, the settings icon isn't shown.
 
 ## Standard criteria

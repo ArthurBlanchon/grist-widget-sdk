@@ -32,6 +32,7 @@ own file, so `src/main.tsx` is the same in every widget and
 | --- | --- | --- |
 | `default` | required | The widget component. `React.lazy()` works. |
 | `widget` | required | The declaration, from [`defineGristWidget()`](/docs/sdk/guide/typing#declare-once): access, columns, title and description (the page's title and meta tags), `reportUrl` (see [When something goes wrong](#when-something-goes-wrong)) and `languages` (see [In the widget's language](#in-the-widgets-language)). |
+| `Settings` | optional | The widget's settings fields. With it, Grist shows "Open configuration" for the widget, and `mountGristWidget()` draws a full-panel Settings view while the configuration is open ([Widget options](/docs/sdk/guide/widget-options#a-settings-view)). |
 | `Alerts`, `LocalDevPage`, `ReleasePage` | optional | Replace the SDK's alerts or pages (see the options below). `export const Alerts = null` renders the widget alone. |
 
 ## `mountGristWidget(config)`
@@ -66,6 +67,7 @@ mountGristWidget({ App, options, dev: false })
 | `metadata` | none | `{ title, description, reportUrl, languages }`: the page's title and meta tags, where to report a problem, and the widget's languages. `mountGristWidget(entry)` takes it from the declaration. |
 | `dev` | `false` | Pass `import.meta.env.DEV`. Outside Grist, it picks `LocalDevPage` over `ReleasePage`. |
 | `Alerts` | the SDK's alerts | Wraps the widget inside Grist, under the boundary. The default lists what needs the user's attention (column mapping, access level, failed writes, an unlinked section) above the widget. `null` renders the widget alone. |
+| `Settings` | none | The widget's settings fields, drawn in the SDK's Settings view while the configuration is open; `hasCustomOptions` then defaults to `true`. |
 | `LocalDevPage` | the SDK's page | Shown outside Grist on the dev server: it points at `pnpm test` and the `dev` loop. |
 | `ReleasePage` | the SDK's page | Shown outside Grist on a deployed URL: links to every channel and version, and the URL to paste into Grist. Receives `{ channel }`. |
 | `root` | `"#root"` | The element to render into, or its selector. |

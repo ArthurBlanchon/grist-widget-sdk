@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from "react"
+import { useCallback, useEffect, useId, useMemo, useState } from "react"
 import { fr } from "date-fns/locale"
-import { Calendar, CalendarDays, CalendarRange, Settings, X } from "lucide-react"
+import { Calendar, CalendarDays, CalendarRange, Settings as SettingsIcon } from "lucide-react"
 
 import { defineGristWidget, type GristColumnInfo } from "grist-widget-sdk"
 
@@ -20,7 +20,6 @@ import {
 } from "@shared/kibo-ui/gantt"
 import { Button } from "@shared/ui/button"
 import { NativeSelect, NativeSelectOption } from "@shared/ui/native-select"
-import { OptionsDraftNotice, useOptionsDraft } from "@shared/options-draft"
 import { reportUrl } from "@shared/report-url"
 
 import { choiceStyles } from "./colors"
@@ -197,23 +196,13 @@ export default function App() {
           </div>
           {w.readOnly ? null : (
             <Button variant="ghost" size="icon-sm" title={t("settings")} aria-expanded={w.configurationOpen} onClick={w.openConfiguration}>
-              <Settings aria-hidden />
+              <SettingsIcon aria-hidden />
               <span className="sr-only">{t("settings")}</span>
             </Button>
           )}
         </div>
       </header>
 
-      {w.configurationOpen ? (
-        <Configuration
-          defaultScale={defaultScale}
-          readOnly={w.readOnly}
-          options={w.widgetOptions}
-          save={(next) => w.patchWidgetOptions({ defaultScale: next })}
-          close={w.closeConfiguration}
-          t={t}
-        />
-      ) : null}
 
       {error ? (
         <p role="alert" className="px-4 py-2 text-sm text-destructive">
@@ -253,92 +242,54 @@ export default function App() {
   )
 }
 
-type T = ReturnType<typeof useT<keyof (typeof messages)["en"]>>
-
 /**
- * The widget's configuration view: Grist's "Open configuration" and the
- * settings icon both open it (useGrist().configurationOpen). A choice
- * applies at once, to the widget's options: Grist keeps them as a draft of
- * the section until its own Save, which a warning in the view says
- * (_shared/options-draft) until a Revert, or the view closes. ✕ and Escape
- * close it.
+ * The Gantt's settings, drawn in the SDK's Settings view (mountGristWidget):
+ * Grist's "Open configuration" and the chart's settings icon open it, and
+ * it says to click Grist's Save while the new options are a draft. A choice
+ * applies at once.
  */
-function Configuration({
-  defaultScale,
-  options,
-  readOnly,
-  save,
-  close,
-  t,
-}: {
-  defaultScale: Scale
-  options: Record<string, unknown> | null
-  readOnly: boolean
-  save: (scale: Scale) => Promise<unknown>
-  close: () => void
-  t: T
-}) {
-  const [error, setError] = useState<string | null>(null)
-  const draft = useOptionsDraft(options)
-  const first = useRef<HTMLSelectElement>(null)
+export function Settings() {
+  const w = widget.useGrist()
+  const t = useT(messages)
   const id = useId()
-  useEffect(() => first.current?.focus(), [])
+  const [error, setError] = useState<string | null>(null)
+  const defaultScale = readDefaultScale(w.widgetOptions)
 
   async function choose(next: Scale) {
     setError(null)
     try {
-      await save(next)
-      draft.wrote({ defaultScale: next })
+      await w.patchWidgetOptions({ defaultScale: next })
     } catch (err) {
       setError(t("saveSettingsFailed", { error: err instanceof Error ? err.message : String(err) }))
     }
   }
 
-  function onKeyDown(e: KeyboardEvent) {
-    if (e.key === "Escape") {
-      e.stopPropagation()
-      close()
-    }
-  }
-
   return (
-    <section role="dialog" aria-label={t("configuration")} onKeyDown={onKeyDown} className="flex shrink-0 flex-col gap-3 border-b bg-card px-4 py-3 text-sm">
-      <div className="flex items-center justify-between gap-2">
-        <h2 className="font-medium">{t("configuration")}</h2>
-        <Button variant="ghost" size="icon-sm" title={t("close")} onClick={close}>
-          <X aria-hidden />
-          <span className="sr-only">{t("close")}</span>
-        </Button>
-      </div>
-      <div className="flex max-w-xs flex-col gap-1">
-        <label htmlFor={`${id}-scale`} className="font-medium">
-          {t("defaultScale")}
-        </label>
-        <NativeSelect
-          ref={first}
-          id={`${id}-scale`}
-          aria-describedby={`${id}-hint`}
-          value={defaultScale}
-          disabled={readOnly}
-          onChange={(e) => void choose(e.target.value as Scale)}
-        >
-          {SCALES.map((value) => (
-            <NativeSelectOption key={value} value={value}>
-              {t(value)}
-            </NativeSelectOption>
-          ))}
-        </NativeSelect>
-        <span id={`${id}-hint`} className="text-xs text-muted-foreground">
-          {t("defaultScaleHint")}
-        </span>
-      </div>
-      {readOnly ? <p className="text-xs text-muted-foreground">{t("settingsReadOnly")}</p> : null}
-      <OptionsDraftNotice visible={draft.visible} />
+    <div className="flex max-w-xs flex-col gap-1 text-sm">
+      <label htmlFor={`${id}-scale`} className="font-medium">
+        {t("defaultScale")}
+      </label>
+      <NativeSelect
+        id={`${id}-scale`}
+        aria-describedby={`${id}-hint`}
+        value={defaultScale}
+        disabled={w.readOnly || w.optionsIssue !== null}
+        onChange={(e) => void choose(e.target.value as Scale)}
+      >
+        {SCALES.map((value) => (
+          <NativeSelectOption key={value} value={value}>
+            {t(value)}
+          </NativeSelectOption>
+        ))}
+      </NativeSelect>
+      <span id={`${id}-hint`} className="text-xs text-muted-foreground">
+        {t("defaultScaleHint")}
+      </span>
       {error ? (
         <p role="alert" className="text-destructive">
           {error}
         </p>
       ) : null}
-    </section>
+    </div>
   )
 }

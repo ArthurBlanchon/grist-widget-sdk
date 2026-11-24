@@ -30,9 +30,11 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
+      # main's latest commit (a workflow_run's default), not the event's
+      # head_sha: the check reads only scripts/site, and the live site is
+      # main's latest anyway.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
           sparse-checkout: |
             scripts/site
             packages/create-grist-widget/src/demo-page.mjs

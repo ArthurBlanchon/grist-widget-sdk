@@ -16,6 +16,19 @@ The reasoning behind 0.4.0, and what it left for later, is the
   replaces it on `/v0/`; `/widgets/mermaid-diagram/0.1.0/` still serves it.
   Either withdraw that version from `widgets-dist`, or add elkjs's licence
   next to it: both are direct pushes to `widgets-dist`, the maintainer's.
+- **OpenSSF Scorecard, what only the maintainer can do** (the workflow
+  fixes and the property tests are in the repository):
+  - the OpenSSF Best Practices badge (CII-Best-Practices):
+    <https://www.bestpractices.dev>, sign in with GitHub, answer the
+    questionnaire; "passing" is in reach with what `SECURITY.md`, CI and
+    the changesets already do;
+  - Code-Review and Branch-Protection stay low while every change is
+    authored and merged by the same account, agents included. Raising them
+    takes a second identity for the agents (a machine account or a GitHub
+    App) whose pull requests the maintainer approves, then `main`'s ruleset
+    requiring one approval. A decision record first: it changes ADR 0012's
+    merge flow;
+  - Maintained rises on its own once the repository is 90 days old.
 
 ## 1. The plan to 0.8.0: the production-grade AI widget factory
 

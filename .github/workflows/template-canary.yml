@@ -89,20 +89,30 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       published: ${{ steps.tag.outputs.published }}
+      # The commit checked, once found on main: the canary job checks out
+      # this output, never the event's head_sha directly.
+      sha: ${{ steps.tag.outputs.sha }}
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
-          sparse-checkout: packages/create-grist-widget/package.json
-          sparse-checkout-cone-mode: false
-          persist-credentials: false
+      # No checkout: the commit's package.json comes through the API, after
+      # the commit is found on main (OpenSSF Scorecard's Dangerous-Workflow
+      # check flags a checkout of workflow_run.head_sha).
       - id: tag
         env:
           EVENT: ${{ github.event_name }}
           HEAD_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
           REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ github.token }}
         run: |
-          VERSION="$(node -p "require('./packages/create-grist-widget/package.json').version")"
+          set -euo pipefail
+          # release.yml only runs on pushes to main, so its commit is on main;
+          # say so rather than assume it. A dispatch from another branch stops here.
+          STATUS="$(gh api "repos/${REPO}/compare/main...${HEAD_SHA}" --jq .status)"
+          case "$STATUS" in
+            identical|behind) ;;
+            *) echo "::error::${HEAD_SHA} is not on main (compare: ${STATUS}): the canary only checks what main released."; exit 1 ;;
+          esac
+          echo "sha=${HEAD_SHA}" >> "$GITHUB_OUTPUT"
+          VERSION="$(gh api -H "Accept: application/vnd.github.raw" "repos/${REPO}/contents/packages/create-grist-widget/package.json?ref=${HEAD_SHA}" | node -p "JSON.parse(require('fs').readFileSync(0, 'utf8')).version")"
           TAG="create-grist-widget@${VERSION}"
           # The peeled line (^{}) is the commit for an annotated tag; a
           # lightweight tag has only the plain one.
@@ -144,7 +154,7 @@ jobs:
           # dispatched ref): its package.json versions are what that release
           # just published -- or what is already live, when the run only
           # opened/updated the Version Packages PR.
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          ref: ${{ needs.released.outputs.sha }}
           path: .release-src
           sparse-checkout: |
             package.json

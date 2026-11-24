@@ -101,7 +101,7 @@ Each item is one pull request; the plan says when each milestone is done.
 - [ ] **Grist's own UI flows in the check:** mapping a column in the
   creator panel, and "Open configuration" (`hasCustomOptions`), clicked as
   a person does. Checked by hand for the Gantt on 2026-11-22 only.
-- [ ] **The SDK's Settings view across the catalog.** The Gantt (0.4.4)
+- [ ] **The SDK's Settings view across the catalog.** The Gantt (0.4.5)
   exports `Settings`, and `mountGristWidget()` draws the full-panel view,
   with Grist's Save reminder (`optionsDraft`). Chart builder, Kanban board,
   Mail merge, Document template and File uploader write options too: their

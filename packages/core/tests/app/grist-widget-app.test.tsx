@@ -241,7 +241,20 @@ describe("the Settings view", () => {
   })
 
   it("gives the focus back to the widget's button, with the widget no longer inert", async () => {
-    // jsdom has no inert: focus() inside an inert element does nothing, as in a browser.
+    // jsdom has no inert. As in a browser: focus() inside an inert element does
+    // nothing, and making the focused element inert takes the focus away.
+    const inert = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "inert")
+    const flags = new WeakMap<HTMLElement, boolean>()
+    Object.defineProperty(HTMLElement.prototype, "inert", {
+      configurable: true,
+      get(this: HTMLElement) {
+        return flags.get(this) ?? false
+      },
+      set(this: HTMLElement, value: boolean) {
+        flags.set(this, value)
+        if (value && document.activeElement instanceof HTMLElement && this.contains(document.activeElement)) document.activeElement.blur()
+      },
+    })
     const focus = HTMLElement.prototype.focus
     const spy = vi.spyOn(HTMLElement.prototype, "focus").mockImplementation(function (this: HTMLElement, options?: FocusOptions) {
       if (hasInertAncestor(this)) return
@@ -259,6 +272,8 @@ describe("the Settings view", () => {
       expect(button).toHaveFocus()
     } finally {
       spy.mockRestore()
+      if (inert) Object.defineProperty(HTMLElement.prototype, "inert", inert)
+      else delete (HTMLElement.prototype as { inert?: boolean }).inert
     }
   })
 

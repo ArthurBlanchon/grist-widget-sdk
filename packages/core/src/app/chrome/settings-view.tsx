@@ -1,30 +1,40 @@
-import { Suspense, useEffect, useId, useLayoutEffect, useRef, type ComponentType, type CSSProperties, type KeyboardEvent, type ReactNode } from "react"
+import { useLayoutEffect, useRef, type ComponentType, type CSSProperties, type ReactNode } from "react"
 
 import { useGrist } from "../../sdk"
-import { useChromeMessages } from "../../sdk/chrome-messages"
-import { WidgetCrashBoundary } from "./report-problem"
-import { tokens } from "./tokens"
+import SettingsPanel from "./settings-panel"
 
 /**
  * The widget, and its Settings view over it while the configuration is open
  * (`useGrist().configurationOpen`: Grist's "Open configuration", or the
  * widget's own button calling `openConfiguration()`).
  *
- * The view fills the widget's panel, which is often small: a "Settings"
- * header, a large "Back to widget" button, the draft warning while Grist
- * holds the widget's new options unsaved (`optionsDraft`), then the
- * widget's `Settings` in a scrolling area. The widget stays mounted under
- * it, inert, so it keeps its state (a scroll, a zoom). Escape goes back.
+ * The view fills the widget's panel, which is often small: a header (an
+ * outlined "Back to widget" on the left, "Settings" in the middle), the
+ * draft warning while Grist holds the widget's new options unsaved
+ * (`optionsDraft`), then the widget's `Settings` in a scrolling area. The
+ * widget stays mounted under it, inert, so it keeps its state (a scroll, a
+ * zoom). Escape goes back, and the focus returns to what had it.
  */
 export function WithSettingsView({ Settings, children }: { Settings: ComponentType; children: ReactNode }) {
   const w = useGrist()
   const widget = useRef<HTMLDivElement>(null)
+  const returnTo = useRef<HTMLElement | null>(null)
   const open = w.configurationOpen
   // `inert` on the widget under the view: nothing there takes focus or clicks.
-  // Set on the element: React 18 doesn't know the attribute. A layout effect,
-  // so it is lifted before the view's cleanup gives the focus back.
+  // Set on the element: React 18 doesn't know the attribute. What had the
+  // focus is noted before (inert takes it away, in a browser) and gets it
+  // back once inert is lifted.
   useLayoutEffect(() => {
-    if (widget.current) widget.current.inert = open
+    const el = widget.current
+    if (!el) return
+    if (open) {
+      returnTo.current = document.activeElement instanceof HTMLElement ? document.activeElement : null
+      el.inert = true
+    } else if (el.inert) {
+      el.inert = false
+      if (returnTo.current?.isConnected) returnTo.current.focus()
+      returnTo.current = null
+    }
   }, [open])
   return (
     <>
@@ -32,143 +42,10 @@ export function WithSettingsView({ Settings, children }: { Settings: ComponentTy
         {children}
       </div>
       {open ? (
-        <SettingsView Settings={Settings} close={w.closeConfiguration} draft={w.optionsDraft} readOnly={w.readOnly} issue={w.optionsIssue} />
+        <SettingsPanel Settings={Settings} close={w.closeConfiguration} draft={w.optionsDraft} readOnly={w.readOnly} issue={w.optionsIssue} />
       ) : null}
     </>
   )
 }
 
-function SettingsView({
-  Settings,
-  close,
-  draft,
-  readOnly,
-  issue,
-}: {
-  Settings: ComponentType
-  close: () => void
-  draft: boolean
-  readOnly: boolean
-  issue: string | null
-}) {
-  const { locale, t } = useChromeMessages()
-  const titleId = useId()
-  const body = useRef<HTMLDivElement>(null)
-  const heading = useRef<HTMLHeadingElement>(null)
-
-  // Focus the first setting, or the heading; give it back to what had it on close.
-  useEffect(() => {
-    const before = document.activeElement instanceof HTMLElement ? document.activeElement : null
-    const first = body.current?.querySelector<HTMLElement>(FOCUSABLE)
-    ;(first ?? heading.current)?.focus()
-    return () => {
-      if (before?.isConnected) before.focus()
-    }
-  }, [])
-
-  function onKeyDown(e: KeyboardEvent) {
-    // A popover inside the settings handles its own Escape first (Radix prevents the default).
-    if (e.key === "Escape" && !e.defaultPrevented) {
-      e.stopPropagation()
-      close()
-    }
-  }
-
-  return (
-    <div role="dialog" aria-modal="true" aria-labelledby={titleId} lang={locale} onKeyDown={onKeyDown} style={PANEL}>
-      <div style={HEADER}>
-        <h2 id={titleId} ref={heading} tabIndex={-1} style={TITLE}>
-          {t.settingsTitle}
-        </h2>
-        <button type="button" onClick={close} style={BACK}>
-          <span aria-hidden>←</span> {t.settingsBack}
-        </button>
-        {draft && !readOnly ? (
-          <p role="status" style={WARNING}>
-            <WarningIcon />
-            <span>{t.settingsDraft}</span>
-          </p>
-        ) : null}
-        {readOnly ? <p style={NOTE}>{t.settingsReadOnly}</p> : null}
-        {/* ADR 0017: options from a newer version, or not migrated, are never written over. */}
-        {issue ? (
-          <p role="alert" style={ISSUE}>
-            {issue}
-          </p>
-        ) : null}
-      </div>
-      <div ref={body} style={BODY}>
-        <WidgetCrashBoundary>
-          <Suspense fallback={null}>
-            <Settings />
-          </Suspense>
-        </WidgetCrashBoundary>
-      </div>
-    </div>
-  )
-}
-
-const FOCUSABLE = 'input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])'
-
 const CONTENTS: CSSProperties = { display: "contents" }
-
-const PANEL: CSSProperties = {
-  position: "fixed",
-  inset: 0,
-  zIndex: 50,
-  display: "flex",
-  flexDirection: "column",
-  background: tokens.background,
-  color: tokens.foreground,
-  fontSize: "0.875rem",
-  lineHeight: 1.5,
-}
-
-const HEADER: CSSProperties = {
-  display: "flex",
-  flexDirection: "column",
-  gap: "0.75rem",
-  padding: "0.75rem 1rem",
-  borderBottom: `1px solid ${tokens.border}`,
-}
-
-const TITLE: CSSProperties = { margin: 0, fontSize: "1rem", fontWeight: 600, outline: "none" }
-
-const BACK: CSSProperties = {
-  boxSizing: "border-box",
-  width: "100%",
-  padding: "0.625rem 1rem",
-  border: "none",
-  borderRadius: tokens.radius,
-  background: tokens.primary,
-  color: tokens.primaryForeground,
-  font: "inherit",
-  fontWeight: 500,
-  cursor: "pointer",
-}
-
-const WARNING: CSSProperties = {
-  display: "flex",
-  gap: "0.5rem",
-  margin: 0,
-  padding: "0.625rem 0.75rem",
-  border: "1px solid rgb(245 158 11 / 0.6)",
-  borderRadius: tokens.radius,
-  background: "rgb(245 158 11 / 0.15)",
-}
-
-const NOTE: CSSProperties = { margin: 0, color: tokens.mutedForeground }
-
-const ISSUE: CSSProperties = { margin: 0, color: tokens.destructive }
-
-const BODY: CSSProperties = { flex: 1, minHeight: 0, overflowY: "auto", padding: "1rem" }
-
-function WarningIcon() {
-  return (
-    <svg aria-hidden width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: "0.125rem" }}>
-      <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" />
-      <path d="M12 9v4" />
-      <path d="M12 17h.01" />
-    </svg>
-  )
-}

@@ -93,9 +93,11 @@ jobs:
       # this output, never the event's head_sha directly.
       sha: ${{ steps.tag.outputs.sha }}
     steps:
-      # No checkout: the commit's package.json comes through the API, after
-      # the commit is found on main (OpenSSF Scorecard's Dangerous-Workflow
-      # check flags a checkout of workflow_run.head_sha).
+      # No checkout: the commit's package.json comes through the API. The
+      # guard is the compare below: the commit must be on main. Handing the
+      # canary job the sha as an output only keeps OpenSSF Scorecard's
+      # Dangerous-Workflow check, which reads the checkout's `ref:` text,
+      # from flagging it; dropping the compare would drop the guard.
       - id: tag
         env:
           EVENT: ${{ github.event_name }}

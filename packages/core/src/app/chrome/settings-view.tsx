@@ -11,7 +11,8 @@ import { tokens } from "./tokens"
  * widget's own button calling `openConfiguration()`).
  *
  * The view fills the widget's panel, which is often small: a "Settings"
- * header, a large "Back to widget" button, the draft warning while Grist
+ * header (an outlined "Back to widget" on the left, the title in the
+ * middle), the draft warning while Grist
  * holds the widget's new options unsaved (`optionsDraft`), then the
  * widget's `Settings` in a scrolling area. The widget stays mounted under
  * it, inert, so it keeps its state (a scroll, a zoom). Escape goes back.
@@ -77,12 +78,16 @@ function SettingsView({
   return (
     <div role="dialog" aria-modal="true" aria-labelledby={titleId} lang={locale} onKeyDown={onKeyDown} style={PANEL}>
       <div style={HEADER}>
-        <h2 id={titleId} ref={heading} tabIndex={-1} style={TITLE}>
-          {t.settingsTitle}
-        </h2>
-        <button type="button" onClick={close} style={BACK}>
-          <span aria-hidden>←</span> {t.settingsBack}
-        </button>
+        {/* One row: the way back on the left, the title in the middle (an empty third column balances the first). */}
+        <div style={BAR}>
+          <button type="button" onClick={close} style={BACK}>
+            <span aria-hidden>←</span> {t.settingsBack}
+          </button>
+          <h2 id={titleId} ref={heading} tabIndex={-1} style={TITLE}>
+            {t.settingsTitle}
+          </h2>
+          <span aria-hidden />
+        </div>
         {draft && !readOnly ? (
           <p role="status" style={WARNING}>
             <WarningIcon />
@@ -132,18 +137,27 @@ const HEADER: CSSProperties = {
   borderBottom: `1px solid ${tokens.border}`,
 }
 
-const TITLE: CSSProperties = { margin: 0, fontSize: "1rem", fontWeight: 600, outline: "none" }
+const BAR: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "minmax(0, 1fr) auto minmax(0, 1fr)",
+  alignItems: "center",
+  gap: "0.5rem",
+}
+
+const TITLE: CSSProperties = { margin: 0, fontSize: "1rem", fontWeight: 600, textAlign: "center", outline: "none" }
 
 const BACK: CSSProperties = {
+  justifySelf: "start",
   boxSizing: "border-box",
-  width: "100%",
-  padding: "0.625rem 1rem",
-  border: "none",
+  maxWidth: "100%",
+  padding: "0.375rem 0.75rem",
+  border: `1px solid ${tokens.border}`,
   borderRadius: tokens.radius,
-  background: tokens.primary,
-  color: tokens.primaryForeground,
+  background: "transparent",
+  color: tokens.foreground,
   font: "inherit",
   fontWeight: 500,
+  textAlign: "left",
   cursor: "pointer",
 }
 

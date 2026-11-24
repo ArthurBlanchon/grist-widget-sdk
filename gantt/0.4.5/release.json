@@ -1,0 +1,8 @@
+{
+  "slug": "gantt",
+  "version": "0.4.5",
+  "commit": "1450383b229da9d02fbd7ff49913e3b2ea2a0a46",
+  "released": "2026-11-24T19:46:33.185Z",
+  "changes": "- The settings' header is lighter: \"Back to widget\" is an outlined button at the top left, with \"Settings\" centred beside it.",
+  "changelog": "CHANGELOG.md"
+}

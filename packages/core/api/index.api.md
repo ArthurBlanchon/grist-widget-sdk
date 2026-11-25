@@ -8,7 +8,9 @@ import * as react from 'react';
 import { ReactNode } from 'react';
 
 // @public
-export function checkGristCell(type: string | undefined, value: unknown): GristCellCheck;
+export function checkGristCell(type: string | undefined, value: unknown, options?: {
+    encoded?: boolean;
+}): GristCellCheck;
 
 // @public
 export function decodeGristValue(value: unknown, column?: GristReplicaColumn): GristDecodedValue;
@@ -16,7 +18,7 @@ export function decodeGristValue(value: unknown, column?: GristReplicaColumn): G
 // @public
 export function defineGristWidget<const D extends GristWidgetDefinition>(definition: D): GristWidget<D>;
 
-// @public
+// @public (undocumented)
 export function encodeGristCell(type: string | undefined, value: unknown): unknown;
 
 // @public

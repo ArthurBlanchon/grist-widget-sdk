@@ -192,12 +192,18 @@ For other actions, write the tuple: `applyActions` takes any
 
 ## Typed reads
 
-### `checkGristCell(type, value)`
+### `checkGristCell(type, value, options?)`
 
 `{ ok: true, value }`, the value a Grist type promises (`"Numeric"`,
 `"Ref:Tasks"`, `"Text,Ref"`…), or `{ ok: false, message }`. `useGrist()`
 checks the mapped cells with it; use it for data read another way. See
 [Typed reads](/docs/sdk/guide/typing).
+
+`options.encoded` says which form a list is in, since a ChoiceList's first
+choice can be `"L"`, the tag of an encoded list:
+- `false`: decoded, as `w.record`, `w.records` and `fetchRows()` give it;
+- `true`: Grist's stored form, as `fetchRows(tableId)` gives it;
+- omitted: a list starting with `"L"` is taken as encoded.
 
 ### `encodeGristCell(type, value)`
 
@@ -207,6 +213,7 @@ become `["L", ...]`, a `Date` for a Date or DateTime column becomes seconds, a
 Attachments list already encoded, passes through. A ChoiceList value is
 always read as its choices, so a first choice `"L"` is kept:
 `encodeGristCell("ChoiceList", ["L", "M"])` gives `["L", "L", "M"]`. Give
-it the choices, never a list already encoded. `mapBack` encodes with it; use it for a write that
-doesn't go through `mapBack`, since Grist stores a bare list as an error cell.
+it the choices, never a list already encoded. `mapBack` encodes with it;
+use it for a write that doesn't go through `mapBack`, since Grist stores a
+bare list as an error cell.
 See [Write data](/docs/sdk/guide/writing-data#any-table-under-its-own-column-ids).

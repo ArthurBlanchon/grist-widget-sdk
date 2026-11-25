@@ -61,7 +61,7 @@ function idsOf(value: unknown): number[] | undefined {
   return list?.every((v) => typeof v === "number") ? (list as number[]) : undefined
 }
 
-function checkOne(base: string, value: unknown): GristCellCheck {
+function checkOne(base: string, value: unknown, encoded: boolean | undefined): GristCellCheck {
   switch (base) {
     case "Any":
       return ok(value)
@@ -84,7 +84,10 @@ function checkOne(base: string, value: unknown): GristCellCheck {
       return value === null || typeof value === "string" ? ok(value) : bad("not a choice")
     case "ChoiceList": {
       if (value === null || value === undefined) return ok([])
-      const list = Array.isArray(value) ? (value[0] === "L" ? value.slice(1) : value) : undefined
+      // Decoded (what useGrist() reads), a list is its choices, a first "L"
+      // included; encoded, it starts with the "L" tag (#133). Not said: the tag
+      // is assumed, as before.
+      const list = Array.isArray(value) ? (value[0] === "L" && encoded !== false ? value.slice(1) : value) : undefined
       return list?.every((v) => typeof v === "string") ? ok(list) : bad("not a list of choices")
     }
     case "Ref": {
@@ -119,15 +122,22 @@ function basesOf(type: string | undefined): string[] {
  * Checks one value against a Grist column type (`"Numeric"`, `"Ref:People"`,
  * `"Text,Ref"`), as typed reads do: the value the type promises, or why it
  * doesn't fit.
+ *
+ * `encoded` says which form a list is in. `false`: decoded, as the plugin
+ * API sends it with `keepEncoded` off (what `useGrist()` reads), so a
+ * ChoiceList `["L", "M"]` is the choices L and M. `true`: Grist's stored
+ * form, `["L", ...]`, as the REST API returns it. Omitted, a list starting
+ * with `"L"` is taken as encoded, which loses a first choice `"L"` of a
+ * decoded list: say which form it is.
  */
-export function checkGristCell(type: string | undefined, value: unknown): GristCellCheck {
+export function checkGristCell(type: string | undefined, value: unknown, options?: { encoded?: boolean }): GristCellCheck {
   const error = formulaError(value)
   if (error) return bad(`formula error (${error})`)
   const bases = basesOf(type)
   if (bases.length === 0 || bases.includes("Any")) return ok(value === undefined ? null : value)
   let first: GristCellCheck | null = null
   for (const base of bases) {
-    const check = checkOne(base, value)
+    const check = checkOne(base, value, options?.encoded)
     if (check.ok) return check
     first ??= check
   }
@@ -151,16 +161,25 @@ const LIST_BASES = ["ChoiceList", "RefList", "Attachments"]
  * ChoiceList or RefList column is stored as an error cell. Checked in
  * Grist 1.7.22.
  */
+/**
+ * An encoded list that passes through `encodeGristCell`. A choice can be the
+ * text "L", so for a type that accepts a ChoiceList only a RefList or
+ * Attachments list is taken as encoded: the tag then row ids, which are
+ * numbers and never a choice (#133).
+ */
+function isEncodedList(value: unknown[], choices: boolean, ids: boolean): boolean {
+  if (value[0] !== "L") return false
+  if (!choices) return true
+  return ids && value.length > 1 && value.slice(1).every((v) => typeof v === "number")
+}
+
 export function encodeGristCell(type: string | undefined, value: unknown): unknown {
   if (value === null || value === undefined) return value
   const bases = basesOf(type)
   const accepts = (...names: string[]) => names.some((n) => bases.includes(n))
   if (value instanceof Date) return accepts("Date", "DateTime") ? Math.floor(value.getTime() / 1000) : value
   if (Array.isArray(value)) {
-    if (!accepts(...LIST_BASES)) return value
-    // An encoded list passes through, except for a ChoiceList: a choice can
-    // be the text "L", which is then the first item, not the tag (#133).
-    if (value[0] === "L" && !accepts("ChoiceList")) return value
+    if (!accepts(...LIST_BASES) || isEncodedList(value, accepts("ChoiceList"), accepts("RefList", "Attachments"))) return value
     return ["L", ...value.map((item) => rowIdOf(item) ?? item)]
   }
   if (accepts("Ref") && typeof value === "object") return rowIdOf(value) ?? value
@@ -207,7 +226,8 @@ export function mapAndCheck<T>(
     const name = nameOf(col)
     const real = mappings[name]
     const take = (raw: unknown) => {
-      const check = checkGristCell(typeOf(col), raw)
+      // useGrist() reads with keepEncoded off: lists come decoded.
+      const check = checkGristCell(typeOf(col), raw, { encoded: false })
       if (check.ok) return check.value
       issues.push({ rowId, column: name, message: check.message, value: raw })
       return null

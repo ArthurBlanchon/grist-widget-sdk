@@ -18,7 +18,7 @@ export function decodeGristValue(value: unknown, column?: GristReplicaColumn): G
 // @public
 export function defineGristWidget<const D extends GristWidgetDefinition>(definition: D): GristWidget<D>;
 
-// @public (undocumented)
+// @public
 export function encodeGristCell(type: string | undefined, value: unknown): unknown;
 
 // @public

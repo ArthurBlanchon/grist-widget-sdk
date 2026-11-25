@@ -201,9 +201,14 @@ checks the mapped cells with it; use it for data read another way. See
 
 `options.encoded` says which form a list is in, since a ChoiceList's first
 choice can be `"L"`, the tag of an encoded list:
-- `false`: decoded, as `w.record`, `w.records` and `fetchRows()` give it;
-- `true`: Grist's stored form, as `fetchRows(tableId)` gives it;
+- `false`: decoded, as `w.record`, `w.records`, `fetchRows()` and
+  `fetchRows(tableId, { columns })` give it;
+- `true`: Grist's stored form, as `fetchRows(tableId)` gives it without
+  `columns`;
 - omitted: a list starting with `"L"` is taken as encoded.
+
+In a type that accepts both a ChoiceList and a RefList, `encodeGristCell`
+wraps an empty `["L"]`: it can't be told from the one choice `"L"`.
 
 ### `encodeGristCell(type, value)`
 

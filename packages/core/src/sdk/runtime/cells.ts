@@ -147,6 +147,18 @@ export function checkGristCell(type: string | undefined, value: unknown, options
 const LIST_BASES = ["ChoiceList", "RefList", "Attachments"]
 
 /**
+ * An encoded list that passes through `encodeGristCell`. A choice can be the
+ * text "L", so for a type that accepts a ChoiceList only a RefList or
+ * Attachments list is taken as encoded: the tag then row ids, which are
+ * numbers and never a choice (#133).
+ */
+function isEncodedList(value: unknown[], choices: boolean, ids: boolean): boolean {
+  if (value[0] !== "L") return false
+  if (!choices) return true
+  return ids && value.length > 1 && value.slice(1).every((v) => typeof v === "number")
+}
+
+/**
  * A value as Grist stores it in a column of the declared `type`: the
  * reverse of what typed reads give. Lists become `["L", ...]` (a RefList's
  * `Reference` items become their row ids), a `Date` for a Date or DateTime
@@ -161,18 +173,6 @@ const LIST_BASES = ["ChoiceList", "RefList", "Attachments"]
  * ChoiceList or RefList column is stored as an error cell. Checked in
  * Grist 1.7.22.
  */
-/**
- * An encoded list that passes through `encodeGristCell`. A choice can be the
- * text "L", so for a type that accepts a ChoiceList only a RefList or
- * Attachments list is taken as encoded: the tag then row ids, which are
- * numbers and never a choice (#133).
- */
-function isEncodedList(value: unknown[], choices: boolean, ids: boolean): boolean {
-  if (value[0] !== "L") return false
-  if (!choices) return true
-  return ids && value.length > 1 && value.slice(1).every((v) => typeof v === "number")
-}
-
 export function encodeGristCell(type: string | undefined, value: unknown): unknown {
   if (value === null || value === undefined) return value
   const bases = basesOf(type)

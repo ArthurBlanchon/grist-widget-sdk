@@ -154,6 +154,14 @@ describe("encodeGristCell", () => {
     expect(encodeGristCell(undefined, ["a"])).toEqual(["a"])
   })
 
+  it("keeps a ChoiceList's first choice when it is \"L\" (#133)", () => {
+    // A choice can be any text, "L" included: a ChoiceList value is always
+    // a list of choices, never taken for one already encoded.
+    expect(encodeGristCell("ChoiceList", ["L"])).toEqual(["L", "L"])
+    expect(encodeGristCell("ChoiceList", ["L", "M", "S"])).toEqual(["L", "L", "M", "S"])
+    expect(encodeGristCell("Text,ChoiceList", ["L", "XL"])).toEqual(["L", "L", "XL"])
+  })
+
   it("picks the list encoding when one of several declared types is a list", () => {
     expect(encodeGristCell("Text,ChoiceList", ["a"])).toEqual(["L", "a"])
     expect(encodeGristCell("Text,Ref", { rowId: 2 })).toBe(2)

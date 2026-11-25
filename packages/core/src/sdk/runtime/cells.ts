@@ -141,8 +141,11 @@ const LIST_BASES = ["ChoiceList", "RefList", "Attachments"]
  * reverse of what typed reads give. Lists become `["L", ...]` (a RefList's
  * `Reference` items become their row ids), a `Date` for a Date or DateTime
  * column becomes seconds since the epoch, a `Reference` for a Ref column its
- * row id. A list already encoded (`["L", ...]`, as the attachment helpers
- * return it) and every other value pass through, so it is safe to call twice.
+ * row id. A RefList or Attachments list already encoded (`["L", ...]`, as
+ * the attachment helpers return it) and every other value pass through, so
+ * it is safe to call twice on those. A ChoiceList value is always a list of
+ * choices: a first choice `"L"` is kept, so give it as the choices
+ * (`["L", "M"]` writes the sizes L and M), never encoded.
  *
  * Grist's plugin API writes values as given: a bare array written to a
  * ChoiceList or RefList column is stored as an error cell. Checked in
@@ -154,7 +157,10 @@ export function encodeGristCell(type: string | undefined, value: unknown): unkno
   const accepts = (...names: string[]) => names.some((n) => bases.includes(n))
   if (value instanceof Date) return accepts("Date", "DateTime") ? Math.floor(value.getTime() / 1000) : value
   if (Array.isArray(value)) {
-    if (!accepts(...LIST_BASES) || value[0] === "L") return value
+    if (!accepts(...LIST_BASES)) return value
+    // An encoded list passes through, except for a ChoiceList: a choice can
+    // be the text "L", which is then the first item, not the tag (#133).
+    if (value[0] === "L" && !accepts("ChoiceList")) return value
     return ["L", ...value.map((item) => rowIdOf(item) ?? item)]
   }
   if (accepts("Ref") && typeof value === "object") return rowIdOf(value) ?? value

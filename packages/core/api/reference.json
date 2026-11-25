@@ -27,7 +27,7 @@
     {
       "name": "encodeGristCell",
       "kind": "function",
-      "summary": "A value as Grist stores it in a column of the declared `type`: the reverse of what typed reads give. Lists become `[\"L\", ...]` (a RefList's `Reference` items become their row ids), a `Date` for a Date or DateTime column becomes seconds since the epoch, a `Reference` for a Ref column its row id. A list already encoded (`[\"L\", ...]`, as the attachment helpers return it) and every other value pass through, so it is safe to call twice.",
+      "summary": "A value as Grist stores it in a column of the declared `type`: the reverse of what typed reads give. Lists become `[\"L\", ...]` (a RefList's `Reference` items become their row ids), a `Date` for a Date or DateTime column becomes seconds since the epoch, a `Reference` for a Ref column its row id. A RefList or Attachments list already encoded (`[\"L\", ...]`, as the attachment helpers return it) and every other value pass through, so it is safe to call twice on those. A ChoiceList value is always a list of choices: a first choice `\"L\"` is kept, so give it as the choices (`[\"L\", \"M\"]` writes the sizes L and M), never encoded.",
       "signatures": [
         "encodeGristCell(type: string | undefined, value: unknown): unknown"
       ]

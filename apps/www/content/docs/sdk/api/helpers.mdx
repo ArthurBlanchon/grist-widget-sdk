@@ -203,7 +203,10 @@ checks the mapped cells with it; use it for data read another way. See
 
 The reverse: a value as Grist stores it in a column of that type. Lists
 become `["L", ...]`, a `Date` for a Date or DateTime column becomes seconds, a
-`Reference` for a Ref column its row id; anything else, or a value already
-encoded, passes through. `mapBack` encodes with it; use it for a write that
+`Reference` for a Ref column its row id; anything else, or a RefList or
+Attachments list already encoded, passes through. A ChoiceList value is
+always read as its choices, so a first choice `"L"` is kept:
+`encodeGristCell("ChoiceList", ["L", "M"])` gives `["L", "L", "M"]`. Give
+it the choices, never a list already encoded. `mapBack` encodes with it; use it for a write that
 doesn't go through `mapBack`, since Grist stores a bare list as an error cell.
 See [Write data](/docs/sdk/guide/writing-data#any-table-under-its-own-column-ids).

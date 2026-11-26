@@ -5,6 +5,7 @@ import { cleanup, fireEvent, renderWithGrist, screen, waitFor, within } from "gr
 import App, { widget } from "./App"
 import { expectVolume, VOLUME_TIMEOUT_MS } from "@shared/testing"
 import { demo } from "./demo"
+import { keysOf } from "./group"
 
 afterEach(() => {
   cleanup()
@@ -192,3 +193,10 @@ function listDemo(groups: number): typeof demo {
 
 it("AC-volume holds as a list of 100 groups of 50 rows", () => expectVolume(<App />, widget, listDemo(100)), VOLUME_TIMEOUT_MS)
 it("AC-volume holds as a list with a distinct group for every row", () => expectVolume(<App />, widget, listDemo(5), { unique: ["Category"] }), VOLUME_TIMEOUT_MS)
+
+describe('a choice "L" (#133)', () => {
+  it("AC-9 counts a ChoiceList row under each choice, a first \"L\" included", () => {
+    // Mapped records come decoded: ["L", "M"] is the choices L and M.
+    expect(keysOf(["L", "M"])).toEqual(["L", "M"])
+  })
+})

@@ -7,6 +7,7 @@ import App, { widget } from "./App"
 import { findGroups } from "./match"
 import { expectVolume, VOLUME_TIMEOUT_MS } from "@shared/testing"
 import { demo } from "./demo"
+import { isBlank, normalize } from "./match"
 
 beforeAll(installJsdomStubs)
 
@@ -214,3 +215,16 @@ describe("Duplicate finder", () => {
 })
 
 it("AC-volume renders 5,000 rows within the DOM budget", () => expectVolume(<App />, widget, demo), VOLUME_TIMEOUT_MS)
+
+describe('a choice "L" (#133)', () => {
+  it("AC-1 compares a stored list on its choices, a first \"L\" included", () => {
+    // fetchRows(tableId) gives the stored form: the tag, then the choices.
+    expect(normalize(["L", "L", "M"])).toBe(normalize(["L", "M"].join(" ")))
+    expect(normalize(["L", "L", "M"])).not.toBe(normalize(["L", "M", "M"]))
+  })
+
+  it("AC-7 counts a stored list holding only the choice \"L\" as filled", () => {
+    expect(isBlank(["L", "L"])).toBe(false)
+    expect(isBlank(["L"])).toBe(true)
+  })
+})

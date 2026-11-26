@@ -55,6 +55,13 @@ describe("Document template", () => {
     await shown("<p>Acme owes 1,234.5 since 3/2/2026 for Paint, Labour.</p>")
   })
 
+  it("AC-1 keeps a list's first choice \"L\" (#133)", async () => {
+    const { emulator } = setup("<p>{{Items}}</p>")
+    // Sizes L and XL, as Grist stores them: the tag, then the choices.
+    emulator.mutate.updateRow("Quotes", 1, { Items: ["L", "L", "XL"] })
+    await shown("<p>L, XL</p>")
+  })
+
   it("AC-2 writes a cell holding HTML as text", async () => {
     setup("<p>{{Note}}</p>")
     await shown("<p>&lt;b&gt;urgent&lt;/b&gt;</p>")

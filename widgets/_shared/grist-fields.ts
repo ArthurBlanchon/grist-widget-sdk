@@ -55,7 +55,8 @@ export function fieldOf(col: GristColumnInfo): Field {
 
 /** The cell as the form shows it. */
 export function toForm(field: Field, raw: unknown): FormValue {
-  const check = checkGristCell(field.kind === "readonly" ? undefined : field.type, raw)
+  // The section's rows come decoded: a ChoiceList's first choice "L" is a choice (#133).
+  const check = checkGristCell(field.kind === "readonly" ? undefined : field.type, raw, { encoded: false })
   if (!check.ok) return display(raw)
   const v = check.value
   switch (field.kind) {
@@ -117,11 +118,11 @@ export function fromForm(field: Field, value: FormValue): Parsed {
   return { ok: true, value: encodeGristCell(field.type, cell) }
 }
 
-/** Any cell value as one line of text. */
+/** Any decoded cell value as one line of text (a stored one: `fromStored` first). */
 export function display(value: unknown): string {
   if (value === null || value === undefined) return ""
   if (value instanceof Date) return value.toISOString()
-  if (Array.isArray(value)) return (value[0] === "L" ? value.slice(1) : value).map(display).join(", ")
+  if (Array.isArray(value)) return value.map(display).join(", ")
   if (typeof value === "object") return JSON.stringify(value)
   return String(value)
 }

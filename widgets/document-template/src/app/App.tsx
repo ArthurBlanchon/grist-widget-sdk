@@ -51,7 +51,8 @@ export default function App() {
       if (!r) return null
       const out: Row = { id: r.id as number }
       for (const [k, v] of Object.entries(r)) {
-        const check = checkGristCell(types?.get(k), v)
+        // The section's rows come decoded: a first choice "L" is a choice (#133).
+        const check = checkGristCell(types?.get(k), v, { encoded: false })
         out[k] = check.ok ? check.value : v
       }
       return out

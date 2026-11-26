@@ -2,6 +2,10 @@
 
 What changed in each version, for the people using the widget. Newest first.
 
+## 0.3.4 (2026-11-26)
+
+- A ChoiceList row whose first choice is "L" (a size, say) is counted under L too: it was counted only under its other choices.
+
 ## 0.3.3 (2026-11-21)
 
 - No more linking alert ("Widget linking") in a section that follows no other, or that no section follows: the widget works either way.

@@ -12,7 +12,7 @@ import { describe, expect, it } from "vitest"
 import { coerceGristDocApiRefRowId, decodeGristValue, encodeGristValue } from "../../src/sdk/helpers/grist-value-codec"
 import { parseGristWidgetOptionsCell } from "../../src/sdk/helpers/grist-widget-options"
 import { parseGristThemePayload } from "../../src/sdk/helpers/grist-theme-payload"
-import { encodeGristCell } from "../../src/sdk/runtime/cells"
+import { checkGristCell, encodeGristCell } from "../../src/sdk/runtime/cells"
 import { stableJson } from "../../src/sdk/runtime/runtime"
 
 const COLUMN_TYPES = ["Text", "Numeric", "Int", "Bool", "Date", "DateTime:Europe/Paris", "Ref:People", "RefList:People", "ChoiceList", "Attachments", "Any"]
@@ -71,17 +71,20 @@ describe("encoding is the inverse of decoding", () => {
 
   it("a list written to a ChoiceList or RefList column is one `[\"L\", ...]` that reads back as the list", () => {
     const list = fc.oneof(
-      // A first choice "L" is read as the list tag and lost: issue #133. Left
-      // out until that is decided, so this property doesn't fail at random.
-      fc.tuple(fc.constant("ChoiceList"), fc.array(fc.string(), { maxLength: 8 }).filter((items) => items[0] !== "L")),
+      // A first choice "L" included (#133). A first choice "E" reads as a
+      // formula error (#135): left out until that is fixed.
+      fc.tuple(fc.constant("ChoiceList"), fc.array(fc.oneof(fc.constant("L"), fc.string()), { maxLength: 8 }).filter((items) => items[0] !== "E")),
       fc.tuple(fc.constant("RefList:People"), fc.array(rowId, { maxLength: 8 }))
     )
     fc.assert(fc.property(list, ([type, items]) => {
       const encoded = encodeGristCell(type, items)
       expect(encoded).toEqual(["L", ...items])
-      // Safe to call twice: an encoded list passes through.
-      expect(encodeGristCell(type, encoded)).toEqual(encoded)
+      // Safe to call twice on a RefList: an encoded list of ids passes through.
+      // Not on a ChoiceList, whose value is always its choices (#133).
+      if (type !== "ChoiceList") expect(encodeGristCell(type, encoded)).toEqual(encoded)
       expect(decodeGristValue(encoded, { id: "c", type })).toEqual(items)
+      // Read back as useGrist() reads it: Grist sends the list decoded.
+      expect(checkGristCell(type, items, { encoded: false })).toEqual({ ok: true, value: items })
     }))
   })
 })

@@ -162,6 +162,8 @@ describe("checkGristCell, a decoded list starting with \"E\" (#135)", () => {
     expect(checkGristCell("ChoiceList", new RaisedException("TypeError"), { encoded: false })).toEqual({ ok: false, message: "formula error (TypeError)" })
     expect(checkGristCell("ChoiceList", ["E", "TypeError"], { encoded: true })).toEqual({ ok: false, message: "formula error (TypeError)" })
     expect(checkGristCell("Numeric", ["E", "ZeroDivisionError"])).toEqual({ ok: false, message: "formula error (ZeroDivisionError)" })
+    // decodeGristValue's form, as fetchRows(..., { columns }) gives it.
+    expect(checkGristCell("Numeric", { __error: true, type: "ZeroDivisionError" }, { encoded: false })).toEqual({ ok: false, message: "formula error (ZeroDivisionError)" })
   })
 })
 

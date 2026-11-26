@@ -25,10 +25,25 @@ class RaisedException {
   name: string
   message?: string
   details?: string
+  user_input?: unknown
   constructor(args: unknown[]) {
     this.name = String(args[0])
     this.message = typeof args[1] === "string" ? args[1] : undefined
     this.details = typeof args[2] === "string" ? args[2] : undefined
+    const input = args[3]
+    this.user_input = input && typeof input === "object" ? (input as { u?: unknown }).u : undefined
+  }
+  /** As Grist shows it, e.g. "#DIV/0!". */
+  toString(): string {
+    switch (this.name) {
+      case "ZeroDivisionError":
+        return "#DIV/0!"
+      case "UnmarshallableError":
+        return this.details || `#${this.name}`
+      case "InvalidTypedValue":
+        return `#Invalid ${this.message}: ${this.details}`
+    }
+    return `#${this.name}`
   }
 }
 

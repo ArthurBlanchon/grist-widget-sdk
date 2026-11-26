@@ -236,6 +236,7 @@ describe("action engine", () => {
     applyUserActions(state, bus, [["UpdateRecord", "People", 10, { tags: ["L", 1, 2] }]])
     const row = getTable(state, "People").rows[0]
     expect(row.tags).toEqual(["L", 1, 2])
-    expect(row.gristHelper_tags).toEqual(["Alpha", "Beta"])
+    // Stored as Grist stores a list (#135); section reads give ["Alpha", "Beta"].
+    expect(row.gristHelper_tags).toEqual(["L", "Alpha", "Beta"])
   })
 })

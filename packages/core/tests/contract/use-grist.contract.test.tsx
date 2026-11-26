@@ -311,7 +311,11 @@ describe("the emulator stores a bare list the way Grist does", () => {
     await settle(() => emulator.setColumnMappings({ Tags: "tags", Links: "links", Due: "due" }))
     await settle(() => w().table.update({ id: 1, fields: { tags: ["home", "work"] } }))
     expect(emulator.state.tables.get("Tasks")!.rows.find((r) => r.id === 1)!.tags).toEqual(["E", "KeyError"])
-    await waitFor(() => expect(w().cellIssues).toEqual([expect.objectContaining({ rowId: 1, column: "Tags" })]))
+    await waitFor(() => expect(w().cellIssues).toEqual([expect.objectContaining({ rowId: 1, column: "Tags", message: "formula error (KeyError)" })]))
+    // As Grist's plugin API decodes it: a RaisedException, not an array (#135).
+    const raw = w().record!.tags as { constructor: { name: string }; name: string }
+    expect(raw.constructor.name).toBe("RaisedException")
+    expect(String(raw)).toBe("#KeyError")
   })
 })
 

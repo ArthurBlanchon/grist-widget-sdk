@@ -54,7 +54,11 @@ encodeGristValue([1, 2], { type: "RefList:Tasks" })    // → ["L", 1, 2]
 
 ### `isGristCellError(value)`
 
-True when `value` is a formula error, Grist's `["E", type, message?]` tuple.
+True when `value` is a formula error in Grist's stored form, the
+`["E", type, message?]` tuple that `fetchRows(tableId)` gives. In the
+section's decoded rows (`w.record`, `w.records`), a formula error is a
+`RaisedException` and a list can start with `"E"`: use
+`checkGristCell(type, value, { encoded: false })` there.
 
 ```tsx
 import { isGristCellError } from "grist-widget-sdk"
@@ -203,10 +207,12 @@ checks the mapped cells with it; use it for data read another way. See
 choice can be `"L"`, the tag of an encoded list:
 - `false`: decoded, as `w.record`, `w.records`, `fetchRows()` and
   `fetchRows(tableId, { columns })` give it. A formula error is then a
-  `RaisedException`, and a list starting with `"E"` is a list;
+  `RaisedException` (or, with `columns`, `{ __error: true, type }`), and a
+  list starting with `"E"` is a list;
 - `true`: Grist's stored form, as `fetchRows(tableId)` gives it without
   `columns`;
-- omitted: a list starting with `"L"` is taken as encoded.
+- omitted: a list starting with `"L"` is taken as encoded, and one
+  starting with `"E"` as an encoded formula error.
 
 In a type that accepts both a ChoiceList and a RefList, `encodeGristCell`
 wraps an empty `["L"]`: it can't be told from the one choice `"L"`.

@@ -31,12 +31,17 @@ const ok = (value: unknown): GristCellCheck => ({ ok: true, value })
 const bad = (message: string): GristCellCheck => ({ ok: false, message })
 
 /**
- * A formula error, as the plugin API decodes it (`RaisedException`) or
- * encodes it (`["E", name, …]`). Decoded (`encoded: false`), an array is a
+ * A formula error, as the plugin API decodes it (`RaisedException`), as
+ * `decodeGristValue` does (`{ __error: true, type }`), or encoded
+ * (`["E", name, …]`). Decoded (`encoded: false`), an array is a
  * list, never an error: a ChoiceList's first choice can be "E" (#135).
  */
 function formulaError(value: unknown, encoded: boolean | undefined): string | null {
   if (encoded !== false && Array.isArray(value) && value[0] === "E") return String(value[1] ?? "error")
+  // decodeGristValue's form, which fetchRows(..., { columns }) gives.
+  if (value && typeof value === "object" && (value as { __error?: unknown }).__error === true) {
+    return String((value as { type?: unknown }).type ?? "error")
+  }
   if (value && typeof value === "object" && (value as { constructor?: { name?: string } }).constructor?.name === "RaisedException") {
     return String((value as { name?: unknown }).name ?? "error")
   }

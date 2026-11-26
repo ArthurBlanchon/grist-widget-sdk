@@ -292,7 +292,8 @@ export function syncRefListDisplayHelpers(
       const lbl = formatLabelFromCell(trow[fieldId])
       return lbl !== "" ? lbl : String(rid)
     })
-    row[helperColId] = labels
+    // A list, stored as Grist stores one: a first label "E" (a name) is a label.
+    row[helperColId] = ["L", ...labels]
   }
 }
 

@@ -78,9 +78,12 @@ formula error included, is `null`, and `w.cellIssues` lists which and why:
 the row, the column, the value and a message. The `cell-issues` alert
 shows the count. See [Typed reads](/docs/sdk/guide/typing).
 
-Outside the mapped records (a raw `w.record`, `fetchRows` of another
-table), a formula error arrives as Grist's tagged value; test for it with
-`isGristCellError(value)`.
+Outside the mapped records, a formula error comes in the form of what was
+read. In `w.record` and `w.records`, Grist sends it decoded, a
+`RaisedException`: check the cell with
+`checkGristCell(type, value, { encoded: false })`. In `fetchRows(tableId)`,
+Grist's stored form, it is `["E", name, …]`: `isGristCellError(value)`
+tests for that form only.
 
 ## A widget that stops working
 

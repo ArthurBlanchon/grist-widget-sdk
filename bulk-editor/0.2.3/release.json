@@ -1,0 +1,8 @@
+{
+  "slug": "bulk-editor",
+  "version": "0.2.3",
+  "commit": "6569f426e7493bbb309da512ed1277b7596f038e",
+  "released": "2026-11-26T07:14:36.728Z",
+  "changes": "- A ChoiceList whose first choice is \"L\" (a size, say) keeps it: the field read it without that choice, so Undo would put back the list without it.",
+  "changelog": "CHANGELOG.md"
+}

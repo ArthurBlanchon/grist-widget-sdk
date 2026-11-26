@@ -1,0 +1,8 @@
+{
+  "slug": "chart-builder",
+  "version": "0.3.3",
+  "commit": "6569f426e7493bbb309da512ed1277b7596f038e",
+  "released": "2026-11-26T07:14:38.197Z",
+  "changes": "- A list label that holds the choice \"L\" (a size, say) keeps it: `L, M` was drawn as `M`.",
+  "changelog": "CHANGELOG.md"
+}

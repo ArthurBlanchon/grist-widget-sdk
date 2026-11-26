@@ -1,0 +1,8 @@
+{
+  "slug": "document-template",
+  "version": "0.2.3",
+  "commit": "6569f426e7493bbb309da512ed1277b7596f038e",
+  "released": "2026-11-26T07:14:39.341Z",
+  "changes": "- A list whose first choice is \"L\" (a size, say) keeps it in the document: `L, XL` was filled in as `XL`.",
+  "changelog": "CHANGELOG.md"
+}

@@ -1,0 +1,8 @@
+{
+  "slug": "duplicate-finder",
+  "version": "0.3.3",
+  "commit": "6569f426e7493bbb309da512ed1277b7596f038e",
+  "released": "2026-11-26T07:14:40.563Z",
+  "changes": "- A list holding the choice \"L\" (a size, say) is compared, and counted as filled, with that choice: every \"L\" in it was left out, so `L, M` and `M` looked the same.",
+  "changelog": "CHANGELOG.md"
+}

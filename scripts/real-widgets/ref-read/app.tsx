@@ -1,5 +1,6 @@
 // The page ref-read.mjs embeds in a real Grist: a widget declaring pure
-// reference columns, which shows what it reads for the selected row.
+// reference columns and a ChoiceList, which shows what it reads for the
+// selected row.
 import { defineGristWidget, type GristColumnToMap } from "grist-widget-sdk"
 import { mountGristWidget } from "grist-widget-sdk/app"
 
@@ -14,7 +15,7 @@ export const widget = defineGristWidget({
 function App() {
   const w = widget.useGrist()
   const r = w.mappedRecord as Record<string, unknown> | null
-  return <pre id="out">{r ? JSON.stringify({ Owner: r.Owner, Helpers: r.Helpers, Code: r.Code }) : ""}</pre>
+  return <pre id="out">{r ? JSON.stringify({ Owner: r.Owner, Helpers: r.Helpers, Code: r.Code, Sizes: r.Sizes }) : ""}</pre>
 }
 
 mountGristWidget({ widget, default: App })

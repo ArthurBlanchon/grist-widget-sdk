@@ -134,6 +134,22 @@ describe("GristMappedRow", () => {
   })
 })
 
+describe("checkGristCell, a ChoiceList's form (#133)", () => {
+  it("reads a decoded list as its choices, a first \"L\" included", () => {
+    expect(checkGristCell("ChoiceList", ["L", "M"], { encoded: false })).toEqual({ ok: true, value: ["L", "M"] })
+  })
+
+  it("strips the tag of an encoded list, and assumes one when the form isn't said", () => {
+    expect(checkGristCell("ChoiceList", ["L", "L", "M"], { encoded: true })).toEqual({ ok: true, value: ["L", "M"] })
+    expect(checkGristCell("ChoiceList", ["L", "a"])).toEqual({ ok: true, value: ["a"] })
+  })
+
+  it("reads mapped ChoiceList cells as decoded, as useGrist() gets them", () => {
+    const { value } = mapAndCheck<{ Sizes: string[] }>({ id: 1, S: ["L", "M"] }, [{ name: "Sizes", type: "ChoiceList" }], { Sizes: "S" })
+    expect(value?.Sizes).toEqual(["L", "M"])
+  })
+})
+
 describe("encodeGristCell", () => {
   it("encodes lists, dates and references the way Grist stores them", () => {
     expect(encodeGristCell("ChoiceList", ["a", "b"])).toEqual(["L", "a", "b"])
@@ -152,6 +168,21 @@ describe("encodeGristCell", () => {
     expect(encodeGristCell("Text", "x")).toBe("x")
     expect(encodeGristCell("ChoiceList", null)).toBeNull()
     expect(encodeGristCell(undefined, ["a"])).toEqual(["a"])
+  })
+
+  it("keeps a ChoiceList's first choice when it is \"L\" (#133)", () => {
+    // A choice can be any text, "L" included: a ChoiceList value is always
+    // a list of choices, never taken for one already encoded.
+    expect(encodeGristCell("ChoiceList", ["L"])).toEqual(["L", "L"])
+    expect(encodeGristCell("ChoiceList", ["L", "M", "S"])).toEqual(["L", "L", "M", "S"])
+    expect(encodeGristCell("Text,ChoiceList", ["L", "XL"])).toEqual(["L", "L", "XL"])
+  })
+
+  it("passes an encoded RefList or Attachments list through when the type also accepts a ChoiceList", () => {
+    expect(encodeGristCell("ChoiceList,RefList:T", ["L", 1, 2])).toEqual(["L", 1, 2])
+    expect(encodeGristCell("Attachments,ChoiceList", ["L", 11])).toEqual(["L", 11])
+    // Choices are text: a list of them is wrapped, a first "L" included.
+    expect(encodeGristCell("ChoiceList,RefList:T", ["L", "M"])).toEqual(["L", "L", "M"])
   })
 
   it("picks the list encoding when one of several declared types is a list", () => {

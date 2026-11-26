@@ -205,9 +205,9 @@ export function createInlineTransport(
   /**
    * Mirror what `viewApi.fetchSelectedTable` does inside `grist-plugin-api.js`:
    * the host RPC stub always returns columnar; the wrapper applies the
-   * `format: "rows"` transpose (and would decode encoded values when
-   * `keepEncoded: false` — a no-op here because our `rowsToColumnar` already
-   * emits JS-native primitives in that case).
+   * `format: "rows"` transpose. The decoding Grist's wrapper does with
+   * `keepEncoded: false` is done on the host side here: `rowsToColumnar`
+   * already decodes lists and dates in that case.
    *
    * Keeping this logic on the inline side guarantees that widgets see the
    * same result whether they go through the iframe transport (real plugin

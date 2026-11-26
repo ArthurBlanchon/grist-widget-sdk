@@ -136,6 +136,11 @@ const check = checkGristCell("Numeric", row.Amount)
 if (!check.ok) console.warn(check.message)
 ```
 
+Without `columns`, `fetchRows(tableId)` gives Grist's stored form, where a
+list starts with `"L"`: pass `{ encoded: true }`. The section's rows, and a
+`fetchRows(tableId, { columns })`, are decoded: pass `{ encoded: false }`,
+so a choice `"L"` stays a choice.
+
 ## The raw rows
 
 `w.record` and `w.records` hold the same rows under the table's own column

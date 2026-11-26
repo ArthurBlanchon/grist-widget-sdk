@@ -4,11 +4,11 @@
  *
  *   { id: number[], colA: unknown[], colB: unknown[], ... }
  *
- * When `keepEncoded` is `false` (Grist's default for these APIs), values are
- * passed through as-is — JS-native primitives (string / number / boolean /
- * Date / arrays) are valid Grist plugin values. When `keepEncoded` is `true`,
- * Date columns are emitted in tuple form (`["d", epoch]`) so callers can
- * round-trip them.
+ * When `keepEncoded` is `false` (Grist's default for the view API), values
+ * are decoded as the plugin API decodes them: a list `["L", ...]` arrives as
+ * its items. When `keepEncoded` is `true`, Date columns are emitted in tuple
+ * form (`["d", epoch]`) and lists keep their tag. `raw` is `docApi.fetchTable`'s
+ * form: what Grist stores, lists tagged and dates in seconds.
  */
 
 import type { GristRowRecord } from "../../sdk/types"
@@ -18,6 +18,13 @@ export type ColumnarTable = Record<string, unknown[]>
 
 export type ToColumnarOptions = {
   keepEncoded?: boolean
+  /**
+   * Grist's stored form, as `docApi.fetchTable` returns it: lists stay
+   * `["L", ...]`, dates are seconds. Without it, a read as the view API
+   * gives it (`fetchSelectedTable`, `onRecords`): lists decoded unless
+   * `keepEncoded`.
+   */
+  raw?: boolean
 }
 
 export function rowsToColumnar(
@@ -28,7 +35,7 @@ export function rowsToColumnar(
   const cols = Object.keys(table.columns)
   const out: ColumnarTable = { id: rows.map((r) => r.id) }
   for (const col of cols) {
-    out[col] = rows.map((r) => encodeForWire(r[col], table.columns[col]?.type, options.keepEncoded))
+    out[col] = rows.map((r) => encodeForWire(r[col], table.columns[col]?.type, options.keepEncoded, options.raw))
   }
   return out
 }
@@ -40,18 +47,21 @@ export function rowToRecord(
 ): Record<string, unknown> {
   const out: Record<string, unknown> = { id: row.id }
   for (const col of Object.keys(table.columns)) {
-    out[col] = encodeForWire(row[col], table.columns[col]?.type, options.keepEncoded)
+    out[col] = encodeForWire(row[col], table.columns[col]?.type, options.keepEncoded, options.raw)
   }
   return out
 }
 
-export function encodeForWire(value: unknown, type: string | undefined, keepEncoded: boolean | undefined): unknown {
+export function encodeForWire(value: unknown, type: string | undefined, keepEncoded: boolean | undefined, raw?: boolean): unknown {
   if (value instanceof Date) {
     const epoch = Math.floor(value.getTime() / 1000)
-    if (keepEncoded) {
+    if (keepEncoded && !raw) {
       return type && type.startsWith("DateTime") ? ["D", epoch, "UTC"] : ["d", epoch]
     }
     return epoch
   }
+  // Grist decodes a stored list with keepEncoded off: ["L", "a"] arrives as
+  // ["a"], so a first choice "L" is a choice (#133).
+  if (!keepEncoded && !raw && Array.isArray(value) && value[0] === "L") return value.slice(1)
   return value
 }

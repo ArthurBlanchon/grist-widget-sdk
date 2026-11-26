@@ -67,6 +67,7 @@ written to a ChoiceList, RefList or Attachments column is stored as an
 import { encodeGristCell } from "grist-widget-sdk"
 
 encodeGristCell("ChoiceList", ["a", "b"]) // ["L", "a", "b"]
+encodeGristCell("ChoiceList", ["L", "M"]) // ["L", "L", "M"]: the sizes L and M
 encodeGristCell("RefList:Tasks", [1, 2, 3]) // ["L", 1, 2, 3]
 encodeGristCell("Date", new Date("2026-03-16")) // 1773619200
 ```

@@ -1,0 +1,4 @@
+# GitHub's language statistics (linguist). Grist's plugin API is a copy of
+# grist-static's file, shipped as is with each catalog widget (ADR 0016):
+# vendored code, not this repository's own JavaScript.
+widgets/_shared/plugin-api/** linguist-vendored

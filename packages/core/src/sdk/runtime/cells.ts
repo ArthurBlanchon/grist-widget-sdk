@@ -39,8 +39,8 @@ const bad = (message: string): GristCellCheck => ({ ok: false, message })
 function formulaError(value: unknown, encoded: boolean | undefined): string | null {
   if (encoded !== false && Array.isArray(value) && value[0] === "E") return String(value[1] ?? "error")
   // decodeGristValue's form, which fetchRows(..., { columns }) gives.
-  if (value && typeof value === "object" && (value as { __error?: unknown }).__error === true) {
-    return String((value as { type?: unknown }).type ?? "error")
+  if (value && typeof value === "object" && (value as { __error?: unknown }).__error === true && typeof (value as { type?: unknown }).type === "string") {
+    return (value as { type: string }).type
   }
   if (value && typeof value === "object" && (value as { constructor?: { name?: string } }).constructor?.name === "RaisedException") {
     return String((value as { name?: unknown }).name ?? "error")

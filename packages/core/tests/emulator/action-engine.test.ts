@@ -6,6 +6,7 @@ import {
   createEventBus,
   evaluateRowFormulas,
   getTable,
+  rowsToColumnar,
 } from "../../src/emulator/core"
 
 function makeFixture() {
@@ -236,7 +237,8 @@ describe("action engine", () => {
     applyUserActions(state, bus, [["UpdateRecord", "People", 10, { tags: ["L", 1, 2] }]])
     const row = getTable(state, "People").rows[0]
     expect(row.tags).toEqual(["L", 1, 2])
-    // Stored as Grist stores a list (#135); section reads give ["Alpha", "Beta"].
+    // Stored as Grist stores a list (#135); section reads give the labels.
     expect(row.gristHelper_tags).toEqual(["L", "Alpha", "Beta"])
+    expect(rowsToColumnar(getTable(state, "People"), getTable(state, "People").rows).gristHelper_tags).toEqual([["Alpha", "Beta"]])
   })
 })

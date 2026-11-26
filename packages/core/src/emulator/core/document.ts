@@ -277,7 +277,7 @@ export function syncRefListDisplayHelpers(
 
     const ids = extractRefListIdsFromWire(row[colId])
     if (ids.length === 0) {
-      row[helperColId] = []
+      row[helperColId] = ["L"]
       continue
     }
 

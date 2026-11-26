@@ -12,6 +12,7 @@ import { Switch } from "@shared/ui/switch"
 import { Textarea } from "@shared/ui/textarea"
 
 import { display, fieldOf, fromForm, sameValue, toForm, type Field, type FormValue } from "@shared/grist-fields"
+import { fromStored } from "@shared/stored"
 import { reportUrl } from "@shared/report-url"
 import { messages } from "./messages"
 
@@ -82,7 +83,7 @@ export default function App() {
           live &&
           setOptions((o) => ({
             ...o,
-            [key]: rows.map((r) => ({ id: r.id, label: (visible ? display(r[visible]) : "") || `#${r.id}` })),
+            [key]: rows.map((r) => ({ id: r.id, label: (visible ? display(fromStored(r[visible])) : "") || `#${r.id}` })),
           })),
         () => undefined,
       )

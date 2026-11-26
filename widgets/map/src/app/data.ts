@@ -2,7 +2,8 @@ import { mergeCountryCounts, normalizeCountryCode, type CountryCounts } from "./
 
 export type Point = { id: number; lon: number; lat: number; label: string; category: string }
 
-const text = (v: unknown) => (v === null || v === undefined ? "" : Array.isArray(v) ? v.filter((x) => x !== "L").join(", ") : String(v).trim())
+// Decoded, as mapped records give it: an "L" is a value (#133).
+const text = (v: unknown) => (v === null || v === undefined ? "" : Array.isArray(v) ? v.join(", ") : String(v).trim())
 
 /** A latitude or longitude within its range, or null. */
 function coordinate(value: unknown, limit: number): number | null {

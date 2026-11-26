@@ -12,7 +12,8 @@ export type Datum = { label: string } & Record<string, number | string>
 const keyOf = (v: unknown) => {
   if (v === null || v === undefined || v === "") return ""
   if (v instanceof Date) return v.toISOString().slice(0, 10)
-  if (Array.isArray(v)) return v.filter((x) => x !== "L").join(", ")
+  // Decoded, as mapped records give it: an "L" is a value (#133).
+  if (Array.isArray(v)) return v.join(", ")
   return String(v).trim()
 }
 

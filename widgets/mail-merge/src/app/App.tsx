@@ -10,6 +10,7 @@ import { Input } from "@shared/ui/input"
 import { NativeSelect, NativeSelectOption } from "@shared/ui/native-select"
 import { Textarea } from "@shared/ui/textarea"
 import { reportUrl } from "@shared/report-url"
+import { fromStored } from "@shared/stored"
 
 import { DEFAULTS, fill, link, LONG_LINK, recipients, type Client, type Row } from "./mail"
 import { messages } from "./messages"
@@ -31,10 +32,13 @@ const CLIENTS: Client[] = ["mailto", "gmail", "outlook"]
 /** The rows the list shows at a time: Open the next one goes through all of them. */
 const PAGE = 100
 
+/** A row of `fetchRows(tableId)` in the section's decoded form. */
+const decodedRow = (row: Record<string, unknown>) => Object.fromEntries(Object.entries(row).map(([k, v]) => [k, fromStored(v)]))
+
 /** A reference cell read from the table (a row id, or a list of them) as the text its column shows. */
 function shown(raw: unknown, label: ReadonlyMap<number, unknown>): unknown {
   const one = (id: unknown) => (typeof id === "number" && id > 0 ? (label.get(id) ?? null) : null)
-  if (Array.isArray(raw)) return (raw[0] === "L" ? raw.slice(1) : raw).map(one)
+  if (Array.isArray(raw)) return raw.map(one)
   return one(raw)
 }
 
@@ -100,7 +104,8 @@ export default function App() {
     if (!tableId) return
     let live = true
     fetchRows(tableId).then(
-      (all) => live && setRead({ tableId, cells: new Map(all.map((r) => [r.id, r])) }),
+      // The table's stored form, decoded as the section's rows are (#133).
+      (all) => live && setRead({ tableId, cells: new Map(all.map((r) => [r.id, decodedRow(r)])) }),
       (err: unknown) => live && setError(t("failed", { error: err instanceof Error ? err.message : String(err) })),
     )
     return () => {
@@ -116,7 +121,7 @@ export default function App() {
       (fetched) => {
         if (!live) return
         const byTable = new Map(fetched)
-        setLabels(new Map([...refCols].map(([col, r]) => [col, new Map((byTable.get(r.table) ?? []).map((row) => [row.id, row[r.shows]]))])))
+        setLabels(new Map([...refCols].map(([col, r]) => [col, new Map((byTable.get(r.table) ?? []).map((row) => [row.id, fromStored(row[r.shows])]))])))
       },
       () => undefined,
     )
@@ -136,7 +141,7 @@ export default function App() {
             for (const [k, raw] of Object.entries({ ...fromTable, ...r })) {
               const label = k in r ? undefined : labels.get(k)
               const v = label ? shown(raw, label) : raw
-              const check = checkGristCell(label ? undefined : types?.get(k), v)
+              const check = checkGristCell(label ? undefined : types?.get(k), v, { encoded: false })
               out[k] = check.ok ? check.value : v
             }
             return out

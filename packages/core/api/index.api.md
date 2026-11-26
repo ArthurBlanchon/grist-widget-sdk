@@ -8,7 +8,9 @@ import * as react from 'react';
 import { ReactNode } from 'react';
 
 // @public
-export function checkGristCell(type: string | undefined, value: unknown): GristCellCheck;
+export function checkGristCell(type: string | undefined, value: unknown, options?: {
+    encoded?: boolean;
+}): GristCellCheck;
 
 // @public
 export function decodeGristValue(value: unknown, column?: GristReplicaColumn): GristDecodedValue;

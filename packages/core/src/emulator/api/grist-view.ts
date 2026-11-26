@@ -18,6 +18,10 @@ import type { GristViewImpl } from "./types"
  * shape. The production `grist-plugin-api.js` wrapper (which the iframe
  * transport talks to) expects the raw RPC stub to return columnar and does
  * the `format: "rows"` transposition + `keepEncoded: false` decoding itself.
+ * The emulator has no such wrapper: its host side (`encodeForWire`) decodes
+ * lists unless `keepEncoded` is true (#133), which equals Grist on every SDK
+ * path (they pass `keepEncoded: false`). A transport through the real
+ * plugin API would need it to return the encoded form instead.
  * Returning rows here used to crash the wrapper's `mapValues(data, col =>
  * col.map(decodeObject))` pass — `data` was an array, `col` was a row object
  * with no `.map` method — so widgets observed `records === null` forever.

@@ -36,6 +36,21 @@ From the [plan to 0.8.0](./docs/planning/2026-11-15-plan-0.8.md) §4, in
 its order: M5, then M7 (M1 to M4 and M6 are done).
 Each item is one pull request; the plan says when each milestone is done.
 
+- [ ] **A choice "L" in the catalog's own reads (#133, after #134).** The
+  section's rows arrive decoded, yet these widgets strip a leading "L" or
+  drop every "L" from a list, so a ChoiceList choice "L" is lost on screen
+  and, in the editors, on the next save:
+  - `checkGristCell` without `{ encoded: false }`:
+    `widgets/_shared/grist-fields.ts` `toForm` (record-editor,
+    bulk-editor), document-template `App.tsx`, mail-merge `App.tsx`
+    (decoded for the section's columns, encoded for `fetchRows(tableId)`'s);
+  - a leading "L" stripped: `_shared/cell-text.ts`, `_shared/grist-fields.ts`
+    `display`, grouped-view `group.ts`;
+  - every "L" dropped: chart-builder `series.ts`, duplicate-finder
+    `match.ts` (twice), mail-merge `mail.ts`, map `data.ts`.
+
+  Done when each reads the form it gets, each widget's tests have a choice
+  "L" in their fixtures, and the widgets are released as patches.
 - [ ] **Attachments on the static demo pages.** grist-static serves no
   attachment, so the demo pages of Attachment viewer, File uploader and
   Signature pad open with their attachments cells empty (`pnpm demo` and

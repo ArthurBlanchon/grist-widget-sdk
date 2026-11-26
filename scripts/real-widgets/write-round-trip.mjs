@@ -35,6 +35,8 @@ class Reference {
 // [column, declared type, value as a typed read gives it, what Grist must store]
 const CASES = [
   ["Tags", "ChoiceList", ["home", "work"], ["L", "home", "work"]],
+  // A first choice "L" (a size) is a choice, not the list tag (#133).
+  ["Sizes", "ChoiceList", ["L", "M"], ["L", "L", "M"]],
   ["Links", "RefList:People", [1, 2], ["L", 1, 2]],
   ["LinksDecoded", "RefList:People", [new Reference("People", 2)], ["L", 2]],
   ["Owner", "Ref:People", new Reference("People", 2), 2],

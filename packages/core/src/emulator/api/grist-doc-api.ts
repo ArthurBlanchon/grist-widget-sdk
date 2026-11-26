@@ -39,7 +39,8 @@ export function createGristDocApiImpl(state: EmulatorDocumentState, bus: EventBu
         return synthesizeTablesColumnMeta(state)
       }
       const table = getTable(state, tableId)
-      return rowsToColumnar(table, table.rows)
+      // docApi.fetchTable isn't decoded by the plugin API: Grist's stored form.
+      return rowsToColumnar(table, table.rows, { raw: true })
     },
 
     async applyUserActions(actions) {

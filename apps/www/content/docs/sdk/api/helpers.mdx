@@ -202,7 +202,8 @@ checks the mapped cells with it; use it for data read another way. See
 `options.encoded` says which form a list is in, since a ChoiceList's first
 choice can be `"L"`, the tag of an encoded list:
 - `false`: decoded, as `w.record`, `w.records`, `fetchRows()` and
-  `fetchRows(tableId, { columns })` give it;
+  `fetchRows(tableId, { columns })` give it. A formula error is then a
+  `RaisedException`, and a list starting with `"E"` is a list;
 - `true`: Grist's stored form, as `fetchRows(tableId)` gives it without
   `columns`;
 - omitted: a list starting with `"L"` is taken as encoded.

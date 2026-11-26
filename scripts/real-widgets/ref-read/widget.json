@@ -5,6 +5,7 @@
     { "name": "Owner", "type": "Ref:People" },
     { "name": "Helpers", "type": "RefList:People" },
     { "name": "Code", "type": "Ref:Codes" },
-    { "name": "Sizes", "type": "ChoiceList" }
+    { "name": "Sizes", "type": "ChoiceList" },
+    { "name": "Grades", "type": "ChoiceList" }
   ]
 }

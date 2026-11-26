@@ -30,9 +30,13 @@ export type GristCellCheck = { ok: true; value: unknown } | { ok: false; message
 const ok = (value: unknown): GristCellCheck => ({ ok: true, value })
 const bad = (message: string): GristCellCheck => ({ ok: false, message })
 
-/** A formula error, as the plugin API decodes it (`RaisedException`) or encodes it (`["E", name, …]`). */
-function formulaError(value: unknown): string | null {
-  if (Array.isArray(value) && value[0] === "E") return String(value[1] ?? "error")
+/**
+ * A formula error, as the plugin API decodes it (`RaisedException`) or
+ * encodes it (`["E", name, …]`). Decoded (`encoded: false`), an array is a
+ * list, never an error: a ChoiceList's first choice can be "E" (#135).
+ */
+function formulaError(value: unknown, encoded: boolean | undefined): string | null {
+  if (encoded !== false && Array.isArray(value) && value[0] === "E") return String(value[1] ?? "error")
   if (value && typeof value === "object" && (value as { constructor?: { name?: string } }).constructor?.name === "RaisedException") {
     return String((value as { name?: unknown }).name ?? "error")
   }
@@ -125,13 +129,15 @@ function basesOf(type: string | undefined): string[] {
  *
  * `encoded` says which form a list is in. `false`: decoded, as the plugin
  * API sends it with `keepEncoded` off (what `useGrist()` reads), so a
- * ChoiceList `["L", "M"]` is the choices L and M. `true`: Grist's stored
+ * ChoiceList `["L", "M"]` is the choices L and M, and `["E", "M"]` the
+ * choices E and M, not a formula error (Grist decodes one to a
+ * `RaisedException`). `true`: Grist's stored
  * form, `["L", ...]`, as the REST API returns it. Omitted, a list starting
  * with `"L"` is taken as encoded, which loses a first choice `"L"` of a
  * decoded list: say which form it is.
  */
 export function checkGristCell(type: string | undefined, value: unknown, options?: { encoded?: boolean }): GristCellCheck {
-  const error = formulaError(value)
+  const error = formulaError(value, options?.encoded)
   if (error) return bad(`formula error (${error})`)
   const bases = basesOf(type)
   if (bases.length === 0 || bases.includes("Any")) return ok(value === undefined ? null : value)

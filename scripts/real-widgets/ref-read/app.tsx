@@ -15,7 +15,7 @@ export const widget = defineGristWidget({
 function App() {
   const w = widget.useGrist()
   const r = w.mappedRecord as Record<string, unknown> | null
-  return <pre id="out">{r ? JSON.stringify({ Owner: r.Owner, Helpers: r.Helpers, Code: r.Code, Sizes: r.Sizes }) : ""}</pre>
+  return <pre id="out">{r ? JSON.stringify({ Owner: r.Owner, Helpers: r.Helpers, Code: r.Code, Sizes: r.Sizes, Grades: r.Grades }) : ""}</pre>
 }
 
 mountGristWidget({ widget, default: App })

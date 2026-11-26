@@ -71,9 +71,8 @@ describe("encoding is the inverse of decoding", () => {
 
   it("a list written to a ChoiceList or RefList column is one `[\"L\", ...]` that reads back as the list", () => {
     const list = fc.oneof(
-      // A first choice "L" included (#133). A first choice "E" reads as a
-      // formula error (#135): left out until that is fixed.
-      fc.tuple(fc.constant("ChoiceList"), fc.array(fc.oneof(fc.constant("L"), fc.string()), { maxLength: 8 }).filter((items) => items[0] !== "E")),
+      // A first choice "L" (#133) or "E" (#135) included.
+      fc.tuple(fc.constant("ChoiceList"), fc.array(fc.oneof(fc.constant("L"), fc.constant("E"), fc.string()), { maxLength: 8 })),
       fc.tuple(fc.constant("RefList:People"), fc.array(rowId, { maxLength: 8 }))
     )
     fc.assert(fc.property(list, ([type, items]) => {

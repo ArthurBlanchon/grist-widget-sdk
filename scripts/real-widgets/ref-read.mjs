@@ -5,7 +5,8 @@
 // ref-read/ is that widget, built here with the SDK's dist and embedded in a
 // document where Owner shows a name, Helpers a list of names and Code a
 // number: each must read as the row id it points to. Sizes, a ChoiceList
-// whose first choice is "L", must read as its choices (#133).
+// whose first choice is "L", and Grades, whose first is "E", must read as
+// their choices (#133, #135).
 //
 //   pnpm --filter grist-widget-sdk build
 //   node scripts/real-widgets/ref-read.mjs
@@ -36,15 +37,16 @@ const declared = JSON.parse(readFileSync(path.join(fixture, "widget.json"), "utf
 const DEMO = {
   tables: {
     Tasks: {
-      columns: { Title: "Text", Owner: "Ref:People", Helpers: "RefList:People", Code: "Ref:Codes", Sizes: "ChoiceList" },
-      rows: [{ Title: "Ship it", Owner: 2, Helpers: [1, 2], Code: 1, Sizes: ["L", "M"] }],
+      columns: { Title: "Text", Owner: "Ref:People", Helpers: "RefList:People", Code: "Ref:Codes", Sizes: "ChoiceList", Grades: "ChoiceList" },
+      rows: [{ Title: "Ship it", Owner: 2, Helpers: [1, 2], Code: 1, Sizes: ["L", "M"], Grades: ["E", "M"] }],
     },
     People: { columns: { Name: "Text" }, rows: [{ Name: "Ada" }, { Name: "Grace" }] },
     Codes: { columns: { Number: "Numeric" }, rows: [{ Number: 100 }] },
   },
 }
-// Sizes: a first choice "L" is a choice, not the list tag (#133).
-const EXPECTED = { Owner: 2, Helpers: [1, 2], Code: 1, Sizes: ["L", "M"] }
+// Sizes: a first choice "L" is a choice, not the list tag (#133). Grades: a
+// first choice "E" is a choice, not a formula error (#135).
+const EXPECTED = { Owner: 2, Helpers: [1, 2], Code: 1, Sizes: ["L", "M"], Grades: ["E", "M"] }
 
 /** The fixture built with the SDK's dist and the React the SDK is tested with. */
 async function build() {

@@ -2,6 +2,10 @@
 
 What changed in each version, for the people using the widget. Newest first.
 
+## 0.3.3 (2026-11-26)
+
+- A list label that holds the choice "L" (a size, say) keeps it: `L, M` was drawn as `M`.
+
 ## 0.3.2 (2026-11-21)
 
 - No more linking alert ("Widget linking") in a section that follows no other, or that no section follows: the widget works either way.

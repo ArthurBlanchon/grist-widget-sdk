@@ -18,7 +18,8 @@ afterEach(() => {
 
 const day = (y: number, m: number, d: number) => Date.UTC(y, m - 1, d) / 1000
 const MEMBERS: GristReplicaRow[] = [
-  { id: 1, Name: "Zoé", Email: "zoe@example.org", Ends: day(2027, 3, 1), Fee: 1200.5, SentAt: null, SentDay: null, Done: false, Club: 2 },
+  // Sizes L and M, as Grist stores them: the tag, then the choices.
+  { id: 1, Name: "Zoé", Email: "zoe@example.org", Ends: day(2027, 3, 1), Fee: 1200.5, SentAt: null, SentDay: null, Done: false, Club: 2, Sizes: ["L", "L", "M"] },
   { id: 2, Name: "Ana", Email: "ana@example.org; bo@example.org", Ends: day(2027, 6, 9), Fee: 40, SentAt: null, SentDay: null, Done: false, Club: 1 },
   { id: 3, Name: "Nobody", Email: "not an address", Ends: null, Fee: 0, SentAt: null, SentDay: null, Done: false, Club: 0 },
 ]
@@ -39,6 +40,7 @@ const doc = (rows = MEMBERS, widgetOptions?: Record<string, unknown>): GristRepl
         SentDay: { type: "Date", label: "SentDay", parentPos: 6 },
         Done: { type: "Bool", label: "Done", parentPos: 7 },
         Club: { type: "Ref:Clubs", label: "Club", parentPos: 8, visibleColRef: 30 },
+        Sizes: { type: "ChoiceList", label: "Sizes", parentPos: 9 },
       },
       rows,
     },
@@ -72,6 +74,11 @@ describe("Mail merge", () => {
     // Grist sends a mapped widget only Email: Name and Club come from the table.
     setup({ ...TEMPLATE, subject: "{{Name}}, {{Club}} club" })
     await waitFor(async () => expect(params((await openLink("zoe@example.org")).getAttribute("href")!).get("subject")).toBe("Zoé, Chess club"))
+  })
+
+  it("AC-1 keeps a list's first choice \"L\", from the table as from the section (#133)", async () => {
+    setup({ ...TEMPLATE, subject: "{{Name}}: {{Sizes}}" })
+    await waitFor(async () => expect(params((await openLink("zoe@example.org")).getAttribute("href")!).get("subject")).toBe("Zoé: L, M"))
   })
 
   it("AC-2 says when a placeholder names no column, and keeps it as written", async () => {

@@ -2,6 +2,10 @@
 
 What changed in each version, for the people using the widget. Newest first.
 
+## 0.2.3 (2026-11-26)
+
+- A list whose first choice is "L" (a size, say) keeps it in the document: `L, XL` was filled in as `XL`.
+
 ## 0.2.2 (2026-11-21)
 
 - No more linking alert ("Widget linking") in a section that follows no other, or that no section follows: the widget works either way.

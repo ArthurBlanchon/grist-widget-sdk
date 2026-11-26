@@ -180,3 +180,11 @@ it("AC-volume holds with a distinct category for every row, in a line chart", ()
 
 it("AC-volume holds with a distinct category for every row, in a combined chart", () =>
   expectVolume(<App />, widget, { ...demo, options: { ...demo.options, chart: "combined" } }, { unique: ["Month"] }), VOLUME_TIMEOUT_MS)
+
+describe('a choice "L" (#133)', () => {
+  it("AC-1 groups by a list label with its first \"L\"", () => {
+    // Mapped records come decoded: ["L", "M"] is the choices L and M.
+    const data = buildData([{ label: ["L", "M"], values: [1] }], 1, "sum", "(blank)")
+    expect(data.map((d) => d.label)).toEqual(["L, M"])
+  })
+})

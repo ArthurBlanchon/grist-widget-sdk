@@ -1,7 +1,7 @@
 {
   "name": "@grist-widgets/record-editor",
   "private": true,
-  "version": "0.2.2",
+  "version": "0.2.3",
   "type": "module",
   "description": "Edit the selected row in a form, each field typed by its column, with Save and Cancel; or add a row.",
   "license": "MIT",

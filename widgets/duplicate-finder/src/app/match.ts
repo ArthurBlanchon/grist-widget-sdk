@@ -1,3 +1,5 @@
+import { fromStored } from "@shared/stored"
+
 /** Grouping rows that are the same on their keys, exactly or approximately. */
 
 export type Mode = "exact" | "close"
@@ -5,7 +7,8 @@ export type Mode = "exact" | "close"
 /** A value as it is compared: no case, accents, punctuation or extra spaces. */
 export function normalize(value: unknown): string {
   if (value === null || value === undefined) return ""
-  const text = Array.isArray(value) ? value.filter((v) => v !== "L").join(" ") : value instanceof Date ? value.toISOString() : String(value)
+  // Stored form (fetchRows(tableId)): only the leading tag goes, a choice "L" stays (#133).
+  const text = Array.isArray(value) ? (fromStored(value) as unknown[]).join(" ") : value instanceof Date ? value.toISOString() : String(value)
   return text
     .normalize("NFKD")
     .replace(/\p{M}/gu, "")
@@ -100,7 +103,7 @@ export function findGroups(rows: readonly Row[], keys: readonly string[], mode: 
 /** A cell with nothing in it: blank text, no reference, an empty list. */
 export function isBlank(value: unknown): boolean {
   if (value === null || value === undefined || value === "") return true
-  if (Array.isArray(value)) return value.filter((v) => v !== "L").length === 0
+  if (Array.isArray(value)) return (fromStored(value) as unknown[]).length === 0
   return false
 }
 

@@ -5,6 +5,7 @@ import { cleanup, fireEvent, renderWithGrist, screen, waitFor, within } from "gr
 
 import App, { widget } from "./App"
 import { readPalette } from "./palette"
+import { pointsOf } from "./data"
 
 // MapLibre needs WebGL, which jsdom lacks: the map and the country layer are doubles that show what would be drawn.
 vi.mock("@shared/ui/map", async () => (await import("./testing/map-double")).mapDouble)
@@ -150,5 +151,13 @@ describe("Map", () => {
     expect(within(layers().at(-1)!).getAllByRole("button")).toHaveLength(6)
     // No two groups share a colour.
     expect(new Set(layers().map((l) => l.dataset.color)).size).toBe(6)
+  })
+})
+
+describe('a choice "L" (#133)', () => {
+  it("AC-1 labels a point with a list, its first \"L\" included", () => {
+    // Mapped records come decoded: ["L", "XL"] is the choices L and XL.
+    const { points } = pointsOf([{ id: 1, Latitude: 45.76, Longitude: 4.84, Label: ["L", "XL"], Category: ["L"] }])
+    expect(points[0]).toMatchObject({ label: "L, XL", category: "L" })
   })
 })

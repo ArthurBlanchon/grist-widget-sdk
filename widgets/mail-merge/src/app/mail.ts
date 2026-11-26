@@ -23,7 +23,8 @@ export function fill(template: string, row: Row, columns: ReadonlySet<string>, l
  * that would end an address in a link (`?`, `&`, `#`, `%`, `,`, `;`).
  */
 export function recipients(value: unknown): string[] {
-  const text = Array.isArray(value) ? value.filter((v) => v !== "L").join(",") : value === null || value === undefined ? "" : String(value)
+  // Decoded (App.tsx decodes the table's stored rows): an "L" is a value (#133).
+  const text = Array.isArray(value) ? value.join(",") : value === null || value === undefined ? "" : String(value)
   return text
     .split(/[,;\n]/)
     .map((s) => s.trim())

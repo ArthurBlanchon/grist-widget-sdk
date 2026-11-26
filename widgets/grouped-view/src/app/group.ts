@@ -12,8 +12,8 @@ export const BLANK = ""
 /** A cell as the keys it is grouped under: a list cell counts under each of its values. */
 export function keysOf(value: unknown): string[] {
   if (Array.isArray(value)) {
-    const list = value[0] === "L" ? value.slice(1) : value
-    const keys = [...new Set(list.map(keyOf).filter((k) => k !== BLANK))]
+    // Decoded, as mapped records give it: a first "L" is a value (#133).
+    const keys = [...new Set(value.map(keyOf).filter((k) => k !== BLANK))]
     return keys.length ? keys : [BLANK]
   }
   return [keyOf(value)]

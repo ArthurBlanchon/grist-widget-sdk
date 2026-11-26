@@ -71,10 +71,6 @@ Each item is one pull request; the plan says when each milestone is done.
   (`string | string[] | undefined`) doesn't allow. Add `| null`, with the API
   report, and split a declared type into its bases in one helper (`basesOf`,
   used in four places). Done when the type and the helper land.
-- [ ] **Release 0.8.0** now that the refactoring is done
-  ([ADR 0024](./docs/decisions/0024-release-0.8-before-m5-m7.md)): the
-  Version Packages pull request, on the maintainer's go. M5 and M7 above
-  continue towards 0.9.0.
 - [ ] **The template's Content Security Policy and standard criteria**
   (the plan put them in 0.8.0; ADR 0024 moves them): a scaffold meets the
   catalog's bar (ADR 0016, ADR 0018). A policy without `unsafe-eval` needs

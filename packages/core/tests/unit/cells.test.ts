@@ -150,6 +150,23 @@ describe("checkGristCell, a ChoiceList's form (#133)", () => {
   })
 })
 
+describe("checkGristCell, a decoded list starting with \"E\" (#135)", () => {
+  it("reads a ChoiceList whose first choice is \"E\" as its choices, not a formula error", () => {
+    expect(checkGristCell("ChoiceList", ["E", "M"], { encoded: false })).toEqual({ ok: true, value: ["E", "M"] })
+    const { value, issues } = mapAndCheck<{ Grades: string[] }>({ id: 1, G: ["E", "M"] }, [{ name: "Grades", type: "ChoiceList" }], { Grades: "G" })
+    expect(value?.Grades).toEqual(["E", "M"])
+    expect(issues).toEqual([])
+  })
+
+  it("still reads a formula error: decoded, a RaisedException; encoded, [\"E\", name]", () => {
+    expect(checkGristCell("ChoiceList", new RaisedException("TypeError"), { encoded: false })).toEqual({ ok: false, message: "formula error (TypeError)" })
+    expect(checkGristCell("ChoiceList", ["E", "TypeError"], { encoded: true })).toEqual({ ok: false, message: "formula error (TypeError)" })
+    expect(checkGristCell("Numeric", ["E", "ZeroDivisionError"])).toEqual({ ok: false, message: "formula error (ZeroDivisionError)" })
+    // decodeGristValue's form, as fetchRows(..., { columns }) gives it.
+    expect(checkGristCell("Numeric", { __error: true, type: "ZeroDivisionError" }, { encoded: false })).toEqual({ ok: false, message: "formula error (ZeroDivisionError)" })
+  })
+})
+
 describe("encodeGristCell", () => {
   it("encodes lists, dates and references the way Grist stores them", () => {
     expect(encodeGristCell("ChoiceList", ["a", "b"])).toEqual(["L", "a", "b"])

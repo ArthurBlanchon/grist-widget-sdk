@@ -277,7 +277,7 @@ export function syncRefListDisplayHelpers(
 
     const ids = extractRefListIdsFromWire(row[colId])
     if (ids.length === 0) {
-      row[helperColId] = []
+      row[helperColId] = ["L"]
       continue
     }
 
@@ -292,7 +292,8 @@ export function syncRefListDisplayHelpers(
       const lbl = formatLabelFromCell(trow[fieldId])
       return lbl !== "" ? lbl : String(rid)
     })
-    row[helperColId] = labels
+    // A list, stored as Grist stores one: a first label "E" (a name) is a label.
+    row[helperColId] = ["L", ...labels]
   }
 }
 

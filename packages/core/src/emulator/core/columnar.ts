@@ -16,6 +16,37 @@ import type { EmulatorTable } from "./types"
 
 export type ColumnarTable = Record<string, unknown[]>
 
+/**
+ * A formula error as the plugin API decodes `["E", name, message, details]`
+ * (grist-plugin-api.js's own `RaisedException`, same name and fields): what
+ * a widget reads with keepEncoded off (#135).
+ */
+class RaisedException {
+  name: string
+  message?: string
+  details?: string
+  user_input?: unknown
+  constructor(args: unknown[]) {
+    this.name = String(args[0])
+    this.message = typeof args[1] === "string" ? args[1] : undefined
+    this.details = typeof args[2] === "string" ? args[2] : undefined
+    const input = args[3]
+    this.user_input = input && typeof input === "object" ? (input as { u?: unknown }).u : undefined
+  }
+  /** As Grist shows it, e.g. "#DIV/0!". */
+  toString(): string {
+    switch (this.name) {
+      case "ZeroDivisionError":
+        return "#DIV/0!"
+      case "UnmarshallableError":
+        return this.details || `#${this.name}`
+      case "InvalidTypedValue":
+        return `#Invalid ${this.message}: ${this.details}`
+    }
+    return `#${this.name}`
+  }
+}
+
 export type ToColumnarOptions = {
   keepEncoded?: boolean
   /**
@@ -62,6 +93,9 @@ export function encodeForWire(value: unknown, type: string | undefined, keepEnco
   }
   // Grist decodes a stored list with keepEncoded off: ["L", "a"] arrives as
   // ["a"], so a first choice "L" is a choice (#133).
-  if (!keepEncoded && !raw && Array.isArray(value) && value[0] === "L") return value.slice(1)
+  if (!keepEncoded && !raw && Array.isArray(value)) {
+    if (value[0] === "L") return value.slice(1)
+    if (value[0] === "E" && value.length > 1) return new RaisedException(value.slice(1))
+  }
   return value
 }

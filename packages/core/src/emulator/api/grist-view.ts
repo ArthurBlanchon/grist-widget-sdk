@@ -120,7 +120,7 @@ function refsShown(
     if (!target || !visible) {
       // Without a visible column, only the helper the column names exactly (displayColRef).
       const helper = Object.entries(table.columns).find(([, c]) => c.colRef !== undefined && c.colRef === col.displayColRef && c.colRef !== col.colRef)?.[0]
-      if (helper) out.set(colId, (row) => row[helper])
+      if (helper) out.set(colId, (row) => encodeForWire(row[helper], undefined, keepEncoded))
       continue
     }
     const [visibleId, visibleCol] = visible

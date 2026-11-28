@@ -2,6 +2,10 @@
 
 What changed in each version, for the people using the widget. Newest first.
 
+## 0.2.4 (2026-11-28)
+
+- Built with the latest version of grist-widget-sdk: nothing changes on screen.
+
 ## 0.2.3 (2026-11-26)
 
 - A ChoiceList whose first choice is "L" (a size, say) keeps it: the field read it without that choice, so Undo would put back the list without it.

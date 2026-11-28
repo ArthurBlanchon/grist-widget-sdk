@@ -2,6 +2,10 @@
 
 What changed in each version, for the people using the widget. Newest first.
 
+## 0.2.3 (2026-11-28)
+
+- Built with the latest version of grist-widget-sdk: nothing changes on screen.
+
 ## 0.2.2 (2026-11-21)
 
 - The alert shown while its section follows no other now says where to link it: SELECT BY, in the widget's panel, Data.

@@ -81,6 +81,13 @@ describe("Mail merge", () => {
     await waitFor(async () => expect(params((await openLink("zoe@example.org")).getAttribute("href")!).get("subject")).toBe("Zoé: L, M"))
   })
 
+  it("AC-1 keeps reading a list whose first choice is \"E\" as its choices (#135)", async () => {
+    // Grades E and M, as Grist stores them: the tag, then the choices.
+    const rows = MEMBERS.map((r) => (r.id === 1 ? { ...r, Sizes: ["L", "E", "M"] } : r))
+    setup({ ...TEMPLATE, subject: "{{Name}}: {{Sizes}}" }, undefined, rows)
+    await waitFor(async () => expect(params((await openLink("zoe@example.org")).getAttribute("href")!).get("subject")).toBe("Zoé: E, M"))
+  })
+
   it("AC-2 says when a placeholder names no column, and keeps it as written", async () => {
     setup({ ...TEMPLATE, subject: "Hi {{Nickname}}" })
     expect(await screen.findByText("Not a column of this table: Nickname. It is sent as written.")).toBeInTheDocument()

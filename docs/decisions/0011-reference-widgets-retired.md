@@ -1,9 +1,9 @@
 # 0011. The six reference widgets are retired, not released again
 
-- **Status:** accepted; its deletion of the six set aside for now by the
-  maintainer on 2026-11-28, which [ADR 0026](./0026-one-maintenance-model.md)
-  (proposed, decision 5) records: the six stay as the external widgets of
-  record, and the real-widgets job keeps checking them
+- **Status:** accepted; amended by [ADR 0026](./0026-one-maintenance-model.md)
+  (2026-11-28, decision 5): the deletion of the six is set aside for now.
+  They stay as the external widgets of record, and the real-widgets job
+  keeps checking them
 - **Date:** 2026-11-15
 
 ## Context

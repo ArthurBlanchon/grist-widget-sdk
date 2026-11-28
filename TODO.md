@@ -59,9 +59,9 @@ Each item is one pull request; the plan says when each milestone is done.
   ([ADR 0026](./docs/decisions/0026-one-maintenance-model.md), decision 5,
   setting aside [ADR 0011](./docs/decisions/0011-reference-widgets-retired.md)'s
   deletion).
-- [ ] **ADR 0026's work, once it is accepted**
-  ([ADR 0026](./docs/decisions/0026-one-maintenance-model.md), proposed),
-  one pull request each, in this order. Each step that changes the CLI or
+- [ ] **ADR 0026's work**
+  ([ADR 0026](./docs/decisions/0026-one-maintenance-model.md)), one pull
+  request each, in this order, each with its own go (ADR 0012). Each step that changes the CLI or
   the template reaches the six reference widgets through `upgrade` first.
   - [ ] The catalog's "Unreleased widget changes" pull request.
   - [ ] The catalog's checks (real Grist, comparison, served release) as

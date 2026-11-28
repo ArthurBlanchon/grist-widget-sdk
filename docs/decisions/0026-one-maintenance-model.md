@@ -1,11 +1,11 @@
 # 0026. One way to maintain a widget, in the catalog or in its own repository
 
-- **Status:** proposed. Decision 5 is the maintainer's, of 2026-11-28; the
-  others await the maintainer's go on this record, after its independent
-  reviews. Accepting it is not a go for the pull requests that implement
-  it: each one takes its own, by ADR 0012's table.
+- **Status:** accepted, on the maintainer's go of 2026-11-28 on #146,
+  after its two independent reviews. Accepting it is not a go for the pull
+  requests that implement it: each one takes its own, by ADR 0012's
+  table.
 - **Date:** 2026-11-28
-- **Amends, once accepted:** [ADR 0011](./0011-reference-widgets-retired.md)
+- **Amends:** [ADR 0011](./0011-reference-widgets-retired.md)
   (the six reference widgets stay, as the external widgets of record)
 
 ## Context
@@ -222,8 +222,8 @@ same code.**
   template change carries its "Existing widgets can …" changeset.
 - The pages that followed ADR 0011 change with this record:
   `docs/architecture.md` and `docs/planning/2026-11-15-plan-0.8.md`.
-  ADR 0011's status says its deletion of the six is set aside (decision 5),
-  and becomes "amended by 0026" once this record is accepted. The six keep their entries
+  ADR 0011's status is "amended by 0026": its deletion of the six is set
+  aside for now (decision 5). The six keep their entries
   in the registry, which moves with awesome-grist-widgets into this
   repository in M7. The real-widgets job then reads them from there:
   `REGISTRY_URL` in `scripts/real-widgets/list-widgets.mjs` changes in

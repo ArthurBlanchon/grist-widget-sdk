@@ -35,6 +35,7 @@ link it from where the decision is applied.
 | [0023](./0023-template-is-the-only-start.md) | The template is the only starting point; examples/ is retired |
 | [0024](./0024-release-0.8-before-m5-m7.md) | 0.8.0 ships once the refactoring is done; M5 and M7 follow it |
 | [0025](./0025-widget-hosting-growth.md) | Hosting that holds at 100 widgets (proposed) |
+| [0026](./0026-one-maintenance-model.md) | One way to maintain a widget, in the catalog or in its own repository (proposed) |
 
 The plans in [`docs/planning/`](../planning/) and
 [`docs/history/`](../history/) hold the reasoning in full. The design

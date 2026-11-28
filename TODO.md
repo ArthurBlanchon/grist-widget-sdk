@@ -36,6 +36,15 @@ From the [plan to 0.8.0](./docs/planning/2026-11-15-plan-0.8.md) §4, in
 its order: M5, then M7 (M1 to M4 and M6 are done).
 Each item is one pull request; the plan says when each milestone is done.
 
+- [ ] **One way to maintain a widget, catalog or external**
+  ([ADR 0026](./docs/decisions/0026-one-maintenance-model.md), proposed).
+  Once it is decided, in its order: fixtures of external widgets, upgraded
+  from the published release to the packed build on every SDK or CLI
+  change, in place of the six reference repositories; the six archived,
+  then deleted; the catalog's checks (real Grist, comparison, served
+  release) as `create-grist-widget` commands; a release check and an
+  "Unreleased widget changes" pull request; one pull request per SDK
+  update in a widget repository; releasing without a push to `dev`.
 - [ ] **Attachments on the static demo pages.** grist-static serves no
   attachment, so the demo pages of Attachment viewer, File uploader and
   Signature pad open with their attachments cells empty (`pnpm demo` and

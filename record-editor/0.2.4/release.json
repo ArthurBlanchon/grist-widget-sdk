@@ -1,0 +1,8 @@
+{
+  "slug": "record-editor",
+  "version": "0.2.4",
+  "commit": "9b53c238ae0be57949790dd250c187b5de8d24e6",
+  "released": "2026-11-28T16:18:41.692Z",
+  "changes": "- A ChoiceList whose first choice is \"E\" (a grade, say) shows its choices: the form took the cell for a formula error and showed none selected.",
+  "changelog": "CHANGELOG.md"
+}

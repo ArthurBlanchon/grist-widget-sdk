@@ -1,0 +1,8 @@
+{
+  "slug": "record-selector",
+  "version": "0.2.3",
+  "commit": "9b53c238ae0be57949790dd250c187b5de8d24e6",
+  "released": "2026-11-28T16:18:42.532Z",
+  "changes": "- Built with the latest version of grist-widget-sdk: nothing changes on screen.",
+  "changelog": "CHANGELOG.md"
+}

@@ -1,8 +1,8 @@
 # 0026. One way to maintain a widget, in the catalog or in its own repository
 
-- **Status:** proposed (drafted 2026-11-28, for the maintainer's decision)
+- **Status:** accepted (the maintainer's go of 2026-11-28)
 - **Date:** 2026-11-28
-- **Amends, once accepted:** [ADR 0011](./0011-reference-widgets-retired.md)
+- **Amends:** [ADR 0011](./0011-reference-widgets-retired.md)
   (the six reference widgets stay, as the external widgets of record)
 
 ## Context
@@ -171,11 +171,14 @@ same code.**
 
 - **The order of the work** (`TODO.md`), each step reaching the six
   through `upgrade` before it is released:
-  1. the checks in the CLI (decision 1);
-  2. the release check and the "Unreleased widget changes" pull request
-     (decision 2);
-  3. the `update` command and its daily notice (decision 3);
-  4. the release command (decision 4).
+  1. the catalog's "Unreleased widget changes" pull request (decision 2):
+     it stays in this repository's `scripts/` and `.github/`, needs no
+     change to the CLI, and would have shown #135's fix as unreleased the
+     day #136 merged;
+  2. the checks in the CLI (decision 1);
+  3. the external release check (decision 2), with those checks;
+  4. the `update` command and its daily notice (decision 3);
+  5. the release command (decision 4).
 - `release-widgets` loses its step 1, which becomes the scheduled job, and
   its step 5, which becomes the check after the deploy.
   `upgrade-reference-widgets` shrinks to running `update` in each of the
@@ -185,9 +188,9 @@ same code.**
 - The docs pages for upgrading and releasing a widget
   (`apps/www/content/docs/cli/`) change with decisions 3 and 4, and each
   template change carries its "Existing widgets can …" changeset.
-- On acceptance, the pages that still follow ADR 0011 change with it:
+- The pages that followed ADR 0011 change with this record:
   `docs/architecture.md` and `docs/planning/2026-11-15-plan-0.8.md`.
-  ADR 0011's status becomes "amended by 0026". The six keep their entries
+  ADR 0011's status is "amended by 0026". The six keep their entries
   in the registry, which moves with awesome-grist-widgets into this
   repository in M7. The news feed stays one of the six. Its catalog entry
   is still open, as ADR 0011 left it.

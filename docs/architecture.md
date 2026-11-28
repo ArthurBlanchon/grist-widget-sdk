@@ -117,8 +117,8 @@ break the docs deploy.
 - **The six reference widgets** (separate repositories, made from the
   template) are checked against every SDK pull request by the Real widgets
   job ([real widgets](./operations/real-widgets.md)), with the SDK and
-  the CLI packed as npm ships them. They stay, as the external widgets of
-  record ([ADR 0026](./decisions/0026-one-maintenance-model.md), amending
+  the CLI packed as npm ships them. They stay for now, as the external
+  widgets of record ([ADR 0026](./decisions/0026-one-maintenance-model.md), amending
   [ADR 0011](./decisions/0011-reference-widgets-retired.md)).
   awesome-grist-widgets, which lists them, is absorbed into the catalog
   then archived (the plan to 0.8.0, M7); their entries move with it.

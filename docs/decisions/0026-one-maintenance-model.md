@@ -1,8 +1,11 @@
 # 0026. One way to maintain a widget, in the catalog or in its own repository
 
-- **Status:** accepted (the maintainer's go of 2026-11-28)
+- **Status:** proposed. Decision 5 is the maintainer's, of 2026-11-28; the
+  others await the maintainer's go on this record, after its independent
+  reviews. Accepting it is not a go for the pull requests that implement
+  it: each one takes its own, by ADR 0012's table.
 - **Date:** 2026-11-28
-- **Amends:** [ADR 0011](./0011-reference-widgets-retired.md)
+- **Amends, once accepted:** [ADR 0011](./0011-reference-widgets-retired.md)
   (the six reference widgets stay, as the external widgets of record)
 
 ## Context
@@ -39,7 +42,7 @@ showed:
      `create-grist-widget upgrade`. Dependabot's alone doesn't compile when
      a release removes names.
    - `pnpm release` must run on `dev` and push to it, so it doesn't work
-     for an agent, nor under a ruleset on `dev`.
+     for an agent whose pushes are kept to its own branches.
    - For the six widgets, the upgrade and release took about 24 pull
      requests and merges, and checks run by hand from this repository.
 4. **Deleting the six repositories removes the only test of the external
@@ -82,13 +85,20 @@ same code.**
      files and fields the release adds or that change on every build: for
      the catalog `release.json` and `CHANGELOG.md`, for an external widget
      `showcase-meta.json`, `version.json` and the manifest's
-     `lastUpdatedAt`. A change to the manifest's other fields, which Grist
-     shows, counts as a change.
-   - **External:** on the `dev` → `main` pull request the check fails
-     when the build changed and the version didn't, which ends the silent
+     `lastUpdatedAt`. A change to the fields Grist shows (the name, the
+     description, the access) counts. The versions of the SDK and the CLI
+     that the manifest records don't count on their own: a bump of the CLI
+     alone, with the bundle unchanged, is not a release.
+   - **External:** on every pull request into `main` the check fails when
+     the build changed and the version didn't, which ends the silent
      no-op. A pull request that doesn't change the build, docs for
      example, passes. A change that should not be released yet waits on
-     `dev`: there is no other escape, since merging is releasing.
+     `dev`: there is no other escape, since merging is releasing. A
+     Dependabot security pull request, which opens on `main`, fails it
+     too. It is closed, and the fix goes through `dev` with a release.
+     On the `dev` → `main` pull request the check also makes sure that
+     the version commit, or its merge, is `dev`'s tip, so that nothing
+     lands under a version without its changelog line.
    - **Catalog:** an SDK or `_shared/` change reaches many widgets at
      once, so it doesn't fail the pull request. The check lists the
      widgets whose build changed. On `main`, a scheduled job keeps one
@@ -98,11 +108,21 @@ same code.**
        already on the branch, so the agent's work stays.
      - The agent chooses each version again by `widgets/AGENTS.md`
        (a patch, a minor, or a major if in doubt) and writes each line for
-       the people using the widget. A major, a raised access or a new
-       outbound host takes the maintainer's go (ADR 0012).
-     - The job builds in a read-only job without secrets. A second job,
-       which runs no package code, writes the versions and the lines it is
-       handed and pushes the branch.
+       the people using the widget. A major, a raised access, a new
+       outbound host or a security fix takes the maintainer's go
+       (ADR 0012).
+     - The job builds in a read-only job without secrets, which hands on
+       a list of slugs and nothing else. A second job, which runs no
+       package code, does the following:
+       - checks each slug against `^[a-z0-9-]+$` and against the folders
+         in `widgets/`;
+       - raises only the `version` in that widget's `package.json`;
+       - writes a fixed placeholder line in its changelog;
+       - pushes one fixed branch.
+
+       A ruleset on `widgets-dist` blocking force pushes and deletion
+       would also keep any token off production's branch. That is a
+       setting, and the maintainer's.
      - Pushed with `GITHUB_TOKEN`, the pull request starts no CI. As with
        the Version Packages pull request, its runs are approved or re-run
        before it can be green and merged.
@@ -113,7 +133,10 @@ same code.**
    repository, `create-grist-widget update` (run by the owner or an agent,
    on a branch from `dev`):
    - moves `grist-widget-sdk` and `create-grist-widget` to the newest
-     release that pnpm's age check allows;
+     release that is at least 7 days old (the cooldown the template's
+     Dependabot has today, longer than pnpm's 24 hours, since these two
+     packages are the first a compromise of this repository's publishing
+     would reach), and never writes a `minimumReleaseAgeExclude` entry;
    - runs `upgrade`;
    - commits;
    - opens one pull request into `dev`, listing in its description the
@@ -127,16 +150,25 @@ same code.**
      install of a just-published package and a run of its code, would let
      a compromised release push `dev` and `gh-pages`.
 
+   Run locally, `update` runs the new release's code on the machine of
+   whoever runs it, as `upgrade` does today. What protects them is the
+   7-day wait, not where it runs.
+
    A scheduled workflow of the template, daily and on demand, only tells.
    In a read-only job without secrets, it installs the new release,
    upgrades, typechecks and tests. It then opens or updates one issue: the
    version, the result, and the uses to change by hand. A second job,
-   which runs no package code, writes the issue.
+   which runs no package code, writes the issue. Its body comes from
+   running a just-published package, so whoever then runs `update`
+   reads it as data ([untrusted input](../operations/untrusted-input.md)).
 
    Dependabot stops updating the two packages. An `ignore` entry also
-   stops its security updates for them, so that issue is their only
-   notice: hence daily. The catalog needs none of this: it takes the SDK
-   from the workspace.
+   stops its security updates for them. So the issue is their notice,
+   hence daily, with Dependabot's alerts, which an `ignore` entry
+   doesn't stop. GitHub turns a public repository's scheduled workflows
+   off after 60 days without activity. A dormant widget then keeps only
+   the alerts, and the docs say to turn the workflow back on. The catalog
+   needs none of this: it takes the SDK from the workspace.
 4. **Releasing is one command, never a direct push.** In a widget
    repository, `pnpm release <patch|minor|major>`, run on a branch from
    `dev`:
@@ -147,11 +179,10 @@ same code.**
 
    Once that is merged, the `dev` → `main` pull request is the release,
    and `dev` stays level with `main` apart from the merge commit, as
-   today. The same flow serves a person and an agent, and passes a ruleset
-   on `dev`. The deploy's reset of `dev` after a repository's first
+   today. The same flow serves a person and an agent. The deploy's reset of `dev` after a repository's first
    release, a direct push, is reviewed in the same change.
-5. **The six reference repositories stay, as the external widgets of
-   record.** They keep their place in the real-widgets job: every SDK or
+5. **The six reference repositories stay for now, as the external
+   widgets of record.** They keep their place in the real-widgets job: every SDK or
    CLI change is checked against them with the packed builds, and they
    move onto each SDK release (`upgrade-reference-widgets`). A release of
    theirs is the maintainer's go. They are also the first to take
@@ -169,8 +200,9 @@ same code.**
 
 ## Consequences
 
-- **The order of the work** (`TODO.md`), each step reaching the six
-  through `upgrade` before it is released:
+- **The order of the work** (`TODO.md`, one item for each). Each step
+  that changes the CLI or the template reaches the six through `upgrade`
+  before anyone else's widget:
   1. the catalog's "Unreleased widget changes" pull request (decision 2):
      it stays in this repository's `scripts/` and `.github/`, needs no
      change to the CLI, and would have shown #135's fix as unreleased the
@@ -190,9 +222,13 @@ same code.**
   template change carries its "Existing widgets can …" changeset.
 - The pages that followed ADR 0011 change with this record:
   `docs/architecture.md` and `docs/planning/2026-11-15-plan-0.8.md`.
-  ADR 0011's status is "amended by 0026". The six keep their entries
+  ADR 0011's status says its deletion of the six is set aside (decision 5),
+  and becomes "amended by 0026" once this record is accepted. The six keep their entries
   in the registry, which moves with awesome-grist-widgets into this
-  repository in M7. The news feed stays one of the six. Its catalog entry
+  repository in M7. The real-widgets job then reads them from there:
+  `REGISTRY_URL` in `scripts/real-widgets/list-widgets.mjs` changes in
+  the same step, since an archived list would stop changing without a
+  sign. The news feed stays one of the six. Its catalog entry
   is still open, as ADR 0011 left it.
 - More catalog releases: a fix in the SDK reaches the widgets within days,
   not at the month's end. Each release adds to the site's size, which

@@ -103,6 +103,15 @@ describe("Record editor", () => {
     expect(tech).toHaveValue("2")
   })
 
+  it("AC-2 reads a list whose first choice is \"E\" as its choices, not a formula error (#135)", async () => {
+    const { emulator } = setup()
+    // A choice "E", then "urgent", as Grist stores them: the tag, then the choices.
+    emulator.mutate.updateRow("Interventions", 1, { Tags: ["L", "E", "urgent"] })
+    await waitFor(() =>
+      expect(within(screen.getByRole("group", { name: "Tags" })).getByRole("button", { name: "urgent" })).toHaveAttribute("aria-pressed", "true")
+    )
+  })
+
   it("AC-3 shows a formula column's value without letting it be edited", async () => {
     setup()
     const total = await screen.findByLabelText("Total")

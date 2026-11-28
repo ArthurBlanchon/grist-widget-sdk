@@ -2,6 +2,10 @@
 
 What changed in each version, for the people using the widget. Newest first.
 
+## 0.4.6 (2026-11-28)
+
+- Built with the latest version of grist-widget-sdk: nothing changes on screen.
+
 ## 0.4.5 (2026-11-24)
 
 - The settings' header is lighter: "Back to widget" is an outlined button at the top left, with "Settings" centred beside it.

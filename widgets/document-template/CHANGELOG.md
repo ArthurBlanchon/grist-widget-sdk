@@ -2,6 +2,10 @@
 
 What changed in each version, for the people using the widget. Newest first.
 
+## 0.2.4 (2026-11-28)
+
+- Built with the latest version of grist-widget-sdk: nothing changes on screen.
+
 ## 0.2.3 (2026-11-26)
 
 - A list whose first choice is "L" (a size, say) keeps it in the document: `L, XL` was filled in as `XL`.

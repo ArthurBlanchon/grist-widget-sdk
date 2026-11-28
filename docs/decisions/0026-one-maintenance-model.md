@@ -3,7 +3,7 @@
 - **Status:** proposed (drafted 2026-11-28, for the maintainer's decision)
 - **Date:** 2026-11-28
 - **Amends, once accepted:** [ADR 0011](./0011-reference-widgets-retired.md)
-  (what replaces the six reference widgets in the real-widgets job)
+  (the six reference widgets stay, as the external widgets of record)
 
 ## Context
 
@@ -50,8 +50,9 @@ showed:
    file that `upgrade` mangles.
 
 A note on 2026-11-28: the six were released as patches (0.2.1, world-map
-0.2.2) on the maintainer's go in the session. ADR 0011 had said they would
-get no new release. That go is the exception, and is recorded here.
+0.2.2) on the maintainer's go in the session, although ADR 0011 had said
+they would get no new release. On the same day the maintainer decided to
+keep them as the reference for now (decision 5).
 
 ## Decision
 
@@ -99,33 +100,36 @@ same code.**
    an agent. A pull request opened with `GITHUB_TOKEN` starts no CI: the
    implementation has to account for that, as the Version Packages pull
    request does today.
-5. **External widgets of record live in this repository.** A few
-   widget repositories, kept as fixtures, cover:
-   - the declaration of 0.4 (`GRIST_OPTIONS` and `WIDGET_METADATA`);
-   - `defineGristWidget`;
-   - a widget with settings.
+5. **The six reference repositories stay, as the external widgets of
+   record.** They keep their place in the real-widgets job: every SDK or
+   CLI change is checked against them with the packed builds, and they
+   move onto each SDK release (`upgrade-reference-widgets`). A release of
+   theirs is the maintainer's go. They are also the first to take
+   decisions 1 to 4, through `upgrade`, before anyone else's widget does.
+   This amends ADR 0011: they are not deleted, and the real-widgets job
+   doesn't move onto the catalog widgets, which build against the
+   workspace and so can't test the external path.
 
-   On every SDK or CLI change, CI scaffolds each fixture with the
-   published release, upgrades it to the packed build, then runs
-   typecheck, test, build and the real-Grist check. This replaces the six
-   repositories in the real-widgets job, not the catalog widgets
-   (amending ADR 0011).
+   If they are ever retired, what replaces them has to test that path:
+   for example, fixtures scaffolded from the published release and
+   upgraded to the packed build on every change, one for each declaration
+   form (`GRIST_OPTIONS`, `defineGristWidget`, a widget with settings).
+   That replacement runs green for a release before the first of them is
+   deleted.
 
 ## Consequences
 
-- **The order of the work** (`TODO.md`):
-  1. the fixtures and the job that upgrades them (decision 5);
-  2. archive the six repositories, which stops their Dependabot pull
-     requests without losing their history, and delete them once the
-     fixtures have run green for a release;
-  3. the checks in the CLI (decision 1);
-  4. the release check and the "Unreleased widget changes" pull request
+- **The order of the work** (`TODO.md`), each step reaching the six
+  through `upgrade` before it is released:
+  1. the checks in the CLI (decision 1);
+  2. the release check and the "Unreleased widget changes" pull request
      (decision 2);
-  5. the update workflow (decision 3);
-  6. the release command (decision 4).
+  3. the update workflow (decision 3);
+  4. the release command (decision 4).
 - `release-widgets` loses its step 1, which becomes the scheduled job, and
   its step 5, which becomes the check after the deploy.
-  `upgrade-reference-widgets` is retired with the six.
+  `upgrade-reference-widgets` shrinks to reviewing and merging each
+  widget's update pull request.
 - A widget repository's CI gets slower: a real Grist in Docker adds a few
   minutes, on the `dev` → `main` pull request at least.
 - The docs pages for upgrading and releasing a widget
@@ -143,10 +147,12 @@ same code.**
   would then carry up to sixteen entries, and nothing of it reaches an
   external widget. The build comparison catches the same changes from what
   is actually built, in both places.
-- **Keep the six repositories as the external test.** They are real, but
-  they need the upkeep of six products: Dependabot, releases, and the
-  hours that went into them on 2026-11-27. They also cover only what they
-  happen to use, where fixtures can cover each declaration form on purpose.
+- **Replace the six with fixtures now.** Fixtures can cover each
+  declaration form on purpose, but they are not widgets anyone uses. The
+  six are real code, with the upkeep of six products: Dependabot, releases,
+  and the hours that went into them on 2026-11-27. The maintainer chose to
+  keep them for now, and decisions 1 to 4 reduce that upkeep. Fixtures stay
+  the way to retire them (decision 5).
 - **Fail a catalog pull request whose change reaches a widget's build.**
   Every SDK pull request would have to release up to sixteen widgets, and
   `widgets-dist` would grow with each one.

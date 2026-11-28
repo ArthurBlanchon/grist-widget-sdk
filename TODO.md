@@ -38,10 +38,9 @@ Each item is one pull request; the plan says when each milestone is done.
 
 - [ ] **One way to maintain a widget, catalog or external**
   ([ADR 0026](./docs/decisions/0026-one-maintenance-model.md), proposed).
-  Once it is decided, in its order: fixtures of external widgets, upgraded
-  from the published release to the packed build on every SDK or CLI
-  change, in place of the six reference repositories; the six archived,
-  then deleted; the catalog's checks (real Grist, comparison, served
+  Once it is decided, in its order, each step reaching the six reference
+  widgets (which stay, as the external widgets of record) through
+  `upgrade` first: the catalog's checks (real Grist, comparison, served
   release) as `create-grist-widget` commands; a release check and an
   "Unreleased widget changes" pull request; one pull request per SDK
   update in a widget repository; releasing without a push to `dev`.
@@ -62,9 +61,9 @@ Each item is one pull request; the plan says when each milestone is done.
   `version` ids stay (ADR 0019).
 - [ ] **M7. Bring the widgets home, then retire.** Wave 3 (REST
   enrichment, Ask AI, Scan with AI) after M1–M4; awesome-grist-widgets
-  absorbed and archived; the
-  six reference repositories retired, the news feed with them
-  ([ADR 0011](./docs/decisions/0011-reference-widgets-retired.md)).
+  absorbed and archived. The six reference repositories stay for now, as
+  the external widgets of record ([ADR 0026](./docs/decisions/0026-one-maintenance-model.md),
+  proposed, amending [ADR 0011](./docs/decisions/0011-reference-widgets-retired.md)).
 - [ ] **The catalog's widgets declare `languages: ["en", "fr"]`** once the
   SDK release with it is out ([ADR 0021](./docs/decisions/0021-chrome-language.md)),
   so their chrome matches their messages: a patch release of each.

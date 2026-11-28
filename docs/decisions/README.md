@@ -20,7 +20,7 @@ link it from where the decision is applied.
 | [0008](./0008-shared-design-system.md) | One design system for every catalog widget |
 | [0009](./0009-install-urls.md) | Install URLs on gristwidgets.com |
 | [0010](./0010-api-keys.md) | API keys never go in widget options |
-| [0011](./0011-reference-widgets-retired.md) | The six reference widgets are retired, not released again |
+| [0011](./0011-reference-widgets-retired.md) | The six reference widgets are retired, not released again (amended by 0026: deletion set aside for now) |
 | [0012](./0012-merge-authority.md) | Who merges what |
 | [0013](./0013-widget-channels.md) | A catalog widget's channels: one per major, and dev |
 | [0014](./0014-catalog-lists.md) | The catalog's lists, and an id per major in Grist's |
@@ -35,6 +35,7 @@ link it from where the decision is applied.
 | [0023](./0023-template-is-the-only-start.md) | The template is the only starting point; examples/ is retired |
 | [0024](./0024-release-0.8-before-m5-m7.md) | 0.8.0 ships once the refactoring is done; M5 and M7 follow it |
 | [0025](./0025-widget-hosting-growth.md) | Hosting that holds at 100 widgets (proposed) |
+| [0026](./0026-one-maintenance-model.md) | One way to maintain a widget, in the catalog or in its own repository |
 
 The plans in [`docs/planning/`](../planning/) and
 [`docs/history/`](../history/) hold the reasoning in full. The design

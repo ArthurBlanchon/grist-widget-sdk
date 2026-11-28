@@ -2,6 +2,10 @@
 
 What changed in each version, for the people using the widget. Newest first.
 
+## 0.2.2 (2026-11-28)
+
+- No warning that its section follows no other: the schema is the whole document's, so the widget needs no link, and the alert showed for nothing.
+
 ## 0.2.1 (2026-11-21)
 
 - The widget loads again: Grist started serving its plugin script as a development build that this widget's security policy refuses, which left every copy on "The Grist plugin did not load". The widget now ships its own copy of Grist's plugin script, a fixed version without that problem, and runs no script from anywhere else.

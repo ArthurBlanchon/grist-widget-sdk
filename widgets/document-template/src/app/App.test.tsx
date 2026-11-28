@@ -62,6 +62,13 @@ describe("Document template", () => {
     await shown("<p>L, XL</p>")
   })
 
+  it("AC-1 keeps reading a list whose first choice is \"E\" as its choices (#135)", async () => {
+    const { emulator } = setup("<p>{{Items}}</p>")
+    // Grades E and M, as Grist stores them: the tag, then the choices.
+    emulator.mutate.updateRow("Quotes", 1, { Items: ["L", "E", "M"] })
+    await shown("<p>E, M</p>")
+  })
+
   it("AC-2 writes a cell holding HTML as text", async () => {
     setup("<p>{{Note}}</p>")
     await shown("<p>&lt;b&gt;urgent&lt;/b&gt;</p>")

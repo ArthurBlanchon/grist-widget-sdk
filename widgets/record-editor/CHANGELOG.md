@@ -2,6 +2,10 @@
 
 What changed in each version, for the people using the widget. Newest first.
 
+## 0.2.4 (2026-11-28)
+
+- A ChoiceList whose first choice is "E" (a grade, say) shows its choices: the form took the cell for a formula error and showed none selected.
+
 ## 0.2.3 (2026-11-26)
 
 - A ChoiceList whose first choice is "L" (a size, say) keeps it: the form showed it without that choice, and Save then wrote the list without it.
